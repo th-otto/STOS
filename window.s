@@ -803,12 +803,21 @@ dejaact:  clr tempinit
 ; SOUS PROGRAMME DE WINDON: AFFICHE UNE FENETRE, (SANS RECOPIE)
 ; Efface le fond graphique avec les flags actuels!
 windaff:  clr escape
+      .IFNE 1
 	  move #8,freelle	;TOUTE la fenetre! 
           move txreel(a4),d2
           move tyreel(a4),d3
           clr d0
           clr d1
           bsr effecran
+      .ELSE
+          move txtext(a4),d2
+          move tytext(a4),d3
+          clr d0
+          clr d1
+          bsr effecran
+	  move #8,freelle	;TOUTE la fenetre! 
+      .ENDC
 ; Ecris le tour et la fenetre
           move ycursor(a4),-(sp)
           move xcursor(a4),-(sp)
