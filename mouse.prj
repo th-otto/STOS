@@ -1,5 +1,5 @@
-run.bin
+mouse.spr
 .L[-S=0]
 .S[-S]
 =
-run.s
+mouse.s
