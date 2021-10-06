@@ -79,7 +79,7 @@ entier: move.l (sp)+,d0
         movem.l (sp)+,d2-d4
         move.l d0,-(sp)
         tst.b d2
-        bmi typemis
+        bmi.w typemis /* XXX */
         beq.s finent
         movem.l a0-a2,-(sp) 
         move.l table,a0
@@ -128,7 +128,7 @@ pack:   move.l (sp)+,retour     ;adresse de retour
 ; Parametres par defaut
         lea params,a2
         moveq #0,d4
-        move.b resol,d4         ;resolution .B!
+        move.b resol.l,d4         ;resolution .B! /* XXX */
         move.w d4,d1
         lsl.w #3,d1
         lea tmode,a0
@@ -150,7 +150,7 @@ pack:   move.l (sp)+,retour     ;adresse de retour
         cmpi.w #2,d0
         beq.s pack3
         cmpi.w #9,d0
-        bne syntax
+        bne.w syntax /* XXX */
 ; Neuf parametres
         lea params,a2
         moveq #6,d7
@@ -170,7 +170,7 @@ pack3:  bsr entier      ;va chercher "destination"
         lea params,a2   
         move.w 12(a2),d0        ;resolution image
         cmpi.w #2,d0
-        bhi foncall
+        bhi.w foncall /* XXX */
         lsl #3,d0
         lea tmode,a3
         moveq #0,d1
@@ -179,20 +179,20 @@ pack3:  bsr entier      ;va chercher "destination"
         move.w 6(a2),d2
         add.w 2(a2),d2
         cmp.w d1,d2
-        bhi foncall
+        bhi.w foncall /* XXX */
         move.w (a2),d2          ;verifie en Y
         mulu 8(a2),d2
         add.w 4(a2),d2
         cmp.w 6(a3,d0.w),d2
-        bhi foncall
+        bhi.w foncall /* XXX */
         move.w (a2)+,d5         ;ty
-        beq foncall
+        beq.w foncall /* XXX */
         move.w (a2)+,d4         ;tx
-        beq foncall
+        beq.w foncall /* XXX */
         move.w (a2)+,d3         ;dy
         move.w (a2)+,d2         ;dx
         move.w (a2)+,d1         ;hauteur
-        beq foncall
+        beq.w foncall /* XXX */
         move.w (a2)+,d6         ;flags
         move.w (a2)+,d7         ;resolution
 ;
@@ -223,13 +223,13 @@ unpack: move.l (sp)+,retour
         move.w #-1,8(a2)        ;dy
 ;
         cmpi.w #1,d0
-        beq unp4
+        beq.w unp4 /* XXX */
         cmpi.w #2,d0
-        beq unp3
+        beq.w unp3 /* XXX */
         cmpi.w #3,d0
-        beq unp1
+        beq.w unp1 /* XXX */
         cmpi.w #4,d0
-        beq unp2
+        beq.w unp2 /* XXX */
         cmpi.w #5,d0
         bne syntax
 ; Cinq parametres
@@ -304,7 +304,8 @@ unp6:   tst d0
 
 ; Preparation de l'entete de l'image compactee
 compact:move.l a1,adobjet
-        move.l #$06071963,code(a1)
+        /* move.l #$06071963,code(a1) */
+        dc.w 0x237c,0x0607,0x1963,0 /* XXX */
         move.w d7,mode(a1)
         move.w d2,dx(a1)
         move.w d3,dy(a1)  
@@ -574,11 +575,13 @@ doct6:  dbra d1,doctet2
 doct7:  add.w (sp),a1           ;autre carres ?
         dbra d5,dcarre
         add.w 2(sp),a2          ;autre ligne de carres?
-        subq.w #1,4(sp)
-        bne dligne
+        /* subq.w #1,4(sp) */
+        dc.w 0x046f,1,4 /* XXX */
+        bne.w dligne /* XXX */
         addq.l #2,a3            ;autre plan couleur?
-        subq.w #1,nbplan
-        bne dplan
+        /* subq.w #1,nbplan */
+        dc.l 0x04790001,nbplan
+        bne.w dplan /* XXX */
 ;
         addq.l #6,sp            ;retabli la pile
 
