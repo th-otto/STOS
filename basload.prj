@@ -1,4 +1,6 @@
 basload.prg
 .S[-S]
+.L[-R]
+.L[-M]
 =
-basic208.s
+basload.s

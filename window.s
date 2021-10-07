@@ -1,6 +1,10 @@
 
 	/* Output	Stos\Windo102.bin */
 
+	.include "adapt.inc"
+
+	.text
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
 ;                             GESTION DES FENETRES                           ;

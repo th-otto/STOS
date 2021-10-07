@@ -80,7 +80,7 @@ dta:    DS.W    13              ;Buffer DTA
 size:   DC.L    0               ;Taille du fichier
 name:   DC.W    0               ;Son nom
         DS.W    9               ;Buffer Dta (Suite)
-adfin:    dc.l 0              ;adresse de chargement du prochain fichier
+end_adr:    dc.l 0              ;adresse de chargement du prochain fichier
 image:    dc.l 0
 mode:     dc.w 0
 handle:   dc.w 0
@@ -146,7 +146,7 @@ sv2:      move.w (a0)+,(a6)+            ;recopie...
           move.l 0(a5),a0               ;coordonnees de la souris
           move.l (a0),(a6)+
 ; installe le dta
-          move.l #finprg,adfin
+          move.l #finprg,end_adr
           bsr setdta
 ; ouvre le folder
           clr.w -(sp)
@@ -258,12 +258,12 @@ TrpLoad:  lea name1(pc),a0        ;sprites
           bsr exec
           lea adapt+2(pc),a3
           jsr (a0)            ;installe les trappes
-          move.l a0,adfin     ;poke l'adresse REELE de fin
+          move.l a0,end_adr     ;poke l'adresse REELE de fin
           lea name2(pc),a0        ;windows
           bsr exec
           lea adapt+2(pc),a3
           jsr (a0)
-          move.l a0,adfin
+          move.l a0,end_adr
 ; Charge le float s'il est la!
           lea name3(pc),a0
           bsr execla
@@ -274,12 +274,12 @@ FlPaLa:   lea name4(pc),a0        ;music
           bsr exec
           lea adapt+2(pc),a3
           jsr (a0)
-          move.l a0,adfin
+          move.l a0,end_adr
 ; charge et appelle les extensions, poke les adresses
           clr d7
           lea extend(pc),a6
 load5:    move.b d7,numbext
-          add.b #65,numbext
+          add.b #'A',numbext
           lea namext(pc),a0
           bsr sfirst
           bne.s load6
@@ -288,7 +288,7 @@ load5:    move.b d7,numbext
           movem.l a6/d6/d7,-(sp)
           lea adapt+2(pc),a3
           jsr (a0)
-          move.l a0,adfin
+          move.l a0,end_adr
           movem.l (sp)+,a6/d6/d7
           move d7,d6
           lsl #2,d6
@@ -493,17 +493,17 @@ execla:   movem.l d1-d3/a1-a3,-(sp)
           bsr setdta
           bsr sfirst
           bne exepala
-          move.l adfin(pc),d3     ;verifie la taille memoire!
+          move.l end_adr(pc),d3     ;verifie la taille memoire!
           add.l dta+26(pc),d3
           addi.l #60000,d3
           cmp.l image(pc),d3
           bcc erreur
           bsr open
-          move.l adfin(pc),a0
+          move.l end_adr(pc),a0
           bsr read
           bsr close
 ; reloge le programme!
-          move.l adfin(pc),a1
+          move.l end_adr(pc),a1
           move.l 2(a1),d0     ;distance a la table
           add.l 6(a1),d0
           andi.l #$ffffff,d0
@@ -525,14 +525,14 @@ exec1:    add.l d2,(a2)       ;change dans le programme
           bra.s exec0
 exec2:    add.w #254,a2       ;si 1 saute 254 octets
           bra.s exec0
-; remonte adfin avec la longeur du programme
-exec3:    move.l adfin(pc),a0
+; go back end_adr with the length of the program
+exec3:    move.l end_adr(pc),a0
           move.l a0,d0
           add.l dta+26(pc),d0
           btst #0,d0            ;Rend pair
           beq.s Pair
           addq.l #1,d0
-Pair:     move.l d0,adfin
+Pair:     move.l d0,end_adr
           movem.l (sp)+,d1-d3/a1-a3
           moveq #0,d0
           rts

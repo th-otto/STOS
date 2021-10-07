@@ -2,6 +2,10 @@
 
           /* Output Stos\Basic208.Bin */
 
+	.include "adapt.inc"
+
+	.text
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;09/11/89;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
           bra cold
@@ -62,13 +66,13 @@ bas:      dc.b ".BAS",0
 bak:      dc.b ".BAK",0
 etoile:   dc.b "*.*",0
 acb:      dc.b ".ACB",0
-; NOMS DE RECONNAISSANCE DES FICHIERS
+; FILE RECOGNITION NAMES
 nomdisk:  dc.b "neo",0,"pi1",0,"pi2",0,"pi3",0
           dc.b "mbk",0,"mbs",0,"prg",0,"var",0,"asc",0
 ; FABRICATION DU .PRG
-prg:      dc.b ".PRG",0
-prgrun:   dc.b "RUN__206.BIN",0
-stos:     dc.b "STOS\",0
+prg:      dc.b ".prg",0
+prgrun:   dc.b "run.bin",0
+stos:     dc.b "stos\",0
 prgmes:   dc.b "Insert a disk which has a",13,10
           dc.b "STOS folder into drive,",13,10
           dc.b "then press any key...",13,10,0
@@ -1225,8 +1229,10 @@ bufgsb:
 ; --------------------------------------------------------------
 
 ; A0 = Extensions address
+; A1 = Filename of executable (only for RUNTIME)
+; A2 = Oldpath address (only for RUNTIME)
 ; A3 = Address adaptations
-; A4 = Command tail
+; A4 = Command tail (not for RUNTIME)
 
 precold:  move.l $ffff0,a0    ;recupere l'adresse des extensions
           move.l $ffff4,a1
@@ -1237,14 +1243,14 @@ precold:  move.l $ffff0,a0    ;recupere l'adresse des extensions
 ; DEPART A FROID
 cold:     move d0,runonly     ;flag NORMAL/RUN ONLY
           move.l a0,adext     ;adresse de la table des extensions
-          move.l a1,ronom     ;adresse du nom du fichier
-          move.l a2,roold     ;adresse du oldpath
+          move.l a1,ronom     ;file name address
+          move.l a2,roold     ;oldpath address 
           move.l a4,adc       ;adresse command tail
 ; adaptation a l'ordinateur
           move.l a3,ada       ;adresse adaptation
-          move.l (a3),adm     ;mouse address
-          move.l 8(a3),adk    ;adresse clavier
-          move.l 24(a3),ads   ;adresse sons
+          move.l adapt_gcurx(a3),adm     ;mouse address
+          move.l adapt_kbiorec(a3),adk    ;adresse clavier
+          move.l adapt_sndtable(a3),ads   ;adresse sons
 
           move.l (sp),vecteurs  ;Adresse de retour
           clr.l -(sp)           ;passage en mode SUPERVISEUR
@@ -1458,7 +1464,7 @@ cd5:      addq.l #8,a6
           bsr clearvar        ;RAZ des variables
           clr coldflg
 
-; charge le RUNTIME s'il faut!
+; load the RUNTIME if necessary!
           tst runonly
           beq.s cd7
           lea cfenv,a0
@@ -1507,7 +1513,7 @@ cf4:      move.l a0,-(sp)
           tst.b (a0)
           bne.s cf4
 
-; Command tail?, si oui, ecrit RUN "xxxxxx" dans le buffer fonction!
+; Command tail ?, if yes, write RUN "xxxxxx" in the function buffer! 
 cd8:      tst.l adc
           beq.s cd11
           move.l adc,a2
@@ -13590,12 +13596,12 @@ md10:     dc.w $a000                    ;init ligne A
           lea vdimode,a0
           add d0,a0                     ;pointe la table VDI du mode
           move.l ada,a2
-          move.l 12(a2),a1              ;adresse table du VDI 1
-          moveq #$5a/2-1,d0
+          move.l adapt_devtab(a2),a1              ;adresse table du VDI 1
+          moveq #45-1,d0
 md12:     move.w (a0)+,(a1)+            ;poke dans la table
           dbra d0,md12
-          move.l 16(a2),a1              ;adresse table du VDI 2
-          moveq #$18/2-1,d0
+          move.l adapt_siztab(a2),a1              ;adresse table du VDI 2
+          moveq #12-1,d0
 md13:     move.w (a0)+,(a1)+
           dbra d0,md13
 ; initialisation d'une workstation
@@ -13845,7 +13851,7 @@ mousekey: move #21,d0
 joy:      clr.b d2
           clr.l d3
           move.l ada,a0
-          move.l 4(a0),a0
+          move.l adapt_joy(a0),a0
           move.b (a0),d3      ;#$e09...
           move.l adm,a0
           btst #1,7(a0)
@@ -13860,25 +13866,25 @@ fire:     move.l adm,a0
           bne.s jtrue
 ; JRIGHT: vrai si va a droite
 jright:   move.l ada,a0
-          move.l 4(a0),a0
+          move.l adapt_joy(a0),a0
           btst #3,(a0)
           beq.s jfalse
           bne.s jtrue
 ; JLEFT: vrai si va a gauche
 jleft:    move.l ada,a0
-          move.l 4(a0),a0
+          move.l adapt_joy(a0),a0
           btst #2,(a0)
           beq.s jfalse
           bne.s jtrue
 ; JDOWN: vrai si descend
 jdown:    move.l ada,a0
-          move.l 4(a0),a0
+          move.l adapt_joy(a0),a0
           btst #1,(a0)
           beq.s jfalse
           bne.s jtrue
 ; JUP: vrai si monte! GENIAL
 jup:      move.l ada,a0
-          move.l 4(a0),a0
+          move.l adapt_joy(a0),a0
           btst #0,(a0)
           bne.s jtrue
 jfalse:   clr.b d2
@@ -16159,7 +16165,7 @@ i5c:      cmp.w #32,d0
           bra.s i5z
 i5d:      lea b4,a0
 i5z:
-	.IFNE 1 /* XXX */
+	.IFNE 1
 	sub.l	#23*2,$4a2		; Safe BIOS interrupt call
 	move.l	a0,-(sp)
 	move.w	#32,-(sp) /* Dosound */

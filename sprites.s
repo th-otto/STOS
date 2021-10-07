@@ -1,4 +1,6 @@
+	.include "adapt.inc"
 
+	.text
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -261,8 +263,8 @@ params:   ds.w      5
 debut:
 
 ; Lors de l'appel, A3 contient l'adresse des adresses!
-        move.l (a3),admouse           ;adresse coords souris
-        move.l 20(a3),advect          ;adresse vecteur souris
+        move.l adapt_gcurx(a3),admouse           ;adresse coords souris
+        move.l adapt_kbdvbase(a3),advect          ;adresse vecteur souris
 ; charge la banque SOURIS par defaut!
           clr.l d7                      ;taille chargee
           pea dta
@@ -2681,14 +2683,12 @@ dep1:     move.l a0,doitactad           ;adresse du flag
           rts
 ;ARRET DES INTERRUPTIONS
 arretint: 
-		  .IFNE 1 /* not present in binary YYY */
-		  tst.l ancient2		    ;Si deja sauve!
+		  tst.l ancient2		        ;If already saved! 
 	      beq.s PaArr
-	      .ENDC
 	      move.l $456,a0
-          move.l ancient1(pc),(a0)          ;remet le VBL
+          move.l ancient1(pc),(a0)      ;remet le VBL
           move.l advect(pc),a0
-          move.l ancient2(pc),(a0)          ;remet la routine souris normale
+          move.l ancient2(pc),(a0)      ;remet la routine souris normale
 PaArr:    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

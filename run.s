@@ -141,7 +141,7 @@ sv1:      move.w (a0)+,(a6)+            ;recopie...
           moveq #$18/2-1,d0
 sv2:      move.w (a0)+,(a6)+            ;recopie...
           dbra d0,sv2
-          move.l 0(a5),a0               ;coordonnees de la souris
+          move.l 0(a5),a0               ;mouse coordinates
           move.l (a0),(a6)+
 ; installe le dta
           move.l #finprg,adfin
@@ -323,6 +323,7 @@ load8:    lea extend(pc),a0                 ;adresse de la table extention
           lea name(pc),a1                   ;adresse du nom du fichier!
           lea oldpath(pc),a2                ;ancien directory
           lea adapt+2(pc),a3                ;adresse des adresses
+          sub.l a4,a4
           moveq #1,d0                   ;RUNTIME!
           jsr (a6)                      ;branche au basic!
           bra erreur2
@@ -352,10 +353,10 @@ lv2:      move.w (a6)+,(a0)+
           move.l 0(a5),a0       ;adresse souris
           move.l (a6)+,(a5)     ;coords de la souris
           pea datas(pc)
-          move #6,-(sp)
+          move #6,-(sp) ; Setpalette
           trap #14
           addq.l #6,sp
-          move.w #37,-(sp)
+          move.w #37,-(sp) ; Vsync
           trap #14
           addq.l #2,sp
 ; RETOUR!
