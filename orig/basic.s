@@ -1,13 +1,13 @@
 
 
-	/* Output	Stos\Basic208.Bin */
+          /* Output Stos\Basic208.Bin */
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;09/11/89;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
           bra cold
 
 ;-------> Buffer pour le menage / securite de pile
-bmenage:	ds.l 64
+bmenage:  ds.l 64
 ;-------> Pile basic
           ds.l $100
 pile:
@@ -28,7 +28,7 @@ defloat:  ds.b 256
 bufcalc:
 ; BUFFER D'ENTREE/SORTIE
 buffer:
-name1:	  ds.b 64
+name1:    ds.b 64
 name2:    ds.b 64
           ds.b 128
 fsname:   ds.b 32
@@ -42,7 +42,7 @@ bs:       ds.b 84
 ;BUFFER DU FOLLOW
 fb:       ds.b 120
 maxfb:
-          ds.b 8           ;securite! /* YYY */
+          ds.b 8           ;securite!
 fl:       dc.b 30,"Line ",0
           dc.b 30,"Ligne ",0
 fl1:      dc.b ": ",0
@@ -97,7 +97,7 @@ fc:       dc.b "          LOAD file.",0
           dc.b "      CHARGER un ficher.",0
           even
 ;FILE SELECTOR
-fswind:   dc.w 1,3,2,34,21    
+fswind:   dc.w 1,3,2,34,21
           dc.w 2,23,2,34,21
           dc.w 3,23,2,34,21
 fst:      dc.b "FILE SELECTOR",0
@@ -308,7 +308,7 @@ thelp2:   dc.b "|P|  Size  |Wd #1|Wd #2|Wd #3|Wd #4|",10,0
           dc.b "|P| Taille |Fn #1|Fn #2|Fn #3|Fn #4|",10,0
 thelp3:   dc.b "Basic accessories loaded :",10,0
           dc.b "Accessoires basic charg‚s:",10,0
-thelp4:   dc.b "Remaining memory:        bytes.",0 /* YYY */
+thelp4:   dc.b "Remaining memory:        bytes.",0
           dc.b "M‚moire restante:        bytes.",0
 helptext: dc.b " ",10,0
           dc.b "------------------------------------",10,0
@@ -339,7 +339,7 @@ tposhelp: dc.b 4,4,13,4,19,4,25,4,31,4            ;tableau
           dc.b 4,11,4,12,4,13,4,14,0,0            ;accessoires
           dc.b 16,11,16,12,16,13,16,14,0,0
           dc.b 29,11,29,12,29,13,29,14,0,0
-          dc.b 21,16                              ;remaining /* YYY */
+          dc.b 21,16                              ;remaining
 ; nom des fichiers accessoires
 accnames: dcb.b 12*8,32
 ; Ok:
@@ -585,15 +585,15 @@ foncext:  dc.b "hsin",$b8,$80
           dc.b "divx",$b8,$ba,"divy",$b8,$bb
           dc.b "ln",$b8,$bc,"tan",$b8,$bd
           dc.b "drvmap",$b8,$be,"file select$",$b8,$bf
-          dc.b "dfree",$b8,$c0,"sgn",$b8,$c1     
+          dc.b "dfree",$b8,$c0,"sgn",$b8,$c1
           dc.b "port",$b8,$c2,"pvoice",$b8,$c3
           dc.b "int",$b8,$c4,"detect",$b8,$c5
           dc.b "deg",$b8,$c6,"rad",$b8,$c7
 
 ; TABLE DES TOKENS ETENDUS: $a0 + code token > $70
 tokext:   dc.b "dir/w",$a0,$70,"fade",$a0,$71
-          dc.b "bcopy",$a0,$72,"square",$a0,$73      
-          dc.b "previous",$a0,$74,"transpose",$a0,$75   
+          dc.b "bcopy",$a0,$72,"square",$a0,$73
+          dc.b "previous",$a0,$74,"transpose",$a0,$75
           dc.b "shift",$a0,$76,"wait key",$a0,$77
           dc.b "dir",$a0,$78,"ldir",$a0,$79
           dc.b "bload",$a0,$7a,"bsave",$a0,$7b
@@ -634,7 +634,7 @@ tokext:   dc.b "dir/w",$a0,$70,"fade",$a0,$71
           dc.b "reduce",$a0,$c3,"put sprite",$a0,$c4
           dc.b "get sprite",$a0,$c5,"load",$a0,$c6
           dc.b "save",$a0,$c7,"palette",$a0,$c8
-          dc.b "synchro",$a0,$c9,"error",$a0,$ca 
+          dc.b "synchro",$a0,$c9,"error",$a0,$ca
           dc.b "break",$a0,$cb,"let",$a0,$cc
           dc.b "key",$a0,$cd,"open in",$a0,$ce,"open out",$a0,$cf
           dc.b "open",$a0,$d0,"close",$a0,$d1
@@ -773,7 +773,7 @@ routines: dc.l buffer,fltoint,inttofl,dta               ;$00
           dc.l chaine,dechaine,active,savect            ;$70
           dc.l loadvect,menage,adoubank,adecran         ;$80
           dc.l abck,abis,buffonc,deffonc                ;$90
-	dc.l foncnom			      ;$A0
+          dc.l foncnom                                  ;$A0
 
 ; EXTENSION NON PRESENTE
 pxt:      dc.b "extension #"
@@ -1014,14 +1014,14 @@ merreur:  dc.b "Not done",0                          ;0---> erreurs editeur
           dc.b "Scrolling not defined",0             ;86
           dc.b "Scrolling non defini",0
           dc.b "String is not a screen bloc",0       ;87
-          dc.b "La chaine n'est pas un bloc ecran",0          
+          dc.b "La chaine n'est pas un bloc ecran",0
 inline:   dc.b " in line ",0," en ligne ",0
           even
           dc.b "Varsys"       ;repere GENIAL ---> debut des variables
 ; VARIABLES SYSTEME DIVERSES
 vecteurs: ds.l 8              ;copie des vecteurs systeme
 anc400:   dc.l 0              ;vecteur 50 herz!!!
-runonly:  dc.w 0              ;flag RUN ONLY ou NORMAL     
+runonly:  dc.w 0              ;flag RUN ONLY ou NORMAL
 ronom:    dc.l 0              ;adresse du nom du RUN ONLY
 roold:    dc.l 0              ;ancien directory
 ada:      dc.l 0              ;adresse des adresses
@@ -1167,7 +1167,7 @@ typecran: dc.w 0              ;full:0, 2,3,4 actuellement active
 ;table de repartition des programmes dans les fenetres
 reparti:  ds.l 16
 ;-----------------------------MENUS DEROULANTS
-mnd:    
+mnd:
           dc.w 0              ;0 menuflg
           dc.w 0              ;2 oldmnflg
           dc.w 0              ;4 menuchg
@@ -1185,7 +1185,7 @@ mnd:
           dc.w 0              ;28 menupen
           dc.w 0              ;30 menupaper
           dc.w 0              ;32 menuold
-          ds.w 16             ;34 menutext  
+          ds.w 16             ;34 menutext
           ds.w 16             ;34+32=66 menumous
           dc.w 0              ;34+32+32=98 onmnflg
           ds.l 10             ;100 onmnjmp
@@ -1226,33 +1226,33 @@ bufgsb:
 
 ; A0 = Extensions address
 ; A3 = Address adaptations
-; A4 = Command tail 
+; A4 = Command tail
 
-precold:  move.l $ffff0,a0    ;recupere l'adresse des extensions  
+precold:  move.l $ffff0,a0    ;recupere l'adresse des extensions
           move.l $ffff4,a1
           move.l $ffff8,a2
           moveq #0,d0
           lea pile,sp
 
 ; DEPART A FROID
-cold:     move d0,runonly     ;flag NORMAL/RUN ONLY    
+cold:     move d0,runonly     ;flag NORMAL/RUN ONLY
           move.l a0,adext     ;adresse de la table des extensions
           move.l a1,ronom     ;adresse du nom du fichier
           move.l a2,roold     ;adresse du oldpath
           move.l a4,adc       ;adresse command tail
-; adaptation a l'ordinateur     
+; adaptation a l'ordinateur
           move.l a3,ada       ;adresse adaptation
           move.l (a3),adm     ;mouse address
           move.l 8(a3),adk    ;adresse clavier
           move.l 24(a3),ads   ;adresse sons
 
-          move.l (sp),vecteurs  	;Adresse de retour
-          clr.l -(sp)         	;passage en mode SUPERVISEUR
+          move.l (sp),vecteurs  ;Adresse de retour
+          clr.l -(sp)           ;passage en mode SUPERVISEUR
           move.w #$20,-(sp)
           trap #1
           addq.l #6,sp
 
-          bsr savect          	;fait tout demarrer
+          bsr savect            ;fait tout demarrer
           lea pile,sp
 
 ;INITIALISATION DE LA MEMOIRE: TROUVE LA TAILLE DE LA MEMOIRE
@@ -1287,7 +1287,7 @@ ig1:      clr.l (a0)+         ;nettoie la memoire VITE
           clr.l (a0)+
           clr.l (a0)+
           dbra d0,ig1
- 
+
           clr program
           lea dataprg,a0      ;premier programme
           move.l a0,adataprg  ;adresse dans dataprg
@@ -1347,7 +1347,7 @@ cd1:      move.b (a0)+,(a2)+
           bsr sfirst          ;Pas trouve!
           bne.w warm
 ;          move.l -4(a0),d0    ;Taille du fichier
-;          cmpi.l #968,d0       ;968 octets!
+;          cmp.l #968,d0       ;968 octets!
 ;          bne.w warm
           lea cfenv,a0        ;ouvre le fichier
           moveq #0,d0
@@ -1441,12 +1441,12 @@ cd4:      tst.l (a5)
           beq.s cd5
           move.l (a5),a1      ;adresse d'appel
           lea routines,a0     ;envoie les adresses des routines
-	sub.l a4,a4	;A4= 0 avant!
+          sub.l a4,a4         ;A4= 0 avant!
           jsr (a1)
           move.l a1,(a5)      ;a1= RAZ lors de clearvar
           move.l a2,(a6)      ;a2= adresse table tokens
-          move.l a3,4(a6)     ;a3= adresse table jumps          
-	move.l a4,26*4(a5)	;a4= adresse ARRET
+          move.l a3,4(a6)     ;a3= adresse table jumps
+          move.l a4,26*4(a5)  ;a4= adresse ARRET
           bsr traduit
           tst runonly
           bne.s cd5
@@ -1671,7 +1671,7 @@ Ste1:	tst.l (a6)
 	movem.l (sp)+,d6/a6
 Ste2:	addq.l #4,a6
 	dbra d6,Ste1
-	rts 
+	rts
 
 ; SYSTEM: RETOUR AU DOS
 system:   tst.b (a6)
@@ -1701,7 +1701,7 @@ se:       bsr incle
           cmp.b #"y",d0
           beq.s se1
           cmp.b #"Y",d0
-se1:      rts          
+se1:      rts
 
 ; REDESSINE L'ECRAN DE L'EDITEUR?
 redessin: movem.l d0-d7/a0-a6,-(sp)
@@ -1735,7 +1735,7 @@ red1:     clr d0
           tst runonly         ;remet les touches de fonction si NORMAL
           bne.s red0
           moveq #1,d0         ;si RUNONLY: ne les met pas par defaut
-red0:     move d0,foncon 
+red0:     move d0,foncon
           move #1,cursflg     ;remet le curseur
           clr mnd+12          ;plus de barre de menu!!!
           jsr menuoff
@@ -1873,7 +1873,7 @@ fct1:     move.b #13,d0       ;ascii: return
           move.b #$80,d1      ;special: return
           clr fonction
           tst.w oldi          ;remet ou non l'insertion
-          bne.w mins  
+          bne.w mins
           rts
 fct2:     clr fonction
           tst.w oldi
@@ -1973,12 +1973,12 @@ ic:       move.w #2,-(sp)     ;OUI: on va le chercher
           addq.l #4,sp
           movem.l (sp)+,d1-d7/a0-a6
           rts
-  
+
 ; AFFICHAGE DES TOUCHES DE FONCTION
 affonc:   move.l a5,-(sp)
           tst mnd+12
           bne.w af10        ;les menus sont actives!
-          tst foncon          
+          tst foncon
           beq.w af10        ;les touches ne sont pas en route!
           move #13,d7
           trap #3             ;getcourante
@@ -2265,7 +2265,7 @@ strflasc: movem.l d0/a0/a1,-(sp)	;Teste le signe
 	tst.w d0
 	bmi.s sfl
 	move.b #32,(a5)+
-sfl:	movem.l (sp)+,d0/a0/a1	 
+sfl:	movem.l (sp)+,d0/a0/a1
 floatasc: move.l d3,d1
           move.l d4,d2
           clr.l d5
@@ -2466,7 +2466,7 @@ t6:       cmp.b #32,d0
           btst #3,d5          ;variable en route?
           beq.s t7
 ; variable en route: tokenisation reduite
-          lea minitok,a3    
+          lea minitok,a3
           bsr sstok
           beq.w t17
           bne.w rate
@@ -2513,7 +2513,7 @@ t18:      cmp.b #$98,d1       ;est-ce un token a branchement?
           bcs.s t18b
           cmp.b #$a0,d1
           bcc.s t18b
-          clr.l d0            ;laisse la place pour l'adresse 
+          clr.l d0            ;laisse la place pour l'adresse
           bsr pokepair
 t18b:     move.l a4,a6        ;change le pointeur CHRGET
           btst #3,d5
@@ -2597,7 +2597,7 @@ tikf:     addq #1,d3
 tikg:     cmp.b #"(",(a6)
           bne.s tiki
 tikh:     ori.b #$20,d3        ;tableau
-tiki:     move.l tokvar,a0    ;nettoie le listing 
+tiki:     move.l tokvar,a0    ;nettoie le listing
           move.b d3,(a0)      ;et poke le flag!
           bra.w btoken
 ; c'est une variable de USER'S FUNCTION!
@@ -2737,7 +2737,7 @@ fd1:      move.w (a5),d1
           cmp.w 2(a5),d0
           beq.s fd2
           bcs.s fd3
-          move.l a5,a4 
+          move.l a5,a4
           add.w d1,a5
           bra.s fd1
 fd2:      clr d1              ;z=1: trouve juste
@@ -3075,7 +3075,7 @@ impchaine:tst impflg
           trap #3
           jmp avantint        ;teste les interruptions et revient!
 ; sortie sur imprimante
-ip:       movem.l a3/d3,-(sp) 
+ip:       movem.l a3/d3,-(sp)
           move.l a0,a3
           move.w #400,d3
           bra.s ip2
@@ -3086,7 +3086,7 @@ ip2:      clr.w -(sp)         ;bcostat sur l'imprimante
           addq.l #4,sp
           tst d0              ;attend que l'imprimante soit prete
           bne.s ip3           ;en gerant les interruptions
-          jsr avantint         
+          jsr avantint
           dbra d3,ip1         ;compte les balayages d'ecran!
           bra.w prtnotr         ;printer not ready!
 ip3:      clr.w d0
@@ -3335,8 +3335,7 @@ renum31:  tst.w (a1)          ;OUF!!!
           add.w (a1),a1
           bra.w renum31
 cantren:  moveq #11,d0
-          /* bra erreur */
-          jmp erreur /* XXX */
+          jmp erreur
 
 ; NEW
 new:      movem.l a4-a6,-(sp)
@@ -3347,7 +3346,7 @@ new:      movem.l a4-a6,-(sp)
           /* addq.l #2,a0 */
           dc.w 0xd1fc,0,2
           move.l a0,fsource
-; effacement des banques 
+; effacement des banques
           bsr stopall         ;va tout arreter
           move.l himem,-(sp)
           move.l topmem,himem ;efface les banques
@@ -3562,7 +3561,7 @@ amb0:     move.w (a0)+,(a2)+
           dbra d0,amb0
           move ambia,d0
           cmpi.w #2,mode
-          beq.s amb2 
+          beq.s amb2
           lea db,a0
           lsl #2,d0
           move.l 0(a0,d0.w),(a1)
@@ -3667,7 +3666,7 @@ write:    move.l d1,-(sp)     ;sauve D1
           move.l (sp)+,d1
           addq.l #4,sp
           tst.l d0
-          bmi.s WF   
+          bmi.s WF
           cmp.l d0,d1         ;Si longueur sauvee<>longueur demandee
           beq.s WF            ;alors erreur: disk full!
           moveq #-39,d0
@@ -3704,7 +3703,7 @@ transtext:move.b (a0)+,(a1)+
 
 ;PREND UN NOM DISQUE ET LE VERIFIE: RETOUR 1 SI IL Y A UNE EXTENSION
 namedisk: bsr expalpha        ;va chercher la chaine
-namedbis: 
+namedbis:
 ;          cmp.w #2,d2
 ;          bcs.s nd0
 ;          cmp.b #":",1(a2)    ;changes drive
@@ -3715,7 +3714,7 @@ namedbis:
 ;          subq #2,d2
 ;          movem.l d2/a2,-(sp)
 ;          bsr drived0
-;          movem.l (sp)+,d2/a2      
+;          movem.l (sp)+,d2/a2
 nd0:
           tst d2
           beq.w badname
@@ -3761,10 +3760,10 @@ fsave:    lea fs,a0
           move.l a0,a1
           clr.b (a0)
           bra.s fsa2
-fsa1:     moveq #1,d0 
+fsa1:     moveq #1,d0
 fsa2:     bsr save3
           bra.w ok
-          
+
 ;SAVE: FAIT UN .BAK SI IL N'Y A PAS D'EXTENSION
 save:     bsr setdta
           bsr namedisk        ;va chercher le nom du fichier
@@ -3853,7 +3852,7 @@ saverr:   move.l d0,-(sp)
 ; ERREURS DE DISQUE
 diskerr:  tst acldflg         ;charge-t-on un accessoire?
           beq.w dkerr0
-          bsr close           ;si OUI: on ferme le fichier systeme 
+          bsr close           ;si OUI: on ferme le fichier systeme
           moveq #1,d0         ;et on revient tout de suite
           rts
 dkerr0:   cmp.w #-33,d0
@@ -3898,14 +3897,14 @@ drvnotc:  moveq #83,d0
 ; SAVE "nom.PRG": sauve le programme en  !!! RUN ONLY !!! GENIAL !!!
 saveprg:  tst runflg
           bne.w illegal
-          clr.b -1(a0)        ;enleve l'extension 
+          clr.b -1(a0)        ;enleve l'extension
           bsr sure
           bne.w notdone
           move.l himem,a0
           sub.l fsource,a0
           /* cmpa.l #4000,a0      ;il faut au moins 4K pour travailler! */
           dc.w 0xb1fc,0,4000
-          bcs.w outofmm         
+          bcs.w outofmm
           lea name1,a0
           lea name2,a1
           move.l a0,a2
@@ -3914,7 +3913,7 @@ sg:       move.b (a0)+,d0     ;recopie name2--> name2
           beq.s sg1
           cmp.b #"\",d0       ;repere la fin du path
           bne.s sg
-sg0:      move.l a0,a2        
+sg0:      move.l a0,a2
           bra.s sg
 sg1:      move.l a2,a1
           lea name2,a0
@@ -3942,7 +3941,7 @@ sg3:      move.b (a1)+,(a2)+  ;folder STOS\ ajoute a NAME1
           bsr transtext       ;avec .BAS a la fin dans NAME1
           bsr save2           ;va sauver le programme dans le folder
 ; fabrique le .PRG loader
-          move.l (sp)+,a1      
+          move.l (sp)+,a1
           lea prgrun,a0       ;loader
           bsr transtext
           lea name1,a0
@@ -3996,7 +3995,7 @@ ouvrebank:lea cbk,a1     ;codage: LIONPOUBNK
           bra.w ouvre
 ;OUVREBAS: ouvre un fichier SOURCE BASIC en le verifiant
 ouvrebas: lea cbs,a1            ;codage: LIONPOULOS
-ouvre:  
+ouvre:
           move.l a0,-(sp)
           clr.l d0
           bsr sfirst
@@ -4165,7 +4164,7 @@ lz8:      addq.l #1,a0
           tst.l d1
           beq.s lz7
           dbra d0,lz2
-          bra.w dk  
+          bra.w dk
 lz5:      move.l d1,-(sp)
           clr.b -1(a0)
           lea buffer,a0         ;va afficher la chaine
@@ -4225,7 +4224,7 @@ al1:      move posacc,d0      ;numero de l'accessoire a charger
           addi.l #8192,d6      ;plus 8k de securite!
           cmp.l topmem,d6
           bcs.s ala
-          bsr close           ;plus de place: arrete de charger 
+          bsr close           ;plus de place: arrete de charger
           bra.s al6           ;sans message d'erreur
 ala:      bsr loadbis         ;charge le programme
           bne.s al5
@@ -4510,7 +4509,7 @@ loadprg:  cmp.b #",",(a6)+
           move.l a2,d2             ;d2= debut du programme
           add.l d0,a1
           tst.l (a1)               ;si nul: pas de relocation!
-          beq.s lprg3  
+          beq.s lprg3
           add.l (a1)+,a2           ;pointe la table de relocation!
           clr.l d0
           bra.s lprg1
@@ -4945,7 +4944,7 @@ mg1:      lea buftok,a0
           bsr stockage
           bra.s mg1
 mg2:      bsr close
-          bra.w ok      
+          bra.w ok
 
 ; sspgm GETFILE: va chercher le numero de fichier, le pointe en a2
 getfile:  cmp.b #"#",(a6)
@@ -5278,7 +5277,7 @@ pofi1:    cmp.b #$f1,(a6)+
           cmp.l fhl(a2),d3
           bhi.w eofmet
           bra.w seekbis
-          
+
 ; FIELD #XX,AA AS XX$,...
 field:    bsr getfile
           beq.w filnotop
@@ -5464,7 +5463,7 @@ dfree:    move.w #0,-(sp)
           mulu d6,d3
           clr.b d2
           rts
-          
+
 ; MK DIR a$
 mkdir:    bsr namedisk
           pea name1
@@ -5519,7 +5518,7 @@ curdir1:  tst.b (a0)+
           bra.w mid7a
 
 ; PREVIOUS: PASSE AU DIRECTORY PRECCEDENT
-previous: clr -(sp) 
+previous: clr -(sp)
           pea buffer
           move.w #$47,-(sp)
           trap #1             ;GETDIR
@@ -5576,7 +5575,7 @@ drived:   cmp.b #$f1,(a6)+
 drived0:  cmp.w #97,d3
           bcs.s drived1
           subi.w #$20,d3
-drived1:  subi.w #65,d3          
+drived1:  subi.w #65,d3
 setdrv:   move.w #10,-(sp)
           trap #13
           addq.l #2,sp
@@ -5668,7 +5667,7 @@ dnxt3:    move.b (a2)+,(a0)+  ;copie le nom du fichier: 0
 ; Sauve le DRIVE et le PATH dans BUFFER,
 ; Recopie le path dans un NAME1, change DRIVE et DIRECTORY...
 ; Recopie le filtre s'il existe dans NAME2 (sinon---> *.*)
-ds:      
+ds:
           movem.l a2/d2,-(sp)
 ; Sauve DRIVE COURANT et DIRECTORY
           bsr fndrive         ;va chercher le numero du drive
@@ -5860,7 +5859,7 @@ dd8:      bsr ttlist
           beq.s dd8
           bmi.s dd15
           bra.w dd3
-    
+
 ; Taille prise et taille restante sur la disquette
 dd10:     bsr impretour
           move.l dirsize,d0
@@ -5875,7 +5874,7 @@ dd10:     bsr impretour
           bne.s dd12
 dd11:     lea msd3,a0
           bra.s dd13
-dd12:     lea msd2,a0 
+dd12:     lea msd2,a0
 dd13:     bsr traduit
           bsr impchaine
 	  bsr impretour
@@ -5917,7 +5916,7 @@ rename1:  lea name1,a1
           bsr snext
           beq.s rename1
           rts
- 
+
 ;-----------------------------------------    --- ----- ---   ---    -------
 ;    ----------------------------------      |      |  |   | |
 ;   |           FILE SELECTOR          |      ---   |  |   |  ---
@@ -5926,7 +5925,7 @@ rename1:  lea name1,a1
 
 ; FILL FILE: REMPLIS LE BUFFER AVEC LES FILES ALPHABETIQUEMENT!
 
-fillfile: 
+fillfile:
           move.l lowvar,d0      ;Au moins 2560 octets de libre?
           subi.l #2600,d0
           cmp.l hichaine,d0
@@ -5939,7 +5938,7 @@ F3:       move.b #32,(a0)+
           dbra d1,F3
           clr.w (a0)+           ;Fin de la chaine
           clr.l (a0)+           ;Place pour la taille
-          dbra d0,F2                    
+          dbra d0,F2
           bsr setdta
           clr fsd
 ; Cherche les directories
@@ -5968,7 +5967,7 @@ putfile:  cmpi.w #128,fsd        ;Pas plus de 128!
           bcc.s FF
 ; Poke le nom au debut du buffer
           lea fsbuff,a0
-          move.l a0,a1  
+          move.l a0,a1
           moveq #13,d0
 pf0:      move.b #32,(a1)+      ;Nettoie le buffer
           dbra d0,pf0
@@ -6023,7 +6022,7 @@ pf9:      lea 20(a2),a2
 ; Decale le reste du buffer---> fin
 pfA:      move.w fsd,d0       ;Adresse du dernier nom!
           mulu #20,d0
-          add.l hichaine,d0  
+          add.l hichaine,d0
           move.l d0,a0
           sub.l a2,d0         ;distance choisi/dernier
           beq.s pfC           ;C'est le dernier
@@ -6041,15 +6040,15 @@ pfD:      move.b (a0)+,(a2)+
 ; Un nom de plus!
           /* addq.w #1,fsd */
           dc.l 0x06790001,fsd /* XXX */
-          rts 
+          rts
 
 ; Pitit ss pgm---> adresse dans le buffer
 adbufile: mulu #20,d0
           move.l hichaine,a0
           add d0,a0
           move.l a0,a1
-          rts                       
-         
+          rts
+
 ; D1-> normal/inverse
 norminv:  tst d1
           bne.s fsinv
@@ -6069,7 +6068,7 @@ fsinv:    movem.l d0/d7/a0,-(sp)
 ; memorise le curseur
 memocurs: movem.l d0/d7/a0,-(sp)
           moveq #0,d7
-          moveq #20,d0        
+          moveq #20,d0
           trap #3
           moveq #17,d7
           trap #3
@@ -6088,8 +6087,8 @@ remetcurs:movem.l d0/d7/a0,-(sp)
           moveq #17,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
-          rts          
-           
+          rts
+
 ; WRITEPOS: ECRIS UN MOT (a0) EN D0/D1 ET STOCKE DANS LA TABLE SOURIS (D2)
 writepos: movem.l d0-d7/a0-a2,-(sp)
           lsl #3,d2
@@ -6103,7 +6102,7 @@ writepos: movem.l d0-d7/a0-a2,-(sp)
           moveq #35,d7
           trap #3
           move d0,(a2)+       ;fixe DX
-          move d1,d0      
+          move d1,d0
           moveq #36,d7
           trap #3
           move d0,(a2)+       ;fixe DY
@@ -6127,7 +6126,7 @@ wrtp1:    addq #8,d0
           move d0,(a2)+
           movem.l (sp)+,d0-d7/a0-a2
           rts
-          
+
 ; WRITEXT: ECRIS LA PHRASE #D0, D1-INVERSE/NORMAL
 writext:  movem.l d0-d2/a0-a2,-(sp)
           bsr norminv
@@ -6176,7 +6175,7 @@ ph1:      tst.b (a1)+
           lea name2,a0     ;affiche le filtre
           trap #3
           bsr remetcurs
-          tst fsd+14        ;reloge le curseur si dans le path!    
+          tst fsd+14        ;reloge le curseur si dans le path!
           beq.s ph2
           bsr locpath
 ph2:      rts
@@ -6192,7 +6191,7 @@ drivaff:  bsr memocurs
           trap #1             ;CURRENT DISK
           addq.l #2,sp
           move d0,d5
-          clr d4              ;compteur 0-7: # du carre          
+          clr d4              ;compteur 0-7: # du carre
 da0:      clr d2
           clr d3
 da1:      btst d3,d6
@@ -6251,7 +6250,7 @@ fileaff:  movem.l d0-d2/a0-a1,-(sp)
           move d0,d1
           bsr adbufile
           sub fsd+2,d1
-          move d1,d2    
+          move d1,d2
           addq #3,d1          ;locate
           moveq #1,d0
           addi.w #16,d2          ;table: 16--->29
@@ -6263,12 +6262,12 @@ fileaff:  movem.l d0-d2/a0-a1,-(sp)
 filesaff: bsr memocurs
           move fsd+2,d0
           moveq #12,d2
-          clr d1      
+          clr d1
 fa1:      bsr fileaff
           addq #1,d0
           dbra d2,fa1
           bsr remetcurs
-          rts   
+          rts
 
 ; locate dans le nom
 locnom:   movem.l d0/d1/d7/a0,-(sp)
@@ -6308,7 +6307,7 @@ lp2:      add.w 6(a1),d1
 ; ENTREE POUR FLOAD/FSAVE
 ffsel:    lea fsbuff,a1
 ffs:      move.b (a0)+,(a1)+    ;recopie la chaine dans le buffer
-          bne.s ffs 
+          bne.s ffs
           move #1,fsd+24
           move #1,fsd+22
           move #1,fsd+26
@@ -6420,22 +6419,22 @@ fs5:      move.w (a2)+,d0
           move.w fsd+22,d0
           moveq #39,d7
           trap #3
-          dbra d3,fs5           
+          dbra d3,fs5
           clr d0
-fs6:      clr d1 
+fs6:      clr d1
           bsr writext         ;affichage du texte
           addq #1,d0
           cmp.w #7,d0
           bcs.s fs6
 ; raz du nom
-          clr fsd+16 
+          clr fsd+16
           lea fsname,a0
           moveq #12,d0
 fs6a:     clr.b (a0)+
           dbra d0,fs6a
           bsr locnom
 ; affiche le pathname
-          bsr pathaff   
+          bsr pathaff
 ; affichage des drives
           bsr drivaff
 ; remplissage du buffer
@@ -6451,13 +6450,13 @@ fswait:   tst.b interflg
           bpl.s fs9
           andi.b #$7f,interflg
           beq.s fs9
-          bclr #0,interflg    
+          bclr #0,interflg
           beq.s fs9
           moveq #13,d0
           moveq #9,d7
           trap #3             ;efface la fenetre
-          bsr ufz1            ;remet tout en route!          
-          jmp braik           ;et fait le break  
+          bsr ufz1            ;remet tout en route!
+          jmp braik           ;et fait le break
 fs9:      moveq #20,d0        ;trouve la zone de la souris
           trap #5
           clr d2
@@ -6479,14 +6478,14 @@ fs11:     addq.l #8,a0
           bne.s fs12a
           move #-1,fsd+6
           bra.s fs19
-; dans une zone 
+; dans une zone
 fs12:     tst fsd+4
-          beq.s fs13  
+          beq.s fs13
           cmp fsd+6,d2    ;on reste sur le meme!
           beq.w fs19
 fs12a:    clr d1
           move fsd+6,d2
-          move #-1,fsd+6   
+          move #-1,fsd+6
           bra.s fs14
 fs13:     move d2,fsd+6
           moveq #1,d1
@@ -6525,7 +6524,7 @@ fs19a:    cmp.b #13,d0        ;RETURN
           bne.s fs19j
           tst fsd+14
           beq.w fs25c           ;si dans NOM----> OK
-          bne.w fs22d           ;si dans PATH---> DIR  
+          bne.w fs22d           ;si dans PATH---> DIR
 fs19j:    tst fsd+14
           bne.w fs19p
 ; dans le nom
@@ -6559,13 +6558,13 @@ fs19g:    cmp.w #8,d1
           bra.w fs19g
 fs19h:    move d1,fsd+16
           move.b #".",d0
-          bra.w fs19f 
+          bra.w fs19f
 fs19d:    cmp.b #97,d0
           bcs.s fs19e
           subi.b #$20,d0
 fs19e:    cmp.b #"_",d0
-	beq.s fs19i
-	cmp.b #48,d0
+          beq.s fs19i
+          cmp.b #48,d0
           bcs.w fswait
           cmp.b #58,d0
           bcs.s fs19i
@@ -6606,8 +6605,8 @@ fs19r:    cmp.b #"*",d0
           beq.s fs19s
           cmp.b #"?",d0
           beq.s fs19s
-	cmp.b #"_",d0
-	beq.s fs19s
+          cmp.b #"_",d0
+          beq.s fs19s
           cmp.b #48,d0
           bcs.w fswait
           cmp.b #58,d0
@@ -6629,9 +6628,9 @@ fs19s:    cmp.w #12,d1
           moveq #0,d7
           trap #3
           bra.w fswait
-            
+
 ; TESTS DE LA SOURIS
-fs19z:    tst fsd+6         ;pas de choix si rien en inverse!  
+fs19z:    tst fsd+6         ;pas de choix si rien en inverse!
           bmi.w fswait
           moveq #21,d0
           trap #5             ;mousekey
@@ -6779,7 +6778,7 @@ fs28c:    move.w d3,-(sp)
           move.b #"\",(a0)+
           clr.b (a0)
           bra.w fs22d
-          
+
 ; DANS LES FICHIERS
 fs29:     subi.w #16,d1
           add fsd+2,d1
@@ -6801,7 +6800,7 @@ fs29b:    move.b (a0)+,d0
           move.b d0,(a1)+
           cmp.l #name1+63,a1
           bcs.s fs29b
-          bsr pathaff         ;si trop de ss directory: ignore!         
+          bsr pathaff         ;si trop de ss directory: ignore!
           bra.w fswait
 fs29c:    clr.b (a1)
           bra.w fs22d         ;branche a PREVIOUS
@@ -6817,10 +6816,10 @@ fs29e:    move.b (a0)+,d0     ;recopie et compte la taille du nom
           addq #1,d1
           cmp.b #32,d0
           beq.s fs29f
-          move d1,d2 
+          move d1,d2
 fs29f:    cmp.b (a1),d0
           bne.s fs29g
-          addq #1,d3      
+          addq #1,d3
 fs29g:    move.b d0,(a1)+
           cmp.w #12,d1
           bne.s fs29e
@@ -6831,9 +6830,9 @@ fs29g:    move.b d0,(a1)+
           trap #3
           bsr locnom          ;curseur a la fin du nom
           cmp.w #12,d3
-          beq.w fs25c           ;si le meme nom: RETURN  
+          beq.w fs25c           ;si le meme nom: RETURN
           bra.w fswait
-    
+
 ;LA FENETRE D0 FAIT ELLE PARTIE DU MODE? BEQ=oui, BNE=non
 fenmode:  move typecran,d5
 fenec:    mulu #5,d5
@@ -7725,7 +7724,7 @@ chr1:     andi.w #$007f,d0
           lsl #2,d0
           lea jumps,a0
           move.l 0(a0,d0.w),a0
-          tst.b interflg      ;le bit 7 d'interflg, est mis … chaque 
+          tst.b interflg      ;le bit 7 d'interflg, est mis … chaque
           bpl.s chr2          ;interruption d'‚cran!
           bsr entrint         ;test break/interruption...
 chr2:     tst folflg
@@ -8477,7 +8476,7 @@ cpt1:     tst.b d5
           bmi.w typemis
           tst.b d2
           bmi.w typemis
-          bne.s cpt2       
+          bne.s cpt2
 cpt0:     move.l d3,d1
           move #$e,d0
           trap #6             ;INTTOFL
@@ -8500,7 +8499,7 @@ opentier: clr parenth
           lea bufcalc,a3
           bsr operande
           bra.w opent1
-; EXPENTIER: returns the result of an integer expression to d2 / d3 / d4 
+; EXPENTIER: returns the result of an integer expression to d2 / d3 / d4
 expentier:bsr evalue
 opent1:   tst parenth
           bne.w syntax
@@ -8515,7 +8514,7 @@ expalpha: bsr evalue
 
 ; ENTREES RECURSIVE POUR UN TYPE DE VARIABLE
 ; ALPHABIS: ramene le resultat d'une expression alphanumerique
-alphabis: bsr evalbis 
+alphabis: bsr evalbis
 alphater: tst parenth
           bne.w syntax
 alphaq:   tst.b d2
@@ -8567,8 +8566,8 @@ def:      cmp.b #$c9,(a6)+    ;cherche un FN
           cmp.b #$a0,-1(a6)   ;Cherche un DefScroll
           bne.w syntax
           cmp.b #$f9,(a6)+
-          beq.w defsc 
-          bne.w syntax    
+          beq.w defsc
+          bne.w syntax
 def1:     tst runflg
           beq.w illdir
           cmp.b #$fa,(a6)+    ;veut un nom de variable
@@ -9207,7 +9206,7 @@ vrai:     /* moveq.l #-1,d3 */
           rts
 eg2:      bsr compch
           bra.s eg1
- 
+
 ; OPERATEUR INFERIEUR STRICTEMENT
 inf:      bsr compat
           beq.s inf1
@@ -9306,7 +9305,7 @@ deg:    bsr ffloat            ;operande FLOAT -> D2/D3/D4
 	trap #6
 	move.b #$40,d2
 	rts
-          
+
 ; RAD(xx)---> conversion DEGRES->RADIANS
 ; / 160 * pi
 rad:    bsr ffloat            ;operande FLOAT -> D2/D3/D4
@@ -9314,7 +9313,7 @@ rad:    bsr ffloat            ;operande FLOAT -> D2/D3/D4
 	trap #6
 	move.b #$40,d2
 	rts
-         
+
 ; SINus
 sin:      bsr ffloat
           moveq #4,d0         ;sin
@@ -9421,8 +9420,8 @@ sgn:      bsr farg
 sgn0:     tst.l d3
           beq.s sgn4
 sgn1:     bpl.s sgn3
-	      /* moveq.l #-1,d3 */
-	      dc.w 0x263c,-1,-1 /* XXX */
+          /* moveq.l #-1,d3 */
+          dc.w 0x263c,-1,-1 /* XXX */
           clr.b d2
           rts
 sgn3:     /* moveq.l #1,d3 */
@@ -9437,7 +9436,7 @@ sgn5:     move.w #$ff01,d0		;Fonction GET SGN
 	move.l d0,d3
 	clr.b d2
 	rts
- 
+
 ; RND (xx)
 rnd:      bsr fentier         ;va chercher l'argument
           tst.l d3
@@ -9450,7 +9449,7 @@ rnd1:     beq.s rnd6
           move #23,d0
 rnd2:     lsr.l #1,d4
           cmp.l d3,d4
-          dbcs.w d0,rnd2
+          dbcs d0,rnd2
           roxl.l #1,d4
 rnd4:     move.w #17,-(sp)
 	trap #14
@@ -9459,7 +9458,7 @@ rnd4:     move.w #17,-(sp)
           cmp.l d3,d0
           bhi.s rnd4
           move.l d0,d3
-          clr.b d2	
+          clr.b d2
 	move.l d3,ancrnd2
           rts
 rnd6:     bra.w foncall
@@ -9650,7 +9649,7 @@ illinst:  moveq #82,d0
 ; SUBSCRIPT OUT OF RANGE
 subsout:  moveq #85,d0
           bra.w erreur
-       
+
 ; TRAITEMENT DES ERREURS: D0=NUMERO DE L'ERREUR
 erreur:   move d0,d4
           lsl #1,d0           ;ecris dans 2 langues!!!
@@ -9664,7 +9663,7 @@ err1:     tst.b (a2)+
 err2:     movem.l a0/d4,-(sp)
           jsr close           ;ferme le fichier systeme
           clr.l printpos      ;print normal
-          clr sortflg         
+          clr sortflg
           clr inputflg        ;hachement important
           move.l adlogic,$44e.l ;en cas de BUS/ADRESS error lors de graphiques /* XXX */
           movem.l (sp)+,a0/d4
@@ -9780,7 +9779,7 @@ oe2:      ori.l #$ff000000,d3
 ; deja passe dessus
 oe4:      move.l d3,-(sp)
           bsr expentier
-          move.l (sp)+,d3  
+          move.l (sp)+,d3
 oe5:      andi.l #$00ffffff,d3
           move.l d3,onerrline ;adresse ou aller!
           rts
@@ -10160,7 +10159,7 @@ then:     andi.l #$00ffffff,d0
 if2:      move.b 4(a6),d1
           beq.w syntax
           addq.l #4,a6
-          cmp.b #$fd,d1       ;si pas un numero apres le THEN: 
+          cmp.b #$fd,d1       ;si pas un numero apres le THEN:
           bcs.w gt5             ;on se rebranche au CHRGET (rts)
 ;numero de ligne pas encore calcule
           pea -4(a6)
@@ -10267,7 +10266,7 @@ ftoken:   move.l a0,a1        ;ramene l'adresse juste en a1
           beq.s ft1
           cmp.b #$c0,d2       ;.EXT fonction
           bne.s ft2
-ft1:      addq.l #1,a0          
+ft1:      addq.l #1,a0
 ft1a:     addq.l #1,a0
           bra.s ft5
 ft2:      cmp.b #$fa,d2       ;variable ou constante?
@@ -10919,7 +10918,7 @@ rtin20:   cmp.b #$80,d1
           clr.b 0(a1,d2.w)    ;un espace a la fin!
           bra.w input4
 
-; INPUT #xx[,yy],: VA CHERCHER SUR LA DISQUETTE 
+; INPUT #xx[,yy],: VA CHERCHER SUR LA DISQUETTE
 inpdisk:  move #1,orinput     ;vient du disque!
           clr flginp
           bsr getfile         ;va chercher le numero de fichier
@@ -11187,11 +11186,11 @@ putk3:    rts
 ;  |      CHAINES ALPHANUMERIQUES      |      ---   |  |   |  ---
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
-;-------------------------------> Fait le menage ! VITE ! 
+;-------------------------------> Fait le menage ! VITE !
 menage:	movem.l d0-d7/a0-a6,-(sp)
 
         	move.l #bmenage,d5          	  ;Debut TI
-        	move.l d5,d6	
+        	move.l d5,d6
 	addi.l #63*8,d6                  ;Fin TI
 	move.l fsource,d7               ;Ad mini de recopie
 	addq.l #2,d7		  ;Chaine vide
@@ -11259,7 +11258,7 @@ Men7:     move.l d3,a1                    ;Decale les adresses au dessus
           bcs.s Men7a
           lea -8(a1),a1
           move.l -8(a1),d2                ;Remonte la limite haute
-          bra.s Men8 
+          bra.s Men8
 Men7a:    addq.l #8,d3
           move.l #$ffffff,8(a1)
 Men8:     move.l -(a1),8(a1)
@@ -11267,7 +11266,7 @@ Men8:     move.l -(a1),8(a1)
           cmp.l a0,a1
           bcc.s Men8
 Men9:     move.l a3,-(a0)                 ;Poke dans la table
-          move.l d0,-(a0) 
+          move.l d0,-(a0)
 Men10:    tst.l d4
           bne.s Men3
           beq.w Men1
@@ -11277,7 +11276,7 @@ Men20:    move.l d5,a3                    ;Adresse TI
           move.l d7,a1                    ;Adresse de recopie
           moveq #0,d7
 Men21:    cmp.l d3,a3                     ;Fini-ni?
-          bcc.s Men26 
+          bcc.s Men26
           move.l (a3),a0                  ;Adresse de la chaine
           lea 8(a3),a3
           cmp.l a0,d7                     ;Chaine deja bougee?
@@ -11302,7 +11301,7 @@ Men22:    move.l -4(a3),a2                ;Change la variable
           move.w (a0)+,d0                 ;Recopie la chaine
           beq.s Men24
           move.w d0,(a1)+
-          subq.w #1,d0 
+          subq.w #1,d0
           lsr.w #1,d0
 Men23:    move.w (a0)+,(a1)+
           dbra d0,Men23
@@ -11424,7 +11423,7 @@ cm1:      move.b (a2)+,(a0)+  ;recopie la chaine ailleurs
           btst #0,d0
           beq.s cm2
           addq.l #1,a0
-cm2:      move.l a0,hichaine       
+cm2:      move.l a0,hichaine
           bra.s cm4
 cm3:      movem.l d2/a2,-(sp)
 cm4:      cmp.b #",",(a6)+
@@ -11968,7 +11967,7 @@ val3b:    move.b (a0)+,d0     ;apres un E, accepte -/+ et chiffres
           beq.s val3c
           cmp.b #"-",d0
           bne.s val3e
-val3c:    bset #1,d3          ;+ ou -: c'est un float! 
+val3c:    bset #1,d3          ;+ ou -: c'est un float!
 val3d:    move.b (a0)+,d0     ;puis cherche la fin de l'exposant
           cmp.b #32,d0
           beq.s val3d
@@ -12203,7 +12202,7 @@ setdate:  cmp.b #$f1,(a6)+
           subi.w #1980,d0
           andi.w #%1111111,d0    ;annee
           or d0,d7
-          ror #7,d7 
+          ror #7,d7
           move d7,-(sp)
           move #$2b,-(sp)
           trap #1             ;set date
@@ -12291,7 +12290,7 @@ mvd5:     move.l adatabank,a3
 mvd2:     cmp.b #$83,(a3)     ;banque programme?
           bne.s mvd3
           tst d5              ;doit reloger les caracteres seulement?
-          bne.s mvd4 
+          bne.s mvd4
           bsr relprg
           bra.s mvd4
 mvd3:     cmp.b #$84,(a3)     ;banque caractere?
@@ -12589,13 +12588,13 @@ adprg:    subq.l #1,d3        ;(1-16)--->(0-15)
           add d3,a0
           rts
 
-; ERASE X/ ERASE P,X: EFFACE UNE BANQUE DE MEMOIRE 
+; ERASE X/ ERASE P,X: EFFACE UNE BANQUE DE MEMOIRE
 erase:    bsr mentiers        ;va chercher le numero de la banque
           cmp.w #2,d0
           beq.s er1
           cmp.w #1,d0
           bne.w syntax
-          move.l d1,d3        ;un seul param: efface dans le programme 
+          move.l d1,d3        ;un seul param: efface dans le programme
 erasbis:  bsr effbank
           bne.s er0
           bsr calclong
@@ -13610,7 +13609,7 @@ modebis:  movem.l d0-d7/a0-a6,-(sp)
           trap #3             ;initmode fenetres
           move d0,nbjeux      ;nombre de jeux de caracteres par defaut!
           bsr putchar         ;remet les jeux de caracteres !!!
-          clr typecran 
+          clr typecran
           clr fenetre
           clr mousflg
           move #1,actualise
@@ -13719,7 +13718,7 @@ md13:     move.w (a0)+,(a1)+
           move #1,intin+16
           move #1,intin+18
           move #2,intin+20
-          bsr vdi   
+          bsr vdi
           move.w contrl+12,d0
           move d0,grh         ;graphic handle
           move.l buffer,$84.l   ;remet la trappe1 /* XXX */
@@ -13866,7 +13865,7 @@ getpalet: lea bufcalc,a3
           bsr adecran
           move.l d3,a0
           move.l a0,a1
-          move.l adlogic,a2   
+          move.l adlogic,a2
           lea 32000(a1),a1
           lea 32000(a2),a2
           moveq #15,d0
@@ -13995,7 +13994,7 @@ jfalse:   clr.b d2
 jtrue:    clr.b d2
           moveq #-1,d3
           rts
- 
+
 ; SHOW / SHOW ON
 show:     moveq #17,d2
           bra.s hid0
@@ -14137,7 +14136,7 @@ scrinst:  lea bufcalc,a3
           bcs.s st2
           move.l a2,a1        ;Adresse chaine
           move.l (sp)+,a2     ;recupere l'adresse de l'ecran
-          movem.l (sp)+,d1-d2 ;recupere X/Y  
+          movem.l (sp)+,d1-d2 ;recupere X/Y
 ; Appel de la trappe
           moveq #52,d0
           trap #5
@@ -14205,7 +14204,7 @@ scalc:    moveq #0,d7
           andi.w #$fff0,d1
           andi.w #$fff0,d3
           andi.w #$fff0,d5
-          andi.w #$f,d7 
+          andi.w #$f,d7
           move d2,-(sp)
           move d1,-(sp)
           tst d1              ;X1
@@ -14325,7 +14324,7 @@ defsc:    bsr expentier         ;Prend le numero
           bsr scalc             ;Calcule les parametres screen copy
           bne.w foncall           ;Erreur de fonction!
           move.w (sp)+,d0       ;Numero du scrolling
-          mulu #16,d0    
+          mulu #16,d0
           lea dfst,a0
           add.w d0,a0
           move.w d1,(a0)+       ;Stocke dans la table
@@ -14350,17 +14349,17 @@ scr:      bsr expentier
           move.w (a0)+,d3
           move.w (a0)+,d4
           move.w (a0)+,d5       ;Jamais de taille nulle!
-          beq.s scr1 
+          beq.s scr1
           move.w (a0)+,d6
           beq.s scr1
           move.l (a0),d7
           move.l adlogic,a0     ;Travaille dans l'ecran logique
-          move.l a0,a1  
+          move.l a0,a1
           moveq #33,d0          ;SCREEN COPY
           trap #5
           rts
 scr1:     moveq #86,d0          ;Scrolling non defini
-          bra.w erreur    
+          bra.w erreur
 
 ; SSPGM ON/OFF: returns 0 if OFF, 1 if ON, -1 if NEITHER THE ONE NOR THE OTHER!
 onoff:    move.b (a6)+,d0
@@ -14371,17 +14370,17 @@ onoff:    move.b (a6)+,d0
           cmp.b #$a5,d0         ;Freeze
           beq.s onof3
           subq.l #1,a6
-          moveq #-1,d0        ;autre: bmi.w et Bcc
+          moveq #-1,d0        ;autre: Bmi et Bcc
           rts
 onof1:    clr d0              ;Off: Beq
           rts
 onof2:    moveq #1,d0         ;On: Bne
           rts
-onof3:    clr d0              ;Freeze: bmi.w et Bcs
+onof3:    clr d0              ;Freeze: Bmi et Bcs
           subq #1,d0
           rts
 
-; SSPGM FINIE: beq.w si l'instruction est finie, bne.w sinon
+; SSPGM FINIE: BEQ si l'instruction est finie, BNE sinon
 finie:    tst.b (a6)
           beq.s fin1
           cmp.b #":",(a6)
@@ -14595,7 +14594,7 @@ collide:  cmp.b #"(",(a6)+
           rts
 
 ; FREEZE: arrete tout!
-freeze:   moveq #4,d0         
+freeze:   moveq #4,d0
           trap #7             ;music freeze
 fz1:      moveq #1,d2
           moveq #10,d0
@@ -15077,7 +15076,7 @@ cft1:     bcs.w syntax
           cmp.w #2,d0
           beq.s cft2
           cmp.w #1,d0
-          bne.w syntax    
+          bne.w syntax
           move.l d1,d2
           moveq #1,d1
 cft2:     cmp.l #$10000,d2
@@ -15150,7 +15149,7 @@ setink:   bsr expentier
           cmp.l colmax,d3
           bcc.w foncall
 ; fabrique les PLANS COULEUR de la LIGNE A
-inkbis:   move.w d3,ink       ;INK pour plot 
+inkbis:   move.w d3,ink       ;INK pour plot
           move.w d3,d7        ;INK pour le VDI
           lea plan0,a0
           clr.l (a0)
@@ -15222,7 +15221,7 @@ plot:     bsr mentiers
 ; couleur non precisee
 pl1:      move ink,d7
 pl1a:     move.l laintin,a0
-          move.w d7,(a0)      ;plotte la couleur         
+          move.w d7,(a0)      ;plotte la couleur
           cmp.l xmax,d2
           bcc.w foncall
           cmp.l ymax,d1
@@ -15325,7 +15324,7 @@ dw3:      dc.w $a003
 clip:     bsr onoff
           bmi.s cl1
           bne.w syntax
-clipoff:  moveq #0,d4           
+clipoff:  moveq #0,d4
           moveq #0,d3
           move.l xmax,d2
           move.l ymax,d1
@@ -15344,7 +15343,7 @@ cl1:      bcs.w syntax
           bsr   mentiers
           cmp.w #2,d0
           bne.w foncall
-          cmp.l xmax,d2                 ;X2         
+          cmp.l xmax,d2                 ;X2
           bcc.w   foncall
           cmp.l ymax,d1                 ;Y2
           bcc.w   foncall
@@ -15539,7 +15538,7 @@ dp2:      move.w d1,d0
           tst.b d2
           bmi.s dp0
           bne.w typemis
-; Set pattern (adresse)          
+; Set pattern (adresse)
           move.w d0,-(sp)
           bsr adoubank
           move.w (sp)+,d1
@@ -16283,7 +16282,7 @@ i5z:
 	move.l a0,(a1)
 	clr.b 4(a1)
 	.ENDC
-	
+
 ; fin des interruptions: se rebranche a la routine normale
 fi5:      move.l anc400,a0
           jmp (a0)
@@ -16603,7 +16602,7 @@ effmenus: moveq #14,d0        ;effacemt rapide de la fenetre
           moveq #16,d7        ;activation rapide de la barre
           moveq #15,d0
           trap #3
-          moveq #15,d3        
+          moveq #15,d3
           bsr adbank          ;adresse de la banque
           move.l a1,a3
           clr.l d2            ;efface le nom en inverse
@@ -16621,7 +16620,7 @@ mt43:     move.l (a1)+,(a0)+  ;recopie dans le decor
           move.l adlogic,a0
 mt44:     move.l (a2)+,(a0)+  ;recopie dans l'ecran logique
           dbra d0,mt44
-          bsr qreactive       ;reactive la fenetre pleine page!  
+          bsr qreactive       ;reactive la fenetre pleine page!
           bsr ufz1            ;remet les sprites
           clr mnd+6
           rts
@@ -16908,7 +16907,7 @@ mn21:     move.b #1,2(a1)               ;met en route!
 
 ; PAPEN: RAMENE PAPER(D0) ET PEN(D1) ACTUELS
 papen:    move valpaper,d0
-          move valpen,d1    
+          move valpen,d1
           rts
 
 ; MENU ON [tour,auto] / MENU OFF / MENU FREEZE
@@ -16934,7 +16933,7 @@ mf2:      rts                 ;c'est fini!
 ; mise en route du menu!
 menuon:   tst mnd+12         ;barre en route?
           beq.s mo0
-          tst mnd         ;menus en marche  
+          tst mnd         ;menus en marche
           bne.s mo0
           tst mnd+4
           bne.s mo0
@@ -17823,7 +17822,7 @@ sp1:      move.l d3,d0
 sp2:      move.l d3,a3
           move.w (a3)+,d3
           bne.s sp3
-          bra.w using50 
+          bra.w using50
 ; IMPRESSION D'UNE CHAINE -milieu-
 sp2a:     move.l a5,-(sp)
           lea buffer,a5
@@ -18034,17 +18033,3 @@ us54:     addq.l #1,a1
 ; stockage des programmes apres le source
           even
 bufprg:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
