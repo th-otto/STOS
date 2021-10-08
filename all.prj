@@ -6,5 +6,7 @@ window.prj
 float.prj
 music.prj
 basic.prj
+
+compiler.prj
 compact.prj
 run.prj

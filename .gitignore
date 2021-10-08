@@ -15,4 +15,4 @@ aaa.cfg
 *.hdr
 *.bin
 a.out
-compact.exa
+*.ex?
