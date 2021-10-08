@@ -110,6 +110,13 @@ VoixOffCpt:      dc.b 0,0,0,0    ;Compteurs voix arretees
 ;         Installation de la trappe
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 debut:
+		  .IFNE COMPILER
+		  move.l #entrappe,$9c.l          ;trap #7 /* XXX */
+		  moveq #0,d0
+		  rts
+
+		  .ELSE
+		  
           pea initrap                   ;initialise sous mode superviseur!
           move.w #38,-(sp)
           trap #14
@@ -120,6 +127,8 @@ debut:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 initrap:  move.l #entrappe,$9c          ;trap #7
           rts
+
+          .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TRAP #7,7

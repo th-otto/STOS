@@ -51,19 +51,19 @@ jumps:    dc.l inison         ;0:  Sound init
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Parametres musique
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          dc.b "Musics"       ;repere pour le basic
+          dc.b "Musics"       ;benchmark for the basic
 even
-musicflg: dc.w 0              ;flag musique en route
-freezflg: dc.w 0              ;flag musique gelee
-volume:   dc.b 0,0,0,0        ;volume des trois voix
+musicflg: dc.w 0              ;flag music on the way
+freezflg: dc.w 0              ;flag frozen music
+volume:   dc.b 0,0,0,0        ;volume of the three voices
 tempo:    dc.w 0              ;tempo (0--->100)
-tempocpt: dc.w 0              ;compteur tempo
-voixon:   dc.w 0              ;flag: voix actuellement en route
+tempocpt: dc.w 0              ;tempo counter
+voixon:   dc.w 0              ;flag: voice currently on the way
 avoixon:  dc.w 0
-admusic:  dc.l 0              ;adresse absolue de depart definition musique
-transp:   dc.w 0              ;transposition de la musique
+admusic:  dc.l 0              ;absolute starting address music definition
+transp:   dc.w 0              ;music transposition
 chip      = $ff8800
-chipcopy: ds.w 16             ;copie des registres du chip sonore
+chipcopy: ds.w 16             ;copy of sound chip registers
 even
 ; TABLE DES ENVELOPPES ET DES TREMOLOS
 envind    = 0               ;.b
@@ -110,6 +110,13 @@ VoixOffCpt:      dc.b 0,0,0,0    ;Compteurs voix arretees
 ;         Installation de la trappe
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 debut:
+		  .IFNE COMPILER
+		  move.l #entrappe,$9c.l          ;trap #7 /* XXX */
+		  moveq #0,d0
+		  rts
+
+		  .ELSE
+		  
           pea initrap                   ;initialise sous mode superviseur!
           move.w #38,-(sp)
           trap #14
@@ -120,6 +127,8 @@ debut:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 initrap:  move.l #entrappe,$9c.l          ;trap #7 /* XXX */
           rts
+
+          .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Depart des interruptions
