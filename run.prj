@@ -1,5 +1,6 @@
 stos\run.bin
 .L[-S=0]
 .S[-S]
+.S[-DRUNONLY=1]
 =
-run.s
+basload.s

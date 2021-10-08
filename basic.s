@@ -32,9 +32,8 @@ defloat:  ds.b 256
 bufcalc:
 ; BUFFER D'ENTREE/SORTIE
 buffer:
-name1:    ds.b 64
-name2:    ds.b 64
-          ds.b 128
+name1:    ds.b 128
+name2:    ds.b 128
 fsname:   ds.b 32
 fsbuff:   ds.b 32
           ds.b 192
@@ -61,7 +60,7 @@ ct:       dc.b 13,10,"Sure ? (Y/N) "
 dta:      ds.b 48
 ;STOCKAGE DES NOMS POUR LE DISQUE
 ;name1     = buffer
-;name2     = buffer+64
+;name2     = buffer+128
 bas:      dc.b ".BAS",0
 bak:      dc.b ".BAK",0
 etoile:   dc.b "*.*",0

@@ -1,22 +1,25 @@
-************************************************
-* D‚sassemblage de BASIC206.PRG                *
-*      Par Pink Elephant Software Inc .        *
-*                 Juin 1992                    *
-************************************************
-/*        opt     d+ */
-/*        output  basload.prg */
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;       STOS BASIC LOADER / RUNTIME / GEM VERSION
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	.include "adapt.inc"
+    .include "adapt.inc"
 
-	.text
+    .text
 
-Debut:  BRA     start
+entry:  bra.w    start
+
+; place for file name
+; this is written by basic.bin when saving a program file
+basname:     ds.b 16
+
 
 ; Adaptation tables
 ; In order :
 ; Word: Tos version
-; .l  : Mouse adr (linea-602, GCURX)
-; .l  : Adr joystick (#Joy_Pos)
+; .l  : Mouse addr (linea-602, GCURX)
+; .l  : Addr joystick (#Joy_Pos)
 ; .l  : Keyboard Buffer (Iorec(1))
 ; .l  : Table Vdi 1 (linea-692, DEV_TAB)
 ; .l  : Table Vdi 2 (linea-498, SIZ_TAB)
@@ -25,100 +28,102 @@ Debut:  BRA     start
 tosversion: .dc.w    0
 Adapt:      .ds.b    adapt_sizeof
 
-extend:	.ds.l     26             ;26 adresses d'extensions
+extend: .ds.l     26             ;26 addresses for extensions
 
 dta:    .ds.w    13              ;Buffer DTA
-size:   .dc.l    0               ;Taille du fichier
-name:   .dc.w    0               ;Son nom
-        .ds.w    9               ;Buffer Dta (Suite)
+size:   .dc.l    0               ;File size
+name:   .dc.w    0               ;Her name
+        .ds.w    9               ;Buffer Dta (Continued) 
 
-Joy_Sav:  .dc.l	0		; Gestion du joystick
-Joy_Pos:  .dc.l	0
-Joy_Ad:	  .dc.l	0
+Joy_Sav:  .dc.l 0                ;Joystick management
+Joy_Pos:  .dc.l 0
+Joy_Ad:   .dc.l 0
 fake_sndtable: ds.b 6
 
-end_adr: .dc.l    0               ;Adresse fin de fichier
-logic:   .dc.l    0               ;Adresse de l'‚cran logique
-res:     .dc.w    0               ;R‚solution au boot
-handle:  .dc.w    0               ;Handle de fichier
-Cmd_Tail:.dc.l    0              ;Command Tail
+end_adr: .dc.l    0               ;upload address of the next file
+logic:   .dc.l    0               ;Logic screen address
+mode:    .dc.w    0               ;resolution at boot
+handle:  .dc.w    0               ;File handle
+Cmd_Tail:.dc.l    0               ;Command Tail
 sav_col: .ds.w    16              ;Buffer for 16 colors
-vdi_1:   .ds.w    45             ;Table VDI 1 (devtab)
-         .ds.w    12             ;Table VDI 2 (siztab)
+vdi_1:   .ds.w    45              ;Table VDI 1 (devtab)
+         .ds.w    12              ;Table VDI 2 (siztab)
          .ds.l    1               ;mouse coordinates
 
 
 curs_off:
-        .dc.b    27,'f',27,'v',0  ;Curs Off
+         .dc.b    27,'f',0        ;Curs Off
 folder:  .dc.b    "\stos",0       ;Folder \Stos
 
-path:    .ds.b    128             ;Buffer
-newpath: .ds.b    128             ;Autre buffer
-piclow:  .dc.b    "pic.pi1",0     ;Image basse r‚olution
-pichi:   .dc.b    "pic.pi3",0     ;Image haute r‚solution
-sprit:   .dc.b    "sprites.bin",0 ; Sprite trap
-windo:   .dc.b    "window.bin",0 ; Window Trap
-float:   .dc.b    "float.bin",0 ; Float Trap
-music:   .dc.b    "music.bin",0 ; Music Trap
-basic:   .dc.b    "basic.bin",0 ; Basic lui meme
+oldpath: .ds.b    128             ;Buffer
+newpath: .ds.b    128             ;Other buffer
+piclow:  .dc.b    "pic.pi1",0     ;low resolution image
+pichi:   .dc.b    "pic.pi3",0     ;high resolution image
+sprit:   .dc.b    "sprit*.bin",0 ; Sprite trap
+windo:   .dc.b    "windo*.bin",0 ; Window Trap
+float:   .dc.b    "float*.bin",0 ; Float Trap
+music:   .dc.b    "music*.bin",0 ; Music Trap
+basic:   .dc.b    "basic*.bin",0 ; Basic himself
 namext:  .dc.b "*.ex"
 numbext: .dc.b 0,0
-        even
-BUFFER3: .ds.b    13
-        EVEN
-;D‚but du programme
-LOADER: .dc.b    "BASLOAD.PRG",0
-        EVEN
+        .even
 
-start:  lea Cmd_Tail(pc),a6
-        clr.l (a6)
-        movea.l 4(a7),a0        ;Adresse Basepage
-        lea     128(a0),a0      ;Nb de caractŠres ds ligne de commande
-        tst.b   (a0)            ;=0 ?
-        beq.s   Skip0          ;cherche Adr logique
-        addq.l  #1,a0           ;Ligne de commande
-        move.l  a0,(a6)         ;Stocke son adresse
+start:  lea     Cmd_Tail(pc),a6
+        clr.l   (a6)
+        movea.l 4(a7),a0        ;address Basepage
+        lea     128(a0),a0      ;Number of characters on command line
+        move.b  (a0)+,d0        ;=0 ?
+        beq.s   Skip0
+        cmp.b   #127,d0
+        bcc.s   Skip0
+        move.l  a0,(a6)         ;Stores his address
 Skip0:
-; Trouve les adresses en respectant le systeme
+; Find addresses while respecting the system
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	lea	Adapt(pc),a6
-	.dc.w	$a000
-	lea	-602(a0),a1	; Position souris
-	move.l	a1,adapt_gcurx(a6)
-	lea	-692(a0),a1	; Table VDI 1
-	move.l	a1,adapt_devtab(a6)
-	lea	-498(a0),a1	; Table VDI 2
-	move.l	a1,adapt_siztab(a6)
-	lea fake_sndtable(pc),a1
-	move.l  a1,adapt_sndtable(a6)
+    lea Adapt(pc),a6
+    .dc.w   $a000
+    lea -602(a0),a1 ; Mouse position
+    move.l  a1,adapt_gcurx(a6)
+    lea -692(a0),a1 ; Table VDI 1
+    move.l  a1,adapt_devtab(a6)
+    lea -498(a0),a1 ; Table VDI 2
+    move.l  a1,adapt_siztab(a6)
+    /*
+     * older basic*.bin need the address of the TOS internal sndtab
+     * variable, that is set by Dosound(). There is no way this can
+     * be determined, so we provide a dummy address to avoid crashes.
+     * Newer versions call Dosound() and thus don't need that address.
+     */
+    lea fake_sndtable(pc),a1
+    move.l  a1,adapt_sndtable(a6)
 
-	move.w	#1,-(sp)	; Adresse du buffer clavier
-	move.w	#14,-(sp)   ; Iorec
-	trap 	#14
-	addq.l	#4,sp
-	move.l	d0,adapt_kbiorec(a6)
+    move.w  #1,-(sp)    ; Keyboard Buffer (Iorec(1))
+    move.w  #14,-(sp)   ; Iorec
+    trap    #14
+    addq.l  #4,sp
+    move.l  d0,adapt_kbiorec(a6)
 
-	move.w	#34,-(sp)	; Adresse des interruptions souris
-	trap 	#14
-	addq.l	#2,sp
-	move.l	d0,a0
-	move.l	a0,adapt_kbdvbase(a6)
-	lea	24(a0),a0
-	lea Joy_Pos(pc),a1
-	move.l	a0,Joy_Ad-Joy_Pos(a1)
-	move.l	(a0),Joy_Sav-Joy_Pos(a1)
-	move.l	a1,adapt_joy(a6)		; Adresse du resultat
-	lea Joy_In(pc),a1
-	move.l	a1,(a0)		; Branche la routine joystick
+    move.w  #34,-(sp)   ; Mouse interrupt addresses
+    trap    #14
+    addq.l  #2,sp
+    move.l  d0,a0
+    move.l  a0,adapt_kbdvbase(a6)
+    lea     24(a0),a0
+    lea     Joy_Pos(pc),a1
+    move.l  a0,Joy_Ad-Joy_Pos(a1)
+    move.l  (a0),Joy_Sav-Joy_Pos(a1)
+    move.l  a1,adapt_joy(a6)        ; Result address
+    lea     Joy_In(pc),a1
+    move.l  a1,(a0)     ; Plug in the joystick routine
 
-; Trouve l'adresse de l'‚cran
+; Find the address of the screen
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         move.w  #3,-(a7)        ;Logbase
         trap    #14
         addq.l  #2,a7
-        lea logic(pc),a0
-        move.l  d0,(a0)         ;Range adresse logic
-        pea     sav_vect(pc)    ;Sauvegarde la configuration
+        lea     logic(pc),a0
+        move.l  d0,(a0)         ;save screen address
+        pea     sav_vect(pc)    ;Save the configuration
         move.w  #38,-(a7)       ;Supexec
         trap    #14
         addq.l  #6,a7
@@ -126,73 +131,73 @@ Skip0:
         move.w  #4,-(a7)        ;Getrez
         trap    #14
         addq.l  #2,a7
-        lea     Adapt(pc),a5    ;Adresse vecteurs
-        move.w  d0,res-Adapt(a5)    ;Range r‚solution
+        lea     Adapt(pc),a5    ;Address of vectors
+        move.w  d0,mode-Adapt(a5)  ;Range resolution
         move.w  d0,d7
-        movea.l adapt_devtab(a5),a0       ;Adr Table VDI 1
-        moveq   #45-1,d0        ;Copie 45 mots
+        movea.l adapt_devtab(a5),a0       ;addr Table VDI 1
+        moveq   #45-1,d0        ;Copy 45 mots
 bcl1:
-        move.w  (a0)+,(a6)+     ;(Soit 90 octets)
-        dbf     d0,bcl1         ;
-        movea.l adapt_siztab(a5),a0       ;Adresse Table VDI 2
-        moveq   #12-1,d0        ;Copier 12 mots
+        move.w  (a0)+,(a6)+
+        dbf     d0,bcl1
+        movea.l adapt_siztab(a5),a0       ;address Table VDI 2
+        moveq   #12-1,d0        ;Copy 12 mots
 bcl2:
-        move.w  (a0)+,(a6)+     ;(Soit 24 octets)
+        move.w  (a0)+,(a6)+
         dbf     d0,bcl2
         movea.l adapt_gcurx(a5),a0
         move.l  (a0),(a6)+      ;mouse coordinates
-        lea EXIT(pc),a0
-        lea end_adr(pc),a1
-        move.l a0,(a1)          ;BASLOAD.PRG end address
-        bsr     set_dta         ;Fixe tampon I/O
-        clr.w   -(a7)           ;Unit‚ actuelle
-        pea     path(pc)        ;Buffer de 64 octets : chemin d'accŠs
+        lea     EXIT(pc),a0
+        lea     end_adr(pc),a1
+        move.l  a0,(a1)         ;BASLOAD.PRG end address
+        bsr     set_dta         ;Fixed I/O buffer
+        clr.w   -(a7)           ;current drive
+        pea     oldpath(pc)     ;buffer for path
         move.w  #$47,-(a7)      ;Dgetpath
         trap    #1
         addq.l  #8,a7
         tst.w   d0
-        bne     set_scr         ;ProblŠme...
-        lea     path(pc),a0     ;Chemin actuel
-        lea     newpath(pc),a1  ;Recopie ds un buffer
+        bne     set_scr         ;Problem...
+        lea     oldpath(pc),a0  ;Current path
+        lea     newpath(pc),a1  ;Copy into a buffer
 Copy_path:
         move.b  (a0)+,(a1)+
         bne.s   Copy_path
-        lea     path(pc),a0
-        tst.b   (a0)            ;Fin du chemin ?
-        bne.s   lbl1            ;Non , d‚cr‚mente
-        move.b  #'\',(a0)+      ;Antislash
-        clr.b   (a0)            ;Fin de chemin
+        lea     oldpath(pc),a0
+        tst.b   (a0)            ;End of the way?
+        bne.s   lbl1            ;No, increase 
+        move.b  #'\',(a0)+      ;backslash
+        clr.b   (a0)            ;End of path
 lbl1:
         subq.l  #1,a1
-        lea     folder(pc),a0   ;Recopie \STOS
+        lea     folder(pc),a0   ;copy "\STOS"
 Copy_Folder:
         move.b  (a0)+,(a1)+
         bne.s   Copy_Folder
-        lea     newpath(pc),a0  ;Fixe chemin \STOS
+        lea     newpath(pc),a0  ;Fixed path \STOS 
         bsr     set_path
-        bne     Error1          ;Pas trouv‚
+        bne     Error1          ;Not found
         cmpi.w  #2,d7           ;High resolution?
         beq.s   hi_res          ;vouiiiiii!
         lea     piclow(pc),a0   ;'PIC.PI1' : zouli image
-        bra.s   affiche         ;Va la chercher
+        bra.s   affiche         ;Go get her
 hi_res:
         lea     pichi(pc),a0    ;'PIC.PI3'
 affiche:
-        bsr     fs_first        ;Existe-t-elle ?
-        bne     No_Image        ;Non...
-        bsr     fopen           ;
+        bsr     fsfirst         ;Does it exist?
+        bne     No_Image        ;No...
+        bsr     fopen
         movea.l logic(pc),a0    ;Logic-32768 : Back
-        suba.l  #32768,a0       ;...
-        move.l  #32034,d0       ;Lire 32034 octets (Degas)
-        bsr     fread           ;Lit
-        bsr     fclose          ;Ferme
+        suba.l  #32768,a0
+        move.l  #32034,d0       ;Read 32034 bytes (Degas)
+        bsr     fread           ;read
+        bsr     fclose          ;close it
 
-        .dc.w    $a00a           ;mouse cover
-        tst.w   d7              ;Low Res ?
-        beq     fix_scr         ;Oui
+        .dc.w    $a00a          ;mouse cover
+        tst.w   d7              ;low res ?
+        beq     fix_scr         ;yes
         cmpi.w  #2,d7           ;Hi Res ?
-        beq     fix_scr         ;Oui
-        clr.w   -(a7)           ;Mid Res: passe en basse
+        beq     fix_scr         ;yes
+        clr.w   -(a7)           ;Mid Res: switch to low
         moveq   #-1,d0
         move.l  d0,-(a7)
         move.l  d0,-(a7)
@@ -200,30 +205,29 @@ affiche:
         trap    #14
         lea     12(a7),a7
 fix_scr:
-        lea     curs_off(pc),a0 ;EnlŠve curseur
+        lea     curs_off(pc),a0 ;Remove cursor 
         bsr     print           ;Emulation VT52
         move.l  logic(pc),-(a7) ;
-        subi.l  #32766,(a7)     ;Adresse palette
+        subi.l  #32766,(a7)     ;palette address
         move.w  #6,-(a7)        ;Setpalette
         trap    #14
         addq.l  #6,a7
+
+; Copy the image with a ...
         moveq   #1,d6
-
-; Recopie l'image avec un effet...
-
 copy_scr:
         movea.l logic(pc),a2
         movea.l a2,a3
-        adda.l  #99*160,a2      ;Ligne 99
-        adda.l  #100*160,a3     ;Ligne 100
+        adda.l  #99*160,a2      ;line 99
+        adda.l  #100*160,a3     ;line 100
         movea.l a2,a0
         movea.l a3,a1
         suba.l  #32734,a0
         suba.l  #32734,a1
         moveq   #99,d7
         addq.w  #1,d6
-        cmp.w   #100,d6         ;Ligne 100 atteinte ?
-        bhi     load            ;Oui...
+        cmp.w   #100,d6         ;Line 100 reached?
+        bhi     load            ;yes...
         moveq   #50,d5
 Effect:
         add.w   d6,d5
@@ -250,80 +254,87 @@ cpy_scr:
         adda.l  #160,a1
         dbf     d7,Effect
         bra     copy_scr
+
+; No image on the floppy disk: remove the mouse
 No_Image:
-        .dc.w   $a00a           ;Cache la souris
-        lea     curs_off(pc),a0 ;EnlŠve le curseur
+        .dc.w   $a00a           ;Hide the mouse
+        lea     curs_off(pc),a0 ;Remove cursor
         bsr     print
+
+; load and call the trap libraries
 load:
-        lea     sprit(pc),a0    ;Filtre 'SPRIT???.BIN'
-        bsr     get_im          ;Charge fichier
-        lea     Adapt(pc),a3    ;Adresses
-        jsr     (a0)            ;Installe trappe
-        lea end_adr(pc),a1
+        lea     sprit(pc),a0    ;'SPRIT*.BIN'
+        bsr     get_im          ;File load
+        lea     Adapt(pc),a3    ;addresses
+        jsr     (a0)            ;install trap
+        lea     end_adr(pc),a1
         move.l  a0,(a1)
 
-        lea     windo(pc),a0    ;Filtre 'WINDO???.BIN'
-        bsr     get_im          ;Charge fichier
-        lea     Adapt(pc),a3    ;Adresses
-        jsr     (a0)            ;Installe trappe
-        lea end_adr(pc),a1
+        lea     windo(pc),a0    ;'WINDO*.BIN'
+        bsr     get_im          ;File load
+        lea     Adapt(pc),a3    ;addresses
+        jsr     (a0)            ;install trap
+        lea     end_adr(pc),a1
         move.l  a0,(a1)
 
-        lea     float(pc),a0    ;Filtre 'FLOAT???.BIN'
-        bsr     get_bin         ;Charge fichier
-        bne     load_zik        ;Si pas l… , tant pis!
-        lea     Adapt(pc),a3    ;Adresses
-        jsr     (a0)            ;Installe trappe
+        lea     float(pc),a0    ;'FLOAT*.BIN'
+        bsr     get_bin         ;File load
+        bne     load_zik        ;If not ..., too bad!
+        lea     Adapt(pc),a3    ;addresses
+        jsr     (a0)            ;install trap
+        /* float.bin does not return correct end address; ignore it and just use filesize */
 
 load_zik:
-        lea     music(pc),a0    ;Filtre 'MUSIC???.BIN'
-        bsr     get_im          ;Charge fichier
-        lea     Adapt(pc),a3    ;Adresses
-        jsr     (a0)            ;Installe trappe
-        lea end_adr(pc),a1
+        lea     music(pc),a0    ;'MUSIC*.BIN'
+        bsr     get_im          ;File load
+        lea     Adapt(pc),a3    ;addresses
+        jsr     (a0)            ;install trap
+        lea     end_adr(pc),a1
         move.l  a0,(a1)
 
-; charge et appelle les extensions, poke les adresses
+; load and call extensions, poke addresses
         clr     d7
         lea     extend(pc),a6
 load5:  move.b  d7,numbext-extend(a6)
         add.b   #'a',numbext-extend(a6)
         lea     namext(pc),a0
-        bsr     fs_first
+        bsr     fsfirst
         bne.s   load6
         lea     namext(pc),a0
         bsr     get_im
         movem.l a6/d6/d7,-(sp)
         lea     Adapt(pc),a3
         jsr     (a0)
-        lea end_adr(pc),a2
+        lea     end_adr(pc),a2
         move.l  a0,(a2)
         movem.l (sp)+,a6/d6/d7
         move    d7,d6
         lsl     #2,d6
-        move.l  a1,0(a6,d6.w)          ;poke l'adresse de debut
+        move.l  a1,0(a6,d6.w)          ;poke the start address
 load6:  addq    #1,d7
         cmp     #26,d7
         bcs.s   load5
 
-        lea     basic(pc),a0    ;Filtre 'BASIC???.BIN'
-        bsr     get_im          ;Charger
-        move.l  a0,-(a7)        ;Sauve l'adresse sur la pile
-        lea     path(pc),a0     ;Chemin de boot
-        bsr     set_path        ;Le remettre
-        movea.l (a7)+,a6        ;Adresse BASIC.BIN
+; load the basic
+        lea     basic(pc),a0    ;'BASIC*.BIN'
+        bsr     get_im          ;load
+        move.l  a0,-(a7)        ;Save the address on the stack
+        lea     oldpath(pc),a0  ;boot path
+        bsr     set_path        ;put it back
+        movea.l (a7)+,a6        ;address BASIC.BIN
+; clears the screen, goes on average if color
         move.w  #$25,-(a7)      ;Vsync
         trap    #14
         addq.l  #2,a7
-        movea.l logic(pc),a0    ;effacer logic
-        move.w  #7999,d0        ;8000-1 (dbf)
+        movea.l logic(pc),a0    ;clear logic
+        move.w  #8000-1,d0
 cls:
         clr.l   (a0)+
         dbf     d0,cls
-        move.w  res(pc),d7
-        cmpi.w  #2,d7           ;Haute r‚solution ?
-        beq.s   hi              ;oui
-        move.w  #1,-(a7)        ;MidRes
+        move.w  mode(pc),d7
+        cmpi.w  #2,d7           ;high resolution ?
+        beq.s   hi              ;yes
+        move.w  #1,-(a7)        ;switch to med resolution
         moveq   #-1,d0
         move.l  d0,-(a7)
         move.l  d0,-(a7)
@@ -332,14 +343,20 @@ cls:
         lea     12(a7),a7
 hi:
         lea     extend(pc),a0   ;Extensions address
-        lea     Adapt(pc),a3    ;Address adaptations
+        lea     basname(pc),a1  ;file name address
+        lea     oldpath(pc),a2  ;old directory 
+        lea     Adapt(pc),a3    ;address adaptations
         movea.l Cmd_Tail(pc),a4 ;Command Tail
-        clr.l   d0              ;d0=0
+        move.b  (a1),d0
+        sne     d0              ;d0=RUNONLY flag
+        neg.b   d0
+        ext.w   d0
+        ext.l   d0
         jsr     (a6)            ;Saute au basic
         bra     set_scr         ;fin du basic
 
-; Erreur de chargement >>> sortie
-; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; error in loading ---> return to GEM
+; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 errmsg:
         .dc.b " not found",13,10,0
         .even
@@ -354,26 +371,26 @@ ErrorLoad:
 Error:
         bsr     fclose
 Error1:
-        lea     path(pc),a0
+        lea     oldpath(pc),a0
         bsr     set_path
-; Restoration du systeme
-; ~~~~~~~~~~~~~~~~~~~~~~
+; loading error or returns from basic
+; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 set_scr:
 ; Restore la routine d'entree du joystick
-	move.l	Joy_Ad(pc),d0
-	beq.s	Skip
-	move.l	d0,a0
-	move.l	Joy_Sav(pc),(a0)
+        move.l  Joy_Ad(pc),d0
+        beq.s   Skip
+        move.l  d0,a0
+        move.l  Joy_Sav(pc),(a0)
 Skip:
-; Les ecrans
-        move.w  res(pc),-(a7)   ;restore r‚solution
-        move.l  logic(pc),-(a7) ;adresses ‚crans
+; The screens
+        move.w  mode(pc),-(a7)  ;restore resolution
+        move.l  logic(pc),-(a7) ;screen address
         move.l  logic(pc),-(a7)
         move.w  #5,-(a7)        ;Setscreen
         trap    #14
         lea     12(a7),a7
 
-        lea     vdi_1(pc),a6    ;Remet vecteurs
+        lea     vdi_1(pc),a6    ;Restore Vectors
         lea     Adapt(pc),a5
         movea.l adapt_devtab(a5),a0
         moveq   #45-1,d0
@@ -387,7 +404,7 @@ bcl8:
         dbf     d0,bcl8
         movea.l adapt_gcurx(a5),a0
         move.l  (a6)+,(a5)
-        pea     sav_col(pc)     ;Remet couleurs
+        pea     sav_col(pc)     ;Restore colors
         move.w  #6,-(a7)        ;Setpalette
         trap    #14
         addq.l  #6,a7
@@ -397,35 +414,35 @@ bcl8:
         clr.w   -(a7)           ;Pterm
         trap    #1
 
-; Routine d'entree du joystick
-; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Joy_In:	lea Joy_Pos(pc),a2
-        move.b	2(a0),(a2)
+; Joystick input routine
+; ~~~~~~~~~~~~~~~~~~~~~~
+Joy_In: lea     Joy_Pos(pc),a2
+        move.b  2(a0),(a2)
         rts
 
-; En superviseur
-; ~~~~~~~~~~~~~~~
+; As supervisor
+; ~~~~~~~~~~~~~
 sav_vect:
-; Copie de la palette
+; copy the palette
         lea     $ffff8240,a0
         lea     sav_col(pc),a1
-        moveq   #$F,d0
+        moveq   #16-1,d0
 bcl8A:
         move.w  (a0)+,(a1)+
         dbf     d0,bcl8A
-; Fausse trappe float
+; dummy float trap
         lea     fake_fl(pc),a0
         move.l  a0,$98
         rts
 
-; Fausse trap float
+; dummy float trap
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fake_fl:cmp.b   #12,d0
         beq.s   fltoa
         moveq   #0,d0
         moveq   #0,d1
         rte
-; Fonction $c 'FLTOA'
+; Function $c 'FLTOA'
 ; ~~~~~~~~~~~~~~~~~~~
 fltoa:  move.b  #'0',(a0)
         move.b  #'.',1(a0)
@@ -433,7 +450,7 @@ fltoa:  move.b  #'0',(a0)
         clr.b   3(a0)
         rte
 
-; Routines d'interfa‡age disque
+; Disk Interfacing Routines
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fsnext:
         move.w  #$4f,-(sp)
@@ -443,7 +460,7 @@ fsnext:
 set_dta:
         move.l  a0,-(a7)
         pea     dta(pc)
-        move.w  #26,-(a7)
+        move.w  #26,-(a7)   ;Fsetdta
         trap    #1
         addq.l  #6,a7
         movea.l (a7)+,a0
@@ -451,13 +468,13 @@ set_dta:
 
 set_path:
         move.l  a0,-(a7)
-        move.w  #59,-(a7)
+        move.w  #59,-(a7)   ;Dsetpath
         trap    #1
         addq.l  #6,a7
         tst.w   d0
         rts
 
-fs_first:
+fsfirst:
         move.l  a0,-(a7)
         clr.w   -(a7)
         move.l  a0,-(a7)
@@ -479,7 +496,7 @@ fopen:
         addq.l  #8,a7
         tst.w   d0
         bmi     Error1
-        lea handle(pc),a0
+        lea     handle(pc),a0
         move.w  d0,(a0)
         rts
 
@@ -507,17 +524,20 @@ print:
         trap    #1
         addq.l  #6,a7
         rts
+
+; EXEC normal ---> error if file not on disk
 get_im:
         bsr     get_bin
         bne     ErrorLoad
         rts
+; EXEC: load the program -if it is there- and relocate it!
 get_bin:
         movem.l d1-d7/a1-a6,-(a7)
         bsr     set_dta
-        bsr     fs_first
+        bsr     fsfirst
         bne     failed
         move.l  end_adr(pc),d3
-        add.l   size(pc),d3
+        add.l   size(pc),d3     ;check the memory size!
         addi.l  #60000,d3
         cmp.l   logic(pc),d3
         bcc     Error
@@ -525,31 +545,33 @@ get_bin:
         movea.l end_adr(pc),a0
         bsr     charge
         bsr     fclose
+; relocate the program
         movea.l end_adr(pc),a1
-        move.l  $2(a1),d0
+        move.l  $2(a1),d0       ;distance to the table
         add.l   6(a1),d0
         andi.l  #$ffffff,d0
-        adda.w  #28,a1
+        adda.w  #28,a1          ;marks the start of the program
         movea.l a1,a2
-        move.l  a2,d2
+        move.l  a2,d2           ;d2=start of program
         adda.l  d0,a1
         clr.l   d0
         tst.l   (a1)
         beq.s   reloge
-        adda.l  (a1)+,a2
+        adda.l  (a1)+,a2        ;point to the first address to relocate
         bra.s   noerr
 err:
         move.b  (a1)+,d0
         beq.s   reloge
         cmp.b   #1,d0
         beq.s   do_asc
-        adda.w  d0,a2
+        adda.w  d0,a2           ;next fixup address
 noerr:
-        add.l   d2,(a2)
+        add.l   d2,(a2)         ;reocate program address
         bra.s   err
 do_asc:
-        adda.w  #254,a2
+        adda.w  #254,a2         ;if 1 skips 254 bytes
         bra.s   err
+; update end address with the length of the program
 reloge:
         lea.l   end_adr(pc),a0
         move.l  (a0),d0
