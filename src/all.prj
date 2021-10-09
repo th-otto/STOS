@@ -1,6 +1,6 @@
 all.prj
 =
-basic.prj
+basload.prj
 sprites.prj
 window.prj
 float.prj
@@ -11,4 +11,5 @@ compiler.prj
 compact.prj
 run.prj
 
-musicc.prj
+;musicc.prj
+;floatc.prj

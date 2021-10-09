@@ -1,0 +1,5 @@
+compiler\float.lib
+.L[-S=0]
+.S[-S]
+=
+float.s
