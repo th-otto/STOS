@@ -10,7 +10,7 @@
 ;**************************************************************************
 
 	.include "extend.inc"
-	
+
 	.text
 
 ; Adaptation au Stos basic
@@ -22,8 +22,8 @@ tokens: dc.b "unpack",$80
         dc.b 0
         even
 jumps:  dc.w 2
-        dc.l unpack
-        dc.l pack
+        dc.l 0 /* unpack */
+        dc.l 0 /* pack */
         even
 welcome:dc.b "PICTURE COMPACTOR extension",0
         dc.b "Extension COMPACTEUR D'IMAGES",0
@@ -74,8 +74,13 @@ palnul: ds.w 16
 ;   a0: address of proram memory end
 ;   a1: address of coldboot function
 ;
-load:   lea finprg,a0
-        lea cold,a1
+load:   lea jumps+2(pc),a0
+        lea unpack(pc),a1
+        move.l a1,(a0)+
+        lea pack(pc),a1
+        move.l a1,(a0)+
+        lea finprg(pc),a0
+        lea cold(pc),a1
         rts
 
 ; Called during coldboot
@@ -89,11 +94,12 @@ load:   lea finprg,a0
 ;   a3: address of jump table for tokens
 ;   a4: (optional) address of reset function
 ;
-cold:   move.l a0,table
-        lea welcome,a0
-        lea warm,a1
-        lea tokens,a2
-        lea jumps,a3
+cold:   lea table(pc),a1
+        move.l a0,(a1)
+        lea welcome(pc),a0
+        lea warm(pc),a1
+        lea tokens(pc),a2
+        lea jumps(pc),a3
 warm:   rts                     ;depart a chaud: ne fait rien
 
 ; Routine: depile et ramene un entier en D3.L
@@ -103,8 +109,8 @@ entier: move.l (sp)+,d0
         tst.b d2
         bmi typemis
         beq.s finent
-        movem.l a0-a2,-(sp) 
-        move.l table,a0
+        movem.l a0-a2,-(sp)
+        move.l table(pc),a0
         move.l ext_fltoint(a0),a0
         jsr (a0)                ;FL TO INT
         movem.l (sp)+,a0-a2
@@ -112,7 +118,7 @@ finent: rts
 
 ; Adoubank
 adoubank:movem.l a0-a2,-(sp)
-        move.l table,a0
+        move.l table(pc),a0
         move.l ext_adoubank(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
@@ -120,7 +126,7 @@ adoubank:movem.l a0-a2,-(sp)
 
 ; Adecran
 adecran:movem.l a0-a2,-(sp)
-        move.l table,a0
+        move.l table(pc),a0
         move.l ext_adscreen(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
@@ -136,9 +142,9 @@ typemis:moveq #19,d0
 foncall:moveq #13,d0
 
 ; Appel des erreurs
-error:  move.l table,a0
+error:  move.l table(pc),a0
         move.l ext_error(a0),a0
-        jmp (a0)   
+        jmp (a0)
 
 ;**************************************************************************
 
@@ -146,14 +152,15 @@ error:  move.l table,a0
 
 ;**************************************************************************
 
-pack:   move.l (sp)+,retour     ;adresse de retour
+pack:   lea retour(pc),a2
+        move.l (sp)+,(a2)       ;adresse de retour
 ; Parametres par defaut
-        lea params,a2
+        lea params(pc),a2
         moveq #0,d4
         move.b resol,d4         ;resolution .B!
         move.w d4,d1
         lsl.w #3,d1
-        lea tmode,a0
+        lea tmode(pc),a0
         moveq #0,d2
         move.w 6(a0,d1.w),d2    ;taille ecran en Y
         moveq #5,d3
@@ -174,7 +181,7 @@ pack:   move.l (sp)+,retour     ;adresse de retour
         cmpi.w #9,d0
         bne syntax
 ; Neuf parametres
-        lea params,a2
+        lea params(pc),a2
         moveq #6,d7
 pack2:  bsr entier      ;empile les cinq params
         move.w d3,(a2)+
@@ -189,12 +196,12 @@ pack3:  bsr entier      ;va chercher "destination"
 ; Verifie les parametres
         movem.l a3-a6,-(sp)
 ;
-        lea params,a2   
+        lea params(pc),a2
         move.w 12(a2),d0        ;resolution image
         cmpi.w #2,d0
         bhi foncall
         lsl #3,d0
-        lea tmode,a3
+        lea tmode(pc),a3
         moveq #0,d1
         move.w 0(a3,d0.w),d1    ;verifie en X
         divu 2(a3,d0.w),d1
@@ -224,7 +231,7 @@ pack3:  bsr entier      ;va chercher "destination"
         clr.b d2
 ;
 fini:   movem.l (sp)+,a3-a6
-        move.l retour,-(sp)
+        move.l retour(pc),-(sp)
         rts
 
 
@@ -234,11 +241,13 @@ fini:   movem.l (sp)+,a3-a6
 
 ;**************************************************************************
 
-unpack: move.l (sp)+,retour
-        clr unpflg
-        lea params,a2
+unpack:
+        lea retour(pc),a2
+        move.l (sp)+,(a2)
+        lea params(pc),a2
+        clr unpflg-params(a2)
         move.w #-1,(a2)         ;flags par defaut
-        move.l table,a0
+        move.l table(pc),a0
         move.l ext_graphic(a0),a0  ;donnees graphiques
         move.l 6(a0),2(a2)      ;decor des sprites
         move.w #-1,6(a2)        ;dx
@@ -271,7 +280,7 @@ unp2:   bsr entier      ;Dy
         lsr.w #4,d3     ;divise par 16!
         move.w d3,6(a2)
 ; Deux parametres
-unp3:   move #1,unpflg  ;Image
+unp3:   move #1,unpflg-params(a2)  ;Image
         bsr entier
         bsr adecran
         move.l d3,2(a2)
@@ -285,21 +294,22 @@ unp4:   bsr entier
         move.w (a2),d3          ;flags
         movem.l a3-a6,-(sp)     ;sauve les registres importants
 ;
-        tst unpflg              ;si l'adresse d'ecran est precisee              
+        tst unpflg-params(a2)              ;si l'adresse d'ecran est precisee
         bne.s unp5              ;aucune gestion d'autoback
         movem.l d1-d3/a0-a1,-(sp)
-        move.l table,a0
+        move.l table(pc),a0
         move.l ext_abck(a0),a0
         jsr (a0)                ;autoback UN
         movem.l (sp)+,d1-d3/a0-a1
 unp5:   bsr decomp
-        tst unpflg
+        lea params(pc),a2
+        tst unpflg-params(a2)
         bne.s unp6
         move.w d0,-(sp)
-        move.l table,a0
+        move.l table(pc),a0
         move.l ext_abis(a0),a0
         jsr (a0)                ;autoback DEUX
-        move.w (sp)+,d0    
+        move.w (sp)+,d0
 ;
 unp6:   tst d0
         bne foncall
@@ -308,9 +318,9 @@ unp6:   tst d0
 
 ;**************************************************************************
 
-        
+
 ;**************************************************************************
-; 
+;
 ;       COMPACTEUR
 ;                       A0: ad image d'origine
 ;                       A1: ad image de destination
@@ -325,21 +335,23 @@ unp6:   tst d0
 ;**************************************************************************
 
 ; Preparation de l'entete de l'image compactee
-compact:move.l a1,adobjet
+compact:
+        lea adobjet(pc),a3
+        move.l a1,(a3)
         move.l #$06071963,code(a1)
         move.w d7,mode(a1)
         move.w d2,dx(a1)
-        move.w d3,dy(a1)  
-        move.w d4,tx(a1)  
-        move.w d5,ty(a1)   
-        move.w d1,tcar(a1)  
-        move.w d6,flags(a1)  
+        move.w d3,dy(a1)
+        move.w d4,tx(a1)
+        move.w d5,ty(a1)
+        move.w d1,tcar(a1)
+        move.w d6,flags(a1)
 
 ; Copie de la palette
         moveq #15,d0
         lea 32000(a0),a2        ;palette de couleurs apres l'image
         lea palette(a1),a3
-copal:  move.w (a2)+,(a3)+ 
+copal:  move.w (a2)+,(a3)+
         dbra d0,copal
 
 ; Preparation des parametres
@@ -348,18 +360,19 @@ copal:  move.w (a2)+,(a3)+
         lea 32000(a5),a6        ;a6--> adresse POINTEUR 1
         move.l a6,-(sp)         ;pour plus tard!
         subq #1,d5
-        move d5,tailley         ;taille en Y de l'image
+        lea adobjet(pc),a3
+        move d5,tailley-adobjet(a3)         ;taille en Y de l'image
         move d1,d5
         move.w mode(a1),d0
         lsl #3,d0
-        lea tmode,a0
+        lea tmode(pc),a0
         move.w 0(a0,d0.w),d7    ;d7--> taille ligne
         move.w 2(a0,d0.w),d6    ;d6--> taille plans
         move.w 4(a0,d0.w),d0    ;d0--> nbplans
-        move d0,nbplan
+        move d0,nbplan-adobjet(a3)
         move d7,d0
         mulu d5,d0
-        move d0,adycar          ;passage en Y d'un carre a l'autre
+        move d0,adycar-adobjet(a3)          ;passage en Y d'un carre a l'autre
         subq #1,d5              ;D5--> indice taille en Y du carre
         subq #1,d4
         move d4,a0              ;a0--> indice taille en X
@@ -371,11 +384,11 @@ copal:  move.w (a2)+,(a3)+
         add.w d0,a4             ;a4--> adresse dans l'ecran
         moveq #7,d1             ;indice compactage
         clr.b (a5)              ;premier octet a zero
-        clr.b (a6)              
+        clr.b (a6)
 
 ; Compactage proprement dit
 plan:   move.l a4,a3
-        move.w tailley,d4
+        move.w tailley(pc),d4
 ligne:  move.l a3,a2
         move.w a0,d3
 carre:  move.l a2,a1
@@ -412,14 +425,15 @@ oct4:   add.w d7,a1             ;passe a la ligne d'ecran suivante
 ;
         add.w d6,a2             ;passe au carre suivant
         dbra d3,carre
-        add.w adycar,a3         ;passe a la ligne de carre suivante
+        add.w adycar(pc),a3         ;passe a la ligne de carre suivante
         dbra d4,ligne
         addq.l #2,a4            ;passe au plan couleur suivant
-        subq.w #1,nbplan
+        lea nbplan(pc),a3
+        subq.w #1,(a3)
         bne.s plan
 
 ; Compactage de la table de pointeurs 1
-        move.l adobjet,a1
+        move.l adobjet(pc),a1
         addq.l #1,a5
         move.l a5,d0
         sub.l a1,d0
@@ -473,7 +487,7 @@ comp2c: move.b (a4)+,(a5)+
 
 decomp: cmpi.l #$06071963,code(a0)       ;verifie le code
         bne erreur2
- 
+
 ; Prepare les parametres
         move.l a0,-(sp)         ;adresse d'origine
         move.l a1,-(sp)         ;adresse destination
@@ -486,7 +500,7 @@ dflag:  move.w d3,-(sp)         ;pousse les flags
         beq.s flag1
 ; Toutes les couleurs a zero pendant le travail! FLAG= XXXXXXX1
         movem.l a0-a1/d1-d2,-(sp)
-        pea palnul
+        pea palnul(pc)
         move.w #6,-(sp)
         trap #14
         addq.l #6,sp
@@ -494,14 +508,14 @@ dflag:  move.w d3,-(sp)         ;pousse les flags
 ;
 flag1:  subq.l #6,sp            ;place pour les parametres
         move.l a1,a4            ;a4--> adresse ecran
-        lea tmode,a2
+        lea tmode(pc),a2
         move.w mode(a0),d0
         lsl.w #3,d0
         move.w 0(a2,d0.w),d7    ;d7--> taille ligne
         move.w 2(a2,d0.w),d6    ;d6--> taille plans
         move.w 4(a2,d0.w),d5    ;d5--> nbplans
         move.w 6(a2,d0.w),d4    ;d4--> taille en Y ecran
-        move.w d5,nbplan
+        move.w d5,nbplan-tmode(a2)
         tst.w d1
         bpl.s dec1
         move.w dx(a0),d1
@@ -522,7 +536,7 @@ dec2:   mulu d6,d1              ;calcule et verifie en X
         bhi erreur
         mulu d7,d2
         add.w d2,a1
-        move.l a1,a3            ;  A3 --> adresse ecran de destination     
+        move.l a1,a3            ;  A3 --> adresse ecran de destination
         move tcar(a0),d0
         mulu d7,d0
         move d0,2(sp)           ;2(sp)--> addition change de ligne de carre
@@ -530,9 +544,10 @@ dec2:   mulu d6,d1              ;calcule et verifie en X
         move tcar(a0),d6        ;D6--> indice hauteur carre
         move.w tx(a0),d0
         subq #1,d0
-        move d0,taillex
-        move.w ty(a0),d0        
-        move d0,tailley
+        lea taillex(pc),a4
+        move d0,(a4)
+        move.w ty(a0),d0
+        move d0,tailley-taillex(a4)
         lea dcomp(a0),a4        ;a4--> table octets 1
         move.l a0,a5
         move.l a0,a6
@@ -549,9 +564,9 @@ prep:   subq #1,d1
 
 ; Decompactage proprement dit
 dplan:  move.l a3,a2
-        move.w tailley,4(sp)    ;4(sp)--> compteur tailleY
+        move.w tailley(pc),4(sp)    ;4(sp)--> compteur tailleY
 dligne: move.l a2,a1
-        move.w taillex,d5
+        move.w taillex(pc),d5
 dcarre: move.l a1,a0
         move.w d6,d4            ;  D4 --> compteur hauteur carre
 ;
@@ -590,14 +605,15 @@ doct6:  dbra d1,doctet2
         moveq #7,d1
         addq.l #1,a6
         bra.s doctet2
-;     
+;
 doct7:  add.w (sp),a1           ;autre carres ?
         dbra d5,dcarre
         add.w 2(sp),a2          ;autre ligne de carres?
         subq.w #1,4(sp)
         bne dligne
         addq.l #2,a3            ;autre plan couleur?
-        subq.w #1,nbplan
+        lea nbplan(pc),a2
+        subq.w #1,(a2)
         bne dplan
 ;
         addq.l #6,sp            ;retabli la pile
@@ -613,7 +629,7 @@ doct7:  add.w (sp),a1           ;autre carres ?
 dpal:   move.w (a0)+,(a1)+
         dbra d0,dpal
         btst #1,d1              ;ne pas changer les couleurs de l'ecran
-        beq.s findec            
+        beq.s findec
         move.l a2,-(sp)         ;change les couleurs de l'ecran
         move.w #6,-(sp)
         trap #14
@@ -627,7 +643,7 @@ erreur: add #16,sp              ;restore la pile!
 erreur2:moveq #-1,d0
         rts
 
-        
+
 ;************************************************************************
         dc.l 0
 finprg:
