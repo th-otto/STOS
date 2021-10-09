@@ -6,6 +6,8 @@
 
     .include "adapt.inc"
 
+soundctrl = 0xffff8921
+
     .text
 
 entry:  bra.w    start
@@ -43,10 +45,22 @@ fake_sndtable: ds.b 6
 
 end_adr: .dc.l    0               ;upload address of the next file
 logic:   .dc.l    0               ;Logic screen address
+physic:  .dc.l    0               ;Physical screen address
 mode:    .dc.w    0               ;resolution at boot
 handle:  .dc.w    0               ;File handle
 Cmd_Tail:.dc.l    0               ;Command Tail
 sav_col: .ds.w    16              ;Buffer for 16 colors
+falcon_pal: .ds.l 256             ;Buffer for 256 colors
+soundctrl_save: .dc.b 0
+soundctrl_was_saved: .dc.b 0
+falcon_was_saved: .dc.b 0
+         .even
+falcon_mode: .ds.w 1
+falcon_save: .ds.w 19
+         .even
+save_hbl: .dc.l 0
+save_vbl: .dc.l 0
+
 vdi_1:   .ds.w    45              ;Table VDI 1 (devtab)
          .ds.w    12              ;Table VDI 2 (siztab)
          .ds.l    1               ;mouse coordinates
@@ -81,14 +95,14 @@ start:  lea     Cmd_Tail(pc),a6
 Skip0:
 ; Find addresses while respecting the system
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    lea Adapt(pc),a6
-    .dc.w   $a000
+    .dc.w   0xa000
+    lea Adapt(pc),a5
     lea -602(a0),a1 ; Mouse position
-    move.l  a1,adapt_gcurx(a6)
+    move.l  a1,adapt_gcurx(a5)
     lea -692(a0),a1 ; Table VDI 1
-    move.l  a1,adapt_devtab(a6)
+    move.l  a1,adapt_devtab(a5)
     lea -498(a0),a1 ; Table VDI 2
-    move.l  a1,adapt_siztab(a6)
+    move.l  a1,adapt_siztab(a5)
     /*
      * older basic*.bin need the address of the TOS internal sndtab
      * variable, that is set by Dosound(). There is no way this can
@@ -96,24 +110,24 @@ Skip0:
      * Newer versions call Dosound() and thus don't need that address.
      */
     lea fake_sndtable(pc),a1
-    move.l  a1,adapt_sndtable(a6)
+    move.l  a1,adapt_sndtable(a5)
 
     move.w  #1,-(sp)    ; Keyboard Buffer (Iorec(1))
     move.w  #14,-(sp)   ; Iorec
     trap    #14
     addq.l  #4,sp
-    move.l  d0,adapt_kbiorec(a6)
+    move.l  d0,adapt_kbiorec(a5)
 
     move.w  #34,-(sp)   ; Mouse interrupt addresses
     trap    #14
     addq.l  #2,sp
     move.l  d0,a0
-    move.l  a0,adapt_kbdvbase(a6)
+    move.l  a0,adapt_kbdvbase(a5)
     lea     24(a0),a0
     lea     Joy_Pos(pc),a1
     move.l  a0,Joy_Ad-Joy_Pos(a1)
     move.l  (a0),Joy_Sav-Joy_Pos(a1)
-    move.l  a1,adapt_joy(a6)        ; Result address
+    move.l  a1,adapt_joy(a5)        ; Result address
     lea     Joy_In(pc),a1
     move.l  a1,(a0)     ; Plug in the joystick routine
 
@@ -122,19 +136,28 @@ Skip0:
         move.w  #3,-(a7)        ;Logbase
         trap    #14
         addq.l  #2,a7
-        lea     logic(pc),a0
-        move.l  d0,(a0)         ;save screen address
+        move.l  d0,logic-Adapt(a5)         ;save screen address
+        move.w  #2,-(a7)        ;Physbase
+        trap    #14
+        addq.l  #2,a7
+        move.l  d0,physic-Adapt(a5)         ;save screen address
+
         pea     sav_vect(pc)    ;Save the configuration
         move.w  #38,-(a7)       ;Supexec
         trap    #14
         addq.l  #6,a7
-        lea     vdi_1(pc),a6
         move.w  #4,-(a7)        ;Getrez
         trap    #14
         addq.l  #2,a7
-        lea     Adapt(pc),a5    ;Address of vectors
         move.w  d0,mode-Adapt(a5)  ;Range resolution
         move.w  d0,d7
+        move.w  #-1,-(a7)
+        move.w  #0x58,-(a7)     ;VsetMode
+        trap    #14
+        addq.l  #4,a7
+        move.w  d0,falcon_mode-Adapt(a5)
+
+        lea     vdi_1(pc),a6
         movea.l adapt_devtab(a5),a0       ;addr Table VDI 1
         moveq   #45-1,d0        ;Copy 45 mots
 bcl1:
@@ -153,7 +176,7 @@ bcl2:
         bsr     set_dta         ;Fixed I/O buffer
         clr.w   -(a7)           ;current drive
         pea     oldpath(pc)     ;buffer for path
-        move.w  #$47,-(a7)      ;Dgetpath
+        move.w  #0x47,-(a7)     ;Dgetpath
         trap    #1
         addq.l  #8,a7
         tst.w   d0
@@ -193,7 +216,7 @@ affiche:
         bsr     fread           ;read
         bsr     fclose          ;close it
 
-        .dc.w    $a00a          ;mouse cover
+        .dc.w   0xa00a          ;mouse cover
         tst.w   d7              ;low res ?
         beq     fix_scr         ;yes
         cmpi.w  #2,d7           ;Hi Res ?
@@ -258,7 +281,7 @@ cpy_scr:
 
 ; No image on the floppy disk: remove the mouse
 No_Image:
-        .dc.w   $a00a           ;Hide the mouse
+        .dc.w   0xa00a          ;Hide the mouse
         lea     curs_off(pc),a0 ;Remove cursor
         bsr     print
 
@@ -294,11 +317,11 @@ load_zik:
         move.l  a0,(a1)
 
 ; load and call extensions, poke addresses
-        clr     d7
+        moveq   #26-1,d7
         lea     extend(pc),a6
-load5:  move.b  d7,numbext-extend(a6)
-        add.b   #'a',numbext-extend(a6)
-        lea     namext(pc),a0
+load5:  lea     namext(pc),a0
+        move.b  d7,numbext-namext(a0)
+        add.b   #'a',numbext-namext(a0)
         bsr     fsfirst
         bne.s   load6
         lea     namext(pc),a0
@@ -306,15 +329,12 @@ load5:  move.b  d7,numbext-extend(a6)
         movem.l a6/d6/d7,-(sp)
         lea     Adapt(pc),a3
         jsr     (a0)
-        lea     end_adr(pc),a2
-        move.l  a0,(a2)
+        lea     end_adr(pc),a6
+        move.l  a0,(a6)
         movem.l (sp)+,a6/d6/d7
-        move    d7,d6
-        lsl     #2,d6
-        move.l  a1,0(a6,d6.w)          ;poke the start address
-load6:  addq    #1,d7
-        cmp     #26,d7
-        bcs.s   load5
+        move.l  a1,(a6)        ;poke the start address
+load6:  addq.w  #4,a6
+        dbf     d7,load5
 
 ; load the basic
         lea     basic(pc),a0    ;'BASIC*.BIN'
@@ -324,7 +344,7 @@ load6:  addq    #1,d7
         bsr     set_path        ;put it back
         movea.l (a7)+,a6        ;address BASIC.BIN
 ; clears the screen, goes on average if color
-        move.w  #$25,-(a7)      ;Vsync
+        move.w  #0x25,-(a7)     ;Vsync
         trap    #14
         addq.l  #2,a7
         movea.l logic(pc),a0    ;clear logic
@@ -377,19 +397,27 @@ Error1:
 ; loading error or returns from basic
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 set_scr:
-; Restore la routine d'entree du joystick
+; Restore the joystick entry routine
         move.l  Joy_Ad(pc),d0
         beq.s   Skip
         move.l  d0,a0
         move.l  Joy_Sav(pc),(a0)
 Skip:
+        pea     rest_vect(pc)    ;Save the configuration
+        move.w  #38,-(a7)       ;Supexec
+        trap    #14
+        addq.l  #6,a7
+        lea     curs_off(pc),a0 ;Remove cursor 
+        bsr     print           ;Emulation VT52
+
 ; The screens
+        move.w  falcon_mode(pc),-(a7)
         move.w  mode(pc),-(a7)  ;restore resolution
-        move.l  logic(pc),-(a7) ;screen address
+        move.l  physic(pc),-(a7) ;screen address
         move.l  logic(pc),-(a7)
         move.w  #5,-(a7)        ;Setscreen
         trap    #14
-        lea     12(a7),a7
+        lea     14(a7),a7
 
         lea     vdi_1(pc),a6    ;Restore Vectors
         lea     Adapt(pc),a5
@@ -404,12 +432,12 @@ bcl8:
         move.w  (a6)+,(a0)+
         dbf     d0,bcl8
         movea.l adapt_gcurx(a5),a0
-        move.l  (a6)+,(a5)
+        move.l  (a6)+,(a0)
         pea     sav_col(pc)     ;Restore colors
         move.w  #6,-(a7)        ;Setpalette
         trap    #14
         addq.l  #6,a7
-        move.w  #$25,-(a7)      ;Vsync
+        move.w  #0x25,-(a7)     ;Vsync
         trap    #14
         addq.l  #2,a7
         clr.w   -(a7)           ;Pterm
@@ -425,7 +453,10 @@ Joy_In: lea     Joy_Pos(pc),a2
 ; ~~~~~~~~~~~~~
 sav_vect:
 ; copy the palette
-        lea     $ffff8240,a0
+        move.l  a5,-(a7)
+        lea     Adapt(pc),a5
+
+        lea     0xffff8240,a0
         lea     sav_col(pc),a1
         moveq   #16-1,d0
 bcl8A:
@@ -433,7 +464,62 @@ bcl8A:
         dbf     d0,bcl8A
 ; dummy float trap
         lea     fake_fl(pc),a0
-        move.l  a0,$98
+        move.l  a0,0x98
+
+; save hbl & vbl interrupt vector
+	    move.l  0x68,save_hbl-Adapt(a5)
+	    move.l  0x70,save_vbl-Adapt(a5)
+
+; save soundctrl register, and set it to 12.5Khz
+        move.l  sp,d0
+        move.l  0x08,d1
+        lea     noste(pc),a0
+        move.l  a0,0x08
+        move.b  soundctrl,soundctrl_save-Adapt(a5)
+        move.b  #1,soundctrl
+        move.b  #1,soundctrl_was_saved-Adapt(a5)
+noste:
+
+; save falcon video registers
+        lea        nofalcon(pc),a0
+        move.l     a0,0x08
+        lea        falcon_save(pc),a1
+		move.w     0xffff8210,(a1)+   /* width of scanline */
+		lea 0xffff8280,a0
+		move.w     (a0)+,(a1)+   /* HHC - Horizontal Hold Counter */
+		move.w     (a0)+,(a1)+   /* HHT - Horizontal Hold Timer */
+		move.w     (a0)+,(a1)+   /* HBB - Horizontal Border Begin */
+		move.w     (a0)+,(a1)+   /* HBE - Horizontal Border End */
+		move.w     (a0)+,(a1)+   /* HDB - Horizontal Display Begin */
+		move.w     (a0)+,(a1)+   /* HDE - Horizontal Display End */
+		move.w     (a0)+,(a1)+   /* HSS - Horizontal SS */
+		move.w     (a0)+,(a1)+   /* HFS - Horizontal FS */
+		move.w     (a0)+,(a1)+   /* HEE - Horizontal EE */
+		lea 0xffff82a0,a0
+		move.w     (a0)+,(a1)+   /* VFC - Vertical Frequency Counter */
+		move.w     (a0)+,(a1)+   /* VFT - Vertical Frequency Timer */
+		move.w     (a0)+,(a1)+   /* VBB - Vertical Border Begin */
+		move.w     (a0)+,(a1)+   /* VBE - Vertical Border End */
+		move.w     (a0)+,(a1)+   /* VDB - Vertical Display Begin */
+		move.w     (a0)+,(a1)+   /* VDE - Vertical Display End */
+		move.w     (a0)+,(a1)+   /* VSS - Vertical SS */
+		move.w     0xffff82c0,(a1)+   /* VMC - Video Master control */
+		move.w     0xffff82c2,(a1)+   /* VCO - Video Control */
+
+; copy the palette
+		lea.l      0xffff9800,a0
+		lea.l      falcon_pal(pc),a1
+		move.w     #256-1,d2
+copy_falpal:
+		move.l     (a0)+,(a1)+
+		dbf        d2,copy_falpal
+
+        move.b  #1,falcon_was_saved-Adapt(a5)
+nofalcon:
+        
+        move.l  d0,sp
+        move.l  d1,0x08
+        move.l  (a7)+,a5
         rts
 
 ; dummy float trap
@@ -443,7 +529,7 @@ fake_fl:cmp.b   #12,d0
         moveq   #0,d0
         moveq   #0,d1
         rte
-; Function $c 'FLTOA'
+; Function 0x0c 'FLTOA'
 ; ~~~~~~~~~~~~~~~~~~~
 fltoa:  move.b  #'0',(a0)
         move.b  #'.',1(a0)
@@ -451,10 +537,62 @@ fltoa:  move.b  #'0',(a0)
         clr.b   3(a0)
         rte
 
+
+; As supervisor
+; ~~~~~~~~~~~~~
+rest_vect:
+; restore hbl & vbl interrupt vector
+	    move.l  save_hbl(pc),0x68
+	    move.l  save_vbl(pc),0x70
+
+; restore sound ctrl
+        move.b  soundctrl_was_saved(pc),d0
+        beq.s   rest_vect1
+        move.b  soundctrl_save(pc),soundctrl
+rest_vect1:
+
+; restore falcon palette
+        move.b  falcon_was_saved(pc),d0
+        beq.s   rest_vect2
+
+		lea.l      0xffff9800,a1
+		lea.l      falcon_pal(pc),a0
+		move.w     #256-1,d0
+rest_falpal:
+		move.l     (a0)+,(a1)+
+		dbf        d0,rest_falpal
+
+; restore falcon video registers
+        lea        falcon_save(pc),a0
+		move.w     (a0)+,0xffff8210   /* width of scanline */
+		lea        0xffff8280,a1
+		move.w     (a0)+,(a1)+   /* HHC - Horizontal Hold Counter */
+		move.w     (a0)+,(a1)+   /* HHT - Horizontal Hold Timer */
+		move.w     (a0)+,(a1)+   /* HBB - Horizontal Border Begin */
+		move.w     (a0)+,(a1)+   /* HBE - Horizontal Border End */
+		move.w     (a0)+,(a1)+   /* HDB - Horizontal Display Begin */
+		move.w     (a0)+,(a1)+   /* HDE - Horizontal Display End */
+		move.w     (a0)+,(a1)+   /* HSS - Horizontal SS */
+		move.w     (a0)+,(a1)+   /* HFS - Horizontal FS */
+		move.w     (a0)+,(a1)+   /* HEE - Horizontal EE */
+		lea        0xffff82a0,a1
+		move.w     (a0)+,(a1)+   /* VFC - Vertical Frequency Counter */
+		move.w     (a0)+,(a1)+   /* VFT - Vertical Frequency Timer */
+		move.w     (a0)+,(a1)+   /* VBB - Vertical Border Begin */
+		move.w     (a0)+,(a1)+   /* VBE - Vertical Border End */
+		move.w     (a0)+,(a1)+   /* VDB - Vertical Display Begin */
+		move.w     (a0)+,(a1)+   /* VDE - Vertical Display End */
+		move.w     (a0)+,(a1)+   /* VSS - Vertical SS */
+		move.w     (a0)+,0xffff82c0   /* VMC - Video Master control */
+		move.w     (a0)+,0xffff82c2   /* VCO - Video Control */
+
+rest_vect2:
+        rts
+
 ; Disk Interfacing Routines
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 fsnext:
-        move.w  #$4f,-(sp)
+        move.w  #0x4f,-(sp)
         trap    #1
         addq.l  #2,sp
         rts
@@ -548,9 +686,9 @@ get_bin:
         bsr     fclose
 ; relocate the program
         movea.l end_adr(pc),a1
-        move.l  $2(a1),d0       ;distance to the table
+        move.l  2(a1),d0        ;distance to the table
         add.l   6(a1),d0
-        andi.l  #$ffffff,d0
+        andi.l  #0xffffff,d0
         adda.w  #28,a1          ;marks the start of the program
         movea.l a1,a2
         move.l  a2,d2           ;d2=start of program
