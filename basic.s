@@ -199,7 +199,7 @@ dh:       dc.w 0,1,0,1,0,1,0,1,0,1,0,1
 fd:       dc.b "(000,2)(220,2)(440,2)(550,2)(660,2)(770,2)(772,2)(774,2)"
           dc.b "(776,2)(777,2)(557,2)(446,2)(335,2)(113,2)(002,2)(001,2)",0
           even
-;FENETRES DE L'EDITEUR
+;EDITOR WINDOWS
 fe:       dc.w 0,0,1,0,4,40,21,1,0     ;0:fond partiel
           dc.w 0,0,2,0,4,80,21,1,0
           dc.w 0,0,3,0,2,80,23,1,0
@@ -742,7 +742,7 @@ dirjumps: dc.l listbank,llistbank,follow,freq,cont,exchange,search,delete
           dc.l ambiance,renum,multi,fullscreen,grab,list,llist,hexa
           dc.l pasimp,accload,accnew,upper,lower,english,francais,pasimp
 
-; ADRESSE DES ROUTINES ETENDUES
+; ADDRESS OF EXTENDED ROUTINES
           dc.b "Jexten"
 extjumps: dc.l dirw,fde,bcopy,textbox
           dc.l previous,transpose,colshift,waitkey
@@ -1604,7 +1604,7 @@ special:  andi.w #$7f,d1
           jsr (a0)            ;branchement a la fonction speciale
           bra boucle
 
-; SAVECT: SAUVE LES VECTEURS D'EXEPTION / DEPART DES INTERRUPTIONS
+; SAVECT: SAVE EXCEPTIONAL VECTORS / START OF INTERRUPTS
 savect:   lea vecteurs+4,a6   ;pile deja stockee
           move.l $8,(a6)+     ;puis BUS ERROR
           move.l $c,(a6)+     ;puis ADRESS ERROR
@@ -1630,7 +1630,7 @@ savect:   lea vecteurs+4,a6   ;pile deja stockee
           move.l #inter50,$400  ;branche les interruptions a 50 herz
 critic:   rts                   ;critical error pointe sur RTS
 
-; LOADVECT: REMET LES VECTEURS, ARRET DES INTERRUPTIONS
+; LOADVECT: RESET VECTORS, STOP INTERRUPTS
 loadvect: move.l anc400,$400
           moveq #8,d0         ;arret interruptions de la trappe #7
           trap #7
@@ -7645,7 +7645,7 @@ end:      tst runflg
           beq illdir
           bra direct
 
-; CHRGET: avec branchements aux routines concernees
+; CHRGET: with connections to the relevant routines
 finligne: tst runflg          ;mode direct ou programme?
           beq.s direct
           add (a5),a5
@@ -11291,7 +11291,7 @@ FinMen:   move.l a1,hichaine
 	bcs outofmm
           rts
 
-; DEMANDE une certaine place pour le traitement des chaines, si revient, OK!
+; REQUESTS some room for the processing of chains, if it comes back, OK!
 demande:  move.l lowvar,d0
           move.l hichaine,a1  ;au retour, a1 contient hichaine
           move.l a1,a0
@@ -12253,7 +12253,7 @@ relp2:    add.w #254,a2
 relp3:    movem.l (sp)+,d0-d7
           rts
 
-; TRANSFERT DE MEMOIRE RAPIDE ET INTELLIGENT a2/pair->a3/pair, d3 octets
+; FAST AND INTELLIGENT MEMORY TRANSFER a2->a3, d3 bytes 
 transmem: move.b d3,d4        ;retour: a2 et a3 pointent a la fin des zones
           andi.b #3,d4
           cmp.l a2,a3
@@ -12334,7 +12334,7 @@ clbk3:    dbra d1,clbk1
           bsr movedata
 clbk4:    rts
 
-; CHAINE LES BANQUES DE DONNEES IMPORTANTES A LA SUITE DU PROGRAMME ACTUEL
+; CHAIN IMPORTANT DATA BANKS FOLLOWING THE CURRENT PROGRAM
 chaine:   bsr stopall
           move.l adatabank,a0
           move.l fsource,a3
@@ -12356,7 +12356,7 @@ activ2b:  dbra d6,activ1
           move.l d5,4(a1)     ;change la longueur totale du prg
           rts
 
-; DECHAINE LES BANQUES DE DONNEES DU PROGRAMME ACTUEL
+; DECHAINS THE CURRENT PROGRAM DATABASES
 dechaine: move.l adataprg,a0
           move.l adatabank,a1
           move.l (a0),a2      ;debut du source en absolu
@@ -12826,7 +12826,7 @@ leng3:	move.l d2,d3
 	bsr adbank
 	bra.s leng2
 
-; ADOUBANK: ramene l'adresse absolue de la banque si <16
+; ADOUBANK: returns the absolute address of the bank if <16
 adoubank: cmp.l #16,d3
           bcc.s adou1
 ; numero de banque
@@ -13365,7 +13365,7 @@ munt05:   move.l d3,d0
           subq.l #1,a6
 munt2:    rts
 
-; ADECRAN: ramene et verifie une adresse d'ecran
+; ADECRAN: bring back and verify a screen address
 adecran:  cmp.l #16,d3
           bcc.s adec1
           bsr adoubank
@@ -14994,7 +14994,7 @@ avdi:     tst autoback
           trap #5
           move.l adback,$44e  ;ecran logique = decor!
 atb1:     bsr vdi             ;APPEL VDI
-; GESTION DE L'AUTOBACK: DEUXIEME APPEL
+; AUTOBACK MANAGEMENT: SECOND CALL
 abis:     tst autoback
           beq.s atb2
           move.l adlogic,a1
@@ -15006,7 +15006,7 @@ abis:     tst autoback
           moveq #29,d0
           trap #5             ;SPREAFF
 atb2:     rts
-; GESTION DE L'AUTO BACK PREMIER APPEL (pour les extensions...)
+; FIRST CALL AUTO BACK MANAGEMENT (for extensions, etc.)
 abck:     tst autoback
           beq.s atb2
           moveq #28,d0

@@ -9,15 +9,21 @@
 
 ;**************************************************************************
 
+	.include "extend.inc"
+	
+	.text
+
 ; Adaptation au Stos basic
-        bra load
+        bra.w load
         even
         dc.b $80
-tokens: dc.b "unpack",$80,"pack",$81
+tokens: dc.b "unpack",$80
+        dc.b "pack",$81
         dc.b 0
         even
 jumps:  dc.w 2
-        dc.l unpack,pack
+        dc.l unpack
+        dc.l pack
         even
 welcome:dc.b "PICTURE COMPACTOR extension",0
         dc.b "Extension COMPACTEUR D'IMAGES",0
@@ -61,12 +67,28 @@ palnul: ds.w 16
 
 ;**************************************************************************
 
-; Appel lors du chargement
+; Called when loaded
+; Inputs:
+;   -
+; Outputs:
+;   a0: address of proram memory end
+;   a1: address of coldboot function
+;
 load:   lea finprg,a0
         lea cold,a1
         rts
 
-; Appel lors de cold
+; Called during coldboot
+; Inputs:
+;   a0: pointer to table of functions that the extension may need
+;      (see extend.inc)
+; Outputs:
+;   a0: welcome message
+;   a1: address of warmboot function (called upon "new")
+;   a2: address of tokens
+;   a3: address of jump table for tokens
+;   a4: (optional) address of reset function
+;
 cold:   move.l a0,table
         lea welcome,a0
         lea warm,a1
@@ -83,7 +105,7 @@ entier: move.l (sp)+,d0
         beq.s finent
         movem.l a0-a2,-(sp) 
         move.l table,a0
-        move.l 4(a0),a0
+        move.l ext_fltoint(a0),a0
         jsr (a0)                ;FL TO INT
         movem.l (sp)+,a0-a2
 finent: rts
@@ -91,7 +113,7 @@ finent: rts
 ; Adoubank
 adoubank:movem.l a0-a2,-(sp)
         move.l table,a0
-        move.l $88(a0),a0
+        move.l ext_adoubank(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
         rts
@@ -99,7 +121,7 @@ adoubank:movem.l a0-a2,-(sp)
 ; Adecran
 adecran:movem.l a0-a2,-(sp)
         move.l table,a0
-        move.l $8c(a0),a0
+        move.l ext_adscreen(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
         rts
@@ -115,7 +137,7 @@ foncall:moveq #13,d0
 
 ; Appel des erreurs
 error:  move.l table,a0
-        move.l $14(a0),a0
+        move.l ext_error(a0),a0
         jmp (a0)   
 
 ;**************************************************************************
@@ -217,8 +239,8 @@ unpack: move.l (sp)+,retour
         lea params,a2
         move.w #-1,(a2)         ;flags par defaut
         move.l table,a0
-        move.l $50(a0),a0       ;donnees graphiques
-        move.l $06(a0),2(a2)    ;decor des sprites
+        move.l ext_graphic(a0),a0  ;donnees graphiques
+        move.l 6(a0),2(a2)      ;decor des sprites
         move.w #-1,6(a2)        ;dx
         move.w #-1,8(a2)        ;dy
 ;
@@ -267,7 +289,7 @@ unp4:   bsr entier
         bne.s unp5              ;aucune gestion d'autoback
         movem.l d1-d3/a0-a1,-(sp)
         move.l table,a0
-        move.l $90(a0),a0
+        move.l ext_abck(a0),a0
         jsr (a0)                ;autoback UN
         movem.l (sp)+,d1-d3/a0-a1
 unp5:   bsr decomp
@@ -275,7 +297,7 @@ unp5:   bsr decomp
         bne.s unp6
         move.w d0,-(sp)
         move.l table,a0
-        move.l $94(a0),a0
+        move.l ext_abis(a0),a0
         jsr (a0)                ;autoback DEUX
         move.w (sp)+,d0    
 ;
@@ -393,8 +415,7 @@ oct4:   add.w d7,a1             ;passe a la ligne d'ecran suivante
         add.w adycar,a3         ;passe a la ligne de carre suivante
         dbra d4,ligne
         addq.l #2,a4            ;passe au plan couleur suivant
-        /* subq.w #1,nbplan*/
-        dc.l 0x04790001,nbplan
+        subq.w #1,nbplan
         bne.s plan
 
 ; Compactage de la table de pointeurs 1
@@ -450,8 +471,7 @@ comp2c: move.b (a4)+,(a5)+
 ;
 ;************************************************************************
 
-decomp: /* cmpi.l #$06071963,code(a0) */       ;verifie le code
-		dc.w 0xca8,0x0607,0x1963,0
+decomp: cmpi.l #$06071963,code(a0)       ;verifie le code
         bne erreur2
  
 ; Prepare les parametres
@@ -611,6 +631,3 @@ erreur2:moveq #-1,d0
 ;************************************************************************
         dc.l 0
 finprg:
-
-
-

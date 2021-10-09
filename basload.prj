@@ -2,5 +2,6 @@ basload.prg
 .S[-S]
 .L[-R]
 .L[-M]
+.L[-S=0]
 =
 basload.s

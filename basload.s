@@ -29,6 +29,7 @@ tosversion: .dc.w    0
 Adapt:      .ds.b    adapt_sizeof
 
 extend: .ds.l     26             ;26 addresses for extensions
+        .ds.l     26             ;26 addresses for extensions cleanup ptrs (setup by basic.bin)
 
 dta:    .ds.w    13              ;Buffer DTA
 size:   .dc.l    0               ;File size
