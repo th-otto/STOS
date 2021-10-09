@@ -11,51 +11,89 @@
 
         .text
 
-	.dc.w 0x0000
-	.dc.w 0x0010
-	.dc.w 0x0000
-	.dc.w 0x0052
-	.dc.w 0x0000
-	.dc.w 0x00b8
-	.dc.w 0x025a
-	.dc.w 0x0220
-	.dc.w 0x0002
-	.dc.w 0x0002
-	.dc.w 0x0008
-	.dc.w 0x0029
-	.dc.w 0x0000
-	.dc.w 0x0100
-	.dc.w 0x2c00
-	.dc.w 0x0100
-	.dc.w 0x2c00
-	.dc.w 0x2c00
-	.dc.w 0x0100
-	.dc.w 0x2c00
-	.dc.w 0x2c00
-	.dc.w 0x2c00
-	.dc.w 0x0100
-	.dc.w 0x2c00
-	.dc.w 0x2c00
-	.dc.w 0x2c00
-	.dc.w 0x2c00
-	.dc.w 0x0101
-	.dc.w 0x0000
-	.dc.w 0x002c
-	.dc.w 0x0001
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x002c
-	.dc.w 0x0001
-	.dc.w 0x0100
+start:
+	.dc.l para-start  ; offset to parameter definitions
+	.dc.l entry-start ; offset to coldboot function
+	.dc.l lib1-start  ; offset to first library function
+; length of library routines follows
+	.dc.w lib2-lib1
+	.dc.w libex-lib2
+
+para:
+	.dc.w 2           ; number of library routines
+	.dc.w 2           ; number of extension commands
+
+	.dc.w l001-para
+	.dc.w l002-para
+
+* Parameter definitions
+
+I	equ	0
+F	equ	$40
+S	equ	$80
+
+* "," forces a comma between any commands
+* 1   indicates the end of one set of parameters for an instruction
+* 1,0 indicates the end of the commands entire parameter definition
+
+l001:
+	.dc.b I,I,1
+	.dc.b 0,','
+	.dc.b 0
+	.dc.b 1
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b 1
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b 1
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b 1
+	.dc.b 1,0
+l002:
+	.dc.b I,I
+	.dc.b ','
+	.dc.b 0
+	.dc.b 1
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b ','
+	.dc.b 0
+	.dc.b 1
+	.dc.b 1,0
 
 ; Adaptation au Stos basic
 entry:
-        bra.w load
+        bra.w init
         even
 
 params: ds.w 9
@@ -94,9 +132,13 @@ palnul: ds.w 16
 
 ;**************************************************************************
 
-load:
-        lea load1(pc),a2
-load1:  rts
+* Initialisation section
+* This code is loaded into memory during initialisation
+* It can be accessed using address placed in the DEBUT variable
+
+init:
+        lea extend(pc),a2		; load position of end into A2
+extend: rts
 
 
 ;**************************************************************************
@@ -105,6 +147,8 @@ load1:  rts
 
 ;**************************************************************************
 
+lib1:
+    ; library calls
 unpackreloc:
 	.dc.w unpackreloc1-unpackreloc
 	.dc.w unpackreloc2-unpackreloc
@@ -367,6 +411,8 @@ erreur2:movem.l    (a7)+,a3-a6
 
 ;**************************************************************************
 
+lib2:
+    ; library calls
 packreloc:
 	.dc.w packreloc1-packreloc
 	.dc.w packreloc2-packreloc
@@ -614,6 +660,7 @@ foncall2:moveq #13,d0
 	movea.l    2364(a5),a0
 	jmp        (a0)
 
+libex:
         
 ;************************************************************************
         dc.w 0
