@@ -1,0 +1,6 @@
+compiler\sprites.lib
+.L[-S=0]
+.S[-S]
+.S[-DCOMPILER=1]
+=
+sprites.s

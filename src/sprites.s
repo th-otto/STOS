@@ -263,6 +263,46 @@ params:   ds.w      5
 debut:
 
 ; Lors de l'appel, A3 contient l'adresse des adresses!
+          .IFNE COMPILER
+        movem.l d1-d7/a1-a6,-(sp)
+        move.l adapt_gcurx(a3),admouse           ;adresse coords souris
+        move.l adapt_kbdvbase(a3),advect          ;adresse vecteur souris
+; Banque souris par defaut
+        cmp.l #$19861987,(a2)+
+        bne Debout
+        move.l a2,dessins2            ;met la banque!
+; Fait de la PLACE pour les BUFFERS
+        move.l a0,a6
+        move.l a0,tzones              ;zones de test
+        add.l #128*4*2,a0
+        move.l a0,buffer              ;buffer des sprites
+        move.w d0,sizebuf             ;Taille en MOTS du buffer
+        lsl.w #1,d0                   ;---> en octets
+        add.l d0,a0
+        move.l a0,buffanim            ;buffer animeur
+        add.l #nbanimes*64,a0
+        move.l a0,buffmvt             ;buffer deplaceur
+        add.l #nbanimes*96*2,a0
+        cmp.l a1,a0
+        bcc.s Debout
+        move.l a0,d6
+        sub.l a6,d6
+        subq #1,d6
+debut2: clr.b (a6)+                   ;nettoie les buffers!
+        dbra d6,debut2
+; initialise la trappe
+        move.l a0,-(sp)
+        bsr initrap
+        move.l (sp)+,a0               ;ramene l'adresse de fin
+        moveq #0,d0
+DOut:   movem.l (sp)+,d1-d7/a1-a6
+        rts
+; Out of mem!
+Debout: moveq #1,d0
+        bra.s DOut
+
+        .ELSE
+        
         move.l adapt_gcurx(a3),admouse           ;adresse coords souris
         move.l adapt_kbdvbase(a3),advect          ;adresse vecteur souris
 ; charge la banque SOURIS par defaut!
@@ -330,6 +370,8 @@ debut2:   clr.b (a1)+                   ;nettoie les buffers!
           bsr initrap
           move.l (sp)+,a0               ;ramene l'adresse de fin
           rts
+
+        .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;        Calcule l'AD ECRAN: d1=x, d2=y, retour: a2=AD, d3=nb mots/ligne      ;

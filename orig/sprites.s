@@ -11,7 +11,11 @@
           bra debut
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          .IFNE COMPILER
+          dc.b "Sprite 101"
+          .ELSE
           dc.b "Sprite 2.4"
+          .ENDC
 even
 ;-----------------------------> copie des vecteurs d'interruption
 ancient1: dc.l 0
@@ -261,6 +265,49 @@ params:   ds.w      5
 debut:
 
 ; Lors de l'appel, A3 contient l'adresse des adresses!
+          .IFNE COMPILER
+        movem.l d1-d7/a1-a6,-(sp)
+        move.l (a3),admouse           ;adresse coords souris
+        move.l 20(a3),advect          ;adresse vecteur souris
+; Banque souris par defaut
+        cmp.l #$19861987,(a2)+
+        bne.w Debout /* XXX */
+        move.l a2,dessins2            ;met la banque!
+; Fait de la PLACE pour les BUFFERS
+        move.l a0,a6
+        move.l a0,tzones              ;zones de test
+        /* add.l #128*4*2,a0 */
+        .dc.w 0xd1fc,0,128*4*2 /* XXX */
+        move.l a0,buffer              ;buffer des sprites
+        move.w d0,sizebuf             ;Taille en MOTS du buffer
+        lsl.w #1,d0                   ;---> en octets
+        add.l d0,a0
+        move.l a0,buffanim            ;buffer animeur
+        /* add.l #nbanimes*64,a0 */
+        dc.w 0xd1fc,0,nbanimes*64 /* XXX */
+        move.l a0,buffmvt             ;buffer deplaceur
+        /* add.l #nbanimes*96*2,a0 */
+        dc.w 0xd1fc,0,nbanimes*96*2 /* XXX */
+        cmp.l a1,a0
+        bcc.s Debout
+        move.l a0,d6
+        sub.l a6,d6
+        subq #1,d6
+debut2: clr.b (a6)+                   ;nettoie les buffers!
+        dbra d6,debut2
+; initialise la trappe
+        move.l a0,-(sp)
+        bsr initrap
+        move.l (sp)+,a0               ;ramene l'adresse de fin
+        moveq #0,d0
+DOut:   movem.l (sp)+,d1-d7/a1-a6
+        rts
+; Out of mem!
+Debout: moveq #1,d0
+        bra.s DOut
+
+        .ELSE
+        
         move.l (a3),admouse           ;adresse coords souris
         move.l 20(a3),advect          ;adresse vecteur souris
 ; charge la banque SOURIS par defaut!
@@ -332,6 +379,8 @@ debut2:   clr.b (a1)+                   ;nettoie les buffers!
           bsr initrap
           move.l (sp)+,a0               ;ramene l'adresse de fin
           rts
+
+        .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;        Calcule l'AD ECRAN: d1=x, d2=y, retour: a2=AD, d3=nb mots/ligne      ;
@@ -439,7 +488,7 @@ calculs:  move xmot(a0),d6
 ;         ADSPR : POINTE LE SPRITE D1 DANS LA TABLE, D1 ---> D5
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 adspr:    clr intmouse
-adspr1:   andi #$f,d1
+adspr1:   andi.w #$f,d1
           move d1,d5
           mulu #28,d1
           lea sprites(pc),a0
@@ -476,8 +525,7 @@ boum5:    cmp d1,d2	      ;ne teste pas le sprite en question
           beq.s boum6
           tst (a0)
           bne.s boum10
-boum6:    
-		  add #28,a0
+boum6:    add #28,a0
           addq #1,d2
           cmpi.w #nbsprite-1,d2
           bne.w boum5 /* XXX */
@@ -1160,7 +1208,7 @@ egen13:   cmp yinput(a0),d7
 ;-------------> mouvement du sprite: trouve le meilleur mode d'affichage.
 
 egen14:
-		  .IFNE 1 /* XXX */
+		  .IFEQ COMPILER /* XXX */
           cmp tptx,d4         ;see if it can display the sprite as ONE
           bne absolu          ;times: it's really better! 
           cmp tpty,d5
@@ -1278,7 +1326,9 @@ icone:    addi.w #640,d1
           addi.w #400,d2
 icone0:   clr intmouse
           move #1,iconflg
-          /* clr.w d0 YYY missing in binary */
+          .IFNE COMPILER
+          clr.w d0 /* YYY missing in binary */
+          .ENDC
           bsr genicone        ;va faire tous les calculs!!!
           tst d0              ;erreur!
           bne.w icon10 /* XXX */
@@ -2690,9 +2740,9 @@ dep1:     move.l a0,doitactad           ;adresse du flag
           move.l #sourint,(a0)          ;branche la routine souris
           rts
 ;ARRET DES INTERRUPTIONS
-arretint: 
-		  .IFNE 0 /* not present in binary XXX */
-		  tst.l ancient2		    ;Si deja sauve!
+arretint:
+		  .IFNE COMPILER /* not present in binary XXX */
+          tst.l ancient2		    ;Si deja sauve!
 	      beq.s PaArr
 	      .ENDC
 	      move.l $456.l,a0 /* XXX */
@@ -3075,7 +3125,7 @@ stopmouse:clr intmouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 limouse:  move.l admouse(pc),a0
           tst d3
-          bne.w limous2
+          bne.w limous2 /* XXX */
           clr d1
           clr d2
           move #640,d3
@@ -4351,8 +4401,3 @@ finspr:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           end
-
-
-
-
-
