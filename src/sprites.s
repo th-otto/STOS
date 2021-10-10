@@ -2804,7 +2804,7 @@ chgmouse: clr intmouse        ;si >=4 pointe le premier sprite de la banque
           move d1,oldform
           move #-1,xmouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;         Remise en marche toute bete de la souris
+;         Restart any beast of the mouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 mousbete: move #1,intmouse
           move #-1,xmouse     ;force le redessin

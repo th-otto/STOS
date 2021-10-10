@@ -1,15 +1,13 @@
-
-	/* Output	Stos\Windo102.bin */
-
-	.include "adapt.inc"
-
-	.text
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
 ;                             GESTION DES FENETRES                           ;
 ;                                  1/11/1989                                          ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	.include "adapt.inc"
+
+	.text
+
           bra debut
           dc.b "Window"       ;repere pour trouver le debut
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -19,18 +17,22 @@
 even
 ttrappe:  dc.l chrout,1         ;0
           dc.l prtstring,1      ;1
-          dc.l laucate,1        ;2
+          dc.l locate,1         ;2
           dc.l setpaper,0       ;3
           dc.l setpen,0         ;4
           dc.l tstscreen,0      ;5
           dc.l initwind,1       ;6
+		  .IFNE COMPILER
+          dc.l arretint,0       ;7
+          .ELSE
           dc.l arretint,1       ;7
+          .ENDC
           dc.l windon,1         ;8
           dc.l effenetre,1      ;9
           dc.l initmode,1       ;10
           dc.l getbuffer,1      ;11
           dc.l hardcopy,0       ;12
-          dc.l gcourante,0      ;13
+          dc.l getcurwindow,0   ;13
           dc.l fixcursor,1      ;14
           dc.l departint,0      ;15
           dc.l qwindon,1        ;16
@@ -58,7 +60,7 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l ytext,0          ;38
           dc.l box,1            ;39
           dc.l update,0         ;40
-        
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TABLE DES COULEURS (ET HACHURES)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -186,16 +188,16 @@ controle: dc.l 0              ;0
 ; update on/off
 upd:      dc.w 0
 
-; fenetre courante
-courante: dc.w 0
-adcouran: dc.l 0
-freelle:  dc.w 0                  ;fenetre avec les bords? (8)
-tempinit: dc.w 0
-tempeff1: dc.w 0
-tempeff2: dc.w 0
-tempeff3: dc.w 0
-tempeff4: dc.w 0
-rapeflag: dc.w 0
+; current window
+curwindow: dc.w 0
+adcurwindow:  dc.l 0
+freelle:   dc.w 0                  ;fenetre avec les bords? (8)
+tempinit:  dc.w 0
+tempeff1:  dc.w 0
+tempeff2:  dc.w 0
+tempeff3:  dc.w 0
+tempeff4:  dc.w 0
+rapeflag:  dc.w 0
 
 ; flag routine curseur en marche
 inhibc:   dc.w 0    ;0 si autorsation aff curseur
@@ -209,7 +211,12 @@ priofen:  ds.b nbfenetre
 
 ; nombre d'octets utilises pour les buffers fenetres
 topcopie: dc.w 0
+		  .IFNE COMPILER
+bufcopie: dc.l 0
+maxcopie: dc.w 0
+          .ELSE
 maxcopie  = 32000
+          .ENDC
 
 ; table des adresses des jeux de caractere: 16 JEUX MAX
 adjeux:   ds.l 16
@@ -282,7 +289,44 @@ bufshade: ds.b 100
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         INITIALISATION DE LA TRAPPE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-debut: 
+debut:
+		  .IFNE COMPILER
+         movem.l d1-d7/a1-a6,-(sp)
+
+; Buffer des fenetres
+        move.l a0,bufcopie
+        move.w d0,maxcopie
+        add.w d0,a0
+; Jeux de caracteres
+        lea adjeux(pc),a5
+        cmp.l #$06071963,(a2)+
+        bne.s Debout
+        move.l a2,(a5)+
+        cmp.l #$06071963,(a3)+
+        bne.s Debout
+        move.l a3,(a5)+
+        cmp.l #$06071963,(a4)+
+        bne.s Debout
+        move.l a4,(a5)+
+        move.w #3,nbjeux
+; Out of mem?
+        cmp.l a1,a0
+        bcc.s Debout
+; initialise la trappe
+        move.l a0,-(sp)
+        bsr initrap
+        move.l (sp)+,a0
+; Fini ok
+        moveq #0,d0
+dout:   movem.l (sp)+,d1-d7/a1-a6
+        rts
+
+; Out of mem
+Debout: moveq #1,d0
+        bra.s dout
+
+		.ELSE
+
 ;          move.l 4(sp),a0
 ;          move.l #$100,d6
 ;          add.l 12(a0),d6
@@ -292,7 +336,7 @@ debut:
 ; initialise la trappe
           bsr initrap
 ; charge les jeux de caractere *.CRx
-          move.l #dta,-(sp)
+          pea dta(pc)
           move.w #$1a,-(sp)
           trap #1             ;SETDTA
           addq.l #6,sp
@@ -309,25 +353,25 @@ debut1:   move.b #"0",numjeux ;*.CR0/*.CR1/....
           tst d0
           bne debut4
           clr.w -(sp)
-          pea dta+30
+          pea dta+30(pc)
           move.w #$3d,-(sp)
           trap #1
           addq.l #8,sp
           move d0,d5          ;handle en D5
           bmi debut1          ;erreur!
           move.l a6,-(sp)     ;adresse de chargement
-          move.l dta+26,-(sp) ;taille du fichier
+          move.l dta+26(pc),-(sp) ;taille du fichier
           move.w d5,-(sp)
           move.w #$3f,-(sp)
           trap #1
-          add.l #12,sp
+          lea 12(sp),sp
           tst.l d0
           bmi debut3
           cmp.l #$06071963,(a6)         ;code de reconnaissance
           bne debut3
           add.l d0,d6                   ;taille totale
           subq.l #4,d0                  ;taille des caracteres (moins code)
-          lea adjeux,a0
+          lea adjeux(pc),a0
           move d7,d1
           lsl #2,d1
           addq.l #4,a6         ;saute le code
@@ -353,6 +397,8 @@ debut4:   move d7,nbjeux       ;premier jeux de caracteres libre!
 ;          move.w #$31,-(sp)   ;KEEP PROCESS
 ;          trap #1
 
+		.ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INITIALISATION/ARRET DES INTERRUPTIONS ET DE LA TRAPPE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -363,7 +409,9 @@ initrap:  move.l #entrappe,-(sp)        ;setexec
           trap #13                      ;trappe 3
           addq.l #8,sp
           rts
-; DEPART DES INTERRUPTIONS
+
+; TRAP #3,15
+; START OF INTERRUPTS
 departint:move #-1,offcur               ;empeche l'affichage du curseur
           clr inhibc
           move.l ecran,a0
@@ -373,10 +421,14 @@ departint:move #-1,offcur               ;empeche l'affichage du curseur
           move.l 4(a0),anc456
           move.l #gcurseur,4(a0)        ;en deuxieme position
           rts
-; ARRET DES INTERRUPTIONS
-arretint: move.l $456,a0
-          move.l anc456,4(a0)
-          rts
+
+; TRAP #3,7
+; STOP INTERRUPTS
+arretint: move.l anc456(pc),d0
+          beq.s  PaArr
+          move.l $456,a0
+          move.l d0,4(a0)
+PaArr:    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ENTREE DE LA TRAPPE
@@ -385,13 +437,13 @@ entrappe: movem.l d1-d7/a1-a6,-(sp)
           lsl #3,d7
           lea ttrappe,a5
           move.l 0(a5,d7.w),a6
-          move.l adcouran,a4
-          tst 6(a5,d7.w)      ;faut-il arreter les sprites?
+          move.l adcurwindow(pc),a4
+          tst 6(a5,d7.w)      ;should we stop the sprites?
           beq.s pastop
 ; FONCTIONS ARRETANT LA SOURIS ET LES SPRITES
           bsr curoff
           movem.l d0/d1,-(sp)
-          moveq #28,d0        ;arret rapide de la souris
+          moveq #28,d0        ;quick mouse stop
           trap #5
           movem.l (sp)+,d0/d1
           jsr (a6)
@@ -401,19 +453,20 @@ entrappe: movem.l d1-d7/a1-a6,-(sp)
           beq.s entrap0
           tst autoback
           bne.s entrap1
-entrap0:  moveq #41,d0        ;mouse bete
+entrap0:  moveq #41,d0        ;restart mouse
           bra.s entrap2
-entrap1:  moveq #29,d0        ;remise en route souris ET TOUS LES SPRITES!
+entrap1:  moveq #29,d0        ;restart mouse AND ALL SPRITES!
 entrap2:  trap #5
           move.l (sp)+,d0
           movem.l (sp)+,d1-d7/a1-a6
           rte
-; FONCTIONS N'ARRETANT PAS LA SOURIS ET LES SPRITES
+; FUNCTIONS THAT DO NOT STOP THE MOUSE AND SPRITES
 pastop:   jsr (a6)
           movem.l (sp)+,d1-d7/a1-a6
           rte
 
-;HARDCOPY DE LA FENETRE OUVERTE
+; TRAP #3,12
+; HARDCOPY OF THE OPEN WINDOW
 hardcopy: moveq #27,d0         ;RESET imprimante
           bsr outprt
           moveq #64,d0
@@ -492,15 +545,18 @@ bconout2: move.w d0,-(sp)
           addq.l #6,sp
           rts
 
-; SETBACK: CHANGE L'ADRESSE DU DECOR
+; TRAP #3,19
+; SETBACK: CHANGES THE ADDRESS OF THE SPRITE BACKGROUND
 setback:  move.l a0,back      ;que c'est long!
           rts
 
+; TRAP #3,40
 ; UPDATE ON/OFF
 update:   move d0,upd
           rts
 
-; INITIALISATION AU MODE DE RESOLUTION et RAZ generale fenetres
+; TRAP #3,10
+; INITIALIZATION TO RESOLUTION MODE and general window reset
 initmode: move.w #4,-(sp)     ;getrez
           trap #14
           addq.l #2,sp
@@ -520,7 +576,7 @@ initmode: move.w #4,-(sp)     ;getrez
           trap #14
           addq.l #6,sp
 ; initialisation des FENETRES
-          lea priofen,a0
+          lea priofen(pc),a0
           move #nbfenetre-1,d0
 initpr:   clr.b (a0)+
           dbra d0,initpr
@@ -551,13 +607,14 @@ initpr:   clr.b (a0)+
           move nbjeux,d0      ;premier jeu de caracteres accessible!
           rts
 
-; INITIALISATION D'UNE FENETRE: D0 numero de la fenetre
-;                               D1 jeu de caractere et bordure
-;                               D2/D3 startx et y
-;                               D4/D5 txtext et tytext
-;                               D6    pen et paper
+; TRAP #3,8
+; INITIALIZING A WINDOW: D0 numero de la fenetre
+;                        D1 jeu de caractere et bordure
+;                        D2/D3 startx et y
+;                        D4/D5 txtext et tytext
+;                        D6    pen et paper
 initwind: andi.w #$000f,d0
-          move.l flagfen,d7
+          move.l flagfen(pc),d7
           btst d0,d7
           bne error2          ;--->deja ouverte!
           move d0,tempinit    ;stocke le numero de la fenetre
@@ -571,7 +628,7 @@ initwind: andi.w #$000f,d0
           bhi error6          ;--->jeu de caractere n'existe pas
           subq #1,d1
           lsl #2,d1
-          lea adjeux,a1
+          lea adjeux(pc),a1
           add.w d1,a1
           tst.l (a1)
           beq error6          ;--->pas de jeu a ce numero!
@@ -616,26 +673,34 @@ pasbord:  swap d1             ;reprend la taille car en Y
           cmp yoctets,d3
           bhi error5          ;---> fenetre trop grande en Y!
 ; paper et pen
-          clr flags(a4)       
+          clr flags(a4)
           move d6,d0
           bsr setpaper
           swap d6
           move d6,d0
           bsr setpen
 ; initialisation de la copie texte
-          move topcopie,d3
+          move topcopie(pc),d3
           mulu d5,d4          ;txtext*tytext*tcarcopie = taille copie texte
           mulu tcarcopie,d4
           move d4,d5
           add.w d3,d5
+		  .IFNE COMPILER
+          cmp.w maxcopie,d5
+          .ELSE
           cmpi.w #maxcopie,d5
+          .ENDC
           bcc error7          ;---> plus de place buffer!
           move d5,topcopie
-          lea bufcopie,a2
+		  .IFNE COMPILER
+          move.l bufcopie(pc),a2
+          .ELSE
+          lea bufcopie(pc),a2
+          .ENDC
           add.w d3,a2
           move.l a2,copie(a4) ;stocke l'adresse de la copie
 ; initialisations diverses
-          move.l a4,adcouran  ;adresse de la fenetre courante=celle-ci
+          move.l a4,adcurwindow  ;adresse de la fenetre curwindow=celle-ci
           clr freelle         ;pour pouvoir imprimer IMBECILE!
           move mode,d0
           mulu #20,d0
@@ -653,21 +718,22 @@ pasbord:  swap d1             ;reprend la taille car en Y
 ; active la fenetre elle meme
 ouvre:    bsr clears
           bsr scrollon
-          move tempinit,d0
-          move.l flagfen,d7
+          move tempinit(pc),d0
+          move.l flagfen(pc),d7
           bset d0,d7          ;fenetre ouverte!
           move.l d7,flagfen
           move #1,tempinit
           bra actzero
 
-; BORDER
+; TRAP #3,30
+; Change the border of the current window
 border:   bsr afftour
           move.l d0,-(sp)
           bsr recopie
           move.l (sp)+,d0
           rts
 
-; AFFICHE LE TOUR D0 DE LA FENETRE COURANTE, si zero, remet la meme!
+; AFFICHE LE TOUR D0 DE LA FENETRE curwindow, si zero, remet la meme!
 afftour:  move bordure(a4),d1
           beq tourerr         ;fenetre sans bordure!!!
           andi.w #$f,d0
@@ -736,7 +802,8 @@ initw6:   bsr chrdec          ;ligne du bas
 tourerr:  moveq #1,d0
           rts
 
-; ACTIVATION MULTIPLE (A0 ---> TABLE)
+; TRAP #3,27
+; MULTIPLE ACTIVATION (A0 ---> TABLE)
 actcache: move.w (a0)+,d0
           bmi actch2
           move.l a0,-(sp)
@@ -757,20 +824,21 @@ actch3:   move.l d0,(sp)      ;une erreur: la sauve, recopie!
           move.l (sp)+,d0
           rts
 
-; ACTIVATION RAPIDE D'UNE FENETRE
+; TRAP #3,16
+; QUICK ACTIVATION OF A WINDOW
 qwindon:  move #1,tempinit
           bra windon2
 ; ACTIVATION DE LA FENETRE D0
 windon:   clr tempinit
 windon2:  andi.w #$000f,d0
-          move.l flagfen,d7
+          move.l flagfen(pc),d7
           btst d0,d7
           beq error3          ;--->pas ouverte!
-          cmp courante,d0
+          cmp curwindow(pc),d0
           beq dejaact         ;banane! Elle est deja activee!
 ; table des priortes
-actzero:  move d0,courante
-          lea priofen,a1       ;adresse de la table des priorte
+actzero:  move d0,curwindow
+          lea priofen(pc),a1       ;adresse de la table des priorte
           move.b 0(a1,d0.w),d2 ;ancienne priorte
           bne wdon0
           move #nbfenetre+1,d2
@@ -786,7 +854,7 @@ wdon2:    dbra d1,wdon1
           mulu #lfenetre,d0
           lea tfenetre,a4
           add.w d0,a4           ;a4 contient l'adresse de la fenetre
-          move.l a4,adcouran  ;stocke l'adcourante
+          move.l a4,adcurwindow  ;stocke l'adcourante
 
 ; Affiche la fenetre telle qu'elle est stockee! SUPER!
           tst tempinit
@@ -808,7 +876,7 @@ dejaact:  clr tempinit
 ; Efface le fond graphique avec les flags actuels!
 windaff:  clr escape
       .IFNE 1
-	  move #8,freelle	;TOUTE la fenetre! 
+	  move #8,freelle	;TOUTE la fenetre!
           move txreel(a4),d2
           move tyreel(a4),d3
           clr d0
@@ -820,7 +888,7 @@ windaff:  clr escape
           clr d0
           clr d1
           bsr effecran
-	  move #8,freelle	;TOUTE la fenetre! 
+	  move #8,freelle	;TOUTE la fenetre!
       .ENDC
 ; Ecris le tour et la fenetre
           move ycursor(a4),-(sp)
@@ -876,10 +944,10 @@ wdon7:    addq #1,d2
           rts
 
 ; REAFFICHE TOUTES LES FENETRES, DANS L'ORDRE INVERSE DES PRIORITES!
-reaffiche:move.l adcouran,-(sp)
+reaffiche:move.l adcurwindow(pc),-(sp)
           moveq #nbfenetre,d7
-windm1:   move.l flagfen,d6
-          lea priofen,a0
+windm1:   move.l flagfen(pc),d6
+          lea priofen(pc),a0
           move #-1,d0
           moveq #nbfenetre-1,d1
 windm2:   addq #1,d0
@@ -888,8 +956,8 @@ windm2:   addq #1,d0
           dbra d1,windm2
 windm3:   subq #1,d7          ;on bouge la fenetre activee=> la premiere
           bne windm1          ;====> la derniere a etre affichee!
-          move.l (sp)+,a4     ;restore l'ancien ADCOURAN
-          move.l a4,adcouran
+          move.l (sp)+,a4     ;restore l'ancien adcurwindow
+          move.l a4,adcurwindow
           rts                 ;====> rien a faire a la fin!!!
 windm4:   btst d0,d6          ;pas ouverte!
           beq windm3
@@ -897,12 +965,13 @@ windm4:   btst d0,d6          ;pas ouverte!
           mulu #lfenetre,d0
           lea tfenetre,a4
           add.w d0,a4
-          move.l a4,adcouran
+          move.l a4,adcurwindow
           bsr windaff         ;va afficher la fenetre!
           move (sp)+,d7       ;recupere la priorite
           bra windm3          ;suivante!
 
-; MOVE WINDOW: CHANGE LA POSITION DE LA FENETRE COURANTE  !!!! GENIAL !!!!
+; TRAP #3,24
+; MOVE WINDOW: CHANGES THE POSITION OF THE CURRENT WINDOW
 windmov:  move d0,d2
           add.w txreel(a4),d2   ;taille totale en X
           mulu chrxsize(a4),d2
@@ -952,14 +1021,17 @@ actua:    move d4,d0
           movem (sp)+,d0-d7
           rts
 
-; EFFACEMENT RAPIDE DE LA FENETRE COURANTE
+; TRAP #3,25
+; CURRENT WINDOW QUICK
 effenvite:move #1,rapeflag
-          move courante,d0
+          move curwindow(pc),d0
           bra effenbis
-; EFFACEMENT D'UNE FENETRE
+
+; TRAP #3,9
+; DELETE A WINDOW
 effenetre:clr rapeflag
 effenbis: andi.w #$000f,d0
-          move.l flagfen,d7
+          move.l flagfen(pc),d7
           btst d0,d7
           beq error3          ;--->pas ouverte!
           bclr d0,d7          ;Fenetre inhibee
@@ -978,7 +1050,7 @@ videbuf:  move.l copie(a4),a2 ;entree pour effacement rapide!
           sub.w d2,topcopie       ;baisse topcopie de la taille enlevee
 vide0:    lea tfenetre,a4
           move #nbfenetre-1,d3
-          move.l flagfen,d7
+          move.l flagfen(pc),d7
 vide1:    btst d3,d7            ;fenetre en route? BUG BUG BUG BUG BUG BUG
           beq vide3
           cmp.l copie(a4),a3
@@ -1002,8 +1074,8 @@ vide3:    add.l #lfenetre,a4      ;fenetre suivante
           cmpi.w #nbfenetre,d3
           bne vide1
 ; refait la table des priorites
-          lea priofen,a0      ;toutes les fenetres des poids
-          move tempinit,d1    ;inferieures a elle sont
+          lea priofen(pc),a0      ;toutes les fenetres des poids
+          move tempinit(pc),d1    ;inferieures a elle sont
           move.b 0(a0,d1.w),d0  ;augmentees de 1
           clr.b 0(a0,d1.w)    ;efface la fenetre de la prioritable
           move #nbfenetre-1,d1
@@ -1019,11 +1091,11 @@ refait2:  dbra d1,refait1
           bsr reaffiche
           bsr recopie
 ; trouve la fenetre courante
-pasrap:   move tempinit,d0
-          cmp courante,d0     ;la fenetre courante n'est pas celle
+pasrap:   move tempinit(pc),d0
+          cmp curwindow(pc),d0 ;la fenetre courante n'est pas celle
           bne finieff         ;qui vient d'etre effacee: on change rien!
           move #1,tempinit
-          lea priofen,a0
+          lea priofen(pc),a0
           clr d0
 trouv1:   cmp.b #1,(a0)+
           beq trouv2          ;active la fenetre de poids le plus fort!
@@ -1036,7 +1108,7 @@ finieff:  clr tempinit
 ; cherche une autre fenetre que la 15!
 trouv2:   cmpi.w #15,d0          ;active toute fenetre, SAUF LA 15!!! SYSTEME!!!
           bne actzero
-          lea priofen,a0
+          lea priofen(pc),a0
           clr d0
 trouv3:   cmp.b #2,(a0)+      ;on peut activer la # deux!!!
           beq actzero
@@ -1062,11 +1134,12 @@ error6:   move #6,d0    ;Char set not found
           bra finerr
 error7:   move #7,d0    ;No more text buffer space
           bra finerr
-finerr:   move.l adcouran,a4  ;reprend l'adresse courante!!!
+finerr:   move.l adcurwindow(pc),a4  ;reprend l'adresse courante!!!
           rts                 ;fin de la trappe
 
-; GETCOURANTE: RAMENE LE NUMERO DE LA FENETRE COURANTE
-gcourante: move courante,d0
+; TRAP #3,13
+; GETCURWINDOW: RETURN THE NUMBER OF THE CURRENT WINDOW
+getcurwindow: move curwindow(pc),d0
           rts
 
 ; INITIALISATION DU CURSEUR: A0 POINTE LA TABLE DE DEFINITION
@@ -1086,14 +1159,16 @@ initc1:   move.b (a0)+,tabcurs(a4,d0.w)
           move #1,curseur(a4)
           rts
 
-; CUR BAS: REMET LE CURSEUR EN BAS
+; TRAP #3,22
+; CURBAS: Displays a small cursor
 curbas:   move.w chrysize(a4),d0
           move d0,fcurseur(a4)
           subq #2,d0
           move d0,dcurseur(a4)
           rts
 
-; CUR HAUT: GRAND CURSEUR
+; TRAP #3,23
+; CURHAUT: Displays a thick cursor
 curhaut:  move.w chrysize(a4),d0
           move d0,fcurseur(a4)
           lsr #1,d0
@@ -1101,15 +1176,18 @@ curhaut:  move.w chrysize(a4),d0
           move d0,dcurseur(a4)
           rts
 
+; TRAP #3,31
 ; AUTOBACK ON
 autobon:  move #1,autoback
           rts
 
+; TRAP #3,32
 ; AUTOBACK OFF
 autoboff: move autoback,oldauto
           clr autoback
           rts
 
+; TRAP #3,33
 ; OLD AUTO BACK
 ancauto:  move oldauto,autoback
           rts
@@ -1122,7 +1200,7 @@ gcurseur: cmp #2,mode         ;pas de flash en COULEURS!
           tst inhibc          ;la routine est en route!
           bne fincurs1
           movem.l d0/a3-a4,-(sp)
-          move.l adcouran,a4  ;pas de curseur sur cette fenetre
+          move.l adcurwindow(pc),a4  ;pas de curseur sur cette fenetre
           tst curseur(a4)
           beq fincurs
 
@@ -1218,7 +1296,7 @@ fincur:   movem.l (sp)+,d0-d7/a0-a6
           rts
 ;-----------------------------------------------------------------------------
 ;
-;                           
+;
 ;
 ;-----------------------------------------------------------------------------
 
@@ -1237,7 +1315,7 @@ ad1:      mulu txreel(a4),d7
           move.l copie(a4),a0
           add.w d7,a0          ;ADRESSE COPIE TEXTE DANS A0
 
-          move freelle,d7
+          move freelle(pc),d7
           add.w startx(a4,d7.w),d0
           add.w starty(a4,d7.w),d1
           move d1,d7
@@ -1360,7 +1438,7 @@ efrapide: move d3,d0
           lsr #3,d0
           subq #1,d0          ;d0 compteur effacement ecran
           tst mode
-          beq.w efrbas
+          beq efrbas
           cmp #1,mode
           beq efrmoy
           move (a6),d6        ;couleurs haute resolution
@@ -1444,7 +1522,7 @@ clears1:  bsr endline
           movem.l (sp)+,d0-d7/a0-a6
           rts
 
-; END LINE: MET UN 255 AU BOUT DE LA LIGNE D1 DANS LA COPIE 
+; END LINE: MET UN 255 AU BOUT DE LA LIGNE D1 DANS LA COPIE
 endline:  move d1,-(sp)
           move txtext(a4),d0
           subq #1,d0
@@ -1465,14 +1543,15 @@ endllow:  move.w flags(a4),d1
           move (sp)+,d1
           rts
 
+; TRAP #3,2
 ; LOCATE D0,D1
-laucate:  cmp txtext(a4),d0
+locate:   cmp txtext(a4),d0
           bcc sorti
           cmp tytext(a4),d1
           bcc sorti
           bsr curxy
           clr d0                  ;pas d'erreur
-          rts     
+          rts
 sorti:    move #1,d0
           rts
 
@@ -1483,13 +1562,15 @@ curxy:    move d0,xcursor(a4)
           move.l a1,adecran(a4)   ;adresses absolues du curseur
           rts
 
-;POSCURSEUR: RAMENE LA POSITION DU CURSEUR EN D0.L
+; TRAP #3,17
+; POSCURSOR: RETURN THE CURSOR'S POSITION TO D0.L
 coordcurs:move xcursor(a4),d0
           swap d0
           move ycursor(a4),d0
           rts
 
-; XGRAPHIC: COORD CURS X ---> COORDS GRAPHIC
+; TRAP #3,35
+; XGRAPHIC: Convert X coord from text to graphic
 xgraphic: cmp txtext(a4),d0             ;ramene -1 si sort
           bcc cxgr1
           add.w startx(a4),d0
@@ -1497,14 +1578,16 @@ xgraphic: cmp txtext(a4),d0             ;ramene -1 si sort
           lsl #3,d0
           rts
 
-; YGRAPHIC: COORD CURS Y ---> COORDS GRAPHIC
+; TRAP #3,36
+; YGRAPHIC: Convert Y coord from text to graphic
 ygraphic: cmp tytext(a4),d0             ;ramene -1 si sort
           bcc cxgr1
           add.w starty(a4),d0
           mulu chrysize(a4),d0
           rts
 
-; XTEXT: TRANSFORME UNE POSITION GRAPHIQUE X(d0) EN COORDONNEE CURSEUR
+; TRAP #3,37
+; XTEXT: Converts X coord from graphic to text
 xtext:    move.w startx(a4),d1
           move.w d1,d2
           add.w txtext(a4),d2
@@ -1523,7 +1606,8 @@ xtext:    move.w startx(a4),d1
 cxgr1:    moveq #-1,d0
           rts
 
-; YTEXT: TRANSFORME UNE POSITION GRAPHIQUE (Y) EN COORDONNEE CURSEUR
+; TRAP #3,38
+; YTEXT: Converts Y coord from graphic to text
 ytext:    move.w starty(a4),d1
           move.w d1,d2
           add.w tytext(a4),d2
@@ -1631,7 +1715,7 @@ scrbs1:   move.l -(a3),-(a1)
 
 ; SCROLLING DANS LA COPIE
 scrollcop:movem.l (sp)+,d0-d6/a0  ;recupere les donnees
-          move.l adcouran,a4      ;adresse de la fenetre courante
+          move.l adcurwindow(pc),a4      ;adresse de la fenetre courante
           move txtext(a4),d7
           subq #1,d7              ;d7 indice en X
           subq #1,d5              ;d5 compteur en Y
@@ -1655,7 +1739,7 @@ finscroll:rts
 
 ; SCROLLING VERS LE HAUT A PARTIE DE LA LIGNE D1
 scrollht: movem.l d0-d7/a0-a6,-(sp)
-          cmp #0,d1           ;une seule ligne: pas de scrolling...
+          tst.w d1            ;une seule ligne: pas de scrolling...
           beq finscrl
           move d1,d5          ;nombre de caractere en Y
           clr d0
@@ -1687,7 +1771,7 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
           mulu tcarcopie,d2   ;tlcopie en d2
           sub.w d2,a0
           sub.w tlecran,a1
-          neg d2              ;decalage copie 
+          neg d2              ;decalage copie
           move d2,d6          ;plus copie|
           move tlecran,d3     ;          |=> explore l'ecran de bas
           move d3,d7          ;          |   en haut
@@ -1701,14 +1785,14 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
 
 ; CURSEUR VERS DROITE
 droite:   move xcursor(a4),d0
-          move freelle,d1
+          move freelle(pc),d1
           addq #1,d0
           cmp txtext(a4,d1.w),d0
           beq drt1
           move ycursor(a4),d1
           bra curxy
 drt1:     bsr alaligne        ;scroll vers le haut
-          bra.w bas
+          bra bas
 
 ; CURSEUR VERS GAUCHE
 gauche:   move xcursor(a4),d0
@@ -1724,7 +1808,7 @@ gch1:     move txtext(a4),d0
 ; CURSEUR VERS LE HAUT
 haut:     move xcursor(a4),d0
           move ycursor(a4),d1
-          beq.w haut1
+          beq haut1
           subq #1,d1
           bra curxy
 haut1:    tst scrollup(a4)
@@ -1734,7 +1818,7 @@ haut1:    tst scrollup(a4)
           bra curxy
 
 ; CURSEUR VERS LE BAS
-bas:      move freelle,d0
+bas:      move freelle(pc),d0
           move ycursor(a4),d1
           addq #1,d1
           cmp tytext(a4,d0.w),d1
@@ -1825,6 +1909,7 @@ souloff:  move flags(a4),d0
           move d0,flags(a4)
           rts
 
+; TRAP #3,4
 ; PEN
 setpen:   move d0,pen(a4)
           move d0,d7
@@ -1842,6 +1927,7 @@ finpen:   or.w d7,flags(a4)
           move.l a6,adpen(a4)
           rts
 
+; TRAP #3,3
 ; PAPER
 setpaper: move d0,paper(a4)
           move d0,d7
@@ -1881,6 +1967,8 @@ scrolloff:clr scrollup(a4)
 cscreen:  move xcursor(a4),d0
           move ycursor(a4),d1
           bra screen
+
+; TRAP #3,5
 tstscreen:cmp txtext(a4),d0
           bge scrn2
           cmp tytext(a4),d1
@@ -1906,22 +1994,24 @@ scrn1:    move.l (a0),d4
 scrn2:    move #-1,d0         ;erreur: sorti de la fenetre
           rts
 
-; GETCHAR: RAMENE L'ADRESSE D'UN JEU DE CARACTERE
+; TRAP #3,28
+; GETCHAR: Get address of character set
 getchar:  andi.w #$f,d0
           lsl #2,d0
-          lea adjeux,a0
+          lea adjeux(pc),a0
           move.l 0(a0,d0.w),d0  ;prend son adresse
           beq getch1
           subq.l #4,d0          ;pointe le code de reconnaissance!
 getch1:   rts
 
-; SET CHAR (xx): INITIALISE UN JEU DE CARACTERES: #=d0/ad=a0
+; TRAP #3,29
+; SET CHAR (xx): INITIALIZE A CHARACTER SET: #=d0/ad=a0
 setchar:  andi.w #$f,d0
           beq setchar1        ;pas les jeux systeme!
           cmpi.w #1,d0
           beq setchar1
           lsl #2,d0
-          lea adjeux,a1
+          lea adjeux(pc),a1
           clr.l 0(a1,d0.w)
           cmpi.l #$06071963,(a0)+
           bne setchar1
@@ -1996,7 +2086,12 @@ efl1:     bsr cscreen
           bsr chrout
           bra efl1
 
-; FIXE LA TAILLE DU CURSEUR d0= haut, d1= bas, d2= vitesse si hires
+; TRAP #3,14
+; SET CURSOR SIZE
+; inputs:
+;   d0= top
+;   d1= bottom
+;   d2= speed so hires
 fixcursor:cmp d0,d1
           bls fix1
           cmp chrysize(a4),d1
@@ -2011,7 +2106,8 @@ fix1:     cmpi.w #2,mode                   ;pas de vitesse si LOW/MID res!
           move d2,indcurs(a4)
 fix2:     rts
 
-; AUTOINS: AFFICHE D0 APRES AVOIR INSERE UN CARACTERE
+; TRAP #3,20
+; AUTOINS: Opens a space in the current line and places a character in it
 autoins:  move txtext(a4),d1
           subq #1,d1
           cmp xcursor(a4),d1
@@ -2038,7 +2134,7 @@ insere:   move xcursor(a4),d2
           clr writing(a4)
           bsr cscreen
           cmpi.b #255,d0
-          bne.s ins0a 
+          bne.s ins0a
 ; curseur sur la fin d'une ligne
           move #32,d0
           bsr inscroll
@@ -2136,7 +2232,8 @@ insc3:    move d6,d0
           bsr chrout
           bra insc2a
 
-; JOIN: joint deux "lignes"
+; TRAP #3,21
+; JOIN: join two "lines"
 join:     move xcursor(a4),-(sp)
           move ycursor(a4),-(sp)
 join0:    move txtext(a4),d0
@@ -2192,7 +2289,8 @@ staup:    clr.w d0
 cont:     move.w #1,d0
           rts
 
-; GETBUFFER: REMPLIT LE BUFFER EN A0, LONGUEUR D0 CARACTERES
+; TRAP #3,11
+; GETBUFFER: FILLS THE BUFFER IN A0, LENGTH D0 CHARACTERS
 getbuffer:move scrollup(a4),-(sp)  ; met un zero a la fin
           clr scrollup(a4)
           move.l a0,a2
@@ -2234,7 +2332,8 @@ get7:     clr.b (a3)                    ;arrete au dernier NON BLANC!
           move (sp)+,scrollup(a4)
           rts
 
-; BOX: BORDER D0, TX/D1, TY/D2 
+; TRAP #3,39
+; BOX: BORDER D0, TX/D1, TY/D2
 box:      move d1,d4
           move d2,d5
           subq #3,d4
@@ -2275,9 +2374,10 @@ box4:     bsr gauche
           move.b 3(a2),d0     ;ligne gauche
           bsr chrout
           dbra d5,box4
-          rts          
+          rts
 
-; TITLE A0: ECRIS UNE CHAINE SUR LA LIGNE DU HAUT D'UNE FENETRE
+; TRAP #3,31
+; TITLE A0: WRITE A STRING ON THE TOP LINE OF A WINDOW
 title:    tst bordure(a4)
           beq titlerr         ;pas de tour a cette fenetre!
           move #8,freelle
@@ -2296,7 +2396,8 @@ title5:   clr.l d0
 titlerr:  moveq #1,d0
           rts
 
-;CENTRAGE: ECRIS UNE CHAINE EN LA CENTRANT
+; TRAP #3,18
+; CENTRE: WRITE A STRING BY CENTERING IT
 centrage: move.l a0,a2
           move.l a0,a1
           clr d1
@@ -2318,7 +2419,8 @@ cent4:    sub.w d1,d0
           bsr curxy
           move.l a2,a0
 
-;PRINT STRING: ECRIS LA CHAINE DE CARACTERES POINTEE PAR A0
+; TRAP #3,1
+; PRINT STRING: WRITE THE STRING POINTED BY A0
 prtstring: move.b (a0)+,d0
           beq prt1
           bsr chrout
@@ -2329,11 +2431,13 @@ prt1:     rts
 chrdec:   movem.l d0-d7/a0-a6,-(sp)
           clr.l d6
           bra chr0
-; IMPRESSION D'UN CARACTERE SUR LES DEUX ECRANS
+
+; TRAP #3,0
+; PRINTING A CHARACTER ON BOTH SCREENS
 chrout:   movem.l d0-d7/a0-a6,-(sp)
           move.l ecran,d6
           sub.l back,d6        ;difference entre ecran LOGIQUE et BACK
-chr0:     move.l adcouran,a4   ;a4 pointe sur la fenetre courante!
+chr0:     move.l adcurwindow(pc),a4   ;a4 pointe sur la fenetre courante!
           andi.w #$00ff,d0
 
           cmpi.b #32,d0
@@ -2431,7 +2535,7 @@ lignesh:  add.w a3,a1           ;passage ligne suivante
           dbra d7,affht1      ;autre ligne?
           bclr #9,d4          ;souligne ?
           beq finaff
-          lea souligne,a0     ;par magouille
+          lea souligne(pc),a0     ;par magouille
           sub.w a3,a1           ;reecris la ligne de soulignement!!!
           clr d7
           bra affht1
@@ -2482,7 +2586,7 @@ octetsm:  subq #4,a5          ;RAZ plans couleur
           dbra d7,affmy1
           bclr #9,d4          ;souligne?
           beq finaff
-          lea souligne,a0     ;souligne par magouille!
+          lea souligne(pc),a0     ;souligne par magouille!
           sub.w a3,a1
           clr d7
           bra affmy1
@@ -2538,7 +2642,7 @@ octetsb:  subq #8,a5          ;RAZ plans couleur
           dbra d7,affbas
           bclr #9,d4          ;souligne?
           beq finaff
-          lea souligne,a0     ;souligne par magouille!
+          lea souligne(pc),a0     ;souligne par magouille!
           sub.w a3,a1
           clr d7
           bra affbas
@@ -2568,9 +2672,9 @@ wrt2bs:   and.w (a5),d0
           bra octetsb
 
 ; MOUVEMENT DU CURSEUR
-finaff:   move.l adcouran,a4
+finaff:   move.l adcurwindow(pc),a4
           move xcursor(a4),d0
-          move freelle,d1
+          move freelle(pc),d1
           addq #1,d0
           cmp txtext(a4,d1.w),d0
           beq finaff5
@@ -2607,7 +2711,7 @@ sortie:   movem.l (sp)+,d0-d7/a0-a6
           rts
 finaff5:  bsr alaligne
           bsr bas
-          bra.w sortie
+          bra sortie
 ; FINAFF active: DROITE RAPIDE!
 finafact: movem.l d0-d7/a0-a6,-(sp)
           bra finaff
@@ -2616,7 +2720,10 @@ finafact: movem.l d0-d7/a0-a6,-(sp)
 ;         GESTION GENIALE DES ICONES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; CHANGEMENT DU JEU D'ICONE (a0)
+; TRAP #3,26
+; Set address of ICONS
+; inputs:
+;   a0 = Address of ICON BANK
 newicon:  clr.l adicon
           cmpi.l #$28091960,(a0)+
           bne newic
@@ -2631,7 +2738,7 @@ cescape:  move #1,escape
 
 ; PUT DROIT: met le code CURDROITE
 putdroit: moveq #9,d0
-          move.l adcopie(a4),a0 
+          move.l adcopie(a4),a0
           tst mode
           beq.s pd1
           move.w flags(a4),d1
@@ -2652,7 +2759,7 @@ afficon:  movem.l d0-d7/a0-a6,-(sp)
           beq finicon
           subq #1,d0          ;pas d'icone zero!
           andi.w #$ff,d0
-          move.l adicon,a0
+          move.l adicon(pc),a0
           cmp (a0)+,d0        ;compare au nombre d'icones
           bcc finicon         ;pas assez d'icones
 ; ok: affiche l'icone!
@@ -2685,7 +2792,7 @@ buggic:   mulu #42*2,d0       ;84 octets par icone
 affica:   mulu chrxsize(a4),d0
           lsl #3,d0             ;coord 0---> 639 (339)
           mulu chrysize(a4),d1  ;coord 0---> 399 (199)
-          lea buficon,a2      ;buffer de sauvegarde, qui ne sert a rien!
+          lea buficon(pc),a2      ;buffer de sauvegarde, qui ne sert a rien!
           move paper(a4),d2
           move pen(a4),d3
 ; inverse?
@@ -2698,17 +2805,17 @@ affic0:   move d2,6(a0)
 ; shade?
           btst #11,d4
           beq affic3
-          lea bufshade,a3
+          lea bufshade(pc),a3
           moveq #41,d2
 affic1:   move.w (a0)+,(a3)+  ;recopie l'icone
           dbra d2,affic1
-          lea bufshade,a3
+          lea bufshade(pc),a3
           lea 12(a3),a3
           moveq #15,d2
 affic2:   and.w #$aaaa,(a3)
           addq.l #4,a3
           dbra d2,affic2
-          lea bufshade,a0
+          lea bufshade(pc),a0
 
 affic3:   tst.l d6            ;un seul ecran
           beq affic4
@@ -2769,14 +2876,9 @@ rec:      move.l (a0)+,(a1)+
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	even
+		  .IFEQ COMPILER
 pair:     dc.l 0
 bufcopie:
+          .ENDC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           end
-
-
-
-
-
-

@@ -1,13 +1,15 @@
-
-	/* Output	Stos\Windo102.bin */
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
 ;                             GESTION DES FENETRES                           ;
 ;                                  1/11/1989                                          ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           bra debut
+
+		  .IFNE COMPILER
+          dc.b "Window 102"       ;repere pour trouver le debut
+          .ELSE
           dc.b "Window"       ;repere pour trouver le debut
+          .ENDC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TABLE DE DEFINITION  DES FONCTIONS DE LA TRAPPE
 
@@ -20,7 +22,11 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l setpen,0         ;4
           dc.l tstscreen,0      ;5
           dc.l initwind,1       ;6
+		  .IFNE COMPILER
+          dc.l arretint,0       ;7
+          .ELSE
           dc.l arretint,1       ;7
+          .ENDC
           dc.l windon,1         ;8
           dc.l effenetre,1      ;9
           dc.l initmode,1       ;10
@@ -205,7 +211,12 @@ priofen:  ds.b nbfenetre
 
 ; nombre d'octets utilises pour les buffers fenetres
 topcopie: dc.w 0
+		  .IFNE COMPILER
+bufcopie: dc.l 0
+maxcopie: dc.w 0
+          .ELSE
 maxcopie  = 32000
+          .ENDC
 
 ; table des adresses des jeux de caractere: 16 JEUX MAX
 adjeux:   ds.l 16
@@ -263,9 +274,12 @@ souligne: dc.w $ffff,$ffff,$ffff,$ffff
 
 ; ancien vecteur contenu en 4($456)
 anc456:   dc.l 0
-
+		  .IFNE COMPILER
+FlgDep:	  dc.w 0
+		  .ELSE
 ; DTA
 dta:      ds.b 48
+		  .ENDC
 
 ;-------------------------------> icones
 adicon:   dc.l 0              ;adresse de la banque d'icones
@@ -278,7 +292,44 @@ bufshade: ds.b 100
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         INITIALISATION DE LA TRAPPE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-debut: 
+debut:
+		  .IFNE COMPILER
+         movem.l d1-d7/a1-a6,-(sp)
+
+; Buffer des fenetres
+        move.l a0,bufcopie
+        move.w d0,maxcopie
+        add.w d0,a0
+; Jeux de caracteres
+        lea adjeux,a5
+        cmp.l #$06071963,(a2)+
+        bne.s Debout
+        move.l a2,(a5)+
+        cmp.l #$06071963,(a3)+
+        bne.s Debout
+        move.l a3,(a5)+
+        cmp.l #$06071963,(a4)+
+        bne.s Debout
+        move.l a4,(a5)+
+        move.w #3,nbjeux
+; Out of mem?
+        cmp.l a1,a0
+        bcc.s Debout
+; initialise la trappe
+        move.l a0,-(sp)
+        bsr initrap
+        move.l (sp)+,a0
+; Fini ok
+        moveq #0,d0
+dout:   movem.l (sp)+,d1-d7/a1-a6
+        rts
+		
+; Out of mem
+Debout: moveq #1,d0
+        bra.s dout
+
+		.ELSE
+		
 ;          move.l 4(sp),a0
 ;          move.l #$100,d6
 ;          add.l 12(a0),d6
@@ -350,6 +401,8 @@ debut4:   move d7,nbjeux       ;premier jeux de caracteres libre!
 ;          move.w #$31,-(sp)   ;KEEP PROCESS
 ;          trap #1
 
+		.ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INITIALISATION/ARRET DES INTERRUPTIONS ET DE LA TRAPPE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -369,11 +422,19 @@ departint:move #-1,offcur               ;empeche l'affichage du curseur
           move.l $456.l,a0 /* XXX */
           move.l 4(a0),anc456
           move.l #gcurseur,4(a0)        ;en deuxieme position
+		  .IFNE COMPILER
+          move.w #1,FlgDep
+          .ENDC
           rts
 ; ARRET DES INTERRUPTIONS
-arretint: move.l $456.l,a0 /* XXX */
+arretint:
+		  .IFNE COMPILER
+          tst.w FlgDep
+	      beq.s PaArr
+	      .ENDC
+          move.l $456.l,a0 /* XXX */
           move.l anc456,4(a0)
-          rts
+PaArr:    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ENTREE DE LA TRAPPE
@@ -383,7 +444,7 @@ entrappe: movem.l d1-d7/a1-a6,-(sp)
           lea ttrappe,a5
           move.l 0(a5,d7.w),a6
           move.l adcouran,a4
-          tst 6(a5,d7.w)      ;faut-il arreter les sprites?
+          tst 6(a5,d7.w)      ;should we stop the sprites?
           beq.s pastop
 ; FONCTIONS ARRETANT LA SOURIS ET LES SPRITES
           bsr curoff
@@ -630,10 +691,18 @@ pasbord:  swap d1             ;reprend la taille car en Y
           mulu tcarcopie,d4
           move d4,d5
           add.w d3,d5
+		  .IFNE COMPILER
+          cmp.w maxcopie,d5
+          .ELSE
           cmpi.w #maxcopie,d5
+          .ENDC
           bcc error7          ;---> plus de place buffer!
           move d5,topcopie
+		  .IFNE COMPILER
+          move.l bufcopie,a2
+          .ELSE
           lea bufcopie,a2
+          .ENDC
           add.w d3,a2
           move.l a2,copie(a4) ;stocke l'adresse de la copie
 ; initialisations diverses
@@ -810,7 +879,7 @@ dejaact:  clr tempinit
 ; SOUS PROGRAMME DE WINDON: AFFICHE UNE FENETRE, (SANS RECOPIE)
 ; Efface le fond graphique avec les flags actuels!
 windaff:  clr escape
-	  move #8,freelle	;TOUTE la fenetre! 
+	  move #8,freelle	;TOUTE la fenetre!
           move txreel(a4),d2
           move tyreel(a4),d3
           clr d0
@@ -1264,7 +1333,7 @@ couleurs: lea tcouleur,a6
 cmoy:     andi.w #$0003,d0
           lsl #5,d0           ;multiplie par 32 (midres)
           /* addq.w #4,d0 */
-          dc.w 0x640,4
+          dc.w 0x640,4 /* XXX */
           bra.w crien /* XXX */
 cbas:     andi.w #$000f,d0
           lsl #3,d0           ;multiplie par 8 (lowres)
@@ -1359,7 +1428,7 @@ efrapide: move d3,d0
           lsr #3,d0
           subq #1,d0          ;d0 compteur effacement ecran
           tst mode
-          beq.w efrbas
+          beq.w efrbas /* XXX */
           cmp #1,mode
           beq.w efrmoy /* XXX */
           move (a6),d6        ;couleurs haute resolution
@@ -1708,7 +1777,7 @@ droite:   move xcursor(a4),d0
           move ycursor(a4),d1
           bra curxy
 drt1:     bsr alaligne        ;scroll vers le haut
-          bra.w bas
+          bra.w bas /* XXX */
 
 ; CURSEUR VERS GAUCHE
 gauche:   move xcursor(a4),d0
@@ -1724,7 +1793,7 @@ gch1:     move txtext(a4),d0
 ; CURSEUR VERS LE HAUT
 haut:     move xcursor(a4),d0
           move ycursor(a4),d1
-          beq.w haut1
+          beq.w haut1 /* XXX */
           subq #1,d1
           bra curxy
 haut1:    tst scrollup(a4)
@@ -2407,7 +2476,7 @@ affcar:   /* move.l adjeucar(a4),a0 */
 affnorm:  move.b writing+1(a4),d4  ;writing dans d4.b
           move chrysize(a4),d7
           subq #1,d7           ;compteur en Y
-          move tlecran,a3      ;taille ligne d'ecran
+          move.w tlecran,a3      ;taille ligne d'ecran
           move chrxsize(a4),a4
           subq #1,a4           ;compteur en X: a4/d5
 
@@ -2611,7 +2680,7 @@ sortie:   movem.l (sp)+,d0-d7/a0-a6
           rts
 finaff5:  bsr alaligne
           bsr bas
-          bra.w sortie
+          bra.w sortie /* XXX */
 ; FINAFF active: DROITE RAPIDE!
 finafact: movem.l d0-d7/a0-a6,-(sp)
           bra.w finaff /* XXX */
@@ -2773,14 +2842,9 @@ rec:      move.l (a0)+,(a1)+
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	even
+		  .IFEQ COMPILER
 pair:     dc.l 0
 bufcopie:
+          .ENDC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           end
-
-
-
-
-
-

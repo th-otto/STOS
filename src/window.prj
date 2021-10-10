@@ -1,5 +1,6 @@
 stos\window.bin
 .L[-S=0]
 .S[-S]
+.S[-DCOMPILER=0]
 =
 window.s
