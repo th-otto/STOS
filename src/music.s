@@ -1,6 +1,6 @@
 
 
-          bra debut
+          bra.w debut
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -14,10 +14,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;27/7/88;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 *********	Note for the programmer!
-*	You can change the music trap to do a better one, but you have to respect 
+*	You can change the music trap to do a better one, but you have to respect
 *	a few rules:
 *	- Be compatible with old Stos musics. If you defined a totally new music
-*	format, you just have to keep the old music player 
+*	format, you just have to keep the old music player
 *	along the new one, and when the user starts a music decide wich one
 *	to use. This method could be more simple for you than changing the
 *	existing routine.
@@ -30,7 +30,7 @@
 *
 *	I'm waiting for the brilliant new routine that will turn Stos into
 *	a superb music machine, able to play 1/3 and 1/SQR(2) note lenght!
-********************************************************************************** 
+**********************************************************************************
 
 even
 inter:    dc.l 0
@@ -78,7 +78,7 @@ envmolo:  ds.b tenv*7
 
 even
 ; TABLE DE LA MUSIQUE
-muscpt    = 0               ;.w 
+muscpt    = 0               ;.w
 musdeb    = 2               ;.w depart relatif/admusic de cette voix
 muspos    = 4               ;.w
 musenv    = 6               ;.w flag: enveloppe en route?
@@ -111,17 +111,17 @@ VoixOffCpt:      dc.b 0,0,0,0    ;Compteurs voix arretees
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 debut:
 		  .IFNE COMPILER
-		  move.l #entrappe,$9c.l          ;trap #7 /* XXX */
+		  move.l #entrappe,$9c          ;trap #7
 		  moveq #0,d0
 		  rts
 
 		  .ELSE
-		  
-          pea initrap                   ;initialise sous mode superviseur!
+
+          pea initrap(pc)               ;initialise sous mode superviseur!
           move.w #38,-(sp)
           trap #14
           addq.l #6,sp
-          lea finmusic+16,a0               ;ramene l'adresse de fin du prg; 16 de securite! 
+          lea finmusic+16(pc),a0        ;ramene l'adresse de fin du prg; 16 de securite!
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,7 +132,7 @@ initrap:  move.l #entrappe,$9c          ;trap #7
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TRAP #7,7
-;         Start of interruptions 
+;         Start of interruptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 startint: bsr inison
           move.l $400,inter
@@ -144,8 +144,10 @@ startint: bsr inison
 ;         Arret des interruptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 arretint: bsr inison
-          move.l inter,$400
-          rts          
+          move.l inter(pc),d0
+          beq.s PaArr
+          move.l d0,$400
+PaArr:    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Entree de la trappe
@@ -242,7 +244,7 @@ music3a:  clr d4
           beq.s music3e
           add.w transp(pc),d4           ;effectue la transposition
           cmpi.w #96,d4
-          bcs.s music3d 
+          bcs.s music3d
           clr d4
 music3d:  lsl #1,d4
 music3e:  lea periodes(pc),a0
@@ -279,7 +281,7 @@ music4:   move d5,d0
           lea periodes(pc),a0
           move.w -2(a0,d4.w),d0         ;prend la periode precedente
           sub.w 0(a0,d4.w),d0           ;moins celle de la note
-          beq.s music4a                 ;attention au silence! 
+          beq.s music4a                 ;attention au silence!
           lsr #2,d0                     ;divise par 4 (de 1/4 ton en 1/4 ton)
           bne.s music4a
           moveq #1,d0
@@ -506,9 +508,7 @@ adsr9:    move.b d1,6(a4)
           move.b #6,(a3)
           move.b d1,2(a3)
 ; passe au son suivant?
-adsr10:   
-		  /* sub.b #1,envnb(a5) */
-		  dc.w 0x42d,1,envnb
+adsr10:   sub.b #1,envnb(a5)
           bne adsr2
 ; passe au son suivant
           move.l envad(a5),a0
@@ -662,7 +662,7 @@ frzz1:    rts
 
 ; TRAP #7,5
 ; UNFREEZE MUSIC
-unfreeze: 
+unfreeze:
           lea chipcopy(pc),a4
           tst.w freezflg-chipcopy(a4)
           beq frzz1
@@ -701,8 +701,8 @@ voicepos: andi.w #3,d1
           move.w musold(a0,d1.w),d0     ;sinon, ramene la position ACTUELLE
 vp1:      rts
 
-          
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		  
+
 finmusic:
