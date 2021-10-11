@@ -266,7 +266,7 @@ debut:
           .IFNE COMPILER
         movem.l d1-d7/a1-a6,-(sp)
         move.l adapt_gcurx(a3),admouse           ;adresse coords souris
-        move.l adapt_kbdvbase(a3),advect          ;adresse vecteur souris
+        move.l adapt_mousevec(a3),advect          ;adresse vecteur souris
 ; Banque souris par defaut
         cmp.l #$19861987,(a2)+
         bne Debout
@@ -304,7 +304,7 @@ Debout: moveq #1,d0
         .ELSE
         
         move.l adapt_gcurx(a3),admouse           ;adresse coords souris
-        move.l adapt_kbdvbase(a3),advect          ;adresse vecteur souris
+        move.l adapt_mousevec(a3),advect          ;adresse vecteur souris
 ; charge la banque SOURIS par defaut!
           clr.l d7                      ;taille chargee
           pea dta

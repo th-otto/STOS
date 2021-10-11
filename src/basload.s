@@ -122,7 +122,8 @@ Skip0:
     trap    #14
     addq.l  #2,sp
     move.l  d0,a0
-    move.l  a0,adapt_kbdvbase(a5)
+    lea     16(a0),a1
+    move.l  a1,adapt_mousevec(a5)
     lea     24(a0),a0
     lea     Joy_Pos(pc),a1
     move.l  a0,Joy_Ad-Joy_Pos(a1)
