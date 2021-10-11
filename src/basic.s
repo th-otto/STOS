@@ -3,6 +3,7 @@
           /* Output Stos\Basic208.Bin */
 
 	.include "adapt.inc"
+	.include "file.inc"
 
 	.text
 
@@ -156,13 +157,7 @@ cbk:      dc.b "Lionpoubnk"
 ;MESSAGE DE RECONNAISSANCE D'UN FICHIER DE VARIABLES
 cvr:      dc.b "Lionpouvar"
           even
-;TABLE DES DIX FICHIERS OUVERTS SUR LA DISQUETTE
-fha       = 2     ;numero de handle.w
-fhl       = 4     ;taille du fichier.l
-fht       = 8     ;taille totale du champ.w
-fhc       = 10    ;taille des champs.w
-fhs       = 42    ;adresse des variables des champs.l
-tfiche    = 106   ;106 octets par fichier
+;TABLE OF TEN FILES OPEN ON THE DISK
 fichiers: ds.b tfiche*10
           even
 ; MESSAGE DE BIENVENUE
@@ -4903,7 +4898,7 @@ mg1:      lea buftok,a0
 mg2:      bsr close
           bra ok
 
-; sspgm GETFILE: va chercher le numero de fichier, le pointe en a2
+; sspgm GETFILE: will look for the file number, point it to a2
 getfile:  cmp.b #"#",(a6)
           bne.s getf1
           addq.l #1,a6
@@ -4918,7 +4913,7 @@ getf2:    tst.l d3
           mulu #tfiche,d3
           lea fichiers,a2
           add d3,a2
-          move.w (a2),d0
+          move.w fhmode(a2),d0
           rts
 
 ; FGETFILE: MEME CHOSE EN FONCTION!
@@ -4952,7 +4947,7 @@ openin:   bsr setdta
           bsr open
           bmi diskerr
           move d0,fha(a2)     ;poke le file handle
-          move #5,(a2)            ;fichier DISQUE en LECTURE!
+          move #5,fhmode(a2)  ;DISC file READING!
           rts
 
 ; OPENOUT #xx,"aaaaa.eee"[,attribut]
@@ -4977,7 +4972,7 @@ opout1:   move d3,d0
           move.l (sp)+,a2
           clr.l fhl(a2)      ;longueur nulle!
           move d0,fha(a2)     ;poke le file handle
-          move #6,(a2)            ;fichier en ecriture!
+          move #6,fhmode(a2)  ;fichier en ecriture!
           rts
 
 ; OPEN #xx,("R", "MID", "AUX", "PRT"),a$
@@ -5021,7 +5016,7 @@ hop2:     cmp.b #",",(a6)+
           bsr create
           bmi diskerr
           move.w d0,fha(a2)         ;handle
-          move.w #-1,(a2)               ;fichier en acces direct
+          move.w #-1,fhmode(a2)     ;fichier en acces direct
           rts
 ; le fichier existe deja
 hop1a:    lea name1,a0
@@ -5031,7 +5026,7 @@ hop1a:    lea name1,a0
           move d0,fha(a2)           ;poke le file handle
           lea dta,a0
           move.l 26(a0),fhl(a2)    ;poke la longueur
-          move.w #-1,(a2)               ;fichier a access direct
+          move.w #-1,fhmode(a2)    ;fichier a access direct
           rts
 ; OUVRE UN PORT D'ENTREE/SORTIE
 hop3:     moveq #1,d0         ;PRT
@@ -5097,8 +5092,8 @@ klos1:    bsr expentier
 ; CLAUSE: FERME TOUS LES FICHIERS
 clause:   bsr close           ;va fermer le fichier systeme
           lea fichiers,a2
-          moveq #9,d2
-cs1:      move.w (a2),d0
+          moveq #10-1,d2
+cs1:      move.w fhmode(a2),d0
           beq.s cs4
           bmi.s cs2
           cmp.w #5,d0           ;ne "ferme" que les fichiers disquette!
@@ -5115,7 +5110,7 @@ cs4:      add.l #tfiche,a2
           rts
 
 ; GETBYTE: PREND UN OCTET DANS LE FICHIER (D7 bouzille)
-getbyte:  move.w (a2),d7
+getbyte:  move.w fhmode(a2),d7
           beq filnotop
           cmp.w #5,d7
           beq getb4

@@ -37,64 +37,22 @@ S	equ	$80
 * 1,0 indicates the end of the commands entire parameter definition
 
 l001:
-	.dc.b I,I,1
-	.dc.b 0,','
-	.dc.b 0
-	.dc.b 1
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b 1
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b 1
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b 1
-	.dc.b 1,0
+	.dc.b 0                           ; Not used for instructions
+	.dc.b I,1                         ; UNPACK bank#
+	.dc.b I,',',I,1                   ; UNPACK bank#,screen
+	.dc.b I,',',I,',',I,1             ; UNPACK b#, sc, flags
+	.dc.b I,',',I,',',I,',',I,1       ; UNPACK b#, sc, X, Y
+	.dc.b I,',',I,',',I,',',I,',',I,1 ; UNPACK b#, sc, fl, X, Y
+	.dc.b 1,0                         ; Ends definition
 l002:
-	.dc.b I,I
-	.dc.b ','
-	.dc.b 0
-	.dc.b 1
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b ','
-	.dc.b 0
-	.dc.b 1
-	.dc.b 1,0
+	.dc.b I                           ; returns an INTEGER
+	.dc.b I,',',I,1                   ; =PACK(logic, bank#)
+	.dc.b I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1 ; =PACK(logic,bank#,mode,flags,height,dx,dy,tx,ty)
+	.dc.b 1,0                         ; Ends definition
 
 ; Adaptation au Stos basic
 entry:
         bra.w init
-        even
 
 params: ds.w 9
 larg:   dc.w 0
@@ -440,7 +398,7 @@ pack:
         clr.w (a2)+             ;dy
         clr.w (a2)+             ;dx
         move.w d3,(a2)+         ;hauteur
-        move.w #%11,(a2)+       ;flags
+        move.w #3,(a2)+         ;flags
         move.w d4,(a2)+         ;resolution
 ;
         cmp.w #1,d0
@@ -665,6 +623,3 @@ libex:
 ;************************************************************************
         dc.w 0
 finprg:
-
-
-
