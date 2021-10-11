@@ -250,8 +250,8 @@ unpack:
         move.l table(pc),a0
         move.l ext_graphic(a0),a0  ;donnees graphiques
         move.l 6(a0),2(a2)      ;decor des sprites
-        move.w #-1,6(a2)        ;dx
-        move.w #-1,8(a2)        ;dy
+        move.w #-1,dx(a2)        ;dx
+        move.w #-1,dy(a2)        ;dy
 ;
         cmpi.w #1,d0
         beq unp4
@@ -265,20 +265,20 @@ unpack:
         bne syntax
 ; Cinq parametres
         bsr entier      ;Dy
-        move.w d3,8(a2)
+        move.w d3,dy(a2)
         bsr entier      ;Dx
         lsr.w #4,d3     ;divise par 16!
-        move.w d3,6(a2)
+        move.w d3,dx(a2)
 ; Trois parametres
 unp1:   bsr entier      ;Flags
         move.w d3,(a2)
         bra.s unp3
 ; Quatre parametres
 unp2:   bsr entier      ;Dy
-        move.w d3,8(a2)
+        move.w d3,dy(a2)
         bsr entier      ;Dx
         lsr.w #4,d3     ;divise par 16!
-        move.w d3,6(a2)
+        move.w d3,dx(a2)
 ; Deux parametres
 unp3:   move #1,unpflg-params(a2)  ;Image
         bsr entier
@@ -289,8 +289,8 @@ unp4:   bsr entier
         bsr adoubank
         move.l d3,a0            ;adresse d'origine
         move.l 2(a2),a1         ;adresse destination
-        move.w 6(a2),d1         ;dx
-        move.w 8(a2),d2         ;dy
+        move.w dx(a2),d1         ;dx
+        move.w dy(a2),d2         ;dy
         move.w (a2),d3          ;flags
         movem.l a3-a6,-(sp)     ;sauve les registres importants
 ;

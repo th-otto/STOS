@@ -1,4 +1,3 @@
-
 ;**************************************************************************
 ;*
 ;*      EXTENSION COMPACTEUR/DECOMPACTEUR D'IMAGES POUR STOS BASIC
@@ -8,6 +7,9 @@
 ;**************************************************************************
 
 ;**************************************************************************
+
+	.include "equates.inc"
+	.include "lib.inc"
 
         .text
 
@@ -115,15 +117,15 @@ unpackreloc:
 	.dc 0
 
 unpack:
-	movea.l    2348(a5),a3
+	movea.l    debut(a5),a3
 	movea.l    0(a3,d1.w),a3
 	clr.w      unpflg-entry(a3)
 	lea.l      params-entry(a3),a2
 
         move.w #-1,(a2)         ;flags par defaut
-        move.l 406(a5),2(a2)    ;decor des sprites
-        move.w #-1,6(a2)        ;dx
-        move.w #-1,8(a2)        ;dy
+        move.l adback(a5),2(a2)    ;decor des sprites
+        move.w #-1,dx(a2)        ;dx
+        move.w #-1,dy(a2)        ;dy
 ;
         cmp.w #1,d0
         beq unp4
@@ -135,45 +137,45 @@ unpack:
         beq unp2
 ; Cinq parametres
         move.l     (a6)+,d3      ;Dy
-        move.w d3,8(a2)
+        move.w d3,dy(a2)
         move.l     (a6)+,d3      ;Dx
         lsr.w #4,d3     ;divise par 16!
-        move.w d3,6(a2)
+        move.w d3,dx(a2)
 ; Trois parametres
 unp1:   move.l     (a6)+,d3      ;Flags
         move.w d3,(a2)
         bra.s unp3
 ; Quatre parametres
 unp2:   move.l     (a6)+,d3      ;Dy
-        move.w d3,8(a2)
+        move.w d3,dy(a2)
         move.l     (a6)+,d3      ;Dx
         lsr.w #4,d3     ;divise par 16!
-        move.w d3,6(a2)
+        move.w d3,dx(a2)
 ; Deux parametres
 unp3:   move #1,unpflg-entry(a3)  ;Image
 unpackreloc1:
-        jsr        0x000000EA.l /* XXX ext_adscreen */
+        jsr        L_adscreen.l
         move.l d3,2(a2)
 ; Un parametre          ;Origine
 unp4:   
 unpackreloc2:
-        jsr        0x000000D6.l /* XXX ext_adoubank */
+        jsr        L_adoubank.l
         move.l d3,a0            ;adresse d'origine
         move.l 2(a2),a1         ;adresse destination
-        move.w 6(a2),d1         ;dx
-        move.w 8(a2),d2         ;dy
+        move.w dx(a2),d1         ;dx
+        move.w dy(a2),d2         ;dy
         move.w (a2),d3          ;flags
 ;
         tst unpflg-entry(a3)              ;si l'adresse d'ecran est precisee              
         bne.s unp5              ;aucune gestion d'autoback
 unpackreloc3:
-        jsr        0x00000242.l                ;autoback UN /* XXX ext_abck */
+        jsr        L_autoback.l                ;autoback UN
 unp5:   bsr decomp
         tst unpflg-entry(a3)
         bne.s unp6
         move.w d0,-(sp)
 unpackreloc4:
-        jsr        0x00000243.l     ;autoback DEUX /* XXX ext_abis */
+        jsr        L_autobackis.l     ;autoback DEUX
         move.w (sp)+,d0    
 ;
 unp6:   tst d0
@@ -202,8 +204,7 @@ foncall:moveq #13,d0
 ;************************************************************************
 
 decomp: movem.l    a3-a6,-(a7)
-        /* cmpi.l #$06071963,code(a0)       ;verifie le code */
-        dc.w 0x0ca8,0x0607,0x1963,code /* XXX */
+        cmpi.l #$06071963,code(a0)       ;verifie le code
         bne erreur2
  
 ; Prepare les parametres
@@ -326,12 +327,10 @@ doct6:  dbra d1,doctet2
 doct7:  add.w (sp),a1           ;autre carres ?
         dbra d5,dcarre
         add.w 2(sp),a2          ;autre ligne de carres?
-        /* subq.w #1,4(sp) */
-        dc.w 0x046f,1,4 /* XXX */
-        bne.w dligne /* XXX */
+        subq.w #1,4(sp)
+        bne dligne
         addq.l #2,6(a7)            ;autre plan couleur?
-        /* subq.w #1,nbplan-entry(a3) */
-        dc.w 0x046b,1,nbplan-entry /* XXX */
+        subq.w #1,nbplan-entry(a3)
         bne dplan
 ;
         lea 10(a7),a7            ;retabli la pile
@@ -377,12 +376,12 @@ packreloc:
 	.dc.w 0
 	
 pack:
-	movea.l    2348(a5),a3
+	movea.l    debut(a5),a3
 	movea.l    0(a3,d1.w),a3
 ; Parametres par defaut
         lea params-entry(a3),a2
         moveq #0,d4
-        move.b resol.l,d4         ;resolution .B! /* XXX */
+        move.b resol,d4         ;resolution .B!
         move.w d4,d1
         lsl.w #3,d1
         lea tmode-entry(a3),a0
@@ -412,10 +411,10 @@ pack2:  move.l (a6)+,d3      ;empile les cinq params
 ; deux parametres
 pack3:  
 packreloc1:
-        jsr 0xd6.l      ;va chercher "destination" /* XXX ext_adoubank */
+        jsr L_adoubank.l      ;va chercher "destination"
         move.l d3,-(a7)
 packreloc2:
-        jsr 0xea.l      ;va chercher "origine" /* XXX ext_adscreen */
+        jsr L_adscreen.l      ;va chercher "origine"
         move.l d3,-(a7)
 ; Verifie les parametres
 ;
@@ -469,8 +468,7 @@ packreloc2:
 ; Preparation de l'entete de l'image compactee
 compact:movem.l    a4-a6,-(a7)
         move.l a1,adobjet-entry(a3)
-        /* move.l #$06071963,code(a1) */
-        dc.w 0x237c,0x0607,0x1963,code /* XXX */
+        move.l #$06071963,code(a1)
         move.w d7,mode(a1)
         move.w d2,dx(a1)
         move.w d3,dy(a1)  

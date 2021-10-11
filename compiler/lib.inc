@@ -100,8 +100,8 @@ L_pop            = 118
 L_ongoto         = 119
 L_ongosub        = 120
 ; Systeme / erreurs
-L_gettimer       = 121
-L_settimer       = 122
+L_settimer       = 121
+L_gettimer       = 122
 L_tester         = 123
 L_finistos       = 124
 L_finigem        = 125
@@ -557,8 +557,8 @@ L_menuitem       = 574
 L_onmenuoff      = 575
 L_onmenuon       = 576
 L_onmenugoto     = 577
-L_autoback1      = 578
-L_autoback2      = 579
+L_autoback       = 578
+L_autobackis     = 579
 L_deftos         = 580
 
 L_RoutMx         = 600

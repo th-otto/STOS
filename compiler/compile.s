@@ -220,68 +220,381 @@ bufdisk:        ds.b 16
 debop           = $EA
 DebFonc         = $B8
 
-jumps:  dc.l csynt,csynt,Cnext,Cwend,Cuntil,Cdim,pok,dok
-        dc.l lok,Cread,CRem,Creturn,CPop,Cresn,CResu,Conerrror 	;$80-$8f
-        dc.l Cscreencopy,Cswap,Cplot,Cpie,Cdraw,Cpoliline,Cpolymark,csynt
-        dc.l Cgoto,Cgosub,csynt,Celse,CRest,CFor,CWhil,CRepe ;$90-$9f
-        dc.l CEten,CPrnt,Cif,CUpd,CSpr,Cfreeze,COff,Con
-        dc.l CExti,CLoc,CPap,CPen,CHome,csynt,csynt,csynt ;$A0-$Af
-        dc.l Ccup,Ccdown,Ccleft,Ccright,CCls,CInc,CDec,CScsw
+jumps:  dc.l csynt     ; $80
+        dc.l csynt
+        dc.l Cnext
+        dc.l Cwend
+        dc.l Cuntil
+        dc.l Cdim
+        dc.l pok
+        dc.l dok
+        dc.l lok
+        dc.l Cread
+        dc.l Crem
+        dc.l Creturn
+        dc.l Cpop
+        dc.l Cresn
+        dc.l Cresume
+        dc.l Conerrror
+        dc.l Cscreencopy  ; $90
+        dc.l Cswap
+        dc.l Cplot
+        dc.l Cpie
+        dc.l Cdraw
+        dc.l Cpolyline
+        dc.l Cpolymark
+        dc.l csynt
+        dc.l Cgoto
+        dc.l Cgosub
+        dc.l csynt
+        dc.l Celse
+        dc.l Crestore
+        dc.l Cfor
+        dc.l Cwhile
+        dc.l Crepeat
+        dc.l Cextensions   ; $a0
+        dc.l Cprint
+        dc.l Cif
+        dc.l Cupdate
+        dc.l Csprite
+        dc.l Cfreeze
+        dc.l Coff
+        dc.l Con
+        dc.l Cextensionsi
+        dc.l Clocate
+        dc.l Cpaper
+        dc.l Cpen
+        dc.l Chome
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l Ccup          ; $b0
+        dc.l Ccdown
+        dc.l Ccleft
+        dc.l Ccright
+        dc.l Ccls
+        dc.l Cinc
+        dc.l Cdec
+        dc.l Cscreenswap
 ; Fonctions/instructions
-        dc.l csynt,Cpsg,csynt,Cdreg,Careg,csynt,Csetdrive2,Csetdir
-        dc.l csynt,csynt,CCol,csynt,csynt,csynt,Csetdrive,CStmr
-        dc.l Clog,csynt,csynt,csynt,csynt,csynt,csynt,csynt
-        dc.l csynt,Cmidset,CIrgh,CIlft,csynt,csynt,csynt,csynt
-        dc.l csynt,csynt,csynt,csynt,csynt,csynt,CXm,CYm
-        dc.l csynt,CPhy,CBak,csynt,CPof,Csmode,CSTim,CSDat
-        dc.l Cscreenput,CDefo,csynt,csynt,csynt,csynt,csynt,csynt
-        dc.l csynt,csynt,csynt,csynt,csynt,csynt,csynt,csynt
-        dc.l csynt,csynt,CLet,csynt,csynt,csynt,csynt,csynt
+        dc.l csynt
+        dc.l Cpsg
+        dc.l csynt
+        dc.l Cdreg
+        dc.l Careg
+        dc.l csynt
+        dc.l Csetdrive2
+        dc.l Csetdir
+        dc.l csynt
+        dc.l csynt
+        dc.l Ccolour
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l Csetdrive
+        dc.l Csettimer
+        dc.l Clog
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l Cmidset
+        dc.l CIright
+        dc.l CIleft
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l Cxmouse
+        dc.l Cymouse
+        dc.l csynt
+        dc.l Csetphysic
+        dc.l Cback
+        dc.l csynt
+        dc.l Cpofset
+        dc.l Csmode
+        dc.l Csettime
+        dc.l Csetdate
+        dc.l Cscreenput
+        dc.l Cdefault
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l Clet
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
 
 ; ADRESSE DES FONCTIONS
-fnjumps:dc.l FEten,CFpsg,CFTSc,CFDrg,CFArg,CPoin,Cgetdrive,Cgetdir
-        dc.l Cextf,CAbs,CFCol,CFKey,CSin,CCos,Cgetdrive2,CTimr
-        dc.l Cflog,CFn,CNot,CRnd,CVal,Casc,Cchr,CInky
-        dc.l Cscancode,Cmidget,Cright,Cleft,CLeng,Cstart,CLen,CPi
-        dc.l pik,dik,lik,CZo,Cxsprite,Cysprite,CFXm,CFYm
-        dc.l CFKm,CFPhy,CFBak,Clog1,CFPof,Cfmode,CTime,CDate
-        dc.l Cscreenget,CFDfo
+fnjumps:dc.l FEten
+        dc.l CFpsg
+        dc.l CFTSc
+        dc.l CFDrg
+        dc.l CFArg
+        dc.l CPoin
+        dc.l Cgetdrive
+        dc.l Cgetdir
+        dc.l Cextf
+        dc.l CAbs
+        dc.l CFCol
+        dc.l CFKey
+        dc.l CSin
+        dc.l CCos
+        dc.l Cgetdrive2
+        dc.l Cgettimer
+        dc.l Cflog
+        dc.l CFn
+        dc.l CNot
+        dc.l CRnd
+        dc.l CVal
+        dc.l Casc
+        dc.l Cchr
+        dc.l CInky
+        dc.l Cscancode
+        dc.l Cmidget
+        dc.l Cright
+        dc.l Cleft
+        dc.l CLeng
+        dc.l Cstart
+        dc.l CLen
+        dc.l CPi
+        dc.l pik
+        dc.l dik
+        dc.l lik
+        dc.l CZo
+        dc.l Cxsprite
+        dc.l Cysprite
+        dc.l CFXm
+        dc.l CFYm
+        dc.l CFKm
+        dc.l Cgetphysic
+        dc.l CFBak
+        dc.l Clog1
+        dc.l Cpofget
+        dc.l Cfmode
+        dc.l CTime
+        dc.l CDate
+        dc.l Cscreenget
+        dc.l CFDfo
 ; ... operateurs
-        dc.l csynt,csynt,csynt,csynt,csynt,csynt             ;$E0-$E9
-        dc.l csynt,csynt,csynt,csynt,csynt,csynt,csynt,csynt
-        dc.l csynt,csynt
+        dc.l csynt             ;$E0-$E9
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
 ; ... variable
         dc.l Var
-; ... constantes
-        dc.l CEnt,CChai,CEnt,CEnt,CFlo                    ;$F0-$Ff
+; ... constantes                    ;$F0-$Ff
+        dc.l CEnt
+        dc.l CChai
+        dc.l CEnt
+        dc.l CEnt
+        dc.l CFlo
 
 ; ADRESSE DES OPERATEURS
-opjumps:dc.l csynt,CXor,COr,CAnd                          ;$EA-$Ef
-        dc.l CDiff,CInfe,CSupe,CEgal,CInf,CSup
-        dc.l CPlus,CMoin,Cmodu,CMult,CDivi,CPuis
-        dc.l csynt,csynt,csynt,csynt,csynt                   ;$F0-$Ff
+opjumps:dc.l csynt                   ;$EA-$Ef
+        dc.l CXor
+        dc.l COr
+        dc.l CAnd
+        dc.l CDiff
+        dc.l CInfe
+        dc.l CSupe                   ;$F0-$Ff
+        dc.l CEgal
+        dc.l CInf
+        dc.l CSup
+        dc.l CPlus
+        dc.l CMoin
+        dc.l Cmodu
+        dc.l CMult
+        dc.l CDivi
+        dc.l CPuis
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
 
 ; ADRESSE DES INSTRUCTIONS ETENDUES
-ExtJump:dc.l Cdirw,CFad,Cbcop,CSqa
-        dc.l Cprevious,Ctranspose,CShif,Cwaitkey
-        dc.l CDir,CLDir,CBlo,CBsa,Cqwdo,csynt,Ccharcopy,Cund
-        dc.l Cmenu,Cmeno,Ctit,CBor,CHard,CWind,Credr,Ccen
-        dc.l Ctempo,CVol,CEnv,CExpl,Cshoot,CPing,CNaut,CNoi
-        dc.l CVoi,CMus,CBox,CRBox,CBar,CRBar,CApp,Cbclr
-        dc.l Cbset,CRol,CRor,Ccurs,CClw,Cbchg,Ccall,Ctrap
-        dc.l csynt,CRun,Cclky,Clinp,CInpu,csynt,CData,CEnd
-        dc.l Cerase,CRese,csynt,csynt,csynt,csynt,CCopy,CDef
-        dc.l CHid,CSho,CChgm,CLimm,Cmovex,Cmovey,Cfix,Cbgra
-        dc.l csynt,CFill,csynt,Ckeyspeed,CMve,CAni,Cunfreeze,Csetzone
-        dc.l Cresetzone,Climitsprite,Cpri,CRedu,Cputsprite,Cgetsprite,CLoad,CSave
-        dc.l CPal,CSync,CErr,Cbreak,CLLet,CKey,COpin,COpou
-        dc.l COpen,CClo,CFiel,csynt,Cputkey,CGPal,CKill,CRena
-        dc.l Crmdir,Cmkdir,CStop,Cwvbl,CSort,CGet,CFlas,csynt
-        dc.l Clprt,CAuto,Csetline,Cgrwriting,Csetmark,Csetpaint,csynt
+ExtJump:dc.l Cdirw
+        dc.l CFad
+        dc.l Cbcop
+        dc.l CSqa
+        dc.l Cprevious
+        dc.l Ctranspose
+        dc.l CShif
+        dc.l Cwaitkey
+        dc.l CDir
+        dc.l CLDir
+        dc.l CBlo
+        dc.l CBsa
+        dc.l Cqwdo
+        dc.l csynt
+        dc.l Ccharcopy
+        dc.l Cund
+        dc.l Cmenu
+        dc.l Cmeno
+        dc.l Ctit
+        dc.l CBor
+        dc.l CHard
+        dc.l CWind
+        dc.l Credr
+        dc.l Ccen
+        dc.l Ctempo
+        dc.l CVol
+        dc.l CEnv
+        dc.l CExpl
+        dc.l Cshoot
+        dc.l CPing
+        dc.l CNaut
+        dc.l CNoi
+        dc.l CVoi
+        dc.l CMus
+        dc.l CBox
+        dc.l CRBox
+        dc.l CBar
+        dc.l CRBar
+        dc.l CApp
+        dc.l Cbclr
+        dc.l Cbset
+        dc.l CRol
+        dc.l CRor
+        dc.l Ccurs
+        dc.l CClw
+        dc.l Cbchg
+        dc.l Ccall
+        dc.l Ctrap
+        dc.l csynt
+        dc.l CRun
+        dc.l Cclky
+        dc.l Clinp
+        dc.l CInpu
+        dc.l csynt
+        dc.l CData
+        dc.l CEnd
+        dc.l Cerase
+        dc.l CRese
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l csynt
+        dc.l CCopy
+        dc.l CDef
+        dc.l CHid
+        dc.l CSho
+        dc.l CChgm
+        dc.l CLimm
+        dc.l Cmovex
+        dc.l Cmovey
+        dc.l Cfix
+        dc.l Cbgra
+        dc.l csynt
+        dc.l CFill
+        dc.l csynt
+        dc.l Ckeyspeed
+        dc.l CMve
+        dc.l CAni
+        dc.l Cunfreeze
+        dc.l Csetzone
+        dc.l Cresetzone
+        dc.l Climitsprite
+        dc.l Cpri
+        dc.l CRedu
+        dc.l Cputsprite
+        dc.l Cgetsprite
+        dc.l CLoad
+        dc.l CSave
+        dc.l CPal
+        dc.l CSync
+        dc.l CErr
+        dc.l Cbreak
+        dc.l CLLet
+        dc.l CKey
+        dc.l COpin
+        dc.l COpou
+        dc.l COpen
+        dc.l CClo
+        dc.l CFiel
+        dc.l csynt
+        dc.l Cputkey
+        dc.l CGPal
+        dc.l CKill
+        dc.l CRena
+        dc.l Crmdir
+        dc.l Cmkdir
+        dc.l CStop
+        dc.l Cwvbl
+        dc.l CSort
+        dc.l CGet
+        dc.l CFlas
+        dc.l csynt
+        dc.l Clprt
+        dc.l CAuto
+        dc.l Csetline
+        dc.l Cgrwriting
+        dc.l Csetmark
+        dc.l Csetpaint
+        dc.l csynt
         dc.l Csetpattern
-        dc.l Cclip,Carc,Cpolygone,Ccircle,CEarc,CEpie,Cellipse,CWr
-        dc.l Cpaint,Cink,CWait,CClic,CPut,CZoo,Cscur,CScd
-        dc.l CScu,Cscroll,CInv,CSha,Cwindopen,CWdo,CWdm,CWdl
+        dc.l Cclip
+        dc.l Carc
+        dc.l Cpolygone
+        dc.l Ccircle
+        dc.l CEarc
+        dc.l CEpie
+        dc.l Cellipse
+        dc.l CWr
+        dc.l Cpaint
+        dc.l Cink
+        dc.l CWait
+        dc.l CClic
+        dc.l CPut
+        dc.l CZoo
+        dc.l Cscur
+        dc.l CScd
+        dc.l CScu
+        dc.l Cscroll
+        dc.l CInv
+        dc.l CSha
+        dc.l Cwindopen
+        dc.l CWdo
+        dc.l CWdm
+        dc.l CWdl
 
 ; ADRESSE DES FONCTIONS ETENDUES
 ExtFonc:dc.l CSinh,CCosh,CTanh,CAsin,CAcos,CAtan,CUpp,CLow
@@ -1740,7 +2053,7 @@ Lot3:   tst.l d6
         rts
 
 ;-----> Entree des instructions etendues (en $A0)
-CEten:  clr.w d0
+Cextensions:  clr.w d0
         bsr getbyte
         cmp.b #32,d0
         bcs.s CEt1
@@ -1767,7 +2080,7 @@ FEten:  clr.w d0
         jmp (a0)
 
 ;-----> Entree des instructions EXTENSIONS
-CExti:  bsr test0
+Cextensionsi:  bsr test0
         bsr extpar
         movem.w d2/d6/d7,-(sp)
         cmp.b #1,(a2)                   ;Si pas de params!
@@ -3304,7 +3617,7 @@ CLLet:  bsr getbyte
         bne csynt
 
 ;-----> Entree directe
-CLet:   bsr test0		;Teste les interruptions!
+Clet:   bsr test0		;Teste les interruptions!
 	bsr vari                ;Cree la variable
         move.w d2,-(sp)
         move.l a1,-(sp)
@@ -4243,7 +4556,7 @@ CSw:    move.l a0,-(a6)
         dc.w 0
 
 ;-----> INC
-CInc:   bsr test0
+Cinc:   bsr test0
         bsr getbyte
         cmp.b #$fa,d0
         bne csynt
@@ -4258,7 +4571,7 @@ CdIn:   /* add.l #1,(a0) */
         dc.w $1111
 
 ;-----> DEC
-CDec:   bsr test0
+Cdec:   bsr test0
         bsr getbyte
         cmp.b #$fa,d0
         bne csynt
@@ -4603,7 +4916,7 @@ Test1:  tst.w Tests
         bne.s Ptt0
 
 ;------------------------------> REM!
-CRem:   addq.l #4,sp            ;Va a la ligne suivante
+Crem:   addq.l #4,sp            ;Va a la ligne suivante
         subq.l #4,a5            ;Enleve le LEA
         bra FinLine
 
@@ -4671,7 +4984,7 @@ Creturn:  bsr test0
         moveq #L_return,d0
         bra crefonc
 ; POP
-CPop:   bsr test0
+Cpop:   bsr test0
         moveq #L_pop,d0
         bra crefonc
 
@@ -4851,7 +5164,7 @@ Rb3:    move.l Tif,Pif
         rts
 
 ;------------------------------> FOR TO STEP
-CFor:   bsr test0
+Cfor:   bsr test0
         bsr pair
         addq.l #4,a6            ;Saute le flag
 
@@ -5031,7 +5344,7 @@ cnxfo:  moveq #23,d0
         bra cerror
 
 ;-----> WHILE
-CWhil:  bsr pair
+Cwhile:  bsr pair
         addq.l #4,a6
         move.l a6,a0
         move.l adline,coldf
@@ -5110,7 +5423,7 @@ Cwend:  move.w ctstnbcle,d0
         bra outlong
 
 ;-----> REPEAT
-CRepe:  bsr pair
+Crepeat:  bsr pair
         addq.l #4,a6
         move.l adline,coldf
         move.l a6,a0
@@ -5191,7 +5504,7 @@ CErr:   bsr test0
         bra crefonc
 
 ;-----> RESUME [xxxx]
-CResu:  bsr Test1
+Cresume:  bsr Test1
         bsr finie
         beq.s Resu1
 ; RESUME #ligne
@@ -5326,15 +5639,15 @@ gdw0:   movem.l a0/a6,-(sp)
 ;-----------------------------------------    ---       ---   ---    -------
 
 ;-----> TIMER=
-CStmr:  bsr getbyte
+Csettimer:  bsr getbyte
         cmp.b #$f1,d0
         bne csynt
         bsr test0
         bsr expentier
-        moveq #L_gettimer,d0
+        moveq #L_settimer,d0
         bra crefonc
 ;-----> =TIMER
-CTimr:  moveq #L_settimer,d0
+Cgettimer:  moveq #L_gettimer,d0
         bra creent
 
 ;-----> POKE DOKE LOKE: rapide, pas de JSR
@@ -5682,7 +5995,7 @@ CLang:  move.w #L_lang,d0
         bra creent
 
 ;-----> OFF
-COff:   bsr test0
+Coff:   bsr test0
         move.w #L_off,d0
         bra crefonc
 
@@ -5725,14 +6038,14 @@ CMd:    moveq #L_mid2,d0
         bra.s crech
 
 ;-----> LEFT$(a$,xx)=
-CIlft:  bsr Cim
+CIleft:  bsr Cim
         cmp.w #1,d7
         bne csynt
         moveq #L_ileft,d0
         bra crefonc
 
 ;-----> RIGHT$(a$,xx)=
-CIrgh:  bsr Cim
+CIright:  bsr Cim
         cmp.w #1,d7
         bne csynt
         moveq #L_irigh,d0
@@ -5900,7 +6213,7 @@ CDate:  move.w #L_date,d0
         bra crech
 
 ;-----> SETTIME
-CSTim:  bsr test0
+Csettime:  bsr test0
         bsr getbyte
         cmp.b #$f1,d0
         bne csynt
@@ -5909,7 +6222,7 @@ CSTim:  bsr test0
         bra crefonc
 
 ;-----> SETDATE
-CSDat:  bsr test0
+Csetdate:  bsr test0
         bsr getbyte
         cmp.b #$f1,d0
         bne csynt
@@ -6042,7 +6355,7 @@ Cda5:   move.w cmvqd0,d0
         rts
 
 ;-----> RESTORE
-CRest:  bsr test0
+Crestore:  bsr test0
         bsr pair
         addq.l #4,a6
         bsr finie
@@ -6226,10 +6539,10 @@ Clprt:  bsr Test1
         lea Lp1,a0
         bra.s Cp0
 
-Lp0:    clr.l printflg(a5)      ;USING=0 / PRT=0 / TYPE=0
+Lp0:    clr.l usingflg(a5)      ;USING=0 / PRT=0 / TYPE=0
         move.l a4,printpos(a5)
         dc.w 0
-Lp1:    clr.l printflg(a5)      ;USING=0 / PRT=1 / TYPE=0
+Lp1:    clr.l usingflg(a5)      ;USING=0 / PRT=1 / TYPE=0
         move.b #1,impflg(a5)
         move.l a4,printpos(a5)
         dc.w 0
@@ -6239,7 +6552,7 @@ StUs:   move.b #1,usingflg(a5)  ;Demarrage du USING
         dc.w 0
 
 ;-----> PRINT
-CPrnt:  bsr Test1
+Cprint:  bsr Test1
         lea Lp0,a0
 Cp0:    bsr code0
         clr.w -(sp)             ;CODE fichier/normal
@@ -6425,7 +6738,7 @@ CWdl:   bsr test0
         bra crefonc
 
 ;-----> LOCATE
-CLoc:   bsr test0
+Clocate:   bsr test0
         lea parent2(pc),a2
         bsr parinst
         move.w #L_locate,d0
@@ -6474,13 +6787,13 @@ CFTSc:  lea parent2(pc),a2
         bra creent
 
 ;-----> PAPER
-CPap:   bsr test0
+Cpaper:   bsr test0
         bsr expentier
         move.w #L_paper,d0
         bra crefonc
 
 ;-----> PEN
-CPen:   bsr test0
+Cpen:   bsr test0
         bsr expentier
         move.w #L_pen,d0
         bra crefonc
@@ -6526,7 +6839,7 @@ CScu:   bsr test0
         bra crefonc
 
 ;-----> HOME
-CHome:  bsr test0
+Chome:  bsr test0
         move.w #L_home,d0
         bra crefonc
 
@@ -6550,7 +6863,7 @@ parcls: dc.b en,1
         dc.b en,",",en,",",en,",",en,to,en,",",en,1
         dc.b 1,0
    .even
-CCls:   bsr test0
+Ccls:   bsr test0
         bsr finie
         bne.s cls1
         move.w #L_cls,d0
@@ -6748,16 +7061,16 @@ Cflog:  move.w #L_logic,d0
 Clog:   move.w #L_logic2,-(sp)
         bra.s Cbk
 ;-----> =PHYSIC
-CFPhy:  move.w #L_physic,d0
+Cgetphysic:  move.w #L_physic,d0
         bra creent
 ;-----> PHYSIC=
-CPhy:   move.w #L_physic2,-(sp)
+Csetphysic:   move.w #L_physic2,-(sp)
         bra.s Cbk
 ;-----> =BACK
 CFBak:  move.w #L_back,d0
         bra creent
 ;-----> BACK=
-CBak:   move.w #L_back2,-(sp)
+Cback:   move.w #L_back2,-(sp)
 Cbk:    bsr test0
         bsr getbyte
         cmp.b #$f1,d0
@@ -6780,7 +7093,7 @@ CFDfo:  bsr getbyte
         bra csynt
 
 ;-----> SCREEN SWAP
-CScsw:  bsr test0
+Cscreenswap:  bsr test0
         move.w #L_sswap,d0
         bra crefonc
 
@@ -6799,7 +7112,7 @@ CWait:  bsr test0
 CFXm:   move.w #L_xmouse,d0
         bra creent
 ;-----> XMOUSE=
-CXm:    bsr test0
+Cxmouse:    bsr test0
         bsr getbyte
         cmp.b #$f1,d0
         bne csynt
@@ -6811,7 +7124,7 @@ CXm:    bsr test0
 CFYm:   move.w #L_ymouse,d0
         bra creent
 ;-----> YMOUSE=
-CYm:    bsr test0
+Cymouse:    bsr test0
         bsr getbyte
         cmp.b #$f1,d0
         bne csynt
@@ -6999,7 +7312,7 @@ cdr:    move.w #L_draw2,d0
         bra crefonc
 
 ;-----> POLYLINE
-Cpoliline:  bsr polyp
+Cpolyline:  bsr polyp
         move.w #L_polyline,d0
         bra crefonc
 
@@ -7168,7 +7481,7 @@ CGPal:  bsr test0
 ;-----> COLOUR xx,nn
 parent2:dc.b en,",",en,1,1,0
    .even
-CCol:   bsr test0
+Ccolour:   bsr test0
         lea parent2,a2
         bsr parinst
         move.w #L_setcolor,d0
@@ -7216,7 +7529,7 @@ clm:    move.w #L_limitmouse,d0
 CSync:  move.w #L_sync,-(sp)
         bra.s CSy
 ;-----> UPDATE / On / Off
-CUpd:   move.w #L_update,-(sp)
+Cupdate:   move.w #L_update,-(sp)
 CSy:    bsr test0
         bsr onoff
         bmi.s csy2
@@ -7235,7 +7548,7 @@ Credr:  bsr test0
         bra crefonc
 
 ;-----> SPRITE
-CSpr:   bsr test0
+Csprite:   bsr test0
         bsr onoff
         bmi.s csp5
         bne.s csp0
@@ -7563,7 +7876,7 @@ csh1:   bcs csynt
         bra crefonc
 
 ;-----> DEFAULT
-CDefo:  bsr test0
+Cdefault:  bsr test0
         tst.w FlagGem
         beq.s CDefo1
 ; Si GEM
@@ -7881,11 +8194,11 @@ CEof:   bsr fgetf
         bra creent
 
 ;-----> =POF
-CFPof:  bsr fgetf
+Cpofget:  bsr fgetf
         move.w #L_pofget,d0
         bra creent
 ;-----> POF=
-CPof:   bsr test0
+Cpofset:   bsr test0
         bsr fgetf
         bsr getbyte
         cmp.b #$f1,d0

@@ -2,5 +2,6 @@ compiler\compact.eca
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]
+.S[-I..\compiler]
 =
 compactc.s
