@@ -503,179 +503,409 @@ tfreq:    dc.w 0
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
 ; TABLE DES TOKENS PRIORITAIRES
-minitok:  dc.b "to",$80,"step",$81,"then",$9a,"else",$9b
-          dc.b "xor",$eb,"or",$ec,"and",$ed
-          dc.b "goto",$98,"gosub",$99
-          dc.b "<>",$ee,"><",$ee,"<=",$ef,"=<",$ef
-          dc.b ">=",$f0,"=>",$f0,"=",$f1,"<",$f2,">",$f3
-          dc.b "+",$f4,"-",$f5,"mod",$f6,"*",$f7,"/",$f8,"^",$f9
-          dc.b "as",$a0,$d3,0,0
+minitok:  dc.b "to",$80
+          dc.b "step",$81
+          dc.b "then",$9a
+          dc.b "else",$9b
+          dc.b "xor",$eb
+          dc.b "or",$ec
+          dc.b "and",$ed
+          dc.b "goto",$98
+          dc.b "gosub",$99
+          dc.b "<>",$ee
+          dc.b "><",$ee
+          dc.b "<=",$ef
+          dc.b "=<",$ef
+          dc.b ">=",$f0
+          dc.b "=>",$f0
+          dc.b "=",$f1
+          dc.b "<",$f2
+          dc.b ">",$f3
+          dc.b "+",$f4
+          dc.b "-",$f5
+          dc.b "mod",$f6
+          dc.b "*",$f7
+          dc.b "/",$f8
+          dc.b "^",$f9
+          dc.b "as",$a0
+          dc.b $d3,0,0
 
           dc.b 254  ;securite pour detokenisation
 ; INSTRUCTIONS
-tokens:   dc.b "to",$80,"step",$81,"next",$82,"wend",$83
-          dc.b "until",$84,"dim",$85,"poke",$86,"doke",$87
-          dc.b "loke",$88,"read",$89,"rem",$8a,"'",$8a,"return",$8b
-          dc.b "pop",$8c,"resume next",$8d,"resume",$8e,"on error",$8f
-          dc.b "screen copy",$90,"swap",$91,"plot",$92,"pie",$93
-          dc.b "draw",$94,"polyline",$95,"polymark",$96     ;une place!
-          dc.b "goto",$98,"gosub",$99,"then",$9a,"else",$9b
-          dc.b "restore",$9c,"for",$9d,"while",$9e,"repeat",$9f
-          dc.b "print",$a1,"?",$a1,"if",$a2,"update",$a3,"sprite",$a4
-          dc.b "freeze",$a5,"off",$a6,"on",$a7
-          dc.b "locate",$a9,"paper",$aa,"pen",$ab           ;.EXT: $a8
-          dc.b "home",$ac,".b",$ad,".w",$ae,".l",$af
-          dc.b "cup",$b0,"cdown",$b1,"cleft",$b2,"cright",$b3
-          dc.b "cls",$b4,"inc",$b5,"dec",$b6,"screen swap",$b7
+tokens:   dc.b "to",$80
+          dc.b "step",$81
+          dc.b "next",$82
+          dc.b "wend",$83
+          dc.b "until",$84
+          dc.b "dim",$85
+          dc.b "poke",$86
+          dc.b "doke",$87
+          dc.b "loke",$88
+          dc.b "read",$89
+          dc.b "rem",$8a
+          dc.b "'",$8a
+          dc.b "return",$8b
+          dc.b "pop",$8c
+          dc.b "resume next",$8d
+          dc.b "resume",$8e
+          dc.b "on error",$8f
+          dc.b "screen copy",$90
+          dc.b "swap",$91
+          dc.b "plot",$92
+          dc.b "pie",$93
+          dc.b "draw",$94
+          dc.b "polyline",$95
+          dc.b "polymark",$96     ;une place!
+          dc.b "goto",$98
+          dc.b "gosub",$99
+          dc.b "then",$9a
+          dc.b "else",$9b
+          dc.b "restore",$9c
+          dc.b "for",$9d
+          dc.b "while",$9e
+          dc.b "repeat",$9f
+          dc.b "print",$a1
+          dc.b "?",$a1
+          dc.b "if",$a2
+          dc.b "update",$a3
+          dc.b "sprite",$a4
+          dc.b "freeze",$a5
+          dc.b "off",$a6
+          dc.b "on",$a7
+          dc.b "locate",$a9
+          dc.b "paper",$aa
+          dc.b "pen",$ab           ;.EXT: $a8
+          dc.b "home",$ac
+          dc.b ".b",$ad
+          dc.b ".w",$ae
+          dc.b ".l",$af
+          dc.b "cup",$b0
+          dc.b "cdown",$b1
+          dc.b "cleft",$b2
+          dc.b "cright",$b3
+          dc.b "cls",$b4
+          dc.b "inc",$b5
+          dc.b "dec",$b6
+          dc.b "screen swap",$b7
 ; FONCTIONS
 debfonc =  $b8
-          dc.b "psg",$b9,"scrn",$ba,"dreg",$bb
-          dc.b "areg",$bc,"point",$bd,"drive$",$be,"dir$",$bf
-          dc.b "abs",$c1,"colour",$c2,"fkey",$c3               ;.EXT: $c0
-          dc.b "sin",$c4,"cos",$c5,"drive",$c6,"timer",$c7
-          dc.b "logic",$c8,"fn",$c9,"not",$ca,"rnd",$cb
-          dc.b "val",$cc,"asc",$cd,"chr$",$ce,"inkey$",$cf
-          dc.b "scancode",$d0,"mid$",$d1,"right$",$d2,"left$",$d3
-          dc.b "length",$d4,"start",$d5,"len",$d6,"pi",$d7
-          dc.b "peek",$d8,"deek",$d9,"leek",$da,"zone",$db
-          dc.b "x sprite",$dc,"y sprite",$dd,"x mouse",$de,"y mouse",$df
-          dc.b "mouse key",$e0,"physic",$e1,"back",$e2,"log",$e3
-          dc.b "pof",$e4,"mode",$e5,"time$",$e6,"date$",$e7
-          dc.b "screen$",$e8,"default",$e9
+          dc.b "psg",$b9
+          dc.b "scrn",$ba
+          dc.b "dreg",$bb
+          dc.b "areg",$bc
+          dc.b "point",$bd
+          dc.b "drive$",$be
+          dc.b "dir$",$bf
+          dc.b "abs",$c1
+          dc.b "colour",$c2
+          dc.b "fkey",$c3               ;.EXT: $c0
+          dc.b "sin",$c4
+          dc.b "cos",$c5
+          dc.b "drive",$c6
+          dc.b "timer",$c7
+          dc.b "logic",$c8
+          dc.b "fn",$c9
+          dc.b "not",$ca
+          dc.b "rnd",$cb
+          dc.b "val",$cc
+          dc.b "asc",$cd
+          dc.b "chr$",$ce
+          dc.b "inkey$",$cf
+          dc.b "scancode",$d0
+          dc.b "mid$",$d1
+          dc.b "right$",$d2
+          dc.b "left$",$d3
+          dc.b "length",$d4
+          dc.b "start",$d5
+          dc.b "len",$d6
+          dc.b "pi",$d7
+          dc.b "peek",$d8
+          dc.b "deek",$d9
+          dc.b "leek",$da
+          dc.b "zone",$db
+          dc.b "x sprite",$dc
+          dc.b "y sprite",$dd
+          dc.b "x mouse",$de
+          dc.b "y mouse",$df
+          dc.b "mouse key",$e0
+          dc.b "physic",$e1
+          dc.b "back",$e2
+          dc.b "log",$e3
+          dc.b "pof",$e4
+          dc.b "mode",$e5
+          dc.b "time$",$e6
+          dc.b "date$",$e7
+          dc.b "screen$",$e8
+          dc.b "default",$e9
 ; OPERATEURS
 debop     = $ea
-          dc.b " xor ",$eb," or ",$ec," and ",$ed
-          dc.b "<>",$ee,"><",$ee,"<=",$ef,"=<",$ef
-          dc.b ">=",$f0,"=>",$f0,"=",$f1,"<",$f2,">",$f3
-          dc.b "+",$f4,"-",$f5," mod ",$f6,"*",$f7,"/",$f8,"^",$f9
+          dc.b " xor ",$eb
+          dc.b " or ",$ec
+          dc.b " and ",$ed
+          dc.b "<>",$ee
+          dc.b "><",$ee
+          dc.b "<=",$ef
+          dc.b "=<",$ef
+          dc.b ">=",$f0
+          dc.b "=>",$f0
+          dc.b "=",$f1
+          dc.b "<",$f2
+          dc.b ">",$f3
+          dc.b "+",$f4
+          dc.b "-",$f5
+          dc.b " mod ",$f6
+          dc.b "*",$f7
+          dc.b "/",$f8
+          dc.b "^",$f9
 ; variables: $fa
 ; constantes: (binaire $fb)(alpha $fc)(hexa $fd)(entier $fe)(float $ff)
 ; TABLE DES FONCTIONS ETENDUES: $b8 + code token
 foncext:  dc.b "hsin",$b8,$80
-          dc.b "hcos",$b8,$81,"htan",$b8,$82
-          dc.b "asin",$b8,$83,"acos",$b8,$84
-          dc.b "atan",$b8,$85,"upper$",$b8,$86
-          dc.b "lower$",$b8,$87,"current",$b8,$88
-          dc.b "match",$b8,$89,"errn",$b8,$8a
-          dc.b "errl",$b8,$8b,"varptr",$b8,$8c
-          dc.b "input$",$b8,$8d,"flip$",$b8,$8e
-          dc.b "free",$b8,$8f,"str$",$b8,$90
-          dc.b "hex$",$b8,$91,"bin$",$b8,$92
-          dc.b "string$",$b8,$93,"space$",$b8,$94
-          dc.b "instr",$b8,$95,"max",$b8,$96
-          dc.b "min",$b8,$97,"lof",$b8,$98
-          dc.b "eof",$b8,$99,"dir first$",$b8,$9a
-          dc.b "dir next$",$b8,$9b,"btst",$b8,$9c
-          dc.b "collide",$b8,$9d,"accnb",$b8,$9e
-          dc.b "language",$b8,$9f,"hunt",$b8,$a1           ;token $a0!!!!
-          dc.b "true",$b8,$a2,"false",$b8,$a3
-          dc.b "xcurs",$b8,$a4,"ycurs",$b8,$a5
-          dc.b "jup",$b8,$a6,"jleft",$b8,$a7
-          dc.b "jright",$b8,$a8,"jdown",$b8,$a9
-          dc.b "fire",$b8,$aa,"joy",$b8,$ab
-          dc.b "movon",$b8,$ac,"icon$",$b8,$ad
-          dc.b "tab",$b8,$ae,"exp",$b8,$af
-          dc.b "charlen",$b8,$b0,"mnbar",$b8,$b1
-          dc.b "mnselect",$b8,$b2,"windon",$b8,$b3
-          dc.b "xtext",$b8,$b4,"ytext",$b8,$b5
-          dc.b "xgraphic",$b8,$b6,"ygraphic",$b8,$b7
+          dc.b "hcos",$b8,$81
+          dc.b "htan",$b8,$82
+          dc.b "asin",$b8,$83
+          dc.b "acos",$b8,$84
+          dc.b "atan",$b8,$85
+          dc.b "upper$",$b8,$86
+          dc.b "lower$",$b8,$87
+          dc.b "current",$b8,$88
+          dc.b "match",$b8,$89
+          dc.b "errn",$b8,$8a
+          dc.b "errl",$b8,$8b
+          dc.b "varptr",$b8,$8c
+          dc.b "input$",$b8,$8d
+          dc.b "flip$",$b8,$8e
+          dc.b "free",$b8,$8f
+          dc.b "str$",$b8,$90
+          dc.b "hex$",$b8,$91
+          dc.b "bin$",$b8,$92
+          dc.b "string$",$b8,$93
+          dc.b "space$",$b8,$94
+          dc.b "instr",$b8,$95
+          dc.b "max",$b8,$96
+          dc.b "min",$b8,$97
+          dc.b "lof",$b8,$98
+          dc.b "eof",$b8,$99
+          dc.b "dir first$",$b8,$9a
+          dc.b "dir next$",$b8,$9b
+          dc.b "btst",$b8,$9c
+          dc.b "collide",$b8,$9d
+          dc.b "accnb",$b8,$9e
+          dc.b "language",$b8,$9f
+          dc.b "hunt",$b8,$a1           ;token $a0!!!!
+          dc.b "true",$b8,$a2
+          dc.b "false",$b8,$a3
+          dc.b "xcurs",$b8,$a4
+          dc.b "ycurs",$b8,$a5
+          dc.b "jup",$b8,$a6
+          dc.b "jleft",$b8,$a7
+          dc.b "jright",$b8,$a8
+          dc.b "jdown",$b8,$a9
+          dc.b "fire",$b8,$aa
+          dc.b "joy",$b8,$ab
+          dc.b "movon",$b8,$ac
+          dc.b "icon$",$b8,$ad
+          dc.b "tab",$b8,$ae
+          dc.b "exp",$b8,$af
+          dc.b "charlen",$b8,$b0
+          dc.b "mnbar",$b8,$b1
+          dc.b "mnselect",$b8,$b2
+          dc.b "windon",$b8,$b3
+          dc.b "xtext",$b8,$b4
+          dc.b "ytext",$b8,$b5
+          dc.b "xgraphic",$b8,$b6
+          dc.b "ygraphic",$b8,$b7
           dc.b "sqr",$b8,$b9                              ;token $b8!!!!
-          dc.b "divx",$b8,$ba,"divy",$b8,$bb
-          dc.b "ln",$b8,$bc,"tan",$b8,$bd
-          dc.b "drvmap",$b8,$be,"file select$",$b8,$bf
-          dc.b "dfree",$b8,$c0,"sgn",$b8,$c1
-          dc.b "port",$b8,$c2,"pvoice",$b8,$c3
-          dc.b "int",$b8,$c4,"detect",$b8,$c5
-          dc.b "deg",$b8,$c6,"rad",$b8,$c7
+          dc.b "divx",$b8,$ba
+          dc.b "divy",$b8,$bb
+          dc.b "ln",$b8,$bc
+          dc.b "tan",$b8,$bd
+          dc.b "drvmap",$b8,$be
+          dc.b "file select$",$b8,$bf
+          dc.b "dfree",$b8,$c0
+          dc.b "sgn",$b8,$c1
+          dc.b "port",$b8,$c2
+          dc.b "pvoice",$b8,$c3
+          dc.b "int",$b8,$c4
+          dc.b "detect",$b8,$c5
+          dc.b "deg",$b8,$c6
+          dc.b "rad",$b8,$c7
 
 ; TABLE DES TOKENS ETENDUS: $a0 + code token > $70
-tokext:   dc.b "dir/w",$a0,$70,"fade",$a0,$71
-          dc.b "bcopy",$a0,$72,"square",$a0,$73
-          dc.b "previous",$a0,$74,"transpose",$a0,$75
-          dc.b "shift",$a0,$76,"wait key",$a0,$77
-          dc.b "dir",$a0,$78,"ldir",$a0,$79
-          dc.b "bload",$a0,$7a,"bsave",$a0,$7b
-          dc.b "qwindow",$a0,$7c,"as set",$a0,$7d
-          dc.b "charcopy",$a0,$7e,"under",$a0,$7f
-          dc.b "menu$",$a0,$80,"menu",$a0,$81,"title",$a0,$82
-          dc.b "border",$a0,$83,"hardcopy",$a0,$84
-          dc.b "windcopy",$a0,$85,"redraw",$a0,$86
-          dc.b "centre",$a0,$87,"tempo",$a0,$88
-          dc.b "volume",$a0,$89,"envel",$a0,$8a
-          dc.b "boom",$a0,$8b,"shoot",$a0,$8c
-          dc.b "bell",$a0,$8d,"play",$a0,$8e
-          dc.b "noise",$a0,$8f,"voice",$a0,$90,"music",$a0,$91
-          dc.b "box",$a0,$92,"rbox",$a0,$93,"bar",$a0,$94,"rbar",$a0,$95
-          dc.b "appear",$a0,$96,"bclr",$a0,$97
-          dc.b "bset",$a0,$98,"rol",$a0,$99
-          dc.b "ror",$a0,$9a,"curs",$a0,$9b
-          dc.b "clw",$a0,$9c,"bchg",$a0,$9d
-          dc.b "call",$a0,$9e,"trap",$a0,$9f
-          dc.b "run",$a0,$a1,"clear key",$a0,$a2
-          dc.b "line input",$a0,$a3,"input",$a0,$a4
-          dc.b "clear",$a0,$a5,"data",$a0,$a6
-          dc.b "end",$a0,$a7,"erase",$a0,$a8
-          dc.b "reserve",$a0,$a9,"as datascreen",$a0,$aa
-          dc.b "as work",$a0,$ab,"as screen",$a0,$ac
-          dc.b "as data",$a0,$ad,"copy",$a0,$ae
+tokext:   dc.b "dir/w",$a0,$70
+          dc.b "fade",$a0,$71
+          dc.b "bcopy",$a0,$72
+          dc.b "square",$a0,$73
+          dc.b "previous",$a0,$74
+          dc.b "transpose",$a0,$75
+          dc.b "shift",$a0,$76
+          dc.b "wait key",$a0,$77
+          dc.b "dir",$a0,$78
+          dc.b "ldir",$a0,$79
+          dc.b "bload",$a0,$7a
+          dc.b "bsave",$a0,$7b
+          dc.b "qwindow",$a0,$7c
+          dc.b "as set",$a0,$7d
+          dc.b "charcopy",$a0,$7e
+          dc.b "under",$a0,$7f
+          dc.b "menu$",$a0,$80
+          dc.b "menu",$a0,$81
+          dc.b "title",$a0,$82
+          dc.b "border",$a0,$83
+          dc.b "hardcopy",$a0,$84
+          dc.b "windcopy",$a0,$85
+          dc.b "redraw",$a0,$86
+          dc.b "centre",$a0,$87
+          dc.b "tempo",$a0,$88
+          dc.b "volume",$a0,$89
+          dc.b "envel",$a0,$8a
+          dc.b "boom",$a0,$8b
+          dc.b "shoot",$a0,$8c
+          dc.b "bell",$a0,$8d
+          dc.b "play",$a0,$8e
+          dc.b "noise",$a0,$8f
+          dc.b "voice",$a0,$90
+          dc.b "music",$a0,$91
+          dc.b "box",$a0,$92
+          dc.b "rbox",$a0,$93
+          dc.b "bar",$a0,$94
+          dc.b "rbar",$a0,$95
+          dc.b "appear",$a0,$96
+          dc.b "bclr",$a0,$97
+          dc.b "bset",$a0,$98
+          dc.b "rol",$a0,$99
+          dc.b "ror",$a0,$9a
+          dc.b "curs",$a0,$9b
+          dc.b "clw",$a0,$9c
+          dc.b "bchg",$a0,$9d
+          dc.b "call",$a0,$9e
+          dc.b "trap",$a0,$9f
+          dc.b "run",$a0,$a1
+          dc.b "clear key",$a0,$a2
+          dc.b "line input",$a0,$a3
+          dc.b "input",$a0,$a4
+          dc.b "clear",$a0,$a5
+          dc.b "data",$a0,$a6
+          dc.b "end",$a0,$a7
+          dc.b "erase",$a0,$a8
+          dc.b "reserve",$a0,$a9
+          dc.b "as datascreen",$a0,$aa
+          dc.b "as work",$a0,$ab
+          dc.b "as screen",$a0,$ac
+          dc.b "as data",$a0,$ad
+          dc.b "copy",$a0,$ae
           dc.b "def",$a0,$af
-          dc.b "hide",$a0,$b0,"show",$a0,$b1
-          dc.b "change mouse",$a0,$b2,"limit mouse",$a0,$b3
-          dc.b "move x",$a0,$b4,"move y",$a0,$b5
-          dc.b "fix",$a0,$b6,"bgrab",$a0,$b7
+          dc.b "hide",$a0,$b0
+          dc.b "show",$a0,$b1
+          dc.b "change mouse",$a0,$b2
+          dc.b "limit mouse",$a0,$b3
+          dc.b "move x",$a0,$b4
+          dc.b "move y",$a0,$b5
+          dc.b "fix",$a0,$b6
+          dc.b "bgrab",$a0,$b7
 ; fonctions etendues: $b8
-          dc.b "fill",$a0,$b9,"key list",$a0,$ba
-          dc.b "key speed",$a0,$bb,"move",$a0,$bc
-          dc.b "anim",$a0,$bd,"unfreeze",$a0,$be
-          dc.b "set zone",$a0,$bf,"reset zone",$a0,$c0
-          dc.b "limit sprite",$a0,$c1,"priority",$a0,$c2
-          dc.b "reduce",$a0,$c3,"put sprite",$a0,$c4
-          dc.b "get sprite",$a0,$c5,"load",$a0,$c6
-          dc.b "save",$a0,$c7,"palette",$a0,$c8
-          dc.b "synchro",$a0,$c9,"error",$a0,$ca
-          dc.b "break",$a0,$cb,"let",$a0,$cc
-          dc.b "key",$a0,$cd,"open in",$a0,$ce,"open out",$a0,$cf
-          dc.b "open",$a0,$d0,"close",$a0,$d1
-          dc.b "field",$a0,$d2," as",$a0,$d3
-          dc.b "put key",$a0,$d4,"get palette",$a0,$d5
-          dc.b "kill",$a0,$d6,"rename",$a0,$d7
-          dc.b "rm dir",$a0,$d8,"mk dir",$a0,$d9
-          dc.b "stop",$a0,$da,"wait vbl",$a0,$db
-          dc.b "sort",$a0,$dc,"get",$a0,$dd
-          dc.b "flash",$a0,$de,"using",$a0,$df
-          dc.b "lprint",$a0,$e0,"auto back",$a0,$e1
-          dc.b "set line",$a0,$e2,"gr writing",$a0,$e3
-          dc.b "set mark",$a0,$e4,"set paint",$a0,$e5
+          dc.b "fill",$a0,$b9
+          dc.b "key list",$a0,$ba
+          dc.b "key speed",$a0,$bb
+          dc.b "move",$a0,$bc
+          dc.b "anim",$a0,$bd
+          dc.b "unfreeze",$a0,$be
+          dc.b "set zone",$a0,$bf
+          dc.b "reset zone",$a0,$c0
+          dc.b "limit sprite",$a0,$c1
+          dc.b "priority",$a0,$c2
+          dc.b "reduce",$a0,$c3
+          dc.b "put sprite",$a0,$c4
+          dc.b "get sprite",$a0,$c5
+          dc.b "load",$a0,$c6
+          dc.b "save",$a0,$c7
+          dc.b "palette",$a0,$c8
+          dc.b "synchro",$a0,$c9
+          dc.b "error",$a0,$ca
+          dc.b "break",$a0,$cb
+          dc.b "let",$a0,$cc
+          dc.b "key",$a0,$cd
+          dc.b "open in",$a0,$ce
+          dc.b "open out",$a0,$cf
+          dc.b "open",$a0,$d0
+          dc.b "close",$a0,$d1
+          dc.b "field",$a0,$d2
+          dc.b " as",$a0,$d3
+          dc.b "put key",$a0,$d4
+          dc.b "get palette",$a0,$d5
+          dc.b "kill",$a0,$d6
+          dc.b "rename",$a0,$d7
+          dc.b "rm dir",$a0,$d8
+          dc.b "mk dir",$a0,$d9
+          dc.b "stop",$a0,$da
+          dc.b "wait vbl",$a0,$db
+          dc.b "sort",$a0,$dc
+          dc.b "get",$a0,$dd
+          dc.b "flash",$a0,$de
+          dc.b "using",$a0,$df
+          dc.b "lprint",$a0,$e0
+          dc.b "auto back",$a0,$e1
+          dc.b "set line",$a0,$e2
+          dc.b "gr writing",$a0,$e3
+          dc.b "set mark",$a0,$e4
+          dc.b "set paint",$a0,$e5
           dc.b "set pattern",$a0,$e7              ;une place
-          dc.b "clip",$a0,$e8,"arc",$a0,$e9
-          dc.b "polygon",$a0,$ea,"circle",$a0,$eb
-          dc.b "earc",$a0,$ec,"epie",$a0,$ed
-          dc.b "ellipse",$a0,$ee,"writing",$a0,$ef
-          dc.b "paint",$a0,$f0,"ink",$a0,$f1
-          dc.b "wait",$a0,$f2,"click",$a0,$f3
-          dc.b "put",$a0,$f4,"zoom",$a0,$f5
-          dc.b "set curs",$a0,$f6,"scroll down",$a0,$f7
-          dc.b "scroll up",$a0,$f8,"scroll",$a0,$f9
-          dc.b "inverse",$a0,$fa,"shade",$a0,$fb
-          dc.b "windopen",$a0,$fc,"window",$a0,$fd
-          dc.b "windmove",$a0,$fe,"windel",$a0,$ff
+          dc.b "clip",$a0,$e8
+          dc.b "arc",$a0,$e9
+          dc.b "polygon",$a0,$ea
+          dc.b "circle",$a0,$eb
+          dc.b "earc",$a0,$ec
+          dc.b "epie",$a0,$ed
+          dc.b "ellipse",$a0,$ee
+          dc.b "writing",$a0,$ef
+          dc.b "paint",$a0,$f0
+          dc.b "ink",$a0,$f1
+          dc.b "wait",$a0,$f2
+          dc.b "click",$a0,$f3
+          dc.b "put",$a0,$f4
+          dc.b "zoom",$a0,$f5
+          dc.b "set curs",$a0,$f6
+          dc.b "scroll down",$a0,$f7
+          dc.b "scroll up",$a0,$f8
+          dc.b "scroll",$a0,$f9
+          dc.b "inverse",$a0,$fa
+          dc.b "shade",$a0,$fb
+          dc.b "windopen",$a0,$fc
+          dc.b "window",$a0,$fd
+          dc.b "windmove",$a0,$fe
+          dc.b "windel",$a0,$ff
 
 ; TABLE DES TOKENS DIRECTS: $a0 + $00 < code token < $20
-          dc.b "listbank",$a0,$00,"llistbank",$a0,$01
-          dc.b "follow",$a0,$02,"frequency",$a0,$03
-          dc.b "cont",$a0,$04,"change",$a0,$05
-          dc.b "search",$a0,$06,"delete",$a0,$07
-          dc.b "merge",$a0,$08,"auto",$a0,$09
-          dc.b "new",$a0,$0a,"unnew",$a0,$0b
-          dc.b "fload",$a0,$0c,"fsave",$a0,$0d
-          dc.b "reset",$a0,$0e,"system",$a0,$0f,"env",$a0,$10
-          dc.b "renum",$a0,$11,"multi",$a0,$12
-          dc.b "full",$a0,$13,"grab",$a0,$14
-          dc.b "list",$a0,$15,"llist",$a0,$16
+          dc.b "listbank",$a0,$00
+          dc.b "llistbank",$a0,$01
+          dc.b "follow",$a0,$02
+          dc.b "frequency",$a0,$03
+          dc.b "cont",$a0,$04
+          dc.b "change",$a0,$05
+          dc.b "search",$a0,$06
+          dc.b "delete",$a0,$07
+          dc.b "merge",$a0,$08
+          dc.b "auto",$a0,$09
+          dc.b "new",$a0,$0a
+          dc.b "unnew",$a0,$0b
+          dc.b "fload",$a0,$0c
+          dc.b "fsave",$a0,$0d
+          dc.b "reset",$a0,$0e
+          dc.b "system",$a0,$0f
+          dc.b "env",$a0,$10
+          dc.b "renum",$a0,$11
+          dc.b "multi",$a0,$12
+          dc.b "full",$a0,$13
+          dc.b "grab",$a0,$14
+          dc.b "list",$a0,$15
+          dc.b "llist",$a0,$16
           dc.b "hexa",$a0,$17                     ;une place libre!
-          dc.b "accload",$a0,$19,"accnew",$a0,$1a
-          dc.b "lower",$a0,$1b,"upper",$a0,$1c
-          dc.b "english",$a0,$1d,"francais",$a0,$1e
+          dc.b "accload",$a0,$19
+          dc.b "accnew",$a0,$1a
+          dc.b "lower",$a0,$1b
+          dc.b "upper",$a0,$1c
+          dc.b "english",$a0,$1d
+          dc.b "francais",$a0,$1e
           dc.b 0
           even
 ; ADRESSE DES ROUTINES D'EXECUTION
@@ -760,7 +990,7 @@ extjumps: dc.l dirw,fde,bcopy,textbox
           dc.l paint,setink,wait,clik,put,zoom,setcurs,scrolldn
           dc.l scrollup,scroll,inverse,shade,windopen,window,windmov,windel
 
-; TABLE DES ADRESSE UTILES POUR LES ROUTINES D'EXTENTION
+; TABLE OF USEFUL ADDRESSES FOR EXTENSION ROUTINES
 routines: dc.l buffer,fltoint,inttofl,dta               ;$00
           dc.l fichiers,erreur,err2,demande             ;$10
           dc.l start1,leng1,transmem,fe                 ;$20

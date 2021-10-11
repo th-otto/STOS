@@ -352,7 +352,7 @@ ms4:    move.l a0,hichaine(a5)
 
 ms5:    clr.l d4
         movem.l d1-d2/a1-a2,-(sp)
-L5b:    jsr 71       ;recherche la chaine!
+L5b:    jsr L_instrfind.l       ;recherche la chaine!
         movem.l (sp)+,d1-d2/a1-a2
         tst.l d3
         beq.s ms9
@@ -858,13 +858,13 @@ L33:    dc.w L33a-L33,L33b-L33,L33d-L33,0
         moveq #1,d4             ;Avec signe
         move.l buffer(a5),a0
         move.l (a6)+,d0
-L33a:   jsr 39
+L33a:   jsr L_longdec.l
         clr.b (a0)
         tst.b UsingFlg(a5)
         beq.s L33c
-L33b:   jsr 41
+L33b:   jsr L_usingcf.l
 l33c:   move.l buffer(a5),a0
-L33d:   jmp 37
+L33d:   jmp L_impfin.l
 
 *************************************************************************
 *       IMPRESSION d'un chiffre FLOAT
@@ -872,13 +872,13 @@ L34:    dc.w L34a-L34,l34b-l34,l34d-l34,0
 *****************************************
         move.l buffer(a5),a0
         move.w FixFlg(a5),d0
-L34a:   jsr 40
+L34a:   jsr L_strflasc.l
         clr.b (a0)
         tst.b UsingFlg(a5)
         beq.s L34c
-L34b:   jsr 41
+L34b:   jsr L_usingcf.l
 l34c:   move.l buffer(a5),a0
-L34d:   jmp 37
+L34d:   jmp L_impfin.l
 
 *************************************************************************
 *       IMPRESSION d'une chaine
@@ -898,11 +898,11 @@ L35b:   clr.b (a0)
         move.l a1,-(sp)
         tst.b UsingFlg(a5)      ;Si using
         beq.s L35d
-L35c:   jsr 42                  ;appelle
+L35c:   jsr L_usingch.l                  ;appelle
         clr.w 4(sp)             ;1 seule fois!
 
 l35d:   move.l buffer(a5),a0
-L35e:   jsr 37              ;Imprime ... et revient
+L35e:   jsr L_impfin.l              ;Imprime ... et revient
         move.l (sp)+,a1
         move.w (sp)+,d1
         bne.s L35r
@@ -943,7 +943,7 @@ ip:     move.l a3,-(sp)
         move.l a0,a3
         move.w #800,d3
         bra.s ip2
-ip1:    jsr 38
+ip1:    jsr L_waitvbl.l
 ip2:    clr.w -(sp)         ;bcostat sur l'imprimante
         move.w #8,-(sp)
         trap #13
@@ -1809,16 +1809,16 @@ L77c:   moveq #0,d2             ;A3/D3= destination
 *       LEFT(a$,xx) en INSTRUCTION
 L78:    dc.w L78a-L78,L78b-L78,0
 ********************************
-L78a:   jsr 77
+L78a:   jsr L_cimid1.l
         move.l (a6)+,d6
         moveq #0,d5
-L78b:   jmp 82
+L78b:   jmp L_cimid2.l
 
 ****************************************************************************
 *       RIGHT(a$,xx) en INSTRUCTION
 L79:    dc.w L79a-L79,L79c-L79,0
 ********************************
-L79a:   jsr 77
+L79a:   jsr L_cimid1.l
         move.l (a6)+,d6
         bmi.s L79z
         moveq #0,d5
@@ -1836,7 +1836,7 @@ L79z:   moveq #13,d0
 *       MID$(a$,xx) en INSTRUCTION
 L80:    dc.w L80a-L80,L80b-L80,0
 ********************************
-L80a:   jsr 77
+L80a:   jsr L_cimid1.l
         move.l (a6)+,d5
         move.l #$ffff,d6
 L80b:   jmp 82
@@ -1845,7 +1845,7 @@ L80b:   jmp 82
 *       MID$(a$,xx,yy) en INSTRUCTION
 L81:    dc.w L81a-L81,L81b-L81,0
 ********************************
-L81a:   jsr 77
+L81a:   jsr L_cimid1.l
         move.l (a6)+,d6
         move.l (a6)+,d5
 L81b:   jmp 82
@@ -1908,7 +1908,7 @@ L84:    dc.w L84a-L84,0
         moveq #0,d1
         move.l (a6)+,a1
         move.w (a1)+,d1
-L84a:   jsr 71
+L84a:   jsr L_instrfind.l
         move.l d3,-(a6)
         rts
 L84b:   moveq #13,d0
@@ -2070,10 +2070,10 @@ L96a:   jsr L_malloc.l
         lea 2(a0),a0        ;laisse la place pour la longueur
         cmp #9,d2
         bne.s hx3
-hx2:    jsr 97
+hx2:    jsr L_longascii.l
         bra.s hx4
-hx3:    jsr 98
-hx4:    jmp 99
+hx3:    jsr L_longbin.l
+hx4:    jmp L_finbin.l
 
 ****************************************************************************
 *       LONGASCII: entier---> hexa ascii
@@ -2170,9 +2170,9 @@ L100a:  jsr L_malloc.l
         moveq #1,d4
         move.l a1,-(sp)
         move.l (a6)+,d0
-L100b:  jsr 39
+L100b:  jsr L_longdec.l
         move.l (sp)+,a1
-L100c:  jmp 99
+L100c:  jmp L_finbin.l
 
 ****************************************************************************
 *       STR$(xx) ---> floats
@@ -2183,9 +2183,9 @@ L101a:  jsr L_malloc.l
         lea 2(a0),a0
         move.l a1,-(sp)
         move.w fixflg(a5),d0
-L101b:  jsr 40
+L101b:  jsr L_strflasc.l
         move.l (sp)+,a1
-L101c:  jmp 99
+L101c:  jmp L_finbin.l
 
 ***************************************************************************
 *       CHVERBUF
@@ -2719,7 +2719,7 @@ L128:   dc.w l128a-l128,l128b-l128,l128c-l128,l128d-l128,0
         beq.s l128d
 ; Affiche un message d'erreur
         move.w d0,-(sp)
-l128a:  jsr 392                         ;DEFAULT
+l128a:  jsr L_defgem.l                         ;DEFAULT
         lea MEGem1(pc),a0
         moveq #1,d7
         trap #3
@@ -2742,10 +2742,10 @@ l128a:  jsr 392                         ;DEFAULT
         lea MEGem2(pc),a0
         moveq #1,d7
         trap #3
-l128b:  jsr 179                 ;Clearkey
-l128c:  jsr 181                 ;Wait key
+l128b:  jsr L_clearkey.l
+l128c:  jsr L_waitkey.l
 ; Termine tout / revient au GEM
-L128d:  jsr 1
+L128d:  jsr L_delete.l
         move.l oend(a5),a0
         jmp (a0)
 MEGem1: dc.b "Error #",0
@@ -3052,14 +3052,14 @@ L147:   dc.w l147a-l147,l147b-l147,l147c-l147,0
         and.l #%11111,d0
         moveq #2,d3
         moveq #0,d4
-L147a:  jsr 39
+L147a:  jsr L_longdec.l
         move.b #":",(a0)+
         rol #6,d7
         move d7,d0
         and.l #%111111,d0
         moveq #2,d3
         moveq #0,d4
-L147b:  jsr 39
+L147b:  jsr L_longdec.l
         move.b #":",(a0)+
         rol #5,d7
         move d7,d0
@@ -3067,7 +3067,7 @@ L147b:  jsr 39
         and #%111111,d0
         moveq #2,d3
         moveq #0,d4
-L147c:  jsr 39
+L147c:  jsr L_longdec.l
 tim1:   move.l (sp)+,a1
         rts
 
@@ -3080,14 +3080,14 @@ L148:   dc.w l148a-l148,l148b-l148,l148c-l148,0
         and.l #%11111,d0
         moveq #2,d3
         moveq #0,d4
-L148a:  jsr 39
+L148a:  jsr L_longdec.l
         move.b #"/",(a0)+
         lsr #5,d7
         move.b d7,d0
         and.l #%1111,d0
         moveq #2,d3
         moveq #0,d4
-L148b:  jsr 39
+L148b:  jsr L_longdec.l
         move.b #"/",(a0)+
         lsr #4,d7
         move.b d7,d0
@@ -3095,7 +3095,7 @@ L148b:  jsr 39
         add.l #1980,d0
         moveq #4,d3
         moveq #0,d4
-L148c:  jsr 39              ;annee
+L148c:  jsr L_longdec.l              ;annee
 	move.l (sp)+,a1
         rts
 
@@ -3112,7 +3112,7 @@ L149a:  jsr L_malloc.l
 	move.l a2,hichaine(a5)
         move.w #8,(a0)+
         move.w (sp)+,d7
-L149b:  jsr 147
+L149b:  jsr L_timebis.l
         move.l a1,-(a6)
         rts
 
@@ -3129,7 +3129,7 @@ L150a:  jsr L_malloc.l
 	move.l a2,hichaine(a5)
         move.w #10,(a0)+
         move.w (sp)+,d7
-L150b:  jsr 148
+L150b:  jsr L_datebis.l
         move.l a1,-(a6)
         rts
 
@@ -3140,21 +3140,21 @@ L151:   dc.w l151a-l151,l151b-l151,l151c-l151,l151d-l151,0
 L151a:  jsr L_chverbuf.l
         move.l a6,-(sp)
         move.l buffer(a5),a6       ;pointe la chaine
-L151b:  jsr 104
+L151b:  jsr L_declong.l
         bne.s badt
         and #%11111,d0
         move d0,d7
         lsl #6,d7           ;heure
         bsr.s svtime
         beq.s badt
-L151c:  jsr 104
+L151c:  jsr L_declong.l
         bne.s badt
         and #%111111,d0
         or d0,d7
         lsl #5,d7           ;minutes
         bsr.s svtime
         beq.s badt
-L151d:  jsr 104
+L151d:  jsr L_declong.l
         bne.s badt
         lsr #1,d0
         and #%11111,d0
@@ -3185,21 +3185,21 @@ L152:   dc.w l152a-l152,l152b-l152,l152c-l152,l152d-l152,0
 L152a:  jsr L_chverbuf.l
         move.l a6,-(sp)
         move.l buffer(a5),a6       ;pointe la chaine
-L152b:  jsr 104
+L152b:  jsr L_declong.l
         bne.s badd
         and #%11111,d0      ;jour
         move d0,d7
         ror #5,d7
         bsr.s svdate
         beq.s badd
-L152c:  jsr 104
+L152c:  jsr L_declong.l
         bne.s badd
         and #%1111,d0       ;mois
         or d0,d7
         ror #4,d7
         bsr.s svdate
         beq.s badd
-L152d:  jsr 104
+L152d:  jsr L_declong.l
         bne.s badd
         sub #1980,d0
         and #%1111111,d0    ;annee
@@ -3381,7 +3381,7 @@ ipu7:   move.l a0,hichaine(a5)
 ipu10:  move.l a6,-(sp)
         move.w d6,-(sp)
         move.l a2,a6
-L157b:  jsr 158                      ;Ramene un FLOAT!
+L157b:  jsr L_valprg.l                      ;Ramene un FLOAT!
         move.l a6,a2
         move.w (sp)+,d6
         move.l (sp)+,a6
@@ -3415,7 +3415,7 @@ Ipuc:   move.l d0,(a3)
 ipu12:  tst orinput(a5)         ;si vient du disque: type mismatch
         bne.s L157z
         lea redo(pc),a0
-L157c:  jsr 159                 ;va traduire
+L157c:  jsr L_traduit.l         ;va traduire
         moveq #1,d7
         trap #3                 ;affichage du message
         move.l a4,(sp)          ;debut de l'input
@@ -3540,16 +3540,16 @@ val4:
         bra.s Valf
 ; chiffre hexa
 val5:   addq.l #1,a6
-L158a:  jsr 105
+L158a:  jsr L_hexalong.l
         bra.s val8
 ; chiffre binaire
 val6:   addq.l #1,a6
-L158b:  jsr 106
+L158b:  jsr L_binlong.l
         bra.s val8
 ; chiffre FLOAT---> entier
 Val3s:  clr.b -(a0)
 val7:
-L158c:  jsr 104
+L158c:  jsr L_declong.l
 val8:   tst d1
         bne.s val10           ;si probleme: ramene zero!
 ; test du signe
@@ -4076,7 +4076,7 @@ FinMen: move.l a1,hichaine(a5)
 *       FREE
 L166:   dc.w L166a-L166,0
 **************************
-L166a:  jsr 165
+L166a:  jsr L_garbage.l
         move.l LowVar(a5),d0
         sub.l Hichaine(a5),d0
         move.l d0,-(a6)
@@ -5892,25 +5892,25 @@ L255a:  moveq #-1,d3
         rts
 
 ***************************************************************************
-*       MAUDE: change la resolution
+*       MODE: change la resolution
 L256:   dc.w L256a-l256,l256b-l256,l256c-l256,l256d-l256,0
 ***********************************************************
         moveq #28,d0
         trap #5
-L256a:  jsr 38
+L256a:  jsr L_waitvbl.l
         move.l adback(a5),a0
         move #3999,d0
         clr.l d1
 maude1: move.l d1,(a0)+
         move.l d1,(a0)+
         dbra d0,maude1
-L256b:  jsr 38
+L256b:  jsr L_waitvbl.l
         move.l adlogic(a5),a0
         move #3999,d0
 maude2: move.l d1,(a0)+
         move.l d1,(a0)+
         dbra d0,maude2
-L256c:  jsr 38
+L256c:  jsr L_waitvbl.l
         move d3,mode(a5)
         move.w d3,-(sp)
         move.l #-1,-(sp)
@@ -5918,7 +5918,7 @@ L256c:  jsr 38
         move.w #5,-(sp)
         trap #14
         lea 12(sp),sp
-L256d:  jsr 38
+L256d:  jsr L_waitvbl.l
         rts
 
 *************************************************************************
@@ -6056,14 +6056,14 @@ md13:   move.w (a0)+,(a1)+
         move.l adtr(pc),$84             ;remet la trappe1
 
 ;pas de CLIP
-L257i:  jsr 260
+L257i:  jsr L_clipoff.l
 ;init du WRITING
         move.l #1,-(a6)                  ;writing normal
-L257j:  jsr 259
+L257j:  jsr L_grwriting.l
 ;init de la COULEUR
         move.l colmax(a5),-(a6)           ;encre graphique 15/3/1
         sub.l #1,(a6)
-L257k:  jsr 258
+L257k:  jsr L_inkk.l
         clr valpaper(a5)
         move #1,valpen(a5)
 ;init des POLYLINES
@@ -6071,16 +6071,16 @@ L257k:  jsr 258
         move.l #$1,-(a6)
         clr.l -(a6)
         clr.l -(a6)
-L257l:  jsr 262
+L257l:  jsr L_setline.l
 ;init des POLYMARKER
         move.l #3,-(a6)                ;etoile
         move.l #4,-(a6)
-L257m:  jsr 263
+L257m:  jsr L_setmark.l
 ; init du PAINT
         move.l #1,-(a6)                ;met la bordure
         move.l #1,-(a6)
         move.l #1,-(a6)                ;rempli avec de la couleur
-L257n:  jsr 264
+L257n:  jsr L_setpaint.l
 ; Init du defscroll/scroll
         move.l dfst(a5),a0               ;Table de def scroll
         moveq #16*8-1,d0
@@ -6673,7 +6673,7 @@ l278z:  moveq #13,d0
 *       BAR
 L279:   dc.w l279a-l279,l279b-l279,0
 *************************************
-l279a:  jsr 294
+l279a:  jsr L_polypar.l
         move.w #1,10(a2)
         move.w #11,(a2)
         clr.w 6(a2)
@@ -6684,7 +6684,7 @@ l279b:  jmp L_avdi.l
 *       RBOX
 L280:   dc.w l280a-l280,l280b-l280,0
 *************************************
-l280a:  jsr 294
+l280a:  jsr L_polypar.l
         move.w #8,10(a2)
         move.w #11,(a2)
         clr.w 6(a2)
@@ -6695,7 +6695,7 @@ l280b:  jmp L_avdi.l
 *       RBAR
 L281:   dc.w l281a-l281,l281b-l281,0
 *************************************
-l281a:  jsr 294
+l281a:  jsr L_polypar.l
         move.w #9,10(a2)
         move.w #11,(a2)
         clr.w 6(a2)
@@ -6743,7 +6743,7 @@ l282z:  moveq #13,d0
 *       POLYGONE x1,y1 TO x2,y2 TO ....
 l283:   dc.w l283a-l283,l283b-l283,0
 *************************************
-l283a:  jsr 294                   ;va chercher le parametres
+l283a:  jsr L_polypar.l                   ;va chercher le parametres
         move #9,(a2)
         clr 6(a2)
         move grh(a5),12(a2)
@@ -6786,7 +6786,7 @@ l284z:  moveq #13,d0
 *       POLYLINE x1,y1 TO x2,y2 TO x3,y3 TO .....
 l285:   dc.w l285a-l285,l285b-l285,0
 *************************************
-l285a:  jsr 294
+l285a:  jsr L_polypar.l
         move #6,(a2)
         clr 6(a2)
         move grh(a5),12(a2)
@@ -7022,7 +7022,7 @@ l295:   dc.w l295a-l295,0
         beq.s cu0
         moveq #39,d0        ;arrete les flash
         trap #5
-L295a:  jsr 303+2           ;remet les couleurs
+L295a:  jsr L_palette3.l    ;remet les couleurs
 cu0:    moveq #20,d0        ;code arret cur
         bra.s cu1
 ; marche du curseur
@@ -7163,7 +7163,7 @@ L302:   dc.w l302a-l302,l302b-l302,0
         bcc.s l302x
         cmp.w #2,mode(a5)
         beq.s l302y
-l302a:  jsr L_maude.l
+l302a:  jsr L_mode.l
 l302b:  jmp L_modebis.l
 l302x:  moveq #13,d0
         bra.s l302z
@@ -7177,8 +7177,8 @@ L303:   dc.w l303a-l303,l303b-l303,0
 *************************************
         move.l adlogic(a5),a0
         lea 32000(a0),a0
-l303a:  jsr 304
-l303b:  jmp 305
+l303a:  jsr L_palette2.l
+l303b:  jmp L_palette3.l
 
 *************************************************************************
 *       LIS LES PARAMETRES D'UNE PALETTE D0=nb / D1=flags
@@ -8557,7 +8557,7 @@ l383:   dc.w l383a-l383,l383b-l383,0
         move.w d1,-(sp)
         move.l adlogic(a5),a0
         lea 32000(a0),a0
-l383a:  jsr 304
+l383a:  jsr L_palette2.l
         move.w (sp)+,d1
 l383b:  jmp L_fade.l
 
@@ -8675,7 +8675,7 @@ l390:   dc.w l390a-l390,0
         beq.s l390z
         moveq #0,d3
 	move.w defmod(a5),d0
-l390a:  jsr L_maude.l
+l390a:  jsr L_mode.l
 l390z:  rts
 
 *************************************************************************
@@ -8686,7 +8686,7 @@ l391:   dc.w l391a-l391,l391b-l391,l391c-l391,0
         move.w 32(a0),cursflg(a5)       ;Prend le curseur par 299!
         move.w 32+2(a0),foncon(a5)      ;Touches de fonction
         clr mnd+12(a5)
-l391a:  jsr 569				;menuoff
+l391a:  jsr L_menuoff.l				;menuoff
 l391b:  jsr L_modebis.l
 
 ; Poke l'ambiance par 299
@@ -8701,7 +8701,7 @@ l391p:  move.w (a0)+,(a1)+
 	cmp.w #2,mode(a5)		;Si noir et blanc---> poke inverse
 	bne.s l391c
 	move.w d2,(a2)
-l391c:  jsr 305
+l391c:  jsr L_palette3.l
 
 ; Termine
 	move.l amb(a5),a0
@@ -9272,7 +9272,7 @@ l426:   dc.w l426a-l426,l426b-l426,l426c-l426,l426d-l426
         dc.w l426i-l426,0
 **************************
         move.l (a6)+,-(sp)
-l426a:  jsr 425
+l426a:  jsr L_charlen.l
         move.l (sp)+,d3
         move.l (a6)+,d0
         tst.l d0
@@ -10299,7 +10299,7 @@ l489g:  jsr L_readdisk.l
         bmi.s l489z
 ; POKE LA PALETTE ET FAIT APPARAITRE L'ECRAN (OU NON)
 pokpal:
-l489h:  jsr 129
+l489h:  jsr L_closys.l
         cmp.l adback(a5),a3
         bne.s plf
         tst d5              ;ET 0 a la fin
@@ -10310,8 +10310,8 @@ l489h:  jsr 129
         add.l #32000,a0
 pkp:    move.w (a3)+,(a0)+
         dbra d0,pkp
-l489i:  jsr 305             ;envoie la palette au XBIOS
-l489j:  jsr 38         ;attend le balayage
+l489i:  jsr L_palette3.l             ;envoie la palette au XBIOS
+l489j:  jsr L_waitvbl.l         ;attend le balayage
         moveq #23,d0
         trap #5             ;DEC TO EC
         moveq #29,d0
@@ -10419,8 +10419,8 @@ l491g:  jsr L_transmem.l        ;bouge les variables
         move.l (sp)+,d0
 l491h:  jsr L_readdisk.l
         bmi.s errbk2
-l491i:  jsr 129
-l491j:  jmp 220
+l491i:  jsr L_closys.l
+l491j:  jmp L_resbis.l
 ; ERREUR EN COURS DE CHARGEMENT DE BANQUES! kADASDROPHE!
 errbank:lea unewbank(a5),a0
         move.l adatabank(a5),a1
@@ -10464,7 +10464,7 @@ l492b:  jsr L_open.l                 ;ouvre le fichier
         and.l #$ffffff,d0
         or.l #$81000000,d0       ;pour le moment: flag DATA
         move.l d0,4(a0)
-l492c:  jsr 493                  ;verifie/reserve/charge: GENIAL!
+l492c:  jsr L_loadinput.l                  ;verifie/reserve/charge: GENIAL!
         move.l (sp)+,d3
 l492d:  jsr L_adbank.l               ;adresse de la banque
         beq.s l492t
@@ -10541,8 +10541,8 @@ l493e:  jsr L_adbank.l                    ;adresse ou charger
         move.l (sp)+,d0               ;longueur a charger
 l493f:  jsr L_readdisk.l
         bmi.s l493z
-l493g:  jsr 129
-l493h:  jmp 220                    ;va tout changer dans le programme
+l493g:  jsr L_closys.l
+l493h:  jmp L_resbis.l                    ;va tout changer dans le programme
 l493z:  jmp L_diskerr.l
 l493y:  moveq #81,d0
         move.l error(a5),a0
@@ -10572,7 +10572,7 @@ l494e:  jsr L_open.l            ;ouvre le fichier
         move.l 26(a1),d0    ;taille du fichier
 l494f:  jsr L_readdisk.l         ;charge
         bmi.s l494z
-l494g:  jsr 129
+l494g:  jsr L_closys.l
         rts
 l494t:  moveq #48,d0
         move.l error(a5),a0
@@ -10603,7 +10603,7 @@ l495e:  jsr L_create.l
         sub.l a0,d0         ;taille a sauver
 l495f:  jsr L_write.l
         bmi.s l495z
-l495g:  jsr 129
+l495g:  jsr L_closys.l
         rts
 l495z:  jmp L_diskerr.l
 
@@ -10708,7 +10708,7 @@ l497i:  jsr L_write.l
         bmi.s l497y
 ; Ferme le fichiers
 pics10:
-l497j:  jsr 129
+l497j:  jsr L_closys.l
         rts
 l497s:  moveq #12,d0
         move.l error(a5),a0
@@ -10816,7 +10816,7 @@ cbk2:   dc.b "Lionpoubnk"
 l500:   dc.w l500a-l500,l500b-l500,l500c-l500,0
 **********************************************
         move.l d0,-(sp)
-l500a:  jsr 129
+l500a:  jsr L_closys.l
         move.l name1,a0
 l500b:  jsr L_unlink.l
         move.l (sp)+,d0
@@ -11714,17 +11714,17 @@ dnxt3:  move.b (a2)+,(a0)+  ;copie le nom du fichier: 0
         add.l #13,a0
         clr.l d4
         moveq #-1,d3
-l536b:  jsr 39
+l536b:  jsr L_longdec.l
         move.l dta(a5),a2          ;date: 22
         move.w 24(a2),d7
         move.l (sp),a0
         add.l #22,a0
-l536c:  jsr 148
+l536c:  jsr L_datebis.l
         move.l dta(a5),a2          ;heure: 33
         move.w 22(a2),d7
         move.l (sp),a0
         add.l #33,a0
-l536d:  jsr 147
+l536d:  jsr L_timebis.l
         clr.l d0                   ;type de fichier: 42--->45
         move.l dta(a5),a2
         move.b 21(a2),d0
@@ -11732,7 +11732,7 @@ l536d:  jsr 147
         lea 42(a0),a0
         clr.l d4
         moveq #-1,d3
-l536e:  jsr 39
+l536e:  jsr L_longdec.l
         rts
 l536v:  move.l chvide(a5),-(a6)
         rts
@@ -11805,7 +11805,7 @@ l538z:  jmp L_diskerr.l
 l539:   dc.w l539a-l539,l539b-l539,l539z-l539,0
 **********************************************
         movem.l a2/d2,-(sp)
-l539a:  jsr 529
+l539a:  jsr L_getdrive2.l
         addq.l #4,a6
         move.l buffer(a5),a3
         move.w d3,128(a3)
@@ -11953,18 +11953,18 @@ l544b:  jsr L_savedrive.l
         movem.l a4-a6,-(sp)
         bsr impr
         lea msd0(pc),a0           ;Drive
-l544c:  jsr 159
+l544c:  jsr L_traduit.l
         bsr impc
-l544d:  jsr 529                ;numero du drive
+l544d:  jsr L_getdrive2.l               ;numero du drive
         move.l (a6)+,d0
-        add.b #65,d0
+        add.b #'A',d0
         move.l defloat(a5),a0
         move.b d0,(a0)
         clr.b 1(a0)
         bsr impc
 
         lea msd1(pc),a0           ;path
-l544e:  jsr 159
+l544e:  jsr L_traduit.l
         bsr impc
         clr.w -(sp)
         move.l defloat(a5),-(sp)
@@ -12017,7 +12017,7 @@ dd5:    lea 1(a2),a0        ;imprime le nom
         move.l a2,-(sp)
         clr.l d4
         moveq #-1,d3
-l544g:  jsr 39
+l544g:  jsr L_longdec.l
         clr.b (a0)
         move.l (sp)+,a2
         move.l defloat(a5),a0      ;affiche la taille
@@ -12039,7 +12039,7 @@ dd10:   bsr impr
         move.l defloat(a5),a0
         clr.l d4
         moveq #-1,d3
-l544h:  jsr 39         ;ecris le nombre de BYTE USED
+l544h:  jsr L_longdec.l         ;ecris le nombre de BYTE USED
         clr.b (a0)
         move.l defloat(a5),a0
         bsr impc
@@ -12051,7 +12051,7 @@ dd11:   lea msd3(pc),a0
         bra.s dd13
 dd12:   lea msd2(pc),a0
 dd13:
-l544i:  jsr 159
+l544i:  jsr L_traduit.l
         bsr impc
         bsr impr
 dd15:
@@ -12062,7 +12062,7 @@ l544j:  jsr L_restoredrive.l                 ;Restore drive!
 
 ;-----> Imprime la chaine
 impc:   movem.l a1/a2,-(sp)
-l544k:  jsr 37
+l544k:  jsr L_impfin.l
         movem.l (sp)+,a1/a2
         rts
 ;-----> Imprime un retour chariot
@@ -12116,7 +12116,7 @@ l545:   dc.w l545a-l545,l545b-l545,l545c-l545,l545d-l545
         sub.l #2600,d0
         cmp.l hichaine(a5),d0
         bhi.s F1
-l545a:  jsr 165
+l545a:  jsr L_garbage.l
 F1:     move.l hichaine(a5),a0    ;Adresse du buffer= hichaine!
         moveq #127,d0         ;128 noms
 F2:     moveq #13,d1          ;RAZ du buffer
@@ -12589,7 +12589,7 @@ fs4:    moveq #0,d7
         tst fsd+24(a5)           ;imprime le titre
         bne.s fs4a
         lea fst(pc),a0
-l558b:  jsr 159
+l558b:  jsr L_traduit.l
         moveq #18,d7
         trap #3
         bra.s fs4b
@@ -12632,7 +12632,7 @@ l558c:  jsr L_fillfile.l
         move #-1,fsd+6(a5)
         bsr filesaff
 ; raz du buffer clavier
-l558d:  jsr 177+2
+l558d:  jsr L_clearkey.l
 ; boucle d'attente
 fswait:
 fs9:    moveq #20,d0        ;trouve la zone de la souris
@@ -13123,7 +13123,7 @@ writext:movem.l d0-d2/a0-a2,-(sp)
         add.l (a1)+,a0
         cmp #6,d2
         bcc.s wt3
-l558h:  jsr 159
+l558h:  jsr L_traduit.l
 wt3:    move.w (a1)+,d0
         move.w (a1)+,d1
         bsr writepos
@@ -13140,7 +13140,7 @@ pathaff:bsr memocurs
         move.w 6(a0),d1
         moveq #2,d7
         trap #3
-l558i:  jsr 529             ;cherche le disque courant
+l558i:  jsr L_getdrive2.l             ;cherche le disque courant
         addq.l #4,a6
         move.l name1(a5),a0
         add.b #65,d3
@@ -14387,7 +14387,7 @@ l581z:  moveq #12,d0
 *       RUN -nom-
 l582:   dc.w l582a-l582,l582b-l582,0
 ***********************
-l582a:  jsr 583                         ;Verifie le nom!
+l582a:  jsr L_vername.l                         ;Verifie le nom!
         movem.l d0/a0/a1,-(sp)
 l582b:  jsr L_delete.l                  ;Deloge
         tst.w flagem(a5)

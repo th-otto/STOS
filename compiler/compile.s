@@ -5070,25 +5070,25 @@ If1:    move.b #$9a,d0
         bsr ftoken
         beq.s If3
         bmi.s If2
-; A trouve un THEN
+; Found a THEN
         /* addq.w #1,ccptnext */
         dc.l 0x06790001,ccptnext /* XXX */
         bra.s If1
-; A trouve un ELSE
+; Found an ELSE
 If2:    /* subq.w #1,ccptnext */
         dc.l 0x04790001,ccptnext /* XXX */
         bne.s If1
-; A trouve le bon ELSE
+; Found the right ELSE
         bra.s If4
 ; Pas de ELSE
 If3:    /* move.l #$1,a1 */
         dc.w 0x227c,0,1 /* XXX */
-; Stocke dans la table d'adressage
+; Store in the addressing table
 If4:    move.l Pif,a0
         move.l a1,(a0)+
         move.l a5,(a0)+
         move.l a0,Pif
-; Numero de ligne apres le THEN?
+; Line number after THEN?
         bsr getbyte
         subq.l #1,a6
         cmp.b #$fe,d0
@@ -8043,11 +8043,11 @@ Cpsg:   bsr test0
 CRun:   bsr finie
         bne.s CRun1
 ; Run seul
-        move.w #581,d0
+        move.w #L_run,d0
         bra crefonc
 ; Run NOM$
 CRun1:  bsr expalpha
-        move.w #582,d0
+        move.w #L_runname,d0
         bra crefonc
 
 ;-----> LOAD / SAVE
@@ -8518,7 +8518,7 @@ ReJ2:   bclr #7,d0              ;Flag #7=0 ---> JSR ou CHAINE
         move.l a5,OldRel
         move.l (sp)+,d0
         rts
-; Poke un octet dans la table de relocation
+; Poke a byte in the relocation table
 OutRel: tst.w passe
         beq.s OutR
         move.b d0,(a4)+

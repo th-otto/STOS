@@ -235,7 +235,7 @@ L_jright         = 252
 L_jleft          = 253
 L_jdown          = 254
 L_jup            = 255
-L_maude          = 256
+L_mode           = 256
 L_modebis        = 257
 L_inkk           = 258
 L_grwriting      = 259
@@ -560,5 +560,8 @@ L_onmenugoto     = 577
 L_autoback       = 578
 L_autobackis     = 579
 L_deftos         = 580
+L_run            = 581
+L_runname        = 582
+L_vername        = 583
 
 L_RoutMx         = 600

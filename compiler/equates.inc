@@ -59,18 +59,18 @@ printpos:   .ds.l 1
 printfile:  .ds.l 1
             .ds.w 1
 sortflg:    .ds.w 1
-tokvar:     .ds.l 1 ; no longer used
-varlong:    .ds.w 1 ; no longer used
-tokch:      .ds.l 1 ; no longer used
-chlong:     .ds.w 1 ; no longer used
-nboucle:    .ds.w 1 ; no longer used
-tstnbcle:   .ds.w 1 ; no longer used
-posbcle:    .ds.l 1 ; no longer used
-tstbcle:    .ds.l 1 ; no longer used
-posgsb:     .ds.l 1 ; no longer used
-cptnext:    .ds.w 1 ; no longer used
-oldfind:    .ds.l 1 ; no longer used
-nbdim:      .ds.w 1 ; no longer used
+tokvar:     .ds.l 1 ; interpreter only
+varlong:    .ds.w 1 ; interpreter only
+tokch:      .ds.l 1 ; interpreter only
+chlong:     .ds.w 1 ; interpreter only
+nboucle:    .ds.w 1 ; interpreter only
+tstnbcle:   .ds.w 1 ; interpreter only
+posbcle:    .ds.l 1 ; interpreter only
+tstbcle:    .ds.l 1 ; interpreter only
+posgsb:     .ds.l 1 ; interpreter only
+cptnext:    .ds.w 1 ; interpreter only
+oldfind:    .ds.l 1 ; interpreter only
+nbdim:      .ds.w 1 ; interpreter only
 scankey:    .ds.w 1
 datastart:  .ds.l 1
 dataline:   .ds.l 1
