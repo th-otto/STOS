@@ -6,6 +6,7 @@
 
 	.include "lib.inc"
 	.include "equates.inc"
+    .include "adapt.inc"
 
 	.text
 
@@ -318,8 +319,8 @@ merr:   dc.b "in line ",0
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
         even
-cjsr:           jsr $ffffff
-cjmp:           jmp $ffffff
+cjsr:           jsr $fffffe
+cjmp:           jmp $fffffe
 cbra:           bra.w cbra
 cleaa0:         lea $ffffff,a0
 cleaa2:         lea $ffffff,a2
@@ -342,7 +343,7 @@ crts:           rts
 *	Ramene la version
 ***************************
 Version:
-	move.w #$0206,d0
+	move.w #$0300,d0
 	rts
 
 *********************************************************************
@@ -1244,16 +1245,13 @@ CIni2:  btst d7,d6
         bra.s 	CIni5
 ; passe 1 : charge
 CIni3:
-        .IFNE 0 /* YYY version 2.08 */
         move.l 	a5,d1
         sub.l 	objet(pc),d1
         move.l 	d1,(a2)                  ;Adresse de l'extension
-        .ENDC
         move.l 	4(a1),d0                 ;Pointe l'init
         addi.l 	#$1c,d0
         bsr 	LSeek
         
-        .IFNE 0 /* YYY version 2.08 */
         move.l 	8(a1),d5                 ;Longueur a charger
         sub.l 	4(a1),d5
 CIni3a:	move.l	d5,d0
@@ -1276,29 +1274,6 @@ CIni5:  lea 	4(a2),a2
         addq.w 	#1,d7
         cmp.w 	#27,d7
         bcs.s 	CIni2
-
-		.ELSE
-        move.l 	8(a1),d0                 ;Longueur a charger
-        sub.l 	4(a1),d0
-CIni3a:	cmp.l 	MaxLoad(pc),d0
-        bhi 	csynt
-CIni3b: move.l 	BufLoad(pc),a0
-        bsr 	load
-        move.l 	a5,d1
-        sub.l 	objet(pc),d1
-        move.l 	d1,(a2)                  ;Adresse de l'extension
-        move.l	BufLoad(pc),a1
-        move.l 	d0,d1
-	subq.w	#1,d1
-        lsr.w 	#2,d1
-CIni4:  move.l 	(a1)+,d0
-        bsr 	outlong
-        dbra 	d1,CIni4
-CIni5:  lea 	4(a2),a2
-        addq.w 	#1,d7
-        cmp.w 	#27,d7
-        bcs.s 	CIni2
-		.ENDC
 
 ;------------------------------------> COPIE LES ROUTINES LIBRAIRIE
                                         ;A6= debut des routines
@@ -1425,13 +1400,12 @@ ReR2:   bclr #7,d0                      ;Flag #7=0 ---> JSR
         bclr #31,d0
         beq.s ReR3
 ; Internal call to the extension (BUG BUG BUG!)
-    .IFNE 0 /* YYY version 2.08 */
 	move.l	d0,d1
 	andi.w	#$00FF,d0
 	swap	d6
 	lsl.w	#8,d6
 	or.w	d6,d0
-	sub.w	#$0100,d0
+	subi.w	#$0100,d0
 	lsr.w	#8,d6
 	swap	d6
         bset 	#28,d0
@@ -1440,14 +1414,6 @@ ReR2:   bclr #7,d0                      ;Flag #7=0 ---> JSR
         move.l 	PAdExtAp(pc),a0
         move.l 	-4(a0),a0
         add.w 	d1,a0
-    .ELSE
-        bset 	#28,d0
-        bsr 	outlong
-        lsl.w 	#2,d0
-        move.l 	PAdExtAp(pc),a0
-        move.l 	-4(a0),a0
-        add.w 	d0,a0
-	.ENDC
         tst.l 	(a0)
         bne.s 	CLib7
         move.l 	#1,(a0)
@@ -2132,9 +2098,9 @@ OLong   = 0
 ODataB  = 4
 ;-----> Programme
 ButDe:  bra 	DPrg
-        dc.b 	"Stos basic compiler V 1.0 by Francois Lionet"
+        dc.b 	"STOS basic compiler V 3.0 by Francois Lionet"
 glu:
-        dcb.b 128-(glu-debprg),48 /* pad to 128 bytes */
+        dcb.b 128-(glu-debprg),0 /* pad to 128 bytes */
         even
 
 **********************************
@@ -2404,11 +2370,6 @@ cd1:    move.b (a1)+,(a3)+
         addq.l #6,sp
 
 ;-----> passe en mode SUPERVISEUR -si pas deja-
-	.IFNE 1 /* XXX 2.08 disabled */
-	move.w sr,d0		 ; ILLEGAL find another way
-	btst #13,d0
-	bne.s DejaSup
-	.ENDC
         clr.l -(sp)         ;passage en mode SUPERVISEUR
         move.w #$20,-(sp)
         trap #1
@@ -2427,17 +2388,17 @@ DejaSup:
         moveq #15,d0
 bgp1:   move.w (a0)+,(a1)+
         dbra d0,bgp1
-    .IFNE 0 /* YYY 2.08 */
-; Adapte aux ROMS en respectant le systeme
+
+; Adapt to ROMS respecting the system
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	lea	adapt+2(pc),a4
+	lea	adapt(pc),a4
 	dc.w	$A000
 	lea	-602(a0),a1	; Position souris
-	move.l	a1,(a4)
+	move.l	a1,adapt_gcurx(a4)
 	lea	-692(a0),a1	; table VDI 1
-	move.l	a1,12(a4)
+	move.l	a1,adapt_devtab(a4)
 	lea	-498(a0),a1	; table VDI 2
-	move.l	a1,16(a4)
+	move.l	a1,adapt_siztab(a4)
 
 	move.w	#1,-(sp)	; Adresse du buffer clavier
 	move.w	#14,-(sp)
@@ -2450,35 +2411,13 @@ bgp1:   move.w (a0)+,(a1)+
 	addq.l	#2,sp
 	move.l	d0,a0
 	lea	16(a0),a1		; Adresse souris
-	move.l	a0,20(a4)
+	move.l	a1,adapt_mousevec(a4)
 	lea	24(a0),a0
 	lea	Joy_In(pc),a1
 	move.l	a0,Joy_Ad-Joy_In(a1)
 	move.l	(a0),Joy_Sav-Joy_In(a1)
 	move.l	a1,(a0)			; Branche la routine joystick
-	move.l	a1,4(a4)		; Adresse du resultat
-
-	.ELSE
-; Adapte ST/STE
-	move.l $8.l,d1
-	lea Ste(pc),a0
-	move.l a0,$8.l
-	move.l sp,d2
-	move.w $FC0002,d0
-FinSte:	move.l d2,sp
-	move.l d1,$8.l
-        lea adapt(pc),a0
-        moveq #NbAdapt-1,d1
-adapt1: cmp.w (a0)+,d0
-        beq.s adapt2
-        add.w #28,a0
-        dbra d1,adapt1
-        lea adapt+2(pc),a0        ;par defaut: ROM du mega ST
-adapt2: lea adapt+2(pc),a2
-        moveq #6,d0
-adapt3: move.l (a0)+,(a2)+    ;recopie en ADAPT+2
-        dbra d0,adapt3
-	.ENDC
+	move.l	#Joy_Pos,adapt_joy(a4)		; Adresse du resultat
 
 ; Fausse trappe FLOAT en trappe 6
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2491,16 +2430,16 @@ adapt3: move.l (a0)+,(a2)+    ;recopie en ADAPT+2
         trap #14              ; get res
         addq.l #2,sp
         move d0,modec(a5)
-        lea adapt+2(pc),a3
-        move.l 12(a3),a0              ;table VDI 1
+        lea adapt(pc),a3
+        move.l adapt_devtab(a3),a0              ;table VDI 1
         moveq #$5a/2-1,d0
 sv1:    move.w (a0)+,(a4)+            ;recopie...
         dbra d0,sv1
-        move.l 16(a3),a0              ;table VDI 2
+        move.l adapt_siztab(a3),a0              ;table VDI 2
         moveq #$18/2-1,d0
 sv2:    move.w (a0)+,(a4)+            ;recopie...
         dbra d0,sv2
-        /* move.l 0(a3),a0               ;coordonnees de la souris */
+        /* move.l adapt_gcurx(a3),a0               ;coordonnees de la souris */
         dc.w 0x206b,0 /* XXX */
         move.l (a0),(a4)+
 
@@ -2521,11 +2460,11 @@ inbt1:  clr.l (a0)+
         move.l a0,callreg+4(a5)
         move.l sp,spile(a5)             ;Sauve la pile
         move.l a5,sp                    ;Nouvelle pile
-        lea adapt+2(pc),a3
+        lea adapt(pc),a3
         move.l a3,ada(a5)               ;adresse adaptation
-        move.l (a3),adm(a5)             ;adresse souris
-        move.l 8(a3),adk(a5)            ;adresse clavier
-        move.l 24(a3),ads(a5)           ;adresse sons
+        move.l adapt_gcurx(a3),adm(a5)             ;adresse souris
+        move.l adapt_kbiorec(a3),adk(a5)            ;adresse clavier
+        move.l adapt_sndtable(a3),ads(a5)           ;adresse sons
 
         clr.l -(a4)                     ;Initialise dataprg
         lea dataprg(a5),a0
@@ -2729,7 +2668,7 @@ inbcl:  clr.l (a3)+
         move.l otrap5(a6),a2
         bsr reloge
         move.l omou(a6),a2
-        lea adapt+2(pc),a3
+        lea adapt(pc),a3
         move.l otbufsp(a6),d0
         move.l otrap5(a6),a4
         jsr (a4)
@@ -2825,7 +2764,7 @@ InEc:	clr.l (a0)+
 	dbra d0,InEc
         bra.w inbf
     
-    .IFNE 1 /* 2.08 disabled */
+    .IFNE 0 /* 2.08 disabled */
 Ste:	move.w $E00002,d0
 	bra FinSte
 	.ENDC
@@ -2908,18 +2847,12 @@ i5c:    cmp #32,d0
         bra.s i5z
 i5d:    lea b4(pc),a0
 i5z:
-	.IFNE 0 /* YYY 2.08 */
-	sub.l	#23*2,$4a2		; Safe BIOS interrupt call /* XXX */
+	sub.l	#23*2,$4a2.l		; Safe BIOS interrupt call /* XXX */
 	move.l	a0,-(sp)
 	move.w	#32,-(sp)
 	trap 	#14
 	addq.l	#6,sp
-	add.l	#23*2,$4a2
-	.ELSE
-     move.l ads(a2),a1                 ;adresse SONS
-     move.l a0,(a1)                ;fait demarrer le son
-     clr.b 4(a1)
-	.ENDC
+	add.l	#23*2,$4a2.l /* XXX */
 ; fin des interruptions: se rebranche a la routine normale
 fi5:    move.l anc400(a2),a0
         jmp (a0)
@@ -2961,15 +2894,18 @@ exec2:  add.w #254,a2       ;si 1 saute 254 octets
 exec3:  movem.l (sp)+,d0-d3/a0-a3
         rts
 
-	.IFNE 0 /* YYY 2.08 */
 **********************************************
 *	ROUTINE GESTION DU JOYSTICK
 **********************************************
 Joy_In:
+    .IFNE 0 /* XXX */
 	move.l	a1,-(sp)
 	lea	Joy_Pos(pc),a1
 	move.b	2(a0),(a1)
 	move.l	(sp)+,a1
+	rts
+	.ELSE
+	move.b	2(a0),Joy_Pos
 	rts
 	.ENDC
 
@@ -3002,24 +2938,22 @@ fingem: move.l anc400(a5),$400.l /* XXX */
 ; Remet le click des touches
         move.b #7,$484.l /* XXX */
 ; Restore la routine d'entree du joystick
-    .IFNE 0 /* YYY 2.08 */
 	move.l	Joy_Ad(pc),d0
 	beq.s	.Skip
 	move.l	d0,a0
 	move.l	Joy_Sav(pc),(a0)
-	.ENDC
 ; RETOUR au gem
 .Skip:   lea dataec+32(pc),a4
-        lea adapt+2(pc),a3
-        move.l 12(a3),a0      ;table VDI 1
+        lea adapt(pc),a3
+        move.l adapt_devtab(a3),a0      ;table VDI 1
         moveq #$5a/2-1,d0
 lv1:    move.w (a4)+,(a0)+
         dbra d0,lv1
-        move.l 16(a3),a0      ;table VDI 2
+        move.l adapt_siztab(a3),a0      ;table VDI 2
         moveq #$18/2-1,d0
 lv2:    move.w (a4)+,(a0)+
         dbra d0,lv2
-        /* move.l 0(a3),a0       ;adresse souris */
+        /* move.l adapt_gcurx(a3),a0       ;adresse souris */
         dc.w 0x206b,0 /* XXX */
         move.l (a4)+,(a0)     ;coords de la souris
 ; Palette / images
@@ -3058,78 +2992,11 @@ otrp1:  dc.l 0
 cvdipb: dc.l 0,0,0,0,0
 **********************************************
 ;-----------------------------> Adaptation aux differentes ROMS
-    .IFNE 0 /* YYY 2.08 */
-adapt:   dc.w 	0
-	dc.l 	0,0,0,0,0,0,0
+tosversion: .dc.w    0
+adapt:      .ds.b    adapt_sizeof
 Joy_Sav:	dc.l	0		; Adresses de gestion du joystick
 Joy_Pos:	dc.l	0
 Joy_Ad:	dc.l	0
-
-	.ELSE
-;-----------------------------> Adaptation aux differentes ROMS
-; 1- MEGA ST
-adapt:    dc.w $0102
-          dc.l $2740
-          dc.l $e4f
-          dc.l $c76
-          dc.l $26e6
-          dc.l $27a8
-          dc.l $e22
-          dc.l $e8a
-; 2- 520/1040 V 1.0
-          dc.w $0100
-          dc.l $26e0            ;adresses souris
-          dc.l $e09             ;adresse joystick
-          dc.l $db0             ;buffer clavier
-          dc.l $2686            ;table VDI 1
-          dc.l $2748            ;table VDI 2
-          dc.l $ddc             ;vecteur inter souris
-          dc.l $e44             ;depart d'un son
-; 3- 520/1040 V 1.1
-          dc.w $0101
-          dc.l $26e0            ;adresses souris
-          dc.l $e09             ;adresse joystick
-          dc.l $db0             ;buffer clavier
-          dc.l $2686            ;table VDI 1
-          dc.l $2748            ;table VDI 2
-          dc.l $ddc             ;vecteur inter souris
-          dc.l $e44             ;depart d'un son
-; 4- ROMS 1.4
-	dc.w $0104
-          dc.l $2882            ;adresses souris
-          dc.l $e6b             ;adresse joystick
-          dc.l $c92             ;buffer clavier
-          dc.l $2828            ;table VDI 1
-          dc.l $28ea            ;table VDI 2
-          dc.l $e3e             ;vecteur inter souris
-          dc.l $ea6             ;depart d'un son
-; 5- ROMS 1.6
-	dc.w $0106
-          dc.l $28c2            ;adresses souris
-          dc.l $eab             ;adresse joystick
-          dc.l $cd2             ;buffer clavier
-          dc.l $2868            ;table VDI 1
-          dc.l $292a            ;table VDI 2
-          dc.l $e7e             ;vecteur inter souris
-          dc.l $ee6             ;depart d'un son
-; 6- ROMS 1.62
-	dc.w $0162
-          dc.l $28c2            ;adresses souris
-          dc.l $eab             ;adresse joystick
-          dc.l $cd2             ;buffer clavier
-          dc.l $2868            ;table VDI 1
-          dc.l $292a            ;table VDI 2
-          dc.l $e7e             ;vecteur inter souris
-          dc.l $ee6             ;depart d'un son
-; 7- Vide
-          dc.w $ffff
-          dc.l 0,0,0,0,0,0,0
-; 8- Vide
-	  dc.w $ffff
-   	  dc.l 0,0,0,0,0,0,0
-NbAdapt	equ 8
-
-	.ENDC
 
 dataec: 	ds.b 	152+4+4
 modec	= 	152

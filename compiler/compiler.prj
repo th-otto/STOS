@@ -1,5 +1,8 @@
 compiler\comp_208.prg
 .L[-S=0]
 .S[-S]
+.L[-R]
+.L[-M]
+.S[-I..\src]
 =
 compile.s
