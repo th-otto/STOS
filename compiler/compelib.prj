@@ -1,4 +1,4 @@
 compiler\compiler.ecc
 .L[-S=0]
 =
-compilec.s
+compelib.s

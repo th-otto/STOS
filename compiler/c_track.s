@@ -8,13 +8,8 @@
 * la disquette du journal.
 *	include "equates.inc"
 
-		.include "lib.s"
-
-Debut:	equ	$92c
-Buffer:	equ	$938
-Error:	equ	$93c
-SVect:	equ	$9b4
-Dta:	equ	$970
+		.include "lib.inc"
+		.include "equates.inc"
 
 ******* POINTEURS SUR LES LIBRAIRIES
 Debu:   dc.l Para-Debu
@@ -73,7 +68,7 @@ DATA
 * ENTREE DE LA ROUTINE INITIALISATION
 Init:   
 * Enlevez les etoiles pour debugger!
-*	lea	SVect(a5),a2
+*	lea	svect(a5),a2
 *	move.l	(a2)+,$8
 *	move.l	(a2)+,$c
 *	move.l	(a2)+,$404
@@ -114,7 +109,7 @@ L1:	dc.w	ki1-l1
 	dc.w 	L1d-L1
 	dc.w 	L1e-L1
 	dc.w 	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	move.l	(a6)+,d6
 	cmp.l	#15,d6
@@ -134,7 +129,7 @@ L1a	jsr	l_erase.l
 L1b	jsr	L_resbis.l
 	movem.l	(sp)+,d0-d7/a0-a3
 ; Copie la chaine dans le buffer, zero a la fin	
-	move.l	Buffer(a5),a0
+	move.l	buffer(a5),a0
 	move.l	a0,a1
 	move.l	a1,d4
 	subq.w	#1,d2
@@ -169,7 +164,7 @@ L1d	jsr	L_resbis.l
 	moveq	#0,d0
 	bsr	Open
 	bmi	L1DErr
-	move.l	Buffer(a5),a0
+	move.l	buffer(a5),a0
 	moveq	#12,d0	
 	bsr	Read
 	bne	L1DErr
@@ -239,12 +234,12 @@ L1NFnd	moveq	#48,d0
 L1DErr	moveq	#52,d0
 ; Appel de l'erreur
 L1Err	bsr	Close
-	move.l	Error(a5),a0
+	move.l	error(a5),a0
 	jmp	(a0)
 
 ******* =TRACK SCAN
 L2:	dc.w	0
-	move.l	Debut(a5),a0	
+	move.l	debut(a5),a0	
 	move.l	0(a0,d1.w),a0
 	lea	Touche-Data(a0),a0
 	moveq	#0,d0
@@ -255,7 +250,7 @@ L2:	dc.w	0
 
 ******* TRACK BANK bank
 L3:	dc.w	L3a-L3,0	
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	lea	MB-Data(a3),a0
 	clr.l	MusBank-MB(a0)
@@ -266,12 +261,12 @@ L3a:	jsr	L_adoubank.l
 	bne.s	L3Bad
 	rts
 L3Bad	moveq	#13,d0
-	move.l	Error(a5),a0
+	move.l	error(a5),a0
 	jmp	(a0)
 
 ******* TRACK VU(voix)
 L4:	dc.w 	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	move.l	(a6)+,d0
 	subq.l	#1,d0
@@ -284,12 +279,12 @@ L4:	dc.w 	0
 	move.l	d1,-(a6)
 	rts
 L4FCall	moveq	#13,d0
-	move.l	Error(a5),a0
+	move.l	error(a5),a0
 	jmp	(a0)
 
 ******* TRACK PLAY music
 L5:	dc.w	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 ; Poke les adresses dans la routine
 	lea	TtAd1+2(pc),a1
@@ -333,7 +328,7 @@ L6:	dc.w	0
 
 ******* TRACK KEY k
 L7:	dc.w	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	move.l	(a6)+,d0
 	lea	TStop-Data(a3),a0
@@ -345,14 +340,14 @@ L8:	dc.w	0
 
 ******* TRACK VOLUME v
 L9:	dc.w	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	move.l	(a6)+,d0
 	bmi.s	L9FCall
 	jsr	MVol-Data(a3)
 	rts
 L9FCall	moveq	#13,d0
-	move.l	Error(a5),a0	
+	move.l	error(a5),a0	
 	jmp	(a0)
 
 ******* Fonction 10
@@ -360,7 +355,7 @@ L10:	dc.w	0
 
 ******* TRACK TEMPO
 L11:	dc.w	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	move.l	(a6)+,d3
 	jsr	STempo-Data(a3)
@@ -371,7 +366,7 @@ L12:	dc.w	0
 
 ******* TRACK STOP
 L13:	dc.w	0
-	move.l	Debut(a5),a3	
+	move.l	debut(a5),a3	
 	move.l	0(a3,d1.w),a3
 	move.w	#$2700,sr
 	jsr	MusOff-Data(a3)

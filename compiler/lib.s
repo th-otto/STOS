@@ -140,11 +140,11 @@ OVide:          equ DebD+$12
 ; Relogeables
 DebRel:         equ DebD+$10
 OChVide:        equ DebD+$10            ;Chaine vide
-OReloc:         equ DebD+$14            ;Debut de la table de relocation
-OTrappes:       equ DebD+$18            ;Debut des buffers trappes
-OError:         equ DebD+$1c            ;Traitement des erreur
-OLiAd:          equ DebD+$20            ;Table #LIGNE----> ADRESSE
-OAdStr:         equ DebD+$24
+OReloc:         equ DebD+$14            ;debut de la table de relocation
+OTrappes:       equ DebD+$18            ;debut des buffers trappes
+Oerror:         equ DebD+$1c            ;Traitement des erreur
+Oliad:          equ DebD+$20            ;Table #LIGNE----> ADRESSE
+Oadstr:         equ DebD+$24
 OFData:         equ DebD+$28
 OAdMenu:        equ DebD+$2C
 OTrap3:         equ DebD+$30            ;Adresses des trappes
@@ -177,7 +177,7 @@ L1:     dc.w 0
 	clr.w (a0)+
 	move.l a0,HiChaine(a5)
 
-        move.l Debut(a5),a6     ;Debut du programme
+        move.l debut(a5),a6     ;debut du programme
 ; Appelle la fin des trappes
 	lea OExt(a6),a2
 	moveq #26-1,d2
@@ -193,7 +193,7 @@ Ft2:	lea 4(a2),a2
 ; Delete the program
 	move.l a6,d6
 Del0:   move.l OReloc(a6),a0    ;Pointe la table de relocation
-        move.l a6,a2            ;Debut a reloger
+        move.l a6,a2            ;debut a reloger
 Del1:   move.b (a0)+,d0
         beq.s Del5
 Del2:   cmp.b #1,d0
@@ -215,14 +215,14 @@ Del4:   sub.l d6,(a2)           ;Soustraie la base
         bra.s Del1
 
 ; Deloge les adresses lignes
-Del5:   move.l OLiAd(a6),a0
+Del5:   move.l Oliad(a6),a0
 Del6:   cmp.w #$ffff,(a0)+
         beq.s Del7
         sub.l d6,(a0)+
         bra.s Del6
 
 ; Deloge les adresses strings
-Del7:   move.l OAdStr(a6),a0
+Del7:   move.l Oadstr(a6),a0
 Del8:   tst.l (a0)
         beq.s Del9
         sub.l d6,(a0)+
@@ -310,7 +310,7 @@ L3h:    subq.l #2,a2
         rts
 ; String too long
 L3z:    moveq #30,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 *************************************************************************
@@ -457,7 +457,7 @@ mlt2:   move d6,d1
 mlt3:   move.l d1,(a6)
         rts
 mlto:   moveq #21,d0        ;OVERFLOW
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ***************************************************************************
@@ -521,7 +521,7 @@ dvc:    tst d7
 dvd:    move.l d3,(a6)
         rts
 dbz1:   moveq #46,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 
@@ -560,7 +560,7 @@ md1:    roxl.l #1,d0
         move.l d1,(a6)          ;Prend le reste
         rts
 md5:    moveq #13,d0            ;legal fonction call
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 
@@ -856,7 +856,7 @@ L33:    dc.w L33a-L33,L33b-L33,L33d-L33,0
 *****************************************
         moveq #-1,d3            ;Proportionnel
         moveq #1,d4             ;Avec signe
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.l (a6)+,d0
 L33a:   jsr 39
         clr.b (a0)
@@ -870,7 +870,7 @@ L33d:   jmp 37
 *       IMPRESSION d'un chiffre FLOAT
 L34:    dc.w L34a-L34,l34b-l34,l34d-l34,0
 *****************************************
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.w FixFlg(a5),d0
 L34a:   jsr 40
         clr.b (a0)
@@ -886,7 +886,7 @@ L35:    dc.w L35c-L35,L35e-L35,0
 ********************************
         move.l (a6)+,a1
         move.w (a1)+,d1
-L35r:   move.l Buffer(a5),a0
+L35r:   move.l buffer(a5),a0
         beq.s L35b
         moveq #120,d0           ;Par salves de 120
 L35a:   move.b (a1)+,(a0)+      ;Recopie dans le buffer
@@ -953,7 +953,7 @@ ip2:    clr.w -(sp)         ;bcostat sur l'imprimante
 l37a:   jsr L_tester.l
         dbra d3,ip1         ;compte les balayages d'ecran!
         moveq #10,d0            ;Printer not ready
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 ip3:    clr.w d0
         move.b (a3)+,d0     ;c'est pret! envoyez c'est pes‚!
@@ -1046,7 +1046,7 @@ L40a:   movem.l (sp)+,a0/a1/d0
         move.w d0,d4
         move expflg(a5),d5
 ; entree pour la tokenisation
-        move.l defloat(a5),a0   ;Buffer d'ecriture du float
+        move.l defloat(a5),a0   ;buffer d'ecriture du float
         move #$c,d0
         trap #6
         tst d4
@@ -1285,7 +1285,7 @@ fnusc:  clr.b usingflg(a5)
 *       PRINT RETOUR CHARIOT
 L43:    dc.w L43a-L43,0
 ***********************
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.b #13,(a0)
         move.b #10,1(a0)
         clr.b 2(a0)
@@ -1295,7 +1295,7 @@ L43a:   jmp 37
 *       PRINT VIRGULE
 L44:    dc.w L44a-L44,0
 ***********************
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.l #$20202000,(a0)
 L44a:   jmp 37
 
@@ -1417,7 +1417,7 @@ L55:    dc.w 0
         move.l d1,-(a6)
         rts
 L55a:   moveq #47,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -1438,7 +1438,7 @@ L56:    dc.w 0
         move.l d1,-(a6)
         rts
 L56a:   moveq #47,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -1459,7 +1459,7 @@ L57:    dc.w 0
         move.l d1,-(a6)
         rts
 L57a:   moveq #47,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -1619,7 +1619,7 @@ L69c:   move.w #17,-(sp)
         move.l d0,ancrnd2(a5)
         rts
 L69d:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 
@@ -1641,7 +1641,7 @@ L70a:   jsr L_garbage.l
         cmp.l hichaine(a5),d0
         bcs.s OutM
 ; Reprend … l'instruction courante
-        move.l LowPile(a5),sp
+        move.l lowpile(a5),sp
         subq.l #4,sp
         move.l BufPar(a5),a6
         jmp (a4)
@@ -1715,7 +1715,7 @@ L73c:   neg.l d5
         addq.l #1,d5
 L73a:   jmp 76
 L73b:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -1776,7 +1776,7 @@ mi8:    move.l a0,hichaine(a5)
 mi9:    move.l ChVide(a5),-(a6)         ;ramene la chaine vide
         rts
 L76z:   moveq #13,d0                    ;Foncall
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -1829,7 +1829,7 @@ L79b:   sub.l d6,d5
         addq.l #1,d5
 L79c:   jmp 82
 L79z:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -1878,7 +1878,7 @@ mdst5:  move.b (a2)+,(a3)+
         dbra d6,mdst5
 mdst10: rts
 L82z:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -1912,7 +1912,7 @@ L84a:   jsr 71
         move.l d3,-(a6)
         rts
 L84b:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -1990,7 +1990,7 @@ L89b:   move.w d1,(a0)+
 L89c:   move.l a0,hichaine(a5)
         rts
 L89z:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -2009,7 +2009,7 @@ L90a:   jsr L_malloc.l
         move.l a0,hichaine(a5)
         rts
 L90z:   moveq #13,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ****************************************************************************
@@ -2195,7 +2195,7 @@ L102:   dc.w 0
         move.l (a6)+,a2
         move.w (a2)+,d2
         move.l a2,a1
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.w d2,d0
         subq.w #1,d0
         bmi.s L102b
@@ -2449,14 +2449,14 @@ L114a:  rts
 *       GOTO variable
 L115:   dc.w 0
 **************
-        move.l LiAd(a5),a0
+        move.l liad(a5),a0
         move.l (a6)+,d0
 L115a:  cmp.w (a0),d0
         lea 6(a0),a0
         beq.s L115b
         bcc.s L115a
         moveq #29,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 L115b:  move.l -4(a0),(sp)
         rts
@@ -2465,14 +2465,14 @@ L115b:  move.l -4(a0),(sp)
 *       GOSUB variable
 L116:   dc.w 0
 **************
-        move.l LiAd(a5),a0
+        move.l liad(a5),a0
         move.l (a6)+,d0
 L116a:  cmp.w (a0),d0
         lea 6(a0),a0
         beq.s L116b
         bcc.s L116a
         moveq #29,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 L116b:  move.l -4(a0),a0
         jmp (a0)
@@ -2481,15 +2481,15 @@ L116b:  move.l -4(a0),a0
 *       RETURN
 L117:   dc.w 0
 ***************
-        move.l LowPile(a5),a0
+        move.l lowpile(a5),a0
         lea -4(a0),sp
         cmp.l SPile(a5),sp
         beq.s L117z
         lea 4(a0),a0
-        move.l a0,LowPile(a5)
+        move.l a0,lowpile(a5)
         rts
 L117z:  moveq #36,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -2497,16 +2497,16 @@ L117z:  moveq #36,d0
 L118:   dc.w 0
 ***************
         move.l (sp),a1
-        move.l LowPile(a5),a0
+        move.l lowpile(a5),a0
         lea -4(a0),sp
         cmp.l SPile(a5),sp
         beq.s L118z
         lea 4(a0),a0
-        move.l a0,LowPile(a5)
+        move.l a0,lowpile(a5)
         addq.l #4,sp
         jmp (a1)
 L118z:  moveq #37,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 *************************************************************************
@@ -2543,7 +2543,7 @@ L120:   dc.w 0
         lsl.w #1,d2
         addq.w #4,d2                    ;Saute le BRA
 	lea 4(sp),a0			* Correction du bug!
-	move.l a0,LowPile(a5)
+	move.l a0,lowpile(a5)
         move.l (sp),a0
         add.l d2,a0
         jmp (a0)
@@ -2579,7 +2579,7 @@ L123a:  and.b #$7f,interflg(a5)
         tst.w brkinhib(a5)
         bne.s L123b
         moveq #17,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 ; Actualise les sprites?
 L123b:  tst.w Actualise(a5)
@@ -2644,7 +2644,7 @@ L124a:  jsr L_delete.l
 L125:   dc.w l125a-l125,0
 **************************
 l125a:  jsr L_delete.l
-        move.l OEnd(a5),a0
+        move.l oend(a5),a0
         jmp (a0)
 
 *************************************************************************
@@ -2662,7 +2662,7 @@ L126a:  jsr L_closys.l                      ;Ferme le fichier systeme
         move.w d0,errornb(a5)
         tst.l PrintPos(a5)
         beq.s PaPr
-        move.l PrintPos(a5),a4          ;Debut du print
+        move.l PrintPos(a5),a4          ;debut du print
         clr.l PrintPos(a5)
 PaPr:   move.l a4,errorchr(a5)
         move.l a4,errorline(a5)
@@ -2674,7 +2674,7 @@ PaPr:   move.l a4,errorchr(a5)
         cmp.w #17,d0                    ;Ne detourne pas le break!
         beq.s L126z
         move.w #1,erroron(a5)
-        move.l LowPile(a5),sp           ;Bas de la pile
+        move.l lowpile(a5),sp           ;Bas de la pile
         subq.l #4,sp
         move.l BufPar(a5),a6            ;Bas des parametres
         move.l onerrline(a5),a0         ;JMP nouvelle ligne
@@ -2690,7 +2690,7 @@ L127:   dc.w l127a-l127,0
 
 ;; Debug
 ;        move.l errorchr(a5),d0
-;        move.l LiAd(a5),a0
+;        move.l liad(a5),a0
 ;L127d:  cmp.w #$ffff,(a0)
 ;        beq.s L127a
 ;        cmp.l 2(a0),d0                  ;1ere ligne ou D0>=AD
@@ -2746,7 +2746,7 @@ l128b:  jsr 179                 ;Clearkey
 l128c:  jsr 181                 ;Wait key
 ; Termine tout / revient au GEM
 L128d:  jsr 1
-        move.l OEnd(a5),a0
+        move.l oend(a5),a0
         jmp (a0)
 MEGem1: dc.b "Error #",0
 MEGem2: dc.b ", press any key.",0
@@ -2774,13 +2774,13 @@ L130:   dc.w 0
 ; Trouve le # de ligne
         cmp.l #65535,d0
         bcc.s L130b
-        move.l LiAd(a5),a0
+        move.l liad(a5),a0
 L130a:  cmp.w (a0),d0
         lea 6(a0),a0
         beq.s L130c
         bcc.s L130a
 L130b:  moveq #29,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 L130c:  move.l -4(a0),d0
 L130d:  move.l d0,onerrline(a5)
@@ -2794,7 +2794,7 @@ L131:   dc.w 0
         cmp.l #86,d0
         bcs.s L131a
         moveq #13,d0
-L131a:  move.l Error(a5),a0
+L131a:  move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -2807,13 +2807,13 @@ L132:   dc.w 0
 ; Trouve le # de ligne
         cmp.l #65535,d0
         bcc.s L132b
-        move.l LiAd(a5),a0
+        move.l liad(a5),a0
 L132a:  cmp.w (a0),d0
         lea 6(a0),a0
         beq.s L132c
         bcc.s L132a
 L132b:  moveq #29,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 L132c:  move.l -4(a0),(sp)
         clr.l errorline(a5)
@@ -2821,7 +2821,7 @@ L132c:  move.l -4(a0),(sp)
         clr.w erroron(a5)
         rts
 L132z:  moveq #38,d0                    ;Resume without error
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 *************************************************************************
@@ -2836,7 +2836,7 @@ L133:   dc.w 0
         move.l errorchr(a5),(sp)
         rts
 L133z:  moveq #38,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -2857,7 +2857,7 @@ L134b:  clr.l errorline(a5)
         move.l a0,(sp)
         rts
 L134z:  moveq #38,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 
 ************************************************************************
@@ -2867,7 +2867,7 @@ L135:   dc.w 0
         tst.w erroron(a5)
         beq.s L135z
         move.l errorchr(a5),d0
-        move.l LiAd(a5),a0
+        move.l liad(a5),a0
 L135a:  cmp.w #$ffff,(a0)
         beq.s L135z
         cmp.l 2(a0),d0                  ;1ere ligne ou D0>=AD
@@ -3169,7 +3169,7 @@ L151d:  jsr 104
         rts
 badt:   move.l (sp)+,a6
         moveq #54,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 ; sous programme
 svtime: move.b (a6)+,d0
@@ -3849,8 +3849,8 @@ L163e:  tst.b d2
         beq.s L163g
         bmi.s L163h
 ; Raz tableau FLOAT
-	move.l ZeroFl(a5),d0		;Prend le ZERO!
-	move.l ZeroFl+4(a5),d1
+	move.l zerofl(a5),d0		;Prend le ZERO!
+	move.l zerofl+4(a5),d1
 L163f:  move.l d0,(a0)+
         move.l d1,(a0)+
         subq.l #1,d6
@@ -3914,14 +3914,14 @@ L165:   dc.w 0
 ;-------------------------------> Fait le menage ! VITE !
         movem.l d0-d7/a0-a6,-(sp)
 
-        move.l Buffer(a5),d5
-	add.l #512,d5			;Debut TI
+        move.l buffer(a5),d5
+	add.l #512,d5			;debut TI
         move.l d5,d6
         add.l #64*8,d6                  ;Fin TI
         move.l LoChaine(a5),d7          ;Ad mini de recopie
 	move.l d7,a1
 
-Men0:   move.l AdStr(a5),a6             ;Table des ad strings
+Men0:   move.l adstr(a5),a6             ;Table des ad strings
         moveq #-1,d2                    ;Maxi dans le tableau
         moveq #0,d4                     ;Cpt tableau---> 0
         move.l d5,d3                    ;Rien dans la TI
@@ -4025,11 +4025,11 @@ Men25:  move.l -4(a3),a2
         move.l d1,(a2)
         bra.s Men21
 ; Est-ce completement fini?
-Men26:  cmp.l d6,d3                     ;Buffer TI rempli?
+Men26:  cmp.l d6,d3                     ;buffer TI rempli?
         bcs.s FinMen                    ;NON---> c'est fini!
 
 ;-----> Reexplore les variables a la recherche de la DERNIERE CHAINE
-        move.l AdStr(a5),a6             ;Table des ad strings
+        move.l adstr(a5),a6             ;Table des ad strings
         moveq #0,d4                     ;Cpt tableau---> 0
 ; Prend la variable
 Men31:  move.l (a6)+,d0
@@ -4110,14 +4110,14 @@ L168z:  moveq #33,d0
 *       RESTORE expression
 L169:   dc.w 0
 ***************
-        move.l LiAd(a5),a0
+        move.l liad(a5),a0
         move.l (a6)+,d0
 L169a:  cmp.w (a0),d0
         lea 6(a0),a0
         beq.s L169b
         bcc.s L169a
         moveq #29,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 L169b:  move.l -4(a0),a2
         cmp.w #$6000,(a2)
@@ -4188,7 +4188,7 @@ L170g:  clr.l (a0)
 L170h:  move.l chvide(a5),(a0)
         rts
 ; CODE 2 ---> FIN DE LA LIGNE
-L170i:  cmp.l Debut(a5),a2
+L170i:  cmp.l debut(a5),a2
         beq.s L170x
         move.l a2,DataD(a5)
         move.l a2,a1
@@ -12235,7 +12235,7 @@ L546:   dc.w l546a-l546,l546b-l546,l546c-l546,0
 *****************************************
         moveq #-1,d3            ;Proportionnel
         moveq #1,d4             ;Avec signe
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.l (a6)+,d0
 L546a:  jsr L_longdec.l
         clr.b (a0)
@@ -12251,7 +12251,7 @@ L546c:  jmp L_printfile.l
 *       PRINTING a FLOAT figure in a file
 L547:   dc.w l547a-l547,l547b-l547,l547c-l547,0
 *****************************************
-        move.l Buffer(a5),a0
+        move.l buffer(a5),a0
         move.w FixFlg(a5),d0
 L547a:  jsr L_strflasc.l
         clr.b (a0)
@@ -14315,14 +14315,14 @@ l577:   dc.w 0
         move.l a0,a1
 l577a:  clr.l (a0)+
         dbra d0,l577a
-l577b:  move.l LiAd(a5),a0
+l577b:  move.l liad(a5),a0
         move.l -(a3),d0
 L577c:  cmp.w (a0),d0
         lea 6(a0),a0
         beq.s L577d
         bcc.s L577c
         moveq #29,d0
-        move.l Error(a5),a0
+        move.l error(a5),a0
         jmp (a0)
 L577d:  move.l -4(a0),(a1)+
         dbra d7,l577b
@@ -14402,7 +14402,7 @@ l582b:  jsr L_delete.l                  ;Deloge
         jmp (a2)
 ; Sous GEM ---> poke une petite routine
 rn1:    move.w #1,FlgRun(a5)
-        move.l OEnd(a5),a0
+        move.l oend(a5),a0
         jsr (a0)
         lea dro(pc),a0
         lea drof(pc),a1
@@ -14413,7 +14413,7 @@ rn2:    move.w (a0)+,(a2)+
         cmp.l a1,a0
         bcs.s rn2
         move.l name1(a5),a0
-        move.l Debut(a5),a4
+        move.l debut(a5),a4
         sub.l #$1c+2,a4
         move.l SPile(a5),sp
         jmp (a3)

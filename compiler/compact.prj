@@ -1,6 +1,6 @@
-compiler\sprites.lib
+compiler\compact.eca
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]
 =
-sprites.s
+compact.s

@@ -37,10 +37,10 @@ ochvide        = DebD+$10            ;Chaine vide
 OReloc         = DebD+$14            ;debut de la table de relocation
 otrappes       = DebD+$18            ;debut des buffers trappes
 oerror         = DebD+$1c            ;Traitement des erreur
-OLiAd          = DebD+$20            ;table #LIGNE----> ADRESSE
-OAdStr         = DebD+$24
+Oliad          = DebD+$20            ;table #LIGNE----> ADRESSE
+Oadstr         = DebD+$24
 OFData         = DebD+$28
-OAdMenu        = DebD+$2C
+Oadmenu        = DebD+$2C
 otrap3         = DebD+$30            ;Adresses des trappes
 otrap5         = DebD+$34
 otrap6         = DebD+$38
@@ -102,8 +102,8 @@ CptInst:        dc.w 0
 
 AdChai:         dc.l 0
 BAdChai:        dc.l 0
-BAdString:      dc.l 0
-AdString:       dc.l 0
+Badstring:      dc.l 0
+adstring:       dc.l 0
 BufVar:         ds.b 64
 passe:          dc.w 0
 
@@ -1276,7 +1276,7 @@ passe0:
 ;-----> Met tout a zero
         clr.l litoad
         clr.l BReloc
-        clr.l BAdString
+        clr.l Badstring
         clr.l BAdChai
         clr.l objet
         clr.w ValFlo
@@ -1302,9 +1302,9 @@ BRel:   addi.l #$400,d0
         add.l d0,a6
         bsr pair
 
-;-----> buffer AdString
-        move.l a6,BAdString
-        move.l AdString,d0
+;-----> buffer adstring
+        move.l a6,Badstring
+        move.l adstring,d0
         addq.l #8,d0
         add.l d0,a6
         bsr pair
@@ -1379,7 +1379,7 @@ Pas0:   clr.l (a0)+
 
         move.l a5,OldRel                ;Initialise la relocation
 
-        move.l BAdString,AdString       ;Pas de chaine
+        move.l Badstring,adstring       ;Pas de chaine
         move.l BAdChai,a0
         move.l a0,AdChai
         tst.w passe
@@ -1853,10 +1853,10 @@ p2c4:   move.l d2,LongChai      ;Longueur des chaines
 	bsr AffPour
 
 ;----------------------------> Laisse l'espace pour la table VarChaine
-        move.l a5,d4            ;Offset OAdStr
+        move.l a5,d4            ;Offset Oadstr
         sub.l objet,d4
-        move.l AdString,d0
-        sub.l BAdString,d0
+        move.l adstring,d0
+        sub.l Badstring,d0
         add.l d0,a5
         moveq #0,d0             ;Met au moins un zero!
         bsr outlong
@@ -2001,15 +2001,15 @@ FCopB:  move.l d3,LongBank
 
 ;----------------------------> Loke les pointeurs dans l'initialisation
         lea debprg,a5
-        move.l d4,OAdStr(a5)            ;table adresse var alphanumeriques
-        move.l d5,OLiAd(a5)             ;table #LIGNE----> Adresse
+        move.l d4,Oadstr(a5)            ;table adresse var alphanumeriques
+        move.l d5,Oliad(a5)             ;table #LIGNE----> Adresse
         move.l d6,OReloc(a5)            ;Sauve la position relocation
         sub.l objet,d7
         move.l d7,ochvide(a5)           ;Sauve la position chaine vide
         move.l FstData,OFData(a5)       ;Premiere ligne de datas
         move.l menucall,d0              ;Adresse de l'appel des menus
         sub.l objet,d0
-        move.l d0,OAdMenu(a5)
+        move.l d0,Oadmenu(a5)
         move.l tbufsp(pc),otbufsp(a5)
         move.l maxcop(pc),omaxcop(a5)
         move.w ValFlo(pc),oflola
@@ -2227,7 +2227,7 @@ passe2:
         move.l BReloc,a6        ;table de relocation
         move.l LongProg,a4      ;debut des variables
         move.l a4,d4            ;---> addition
-        move.l BAdString,a2     ;table des variables chaines
+        move.l Badstring,a2     ;table des variables chaines
 P2a:    move.b (a6)+,d0
         beq.w P2f
         cmp.b #1,d0
@@ -2349,17 +2349,17 @@ P2e1:   btst #5,d0              ;tableau: pointeur sur tableau
 P2e:    addq.l #4,a4
         bra P2a
 ; Fin: loke l'offset de fin des variables / debut des trappes
-P2f:    clr.l (a2)              ;Arret AdString
+P2f:    clr.l (a2)              ;Arret adstring
         addq.l #8,a4            ;Saute la derniere variable
         lea debprg,a5
         move.l a4,otrappes(a5)
         sub.l d4,a4             ;Longueur des variables
         move.l a4,LongVar
 
-;--------------------------------> Copie la table AdString
-        move.l OAdStr(a5),a5
+;--------------------------------> Copie la table adstring
+        move.l Oadstr(a5),a5
         add.l objet,a5
-        move.l BAdString,a0
+        move.l Badstring,a0
 P2s:    move.l (a0),d0
         bsr outlong
         tst.l (a0)+
@@ -2463,15 +2463,15 @@ DPrg2:  cmp.w #$FF00,(a5)
 DPrg3:
 
 ;-----> reloge la table des GOTO
-        move.l OLiAd(a6),a5
+        move.l Oliad(a6),a5
 DPrg4:  cmp.w #65535,(a5)+
         beq.s DPrg5
         add.l d6,(a5)+
         bra.s DPrg4
 DPrg5:
 
-;-----> reloge la table des AdString
-        move.l OAdStr(a6),a5
+;-----> reloge la table des adstring
+        move.l Oadstr(a6),a5
 DPrg6:  tst.l (a5)
         beq.s DPrg7
         add.l d6,(a5)+
@@ -2554,13 +2554,13 @@ Ina10:
         move.l d0,hichaine(a5)          ;fsource!
         move.l a4,chvide(a5)            ;Chaine vide
         move.l sp,spile(a5)             ;Sauve la pile
-        move.l sp,LowPile(a5)           ;Niveau zero de la pile!
-        /* add.l #4,LowPile(a5) */
-        dc.w 0x06ad,0,4,LowPile /* XXX */
-        move.l OLiAd(a6),LiAd(a5)       ;Adresse des litoad
-        move.l OAdStr(a6),AdStr(a5)     ;Adresse Ad-Strings
+        move.l sp,lowpile(a5)           ;Niveau zero de la pile!
+        /* add.l #4,lowpile(a5) */
+        dc.w 0x06ad,0,4,lowpile /* XXX */
+        move.l Oliad(a6),liad(a5)       ;Adresse des litoad
+        move.l Oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
         move.l OFData(a6),datastart(a5) ;Datas
-        move.l OAdMenu(a6),AdMenu(a5)   ;Menus
+        move.l Oadmenu(a6),admenu(a5)   ;Menus
         move.l a0,table(a5)             ;Adresse de la table d'adresses
 
 ; Donnees pour le programme
@@ -2575,8 +2575,8 @@ Ina10:
         lea oodfst(a6),a1
         move.l a1,dfst(a5)
         move.w ooflola(a6),flola(a5)    ;Float present?
-	move.l oozero(a6),ZeroFl(a5)	;RAZ zero float
-	move.l oozero+4(a6),ZeroFl+4(a5)
+	move.l oozero(a6),zerofl(a5)	;RAZ zero float
+	move.l oozero+4(a6),zerofl+4(a5)
         clr.w flgrun(a5)
 ; buffers
         move.l (a0),d0
@@ -2595,10 +2595,10 @@ Ina10:
         subi.w #512,d0
         move.l d0,defloat(a5)           ;buffer ecriture float
         subi.w #$180,d0
-        move.l d0,Work(a5)              ;Definition workstation
+        move.l d0,work(a5)              ;Definition workstation
 
 ; Sauve les vecteurs erreurs systeme
-        lea SVect(a5),a0
+        lea svect(a5),a0
         move.l $8.l,(a0)+ /* XXX */
         move.l $c.l,(a0)+ /* XXX */
         move.l $404.l,(a0)+ /* XXX */
@@ -2619,7 +2619,7 @@ Ina10:
 	bne.w InaErr /* XXX */
 
 ; Initialise les extensions
-        clr.w FlaGem(a5)
+        clr.w flagem(a5)
         move.l debut(a5),a3
         lea OExt(a3),a2
         moveq #26-1,d2
@@ -2892,13 +2892,13 @@ inb10:  tst.w d7
 	move.l a6,debut(a5)             ;debut du programme
         move.l oerror(a6),error(a5)     ;Traitement des erreurs
         move.l a4,chvide(a5)            ;Chaine vide
-        move.l sp,LowPile(a5)           ;Niveau zero de la pile!
-        /* add.l #4,LowPile(a5) */
-        dc.w 0x06ad,0,4,LowPile /* XXX */
-        move.l OLiAd(a6),LiAd(a5)       ;Adresse des litoad
-        move.l OAdStr(a6),AdStr(a5)     ;Adresse Ad-Strings
+        move.l sp,lowpile(a5)           ;Niveau zero de la pile!
+        /* add.l #4,lowpile(a5) */
+        dc.w 0x06ad,0,4,lowpile /* XXX */
+        move.l Oliad(a6),liad(a5)       ;Adresse des litoad
+        move.l Oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
         move.l OFData(a6),datastart(a5) ;Datas
-        move.l OAdMenu(a6),AdMenu(a5)   ;Menus
+        move.l Oadmenu(a6),admenu(a5)   ;Menus
 
 ; tables VDI...
         lea cvdipb(pc),a2
@@ -2924,7 +2924,7 @@ inb10:  tst.w d7
         move.l a4,16(a2)
         lea 128*2(a4),a4
 ; buffers
-        move.l a4,Work(a5)              ;Definition workstation
+        move.l a4,work(a5)              ;Definition workstation
         lea $180(a4),a4
         move.l a4,defloat(a5)
         lea 512(a4),a4
@@ -2951,8 +2951,8 @@ inb10:  tst.w d7
 	move.w 36(a1),defmod(a5)
 	move.w 38(a1),langue(a5)
         clr.w flgrun(a5)
-	move.l oozero(a6),ZeroFl(a5)
-	move.l oozero+4(a6),ZeroFl+4(a5)
+	move.l oozero(a6),zerofl(a5)
+	move.l oozero+4(a6),zerofl+4(a5)
 ; Out of mem?
         cmp.l lowvar(a5),a4
         bcc ErrM1
@@ -3004,7 +3004,7 @@ InbPaf: move.l otrap7(a6),a2
         move.l a0,lochaine(a5)
 
 ; Sauve les vecteurs erreurs systeme
-        lea SVect(a5),a0
+        lea svect(a5),a0
         move.l $8.l,(a0)+ /* XXX */
         move.l $c.l,(a0)+ /* XXX */
         move.l $404.l,(a0)+ /* XXX */
@@ -3038,9 +3038,9 @@ InbPaf: move.l otrap7(a6),a2
 ; Initialise les extensions
 	move.l bufpar(a5),a6
         lea fingem(pc),a0
-        move.l a0,OEnd(a5)
+        move.l a0,oend(a5)
 
-        move.w #1,FlaGem(a5)
+        move.w #1,flagem(a5)
         move.l debut(a5),a3
         lea OExt(a3),a2
         moveq #26-1,d2
@@ -3238,7 +3238,7 @@ fingem: move.l anc400(a5),$400.l /* XXX */
 	lea trp1(pc),a0
 	move.l a0,$84.l /* XXX */
         lea trp2(pc),a0
-        move.l Work(a5),2(a0)
+        move.l work(a5),2(a0)
 	move.l contrl(a5),a0
         move.w #101,(a0)
         clr 2(a0)
@@ -3792,9 +3792,9 @@ Va7:    move.b (a2)+,(a0)+      ;Recopie le nom
         move.b d1,d0
         andi.b #$c0,d0
         bpl.s Va7a
-        /* add.l #4,AdString       ;Taille de la table Ad variables alpha */
+        /* add.l #4,adstring       ;Taille de la table Ad variables alpha */
         dc.w 0x06b9
-        dc.l 4,AdString
+        dc.l 4,adstring
 Va7a:   btst #6,d1              ;Variable FLOAT?
         beq.s Va7b
         move.w #1,floflag       ;Met le FLOAT!
@@ -4976,7 +4976,7 @@ Gs1:    lea cdgs,a0             ;MOVE.L SP,LOWPILE(A5)
         bsr code0
         moveq #L_gosub,d0
         bra crefonc
-cdgs:   move.l sp,LowPile(a5)
+cdgs:   move.l sp,lowpile(a5)
         dc.w 0
 
 ; RETURN

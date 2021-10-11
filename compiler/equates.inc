@@ -210,9 +210,9 @@ defloat:    .ds.l 1            ;buffer ecriture float
 lochaine:   .ds.l 1            ;debut du buffer des chaines
 chvide:     .ds.l 1            ;Adresse de la chaine vide
 bufpar:     .ds.l 1            ;buffer des parametres
-LiAd:       .ds.l 1            ;Table #LIGNE----> ADRESSE
-LowPile:    .ds.l 1            ;Niveau ZERO de la pile
-AdStr:      .ds.l 1            ;Table Ad-Strings
+liad:       .ds.l 1            ;Table #LIGNE----> ADRESSE
+lowpile:    .ds.l 1            ;Niveau ZERO de la pile
+adstr:      .ds.l 1            ;Table Ad-Strings
 
 intin:      .ds.l 1
 contrl:     .ds.l 1
@@ -223,18 +223,18 @@ dta:        .ds.l 1
 buffonc:    .ds.l 1
 deffonc:    .ds.l 1
 foncnom:    .ds.l 1
-Work:       .ds.l 1
+work:       .ds.l 1
 dfst:       .ds.l 1
 amb:        .ds.l 1
 name1:      .ds.l 1
 name2:      .ds.l 1
 fsbuff:     .ds.l 1
 fsname:     .ds.l 1
-AdMenu:     .ds.l 1
-FlaGem:     .ds.l 1
-OEnd:       .ds.l 1
+admenu:     .ds.l 1
+flagem:     .ds.l 1
+oend:       .ds.l 1
 flola:      .ds.w 1
 flgrun:     .ds.w 1
-ZeroFl:     .ds.l 2
-SVect:      .ds.l 5  ; saved exception vectors
+zerofl:     .ds.l 2
+svect:      .ds.l 5  ; saved exception vectors
 
