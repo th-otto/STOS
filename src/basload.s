@@ -318,7 +318,7 @@ load_zik:
         move.l  a0,(a1)
 
 ; load and call extensions, poke addresses
-        moveq   #26-1,d7
+        moveq   #0,d7
         lea     extend(pc),a6
 load5:  lea     namext(pc),a0
         move.b  d7,numbext-namext(a0)
@@ -335,7 +335,9 @@ load5:  lea     namext(pc),a0
         movem.l (sp)+,a6/d6/d7
         move.l  a1,(a6)        ;poke the start address
 load6:  addq.w  #4,a6
-        dbf     d7,load5
+        addq    #1,d7
+        cmp     #26,d7
+        bcs.s   load5
 
 ; load the basic
         lea     basic(pc),a0    ;'BASIC*.BIN'
