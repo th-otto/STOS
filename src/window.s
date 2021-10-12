@@ -23,9 +23,9 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l tstscreen,0      ;5
           dc.l initwind,1       ;6
 		  .IFNE COMPILER
-          dc.l arretint,0       ;7
+          dc.l stopinter,0      ;7
           .ELSE
-          dc.l arretint,1       ;7
+          dc.l stopinter,1      ;7
           .ENDC
           dc.l windon,1         ;8
           dc.l effenetre,1      ;9
@@ -34,25 +34,25 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l hardcopy,0       ;12
           dc.l getcurwindow,0   ;13
           dc.l fixcursor,1      ;14
-          dc.l departint,0      ;15
+          dc.l startinter,0     ;15
           dc.l qwindon,1        ;16
           dc.l coordcurs,0      ;17
           dc.l centrage,1       ;18
           dc.l setback,0        ;19
           dc.l autoins,1        ;20
           dc.l join,1           ;21
-          dc.l curbas,1         ;22
-          dc.l curhaut,1        ;23
-          dc.l windmov,1        ;24
-          dc.l effenvite,1      ;25
+          dc.l smallcursor,1    ;22
+          dc.l largecursor,1    ;23
+          dc.l windmove,1       ;24
+          dc.l currwindow,1     ;25
           dc.l newicon,0        ;26
           dc.l actcache,1       ;27
           dc.l getchar,0        ;28
           dc.l setchar,0        ;29
           dc.l border,1         ;30
           dc.l title,1          ;31
-          dc.l autobon,1        ;32
-          dc.l autoboff,0       ;33
+          dc.l autobackon,1     ;32
+          dc.l autobackoff,0    ;33
           dc.l ancauto,1        ;34
           dc.l xgraphic,0       ;35
           dc.l ygraphic,0       ;36
@@ -412,7 +412,7 @@ initrap:  move.l #entrappe,-(sp)        ;setexec
 
 ; TRAP #3,15
 ; START OF INTERRUPTS
-departint:move #-1,offcur               ;empeche l'affichage du curseur
+startinter:move #-1,offcur               ;empeche l'affichage du curseur
           clr inhibc
           move.l ecran,a0
           sub.l  #$8000,a0               ;par defaut: decor=ecran-$8000
@@ -424,7 +424,7 @@ departint:move #-1,offcur               ;empeche l'affichage du curseur
 
 ; TRAP #3,7
 ; STOP INTERRUPTS
-arretint: move.l anc456(pc),d0
+stopinter: move.l anc456(pc),d0
           beq.s  PaArr
           move.l $456,a0
           move.l d0,4(a0)
@@ -972,7 +972,7 @@ windm4:   btst d0,d6          ;pas ouverte!
 
 ; TRAP #3,24
 ; MOVE WINDOW: CHANGES THE POSITION OF THE CURRENT WINDOW
-windmov:  move d0,d2
+windmove:  move d0,d2
           add.w txreel(a4),d2   ;taille totale en X
           mulu chrxsize(a4),d2
           cmp xoctets,d2      ;trop grande en X
@@ -1023,7 +1023,7 @@ actua:    move d4,d0
 
 ; TRAP #3,25
 ; CURRENT WINDOW QUICK
-effenvite:move #1,rapeflag
+currwindow:move #1,rapeflag
           move curwindow(pc),d0
           bra effenbis
 
@@ -1161,7 +1161,7 @@ initc1:   move.b (a0)+,tabcurs(a4,d0.w)
 
 ; TRAP #3,22
 ; CURBAS: Displays a small cursor
-curbas:   move.w chrysize(a4),d0
+smallcursor:   move.w chrysize(a4),d0
           move d0,fcurseur(a4)
           subq #2,d0
           move d0,dcurseur(a4)
@@ -1169,7 +1169,7 @@ curbas:   move.w chrysize(a4),d0
 
 ; TRAP #3,23
 ; CURHAUT: Displays a thick cursor
-curhaut:  move.w chrysize(a4),d0
+largecursor:  move.w chrysize(a4),d0
           move d0,fcurseur(a4)
           lsr #1,d0
           addq #1,d0
@@ -1178,12 +1178,12 @@ curhaut:  move.w chrysize(a4),d0
 
 ; TRAP #3,31
 ; AUTOBACK ON
-autobon:  move #1,autoback
+autobackon:  move #1,autoback
           rts
 
 ; TRAP #3,32
 ; AUTOBACK OFF
-autoboff: move autoback,oldauto
+autobackoff: move autoback,oldauto
           clr autoback
           rts
 

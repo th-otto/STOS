@@ -1312,9 +1312,9 @@ cptnext:  dc.w 0              ;recherche des FOR/NEXT dans le source
 oldfind:  dc.l 0              ;recherche ancien ligneact
 nbdim:    dc.w 0              ;nombre de dimensions pendant DIM
 scankey:  dc.w 0              ;scancode du dernier inkey
-datastart:dc.l 0              ;adresse de la ligne contenant le premier DATA
-dataline: dc.l 0              ;adresse de la ligne du data actuel
-datad:    dc.l 0              ;adresse du data actuel
+datastart:dc.l 0              ;address of the line containing the first DATA
+dataline: dc.l 0              ;address of the current data line
+datad:    dc.l 0              ;current data address
 folflg:   dc.w 0
 erroron:  dc.w 0              ;erreur en route?
 onerrline:dc.l 0              ;adresse ou se brancher en cas d'erreur

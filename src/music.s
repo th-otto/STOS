@@ -36,15 +36,15 @@ even
 inter:    dc.l 0
 
 ; fonctions de la trappe
-jumps:    dc.l inison         ;0:  Sound init
-          dc.l stmusic        ;1:  Starts music
-          dc.l stopvoix       ;2:  Stop one voice
-          dc.l marchvoix      ;3:  Restarts one voice
+jumps:    dc.l initsound      ;0:  Sound init
+          dc.l startmusic     ;1:  Starts music
+          dc.l stopvoice      ;2:  Stop one voice
+          dc.l restartvoice   ;3:  Restarts one voice
           dc.l freeze         ;4:  Music freeze
           dc.l unfreeze       ;5:  Un freeze music
           dc.l chgtempo       ;6:  Change tempo
           dc.l startint       ;7:  Init interrupts
-          dc.l arretint       ;8:  End interrupts
+          dc.l stopinter      ;8:  End interrupts
           dc.l transpose      ;9:  Transpose
           dc.l voicepos       ;10: Returns music note played
 
@@ -134,7 +134,7 @@ initrap:  move.l #entrappe,$9c          ;trap #7
 ; TRAP #7,7
 ;         Start of interruptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-startint: bsr inison
+startint: bsr initsound
           move.l $400,inter
           move.l #wedge,$400
           rts
@@ -143,7 +143,7 @@ startint: bsr inison
 ; TRAP #7,8
 ;         Arret des interruptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-arretint: bsr inison
+stopinter: bsr initsound
           move.l inter(pc),d0
           beq.s PaArr
           move.l d0,$400
@@ -540,7 +540,7 @@ nxadsr:   move.b 0(a0,d0.w),(a5)        ;poke la nouvelle vitesse
 
 ; TRAP #7,1
 ; START MUSIC: START A MUSIC POINTED BY A0
-stmusic:  bsr inison
+startmusic:  bsr initsound
           cmp.l #$19631969,(a0)         ;code de verification au debut
           bne stm10
           move.l a0,admusic             ;depart absolu!
@@ -569,7 +569,7 @@ stm10:    rts
 ; TRAP #7,0
 ; Init Sound
 ; Resets sound generator and kills music
-inison:   clr musicflg                  ;plus de musique pour l'instant
+initsound:   clr musicflg                  ;plus de musique pour l'instant
           clr transp
           move #7,voixon                ;Remet toutes les voix
           move #7,avoixon
@@ -614,7 +614,7 @@ mixer:    move.b #7,(a3)                ;selection du mixer
 ; STOP A VOICE
 ; D1= number of voice
 ; D2= 50th duration of the shutdown
-stopvoix: andi.w #3,d1
+stopvoice: andi.w #3,d1
           beq stpvx
           subq #1,d1
           lea voixon(pc),a0            ;Stop the voice
@@ -632,7 +632,7 @@ stpvx:    rts
 ; TRAP #7,3
 ; TURN ON A VOICE
 ; D1= number of voice
-marchvoix:andi.w #3,d1
+restartvoice:andi.w #3,d1
           beq stpvx
           subq #1,d1
           lea voixon(pc),a0            ;Remet la voix

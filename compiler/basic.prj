@@ -1,0 +1,6 @@
+compiler\basic.lib
+.L[-S=0]
+.S[-S]
+.S[-I..\src]
+=
+lib.s

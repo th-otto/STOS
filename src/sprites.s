@@ -26,14 +26,14 @@ trappe:   dc.l initmode       ;0
           dc.l prionoff       ;4
           dc.l boum           ;5
           dc.l posprite       ;6
-          dc.l sponoff        ;7
-          dc.l spxonoff       ;8
+          dc.l spritesonoff   ;7
+          dc.l spritenonoff   ;8
           dc.l sprnxya        ;9
-          dc.l movonoff       ;10
-          dc.l mvxonoff       ;11
-          dc.l depinit        ;12
-          dc.l anonoff        ;13
-          dc.l anxonoff       ;14
+          dc.l movesonoff     ;10
+          dc.l movenonoff     ;11
+          dc.l moveinit       ;12
+          dc.l animsonoff     ;13
+          dc.l animnonoff     ;14
           dc.l animinit       ;15
           dc.l actualise      ;16
           dc.l show           ;17
@@ -41,37 +41,37 @@ trappe:   dc.l initmode       ;0
           dc.l chgmouse       ;19
           dc.l mouse          ;20
           dc.l mousekey       ;21
-          dc.l ectodec        ;22
-          dc.l dectoec        ;23
+          dc.l screentoback   ;22
+          dc.l backtoscreen   ;23
           dc.l drawmouse      ;24
           dc.l setzone        ;25
           dc.l zone           ;26
           dc.l chgscreen      ;27
           dc.l stopmouse      ;28
-          dc.l spreaff        ;29
-          dc.l departint      ;30
-          dc.l arretint       ;31
-          dc.l limouse        ;32
+          dc.l drawsprites    ;29
+          dc.l startinter     ;30
+          dc.l stopinter      ;31
+          dc.l limitmouse     ;32
           dc.l scrcopy        ;33
-          dc.l icone          ;34
-          dc.l putspr         ;35
-          dc.l razones        ;36
-          dc.l getspr         ;37
+          dc.l puticon        ;34
+          dc.l putspritei     ;35
+          dc.l initzones      ;36
+          dc.l getsprite      ;37
           dc.l reduce         ;38
-          dc.l razflash       ;39
-          dc.l flashinit      ;40
-          dc.l mousbete       ;41
+          dc.l initflash      ;39
+          dc.l flash          ;40
+          dc.l restartmouse   ;41
           dc.l zoom           ;42
           dc.l appear         ;43
-          dc.l chgcmous       ;44
-          dc.l mouvon         ;45
+          dc.l movemouse      ;44
+          dc.l moveon         ;45
           dc.l shifton        ;46
           dc.l redraw         ;47
           dc.l interson       ;48
           dc.l inter          ;49
           dc.l cls            ;50
-          dc.l getbloc        ;51
-          dc.l putbloc        ;52
+          dc.l getblock       ;51
+          dc.l putblock       ;52
           dc.l fade           ;53
 
 ; adaptation 520/1040
@@ -1298,7 +1298,7 @@ outicon:  clr iconflg       ;par precaution!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         PUTSPRITE: pokage du sprite d1 dans le decor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-putspr:   bsr posprite
+putspritei:   bsr posprite
           tst (a0)
           bne.s putspr1
           move #1,intmouse
@@ -1310,7 +1310,7 @@ putspr1:  move d1,d2          ;Y
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ICON: pokage d'un "sprite" dans le decor: d1-x/d2-y/d3-pointeur
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-icone:    addi.w #640,d1
+puticon:    addi.w #640,d1
           addi.w #400,d2
 icone0:   clr intmouse
           move #1,iconflg
@@ -1349,7 +1349,7 @@ icon10:   moveq #1,d0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         GET SPRITE: recupere un bout du decor--->sprite (d4=couleur mask)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-getspr:   clr intmouse
+getsprite:   clr intmouse
           move #1,iconflg
           clr.w d0            ;TURN ON the icon!
           addi.w #640,d1
@@ -1511,7 +1511,7 @@ getspr30: addq #1,d5
           bne getspr21
 
 ; finininini: pas d'erreur
-getspr17: bsr spreaff         ;va TOUT reafficher!
+getspr17: bsr drawsprites         ;va TOUT reafficher!
           clr d0
           rts
 
@@ -1624,9 +1624,9 @@ pinit:    move d0,(a0)+
 ;         d1/d2/d3/d4= limG/limD/limH/limB                                    ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 chglimit: clr intmouse
-          bsr dectoec         ;efface tous les sprites, VITE!
+          bsr backtoscreen         ;efface tous les sprites, VITE!
           bsr chglim          ;va changer les limites
-          bsr spreaff         ;va tout reafficher
+          bsr drawsprites         ;va tout reafficher
           clr.l d0
           rts
 ; entree pour initmode
@@ -1720,13 +1720,13 @@ ilim1:    move d0,maxlimb
 ;initialisation deplaceur/animeur/actualisateur
           bsr initactiv
 ;initialisation du flasheur
-          bsr razflash
+          bsr initflash
 ;initialisation du shifter
           bsr initshift
 ;initialisation du fadeur
           clr.w fadeflg
 ;initialisation zoneur
-          bsr razones
+          bsr initzones
 ;initialisation de la table des sprites
           lea sprites(pc),a0
           moveq #nbsprite-1,d0
@@ -1738,10 +1738,10 @@ binit2:   clr.b (a0)+
           clr d1
           bsr prionoff
 ;copie de l'ecran
-          bsr ectodec
+          bsr screentoback
 ;initialisation et autorisation de la souris
           clr d3
-          bsr limouse         ;limites de la souris
+          bsr limitmouse         ;limites de la souris
           move #1,d1
           bsr chgmouse        ;dessin de la souris
 ;autorisation de l'animeur
@@ -1768,7 +1768,7 @@ sproff1:  move d4,d0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Recopie de l'ecran dans le decor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-ectodec:  move.l ecran,a0
+screentoback:  move.l ecran,a0
           move.l backg(pc),a1
 ec0:      move #8007,d0       ;recopie la palette!
 ec1:      move.l (a0)+,(a1)+
@@ -1779,7 +1779,7 @@ ec1:      move.l (a0)+,(a1)+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Recopie du decor dans l'ecran
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-dectoec:  move.l backg(pc),a0
+backtoscreen:  move.l backg(pc),a0
           move.l ecran,a1
           bra ec0
 
@@ -2456,7 +2456,7 @@ fincls:   move #1,intmouse
 ;         Fabrication d'un bloc: a1= ecran / a2= destination
 ;                                d1-d2= X1/X2  /  d3-d4= tx/ty
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-getbloc:  move.l #$44553528,(a2)+       ;code BLOC
+getblock:  move.l #$44553528,(a2)+       ;code BLOC
           andi.w #$fff0,d3
           move.w d3,(a2)+               ;TX
           move.w d4,(a2)+               ;TY
@@ -2506,7 +2506,7 @@ fingetb:  move.l a1,d0
 ;                             a1= ad bloc / a2= ad ecran
 ;                             d1/d2= X/Y
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-putbloc:  cmp.l #$44553528,(a1)+
+putblock:  cmp.l #$44553528,(a1)+
           bne pasbloc
 
 ; Calcul coordonnees d'arrivee
@@ -2691,7 +2691,7 @@ initrap:  move.l #routrap,d0
 routrap:  move.l #entrappe,$94          ;trappe #5
           rts
 ;INITIALISATION DES INTERRUPTIONS: A0=DOITACT
-departint:clr intmouse                  ;aucune interruption
+startinter:clr intmouse                  ;aucune interruption
           clr animflg
           clr nbflash
           clr goodbank
@@ -2724,7 +2724,7 @@ dep1:     move.l a0,doitactad           ;adresse du flag
           move.l #sourint,(a0)          ;branche la routine souris
           rts
 ;ARRET DES INTERRUPTIONS
-arretint: 
+stopinter: 
 		  tst.l ancient2		        ;If already saved! 
 	      beq.s PaArr
 	      move.l $456,a0
@@ -2848,7 +2848,7 @@ chgmouse: clr intmouse        ;si >=4 pointe le premier sprite de la banque
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Restart any beast of the mouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-mousbete: move #1,intmouse
+restartmouse: move #1,intmouse
           move #-1,xmouse     ;force le redessin
           clr.l d0
           rts
@@ -3072,7 +3072,7 @@ rapfin:   movem.l (sp)+,a1/d0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Reaffichage simple de tous les sprites et de la souris
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-spreaff:  moveq #0,d5
+drawsprites:  moveq #0,d5
 spreaf0:  lea sprites+28(pc),a1   ;pointe le sprite #1
           moveq #1,d4
           clr d1              ;prend les coordonnees existantes!!!
@@ -3101,7 +3101,7 @@ stopmouse:clr intmouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Limit mouse: limite les coordonnees de la souris
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-limouse:  move.l admouse(pc),a0
+limitmouse:  move.l admouse(pc),a0
           tst d3
           bne limous2
           clr d1
@@ -3133,7 +3133,7 @@ limous2:  clr intmouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         CHANGE LES COORDONNEES DE LA SOURIS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-chgcmous: clr intmouse
+movemouse: clr intmouse
           move.l admouse(pc),a0
 	  sub dxmouse(pc),d1	;ramene au debut de la zone
           cmp mxmouse(pc),d1    ;regarde si les coords ne sont pas trop grandes
@@ -3149,7 +3149,7 @@ chgc2:    move #1,intmouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         RAZ ZONE: initialisation table zoneur
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-razones:  move #127,d0
+initzones:  move #127,d0
           move.l tzones(pc),a0
 rz1:      clr.l (a0)+
           clr.l (a0)+
@@ -3268,7 +3268,7 @@ dh5:      moveq #1,d2         ;bne: pas de chiffre
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         INITIALISATION DU FLASHEUR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-razflash: clr nbflash
+initflash: clr nbflash
           move #lflash*16-1,d0
           lea tflash(pc),a0
 razfl1:   clr.b (a0)+
@@ -3278,7 +3278,7 @@ razfl1:   clr.b (a0)+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         FLASH X,A$     d1=numero de la couleur, a0=adresse de la chaine
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-flashinit:move nbflash(pc),d6
+flash:    move nbflash(pc),d6
           clr nbflash         ;arrete les flashes
           clr d5
           cmpi.w #16,d1
@@ -3468,7 +3468,7 @@ toolong:  move #1,animflg
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         MOVE X/Y n,a$   A0 adresse chaine, D1 numero du sprite, D2 X ou Y
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-depinit:  clr animflg
+moveinit:  clr animflg
           andi.w #$f,d1          ;pas de sprite zero!
           beq syntax
           subq #1,d1
@@ -3590,7 +3590,7 @@ actad:    subq #1,d1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Fonction MOVE: un sprite est-t-il encore en mouvement?
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-mouvon:   moveq #0,d0
+moveon:   moveq #0,d0
           andi.w #$f,d1
           beq.s mouvon1
           bsr actad
@@ -3628,14 +3628,14 @@ onof2:    andi.w #$7fff,(a6)     ;ON
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ANIMATE X ON / ANIMATE X OFF  d1=x, d2: -0:off -1:freeze -3:on
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-anxonoff: clr d3
+animnonoff: clr d3
           andi.w #$f,d1
           bne anmf0
           bra syntax
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ANIMATE ON / ANIMATE OFF      cf avant
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-anonoff:  moveq #1,d1
+animsonoff:  moveq #1,d1
           moveq #14,d3
 anmf0:    bsr actad
           move.l a4,a6
@@ -3648,14 +3648,14 @@ anmf1:    bsr onoff
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         MOVE X ON / MOVE X OFF    d1=X, cf avant
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-mvxonoff: moveq #1,d3
+movenonoff: moveq #1,d3
           andi.w #$f,d1
           bne monf0
           bra syntax
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         MOVE ON / MOVE OFF              cf avant
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-movonoff: moveq #1,d1
+movesonoff: moveq #1,d1
           moveq #29,d3
 monf0:    bsr actad
           move.l a5,a6
@@ -3668,20 +3668,20 @@ monf1:    bsr onoff
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         SPRITE x ON / SPRITE x OFF  d1=sprite, d2=onoff
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-spxonoff: andi.w #$f,d1
+spritenonoff: andi.w #$f,d1
           beq syntax
 	  move d1,-(sp)
-	  bsr anxonoff
+	  bsr animnonoff
 	  move (sp),d1
-	  bsr mvxonoff
+	  bsr movenonoff
 	  move (sp)+,d1
 	  clr d3
 	  bra.s sponof0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         SPRITE ON / OFF
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-sponoff:  bsr movonoff
-	  bsr anonoff
+spritesonoff:  bsr movesonoff
+	  bsr animsonoff
 	  moveq #1,d1
           moveq #14,d3
 sponof0:  bsr actad
@@ -3738,7 +3738,7 @@ fade:     move.w d1,fadecpt
           bne.s fde1
 ; Si toutes les couleurs----> arrete shift et flash!
           move.w d2,-(sp)
-          bsr razflash
+          bsr initflash
           bsr initshift
           move.w (sp)+,d2
 
