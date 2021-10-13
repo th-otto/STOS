@@ -49,7 +49,7 @@ compad:
 lib2:
 		.dc.w 0 ; no library calls
 comptest_off:
-		tst.w      flagem(a5)
+		tst.w      flaggem(a5)
 		bne.s      comptest_off1
 		move.l     table(a5),-(a6)
 		rts

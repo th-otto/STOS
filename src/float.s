@@ -6,8 +6,8 @@
 *	TABLE DES SAUTS A LA TRAPPE
 ************************************
 Jumps:
-	dc.l CPlus		;0
-	dc.l CMoins		;1
+	dc.l Cadd		;0
+	dc.l Csub		;1
 	dc.l CMult		;2
 	dc.l CDivi		;3
 	dc.l CSIN			;4
@@ -34,7 +34,7 @@ Jumps:
 	dc.l CCOSH		;19
 	dc.l CTANH		;1A
 	dc.l CINT			;1B
-	dc.l CPUIS		;1C
+	dc.l Cpow		;1C
 	dc.l CABS			;1D
 
 Jump2:	dc.l 0			;0
@@ -133,7 +133,7 @@ zerau:	moveq #0,d3
 
 * TRAP #6,$00
 * Adds two floating point numbers together
-CPlus:	move.l d3,-(sp)
+Cadd:	move.l d3,-(sp)
 	move.l d1,-(sp)
 	bsr Plus
 	addq.l #8,sp
@@ -143,7 +143,7 @@ CPlus:	move.l d3,-(sp)
 * TRAP #6,$01
 * Subtract one floating point number from another
 * Parameters used identical to ADFL
-CMoins:	move.l d3,-(sp)
+Csub:	move.l d3,-(sp)
 	move.l d1,-(sp)
 	bsr Moins
 	addq.l #8,sp
@@ -578,7 +578,7 @@ COS:
 
 * TRAP #6,$1C
 * POWER
-CPUIS:
+Cpow:
 	MOVE.L	D3,-(SP)
 	MOVE.L	D1,-(SP)
 	BSR 	PUIS

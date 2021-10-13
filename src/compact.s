@@ -9,7 +9,7 @@
 
 ;**************************************************************************
 
-	.include "extend.inc"
+	.include "system.inc"
 
 	.text
 
@@ -86,7 +86,7 @@ load:   lea jumps+2(pc),a0
 ; Called during coldboot
 ; Inputs:
 ;   a0: pointer to table of functions that the extension may need
-;      (see extend.inc)
+;      (see system.inc)
 ; Outputs:
 ;   a0: welcome message
 ;   a1: address of warmboot function (called upon "new")
@@ -111,7 +111,7 @@ entier: move.l (sp)+,d0
         beq.s finent
         movem.l a0-a2,-(sp)
         move.l table(pc),a0
-        move.l ext_fltoint(a0),a0
+        move.l sys_fltoint(a0),a0
         jsr (a0)                ;FL TO INT
         movem.l (sp)+,a0-a2
 finent: rts
@@ -119,7 +119,7 @@ finent: rts
 ; Adoubank
 adoubank:movem.l a0-a2,-(sp)
         move.l table(pc),a0
-        move.l ext_adoubank(a0),a0
+        move.l sys_adoubank(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
         rts
@@ -127,7 +127,7 @@ adoubank:movem.l a0-a2,-(sp)
 ; Adecran
 adecran:movem.l a0-a2,-(sp)
         move.l table(pc),a0
-        move.l ext_adscreen(a0),a0
+        move.l sys_adscreen(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
         rts
@@ -143,7 +143,7 @@ foncall:moveq #13,d0
 
 ; Appel des erreurs
 error:  move.l table(pc),a0
-        move.l ext_error(a0),a0
+        move.l sys_error(a0),a0
         jmp (a0)
 
 ;**************************************************************************
@@ -248,7 +248,7 @@ unpack:
         clr unpflg-params(a2)
         move.w #-1,(a2)         ;flags par defaut
         move.l table(pc),a0
-        move.l ext_graphic(a0),a0  ;donnees graphiques
+        move.l sys_graphic(a0),a0  ;donnees graphiques
         move.l 6(a0),2(a2)      ;decor des sprites
         move.w #-1,dx(a2)        ;dx
         move.w #-1,dy(a2)        ;dy
@@ -298,7 +298,7 @@ unp4:   bsr entier
         bne.s unp5              ;aucune gestion d'autoback
         movem.l d1-d3/a0-a1,-(sp)
         move.l table(pc),a0
-        move.l ext_abck(a0),a0
+        move.l sys_abck(a0),a0
         jsr (a0)                ;autoback UN
         movem.l (sp)+,d1-d3/a0-a1
 unp5:   bsr decomp
@@ -307,7 +307,7 @@ unp5:   bsr decomp
         bne.s unp6
         move.w d0,-(sp)
         move.l table(pc),a0
-        move.l ext_abis(a0),a0
+        move.l sys_abis(a0),a0
         jsr (a0)                ;autoback DEUX
         move.w (sp)+,d0
 ;

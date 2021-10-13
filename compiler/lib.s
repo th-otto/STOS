@@ -1,10 +1,12 @@
 		.include "lib.inc"
 		.include "file.inc"
 		.include "equates.inc"
-		.include "extend.inc"
+		.include "system.inc"
 		.include "music.inc"
 		.include "window.inc"
 		.include "sprites.inc"
+		.include "tokens.inc"
+		.include "errors.inc"
 
 		.text
 
@@ -239,7 +241,7 @@ Del10:  cmp.w #$FF00,(a0)
         sub.l d6,(a0)+
         bra.s Del10
 
-; Remet les vecteurs d'exeption
+; Restore exception vectors
 Del11:	lea svect(a5),a0
         move.l (a0)+,$8.l /* XXX */
         move.l (a0)+,$c.l /* XXX */
@@ -563,7 +565,7 @@ md1:    roxl.l #1,d0
         dbra d5,md2
         move.l d1,(a6)          ;Prend le reste
         rts
-md5:    moveq #13,d0            ;legal fonction call
+md5:    moveq #E_illegalfunc,d0            ;illegal function call
         move.l error(a5),a0
         jmp (a0)
 
@@ -2593,7 +2595,7 @@ L123a:  and.b #$7f,interflg(a5)
 L123b:  tst.w actualise(a5)
         beq.s L123c
         movem.l d0-d1/a0,-(sp)
-        moveq #16,d0
+        moveq #S_actualise,d0
         trap #5
         movem.l (sp)+,d0-d1/a0
         bclr #1,interflg(a5)
@@ -2716,7 +2718,7 @@ l127a:  jsr L_delete.l
         clr.w runflg(a5)                ;Pas de numero de ligne!
         move.w (sp)+,d0
         move.l table(a5),a0
-        move.l ext_error(a0),a0
+        move.l sys_error(a0),a0
         jmp (a0)
 
 *************************************************************************
@@ -3099,7 +3101,7 @@ l148b:  jsr L_longdec.l
         move.b #"/",(a0)+
         lsr #4,d7
         move.b d7,d0
-        andi.l #%1111111,d0
+        andi.l #$7f,d0
         addi.l #1980,d0
         moveq #4,d3
         moveq #0,d4
@@ -3116,8 +3118,8 @@ L149:   dc.w l149a-L149,l149b-L149,0
         move.w d0,(sp)
         moveq #8,d3
 l149a:  jsr L_malloc.l
-	lea 8+2(a0),a2
-	move.l a2,hichaine(a5)
+        lea 8+2(a0),a2
+        move.l a2,hichaine(a5)
         move.w #8,(a0)+
         move.w (sp)+,d7
 l149b:  jsr L_timebis.l
@@ -3592,7 +3594,7 @@ Valf1:  move.l (sp)+,a6
 *       TRADUIT
 L159:   dc.w 0
 ***************
-        tst langue(a5)
+        tst language(a5)
         beq.s trad2
 trad1:  tst.b (a0)+
         bne.s trad1
@@ -3602,23 +3604,23 @@ trad2:  rts
 *       KEY: test des touches et des touches de fonction
 L160:   dc.w l160a-L160,l160b-L160,l160c-L160,0
 ************************************************
-ki:     move fonction(a5),d0
+ki:     move funckey(a5),d0
         beq.s k0
         subq #1,d0
-        move.l buffonc(a5),a0
+        move.l buffunc(a5),a0
         move.b 0(a0,d0.w),d0
         beq.s fct2
         cmp.b #'`',d0
         beq.s fct1
         clr d1
-        /* addq.w #1,fonction(a5) */
-        dc.w 0x066d,1,fonction
+        /* addq.w #1,funckey(a5) */
+        dc.w 0x066d,1,funckey
         rts
 fct1:   move.b #13,d0       ;ascii: return
         move.b #$80,d1      ;special: return
-        clr fonction(a5)
+        clr funckey(a5)
         rts
-fct2:   clr fonction(a5)
+fct2:   clr funckey(a5)
 ;attente d'une touche avec actualisation des touches de fonction
 k0:     move.w #-1,-(sp)    ;test des shifts et capslock
         move.w #11,-(sp)
@@ -3655,7 +3657,7 @@ k6:     clr d1
         subi.w #32,d1          ;appui sur une touche de fonction
 k9:     mulu #40,d1
         addq #1,d1
-        move d1,fonction(a5)
+        move d1,funckey(a5)
         bra ki              ;commence a lire la table
 k7:     rts
 
@@ -3740,9 +3742,9 @@ af1:    move shift(a5),d1       ;position des shifts
         bra.s af05
 af0:    move #50,d0
         move #400,d1
-af05:   move.l foncnom(a5),a3
+af05:   move.l funcname(a5),a3
         lea 0(a3,d0.w),a3       ;a3 pointe le NOM des touches
-        move.l buffonc(a5),a1
+        move.l buffunc(a5),a1
         lea 0(a1,d1.w),a1       ;a1 pointe sur les touches de fonction
         tst mode(a5)
         beq.s af2
@@ -4260,7 +4262,7 @@ L175:   dc.w l175a-L175,0
         bhi.s l175z
         subq.l #1,d3
         mulu #40,d3
-        add.l buffonc(a5),d3
+        add.l buffunc(a5),d3
         move.l d3,a0
         move.w (a2)+,d2
         beq.s ky2
@@ -4340,7 +4342,7 @@ L179:   dc.w l179a-L179,0
 l179a:  jsr L_incle.l
         tst.l d0
         bne.s l179a
-        clr fonction(a5)        ;plus de touche de fonction!
+        clr funckey(a5)        ;plus de touche de fonction!
         rts
 
 *************************************************************************
@@ -4353,7 +4355,7 @@ L180:   dc.w 0
         bcc.s L180z
         subq #1,d2
         bcs.s putk3
-        move.l buffonc(a5),a0
+        move.l buffunc(a5),a0
         lea 40*20(a0),a0
 putk1:  move.b (a2)+,d0
         cmp.b #32,d0
@@ -4362,7 +4364,7 @@ putk1:  move.b (a2)+,d0
 putk2:  move.b d0,(a0)+
         dbra d2,putk1
         clr.b (a0)
-        move.w #40*20+1,fonction(a5)
+        move.w #40*20+1,funckey(a5)
 putk3:  rts
 L180z:  moveq #13,d0
         move.l error(a5),a0
@@ -4892,16 +4894,16 @@ L205:   dc.w 0
 ***************
         movem.l d0-d7/a0-a6,-(sp)
         clr.l d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5             ;move off
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5             ;anim off
-        moveq #7,d0
+        moveq #S_spritesonoff,d0
         trap #5             ;sprite off
-        moveq #16,d0
+        moveq #S_actualise,d0
         trap #5             ;actualise
         moveq #1,d1
-        moveq #19,d0
+        moveq #S_chgmouse,d0
         trap #5             ;mouse par default
         moveq #M_initsound,d0
         trap #7             ;music off
@@ -4928,7 +4930,7 @@ l206a:  jsr L_adbank.l
         bne.s mvd1
         lea mvd1(pc),a1     ;pointe un message fixe, <> de 19861987
 mvd1:   move.l a1,a0
-        moveq #1,d0         ;chgbank
+        moveq #S_chgbank,d0         ;chgbank
         trap #5
         moveq #0,d5
 l206b:  jmp L_putchar.l
@@ -5610,7 +5612,7 @@ l232a:  move.l d3,-(a6)
 L233:   dc.w 0
 ***************
         moveq #0,d3
-        move.w langue(a5),d3
+        move.w language(a5),d3
         move.l d3,-(a6)
         rts
 
@@ -5699,7 +5701,7 @@ L240:   dc.w l240a-L240,0
 l240a:  jsr L_adscreen.l
         move.l d3,adback(a5)
         move.l d3,a0
-        moveq #27,d0
+        moveq #S_chgscreen,d0
         trap #5
         move.l d3,a0
         moveq #W_setback,d7
@@ -5731,7 +5733,7 @@ L243:   dc.w 0
 ; Change BACK to current physic
         move.l d3,adback(a5)
         move.l d3,a0
-        moveq #27,d0
+        moveq #S_chgscreen,d0
         trap #5
         move.l d3,a0
         moveq #W_setback,d7
@@ -5764,7 +5766,7 @@ l244b:  rts
 *       =XMOUSE
 L245:   dc.w 0
 ***************
-        moveq #20,d0
+        moveq #S_mouse,d0
         trap #5
         moveq #0,d3
         move.w d0,d3
@@ -5777,7 +5779,7 @@ L246:   dc.w 0
 ***************
         moveq #-1,d2
         move.l (a6)+,d1
-        moveq #44,d0
+        moveq #S_movemouse,d0
         trap #5
         rts
 
@@ -5785,7 +5787,7 @@ L246:   dc.w 0
 *       =YMOUSE
 L247:   dc.w 0
 ***************
-        moveq #20,d0
+        moveq #S_mouse,d0
         trap #5
         moveq #0,d3
         move.w d1,d3
@@ -5798,7 +5800,7 @@ L248:   dc.w 0
 ***************
         move.l (a6)+,d2
         moveq #-1,d1
-        moveq #44,d0
+        moveq #S_movemouse,d0
         trap #5
         rts
 
@@ -5806,7 +5808,7 @@ L248:   dc.w 0
 *       MOUSEKEY
 L249:   dc.w 0
 ***************
-        moveq #21,d0
+        moveq #S_mousekey,d0
         trap #5
         moveq #0,d3
         move.b d0,d3
@@ -5906,7 +5908,7 @@ L255a:  moveq #-1,d3
 *       MODE: change la resolution
 L256:   dc.w l256a-L256,l256b-L256,l256c-L256,l256d-L256,0
 ***********************************************************
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
 l256a:  jsr L_waitvbl.l
         move.l adback(a5),a0
@@ -5940,7 +5942,7 @@ L257:   dc.w l257a-L257,l257b-L257,l257c-L257,l257d-L257
         dc.w l257m-L257,l257n-L257,0
 *************************************
         movem.l d0-d7/a0-a6,-(sp)
-        clr d0
+        move.w #S_initmode,d0
         trap #5                 ;initmode sprites
         move #W_initmode,d7
         trap #3                 ;initmode fenetres
@@ -6471,7 +6473,7 @@ L269:   dc.w 0
 ***************
         tst.w autoback(a5)
         beq.s atb1
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
         move.l adback(a5),$44e.l /* XXX */
 atb1:   movem.l d0-d1,-(sp)
@@ -6485,9 +6487,9 @@ atb1:   movem.l d0-d1,-(sp)
         move.l a1,$44e.l /* XXX */
         move.l adback(a5),a0
         clr.l d5
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
-        moveq #29,d0
+        moveq #S_drawsprites,d0
         trap #5
 atb2:   rts
 
@@ -6548,7 +6550,7 @@ L274:   dc.w 0
         move.w d1,ygraph(a5)
         tst autoback(a5)        ;si AUTOBACK: plotte dans le decor d'abord
         beq.s pl2
-        moveq #28,d0            ;stopmouse
+        moveq #S_stopmouse,d0            ;stopmouse
         trap #5
         move.l adback(a5),$44e.l /* XXX */
         dc.w $a001          ;LIGNE A: PUT PIXEL
@@ -6556,7 +6558,7 @@ L274:   dc.w 0
 pl2:    dc.w $a001          ;LIGNE A: PUT PIXEL
 pl3:    tst autoback(a5)
         beq.s pl4
-        moveq #29,d0        ;spreaff
+        moveq #S_drawsprites,d0        ;spreaff
         trap #5
 pl4:    rts
 l274z:  moveq #13,d0
@@ -6580,7 +6582,7 @@ L275:   dc.w 0
         move.w d2,ygraph(a5)
         tst autoback(a5)    ;si autoback: prend dans le decor
         beq.s pt1
-        moveq #28,d0        ;stopmouse
+        moveq #S_stopmouse,d0        ;stopmouse
         trap #5
         move.l adback(a5),$44e.l /* XXX */
 pt1:    dc.w $a002          ;LIGNE A: GET PIXEL
@@ -6590,7 +6592,7 @@ pt1:    dc.w $a002          ;LIGNE A: GET PIXEL
         move.l d3,-(a6)
         tst autoback(a5)
         beq.s pt2
-        move #41,d0         ;MOUSEBETE: remet la souris
+        move #S_restartmouse,d0         ;MOUSEBETE: hand over the mouse
         trap #5
 pt2:    rts
 l275z:  moveq #13,d0
@@ -6642,7 +6644,7 @@ L277:   dc.w 0
         move #-1,32(a0)               ;LSTLIN= -1!
         tst autoback(a5)
         beq.s dw3
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
         move.l adback(a5),$44e.l /* XXX */
         dc.w $a003
@@ -6650,7 +6652,7 @@ L277:   dc.w 0
 dw3:    dc.w $a003
         tst.w autoback(a5)
         beq.s dw4
-        moveq #29,d0
+        moveq #S_drawsprites,d0
         trap #5
 dw4:    rts
 l277z:  moveq #13,d0
@@ -7035,7 +7037,7 @@ L295:   dc.w l295a-L295,0
 ; arret du curseur
         cmp #2,mode(a5)
         beq.s cu0
-        moveq #39,d0        ;arrete les flash
+        moveq #S_initflash,d0        ;arrete les flash
         trap #5
 l295a:  jsr L_palette3.l    ;remet les couleurs
 cu0:    moveq #20,d0        ;code arret cur
@@ -7045,7 +7047,7 @@ cu3:    cmp #2,mode(a5)
         beq.s cu2
         lea fd(pc),a0       ;fait flasher la couleur #2
         moveq #2,d1
-        moveq #40,d0
+        moveq #S_flash,d0
         trap #5
 cu2:    moveq #17,d0
 cu1:    moveq #W_chrout,d7
@@ -7300,10 +7302,10 @@ l308z:  moveq #13,d0
         jmp (a0)
 
 *************************************************************************
-*       SHOW
+*       SHOW OFF
 L309:   dc.w 0
 ***************
-        moveq #17,d0
+        moveq #S_show,d0
         moveq #-1,d1
         trap #5
         rts
@@ -7312,16 +7314,16 @@ L309:   dc.w 0
 *       SHOW ON
 L310:   dc.w 0
 ***************
-        moveq #17,d0
+        moveq #S_show,d0
         moveq #0,d1
         trap #5
         rts
 
 *************************************************************************
-*       HIDE
+*       HIDE OFF
 L311:   dc.w 0
 ***************
-        moveq #18,d0
+        moveq #S_hide,d0
         moveq #-1,d1
         trap #5
         rts
@@ -7330,7 +7332,7 @@ L311:   dc.w 0
 *       HIDE ON
 L312:   dc.w 0
 ***************
-        moveq #18,d0
+        moveq #S_hide,d0
         moveq #0,d1
         trap #5
         rts
@@ -7340,7 +7342,7 @@ L312:   dc.w 0
 L313:   dc.w 0
 ***************
         move.l (a6)+,d1
-        moveq #19,d0
+        moveq #S_chgmouse,d0
         trap #5
         rts
 
@@ -7348,7 +7350,7 @@ L313:   dc.w 0
 *       LIMIT MOUSE
 L314:   dc.w 0
 ***************
-        moveq #32,d0
+        moveq #S_limitmouse,d0
         moveq #0,d3
         trap #5
         rts
@@ -7369,7 +7371,7 @@ L315:   dc.w 0
         bcc.s l315z
         cmp.l ymax(a5),d4
         bcc.s l315z
-        moveq #32,d0
+        moveq #S_limitmouse,d0
         trap #5
         rts
 l315z:  moveq #13,d0
@@ -7380,7 +7382,7 @@ l315z:  moveq #13,d0
 *       SYNCHRO seul
 L316:   dc.w 0
 ***************
-        moveq #49,d0
+        moveq #S_inter,d0
         trap #5
         rts
 
@@ -7389,7 +7391,7 @@ L316:   dc.w 0
 L317:   dc.w 0
 ***************
         moveq #0,d1
-        moveq #48,d0
+        moveq #S_intersynconoff,d0
         trap #5
         rts
 
@@ -7398,7 +7400,7 @@ L317:   dc.w 0
 L318:   dc.w 0
 ***************
         moveq #1,d1
-        moveq #48,d0
+        moveq #S_intersynconoff,d0
         trap #5
         rts
 
@@ -7406,7 +7408,7 @@ L318:   dc.w 0
 *       UPDATE seul
 L319:   dc.w 0
 ***************
-        moveq #16,d0
+        moveq #S_actualise,d0
         trap #5
         rts
 
@@ -7434,7 +7436,7 @@ L321:   dc.w 0
 *       REDRAW
 L322:   dc.w 0
 ***************
-        moveq #47,d0
+        moveq #S_redraw,d0
         trap #5
         rts
 
@@ -7442,7 +7444,7 @@ L322:   dc.w 0
 *       SPRITE off
 L323:   dc.w 0
 ***************
-        moveq #7,d0
+        moveq #S_spritesonoff,d0
         moveq #0,d2
         trap #5
         rts
@@ -7451,7 +7453,7 @@ L323:   dc.w 0
 *       SPRITE on
 L324:   dc.w 0
 ***********************
-        moveq #7,d0
+        moveq #S_spritesonoff,d0
         moveq #1,d2
         trap #5
         rts
@@ -7460,7 +7462,7 @@ L324:   dc.w 0
 *       SPRITE off XX
 L325:   dc.w 0
 ***********************
-        moveq #8,d0
+        moveq #S_spritenonoff,d0
         move.l (a6)+,d1
         moveq #0,d2
         trap #5
@@ -7477,7 +7479,7 @@ L326:   dc.w 0
 ***********************
         moveq #1,d2
         move.l (a6)+,d1
-        moveq #8,d0
+        moveq #S_spritenonoff,d0
         trap #5
         tst d0
         bne.s l326z
@@ -7494,7 +7496,7 @@ L327:   dc.w 0
         move.l (a6)+,d3
         move.l (a6)+,d2
         move.l (a6)+,d1
-        moveq #9,d0
+        moveq #S_sprite,d0
         trap #5
         tst d0
         bne.s l327z
@@ -7511,7 +7513,7 @@ L328:   dc.w 0
         move.l (a6)+,d3
         move.l (a6)+,d2
         move.l (a6)+,d1
-        moveq #9,d0
+        moveq #S_sprite,d0
         trap #5
         tst d0
         bne.s l328z
@@ -7525,7 +7527,7 @@ l328z:  moveq #56,d0
 L329:   dc.w 0
 ***********************
         moveq #0,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
         rts
 
@@ -7534,7 +7536,7 @@ L329:   dc.w 0
 L330:   dc.w 0
 ***********************
         moveq #2,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
         rts
 
@@ -7543,7 +7545,7 @@ L330:   dc.w 0
 L331:   dc.w 0
 ***********************
         moveq #1,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
         rts
 
@@ -7553,7 +7555,7 @@ L332:   dc.w 0
 ***********************
         moveq #0,d2
         move.l (a6)+,d1
-        moveq #11,d0
+        moveq #S_movenonoff,d0
         trap #5
         tst d0
         bne.s l332z
@@ -7568,7 +7570,7 @@ L333:   dc.w 0
 ***********************
         moveq #2,d2
         move.l (a6)+,d1
-        moveq #11,d0
+        moveq #S_movenonoff,d0
         trap #5
         tst d0
         bne.s l333z
@@ -7583,7 +7585,7 @@ L334:   dc.w 0
 ***********************
         moveq #1,d2
         move.l (a6)+,d1
-        moveq #11,d0
+        moveq #S_movenonoff,d0
         trap #5
         tst d0
         bne.s l334z
@@ -7597,7 +7599,7 @@ l334z:  moveq #57,d0
 L335:   dc.w 0
 ***********************
         moveq #0,d2
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -7606,7 +7608,7 @@ L335:   dc.w 0
 L336:   dc.w 0
 ***********************
         moveq #2,d2
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -7615,7 +7617,7 @@ L336:   dc.w 0
 L337:   dc.w 0
 ***********************
         moveq #1,d2
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -7625,7 +7627,7 @@ L338:   dc.w 0
 ***********************
         moveq #0,d2
         move.l (a6)+,d1
-        moveq #14,d0
+        moveq #S_animnonoff,d0
         trap #5
         tst d0
         bne.s l338z
@@ -7640,7 +7642,7 @@ L339:   dc.w 0
 ***********************
         moveq #2,d2
         move.l (a6)+,d1
-        moveq #14,d0
+        moveq #S_animnonoff,d0
         trap #5
         tst d0
         bne.s l339z
@@ -7655,7 +7657,7 @@ L340:   dc.w 0
 ***********************
         moveq #1,d2
         move.l (a6)+,d1
-        moveq #14,d0
+        moveq #S_animnonoff,d0
         trap #5
         tst d0
         bne.s l340z
@@ -7674,7 +7676,7 @@ l341a:  jsr L_chverbuf.l
         move.l buffer(a5),a0
         moveq #0,d2
         move.l (a6)+,d1
-        moveq #15,d0
+        moveq #S_animinit,d0
         trap #5
         tst d0
         bne.s l341x
@@ -7695,7 +7697,7 @@ l342a:  jsr L_chverbuf.l
         move.l buffer(a5),a0
         moveq #0,d2
         move.l (a6)+,d1
-        moveq #12,d0
+        moveq #S_moveinit,d0
         trap #5
         tst d0
         bne.s l342x
@@ -7716,7 +7718,7 @@ l343a:  jsr L_chverbuf.l
         move.l buffer(a5),a0
         moveq #1,d2
         move.l (a6)+,d1
-        moveq #12,d0
+        moveq #S_moveinit,d0
         trap #5
         tst d0
         bne.s l343x
@@ -7732,7 +7734,7 @@ l343z:  move.l error(a5),a0
 L344:   dc.w 0
 ***********************
         move.l (a6)+,d1
-        moveq #45,d0
+        moveq #S_moveon,d0
         trap #5
         move.l d0,-(a6)
         rts
@@ -7744,7 +7746,7 @@ L345:   dc.w 0
         move.l (a6)+,d3
         move.l (a6)+,d2
         move.l (a6)+,d1
-        moveq #5,d0
+        moveq #S_collide,d0
         trap #5
         move.l d0,-(a6)
         rts
@@ -7754,7 +7756,7 @@ L345:   dc.w 0
 L346:   dc.w 0
 ***********************
         move.l (a6)+,d1
-        moveq #6,d0
+        moveq #S_posprite,d0
         trap #5
         cmp.w xmax+2(a5),d0
         bcc.s dtc1
@@ -7763,7 +7765,7 @@ L346:   dc.w 0
         move.l laptsin(a5),a2
         move.w d0,(a2)
         move.w d1,2(a2)
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
         move.l adback(a5),$44e.l /* XXX */
         dc.w $a002
@@ -7771,7 +7773,7 @@ L346:   dc.w 0
         moveq #0,d3
         move.w d0,d3
         move.l d3,-(a6)
-        moveq #41,d0
+        moveq #S_restartmouse,d0
         trap #5
         rts
 dtc1:   move.l #-1,-(a6)
@@ -7784,9 +7786,9 @@ L347:   dc.w 0
         moveq #M_freeze,d0
         trap #7
         moveq #1,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -7797,9 +7799,9 @@ L348:   dc.w 0
         moveq #M_unfreeze,d0
         trap #7
         moveq #2,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -7808,7 +7810,7 @@ L348:   dc.w 0
 L349:   dc.w 0
 ***********************
         move.l (a6)+,d1
-        moveq #6,d0
+        moveq #S_posprite,d0
         trap #5
         ext.l d0
         move.l d0,-(a6)
@@ -7819,7 +7821,7 @@ L349:   dc.w 0
 L350:   dc.w 0
 ***********************
         move.l (a6)+,d1
-        moveq #6,d0
+        moveq #S_posprite,d0
         trap #5
         ext.l d1
         move.l d1,-(a6)
@@ -7833,7 +7835,7 @@ L351:   dc.w 0
         clr d2
         clr d3
         clr d3
-        moveq #2,d0
+        moveq #S_chglimit,d0
         trap #5
         rts
 
@@ -7845,7 +7847,7 @@ L352:   dc.w 0
         move.l (a6)+,d2
         move.l (a6)+,d3
         move.l (a6)+,d1
-        moveq #2,d0
+        moveq #S_chglimit,d0
         trap #5
         rts
 
@@ -7854,7 +7856,7 @@ L352:   dc.w 0
 L353:   dc.w 0
 ***********************
         move.l (a6)+,d1
-        moveq #35,d0
+        moveq #S_putsprite,d0
         trap #5
         rts
 
@@ -7866,7 +7868,7 @@ L354:   dc.w 0
         move.l (a6)+,d3
         move.l (a6)+,d2
         move.l (a6)+,d1
-        moveq #37,d0
+        moveq #S_getsprite,d0
         trap #5
         tst d0
         bne.s l354z
@@ -7883,7 +7885,7 @@ L355:   dc.w 0
         move.l (a6)+,d3
         move.l (a6)+,d2
         move.l (a6)+,d1
-        moveq #37,d0
+        moveq #S_getsprite,d0
         trap #5
         tst d0
         bne.s l355z
@@ -7897,7 +7899,7 @@ l355z:  moveq #13,d0
 L356:   dc.w 0
 ***********************
         moveq #0,d1
-        moveq #4,d0
+        moveq #S_priority,d0
         trap #5
         rts
 
@@ -7906,7 +7908,7 @@ L356:   dc.w 0
 L357:   dc.w 0
 ***********************
         moveq #1,d1
-        moveq #4,d0
+        moveq #S_priority,d0
         trap #5
         rts
 
@@ -8020,7 +8022,7 @@ l359b:  jsr L_adscreen.l
         move.l d3,a0
         move.l (sp)+,a1
         moveq #0,d5
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
         rts
 
@@ -8043,7 +8045,7 @@ l360b:  jsr L_adscreen.l
         move.l (sp)+,d4
 l360c:  jsr L_screencalc.l
         bne.s l360z
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
 l360z:  rts
 
@@ -8089,7 +8091,7 @@ l361b:  jsr L_malloc.l
         move.w d3,(a2)+       ;poke la taille
         movem.l (sp)+,a1/d1/d2/d3/d4
 ; Appel de la trappe
-        moveq #51,d0
+        moveq #S_getblock,d0
         trap #5
         btst #0,d0
         beq.s l361x
@@ -8112,7 +8114,7 @@ l362a:  jsr L_adscreen.l
         move.l (sp)+,a1
         cmp.w #8,(a1)+
         bcs.s l362z
-        moveq #52,d0
+        moveq #S_putblock,d0
         trap #5
         tst d0
         bne.s l362z
@@ -8180,7 +8182,7 @@ L364:   dc.w 0
         move.l (a0),d7
         move.l adlogic(a5),a0
         move.l a0,a1
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
         rts
 scr1:   moveq #86,d0          ;Scrolling non defini
@@ -8191,7 +8193,7 @@ scr1:   moveq #86,d0          ;Scrolling non defini
 *       RESET ZONE seul
 L365:   dc.w 0
 ***********************
-        moveq #36,d0
+        moveq #S_initzones,d0
         trap #5
         rts
 
@@ -8206,7 +8208,7 @@ L366:   dc.w 0
         moveq #1,d3
         moveq #0,d4
         moveq #1,d5
-        moveq #25,d0
+        moveq #S_setzone,d0
         trap #5
         rts
 l366z:  moveq #13,d0
@@ -8226,7 +8228,7 @@ L367:   dc.w 0
         addi.l #640,d3
         addi.l #400,d4
         addi.l #400,d5
-        moveq #25,d0
+        moveq #S_setzone,d0
         trap #5
         tst.w d0
         bne.s l367z
@@ -8242,7 +8244,7 @@ L368:   dc.w 0
         move.l (a6)+,d1
         cmp.l #128,d1
         bcc.s l368z
-        moveq #26,d0
+        moveq #S_zone,d0
         trap #5
         moveq #0,d3
         move.w d1,d3
@@ -8336,25 +8338,25 @@ L373:   dc.w 0
         tst.w d7
         bne.s rdc2
 ; DEUX ADRESSES D'ECRAN
-rdc1:   move #38,d0
+rdc1:   move #S_reduce,d0
         trap #5
         rts
 ; AUTOBACK
 rdc2:   tst autoback(a5)
         beq.s rdc1
         move d1,-(sp)
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
         move (sp)+,d1
         move.l adback(a5),a1            ;Appel!
-        moveq #38,d0
+        moveq #S_reduce,d0
         trap #5
         move.l adlogic(a5),a1
         move.l adback(a5),a0
         moveq #0,d5
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
-        moveq #29,d0
+        moveq #S_drawsprites,d0
         trap #5
         rts
 l373z:  moveq #13,d0
@@ -8481,25 +8483,25 @@ L378:   dc.w 0
         tst.w d7
         bne.s zm2
 ; ecran de destination CHOISI!
-zm1:    moveq #42,d0        ;fonction ZOOM de la trappe
+zm1:    moveq #S_zoom,d0        ;fonction ZOOM de la trappe
         trap #5
         rts
 ; ecran de destination par defaut!
 zm2:    tst autoback(a5)
         beq.s zm1
         move d1,-(sp)
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
         move (sp)+,d1
         move.l adback(a5),a1
-        moveq #42,d0
+        moveq #S_zoom,d0
         trap #5
         move.l adlogic(a5),a1
         move.l adback(a5),a0
         clr.l d5
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
-        moveq #29,d0
+        moveq #S_drawsprites,d0
         trap #5
         rts
 l378z:  moveq #13,d0
@@ -8518,7 +8520,7 @@ l379b:  jsr L_rnd.l
         addq.w #1,d1
         move.l (sp)+,a0
         move.l adphysic(a5),a1
-        moveq #43,d0
+        moveq #S_appear,d0
         trap #5
         rts
 
@@ -8533,7 +8535,7 @@ l380a:  jsr L_adscreen.l
         move.l (sp)+,d1
         cmp.l #80,d1
         bhi.s l380z
-        moveq #43,d0
+        moveq #S_appear,d0
         trap #5
         rts
 l380z:  moveq #13,d0
@@ -8594,7 +8596,7 @@ g6:     move.w (a0)+,(a1)+  ;copie dans le back
         beq.s g7
         cmp.l #1000,d1
         bcc.s g7
-        moveq #53,d0        ;Fonction FADE
+        moveq #S_fade,d0        ;Fonction FADE
         trap #5             ;debut
         rts
 g7:     moveq #13,d0
@@ -8605,7 +8607,7 @@ g7:     moveq #13,d0
 *       FLASH OFF
 L385:   dc.w 0
 ***********************
-        moveq #39,d0
+        moveq #S_initflash,d0
         trap #5
         rts
 
@@ -8616,7 +8618,7 @@ L386:   dc.w l386a-L386,0
 l386a:  jsr L_chverbuf.l
         move.l (a6)+,d1
         move.l buffer(a5),a0
-        moveq #40,d0
+        moveq #S_flash,d0
         trap #5
         tst.w d0
         bne.s l386z
@@ -8630,7 +8632,7 @@ l386z:  moveq #67,d0
 L387:   dc.w 0
 ***********************
         moveq #0,d1
-        moveq #46,d0
+        moveq #S_shifton,d0
         trap #5
         rts
 
@@ -8640,7 +8642,7 @@ L388:   dc.w 0
 ***********************
         move.l (a6)+,d1
         moveq #1,d2
-        moveq #46,d0
+        moveq #S_shifton,d0
         trap #5
         rts
 
@@ -8654,10 +8656,10 @@ L389:   dc.w 0
         cmp.l d0,d2
         bcc.s l389z
         move.l (a6)+,d1
-        moveq #46,d0
+        moveq #S_shifton,d0
         trap #5
         rts
-l389z:  moveq #13,d0
+l389z:  moveq #E_illegalfunc,d0
         move.l error(a5),a0
         jmp (a0)
 
@@ -8668,7 +8670,7 @@ L390:   dc.w l390a-L390,0
         move.l defback(a5),d3
         move.l d3,adback(a5)
         move.l d3,a0
-        moveq #27,d0
+        moveq #S_chgscreen,d0
         trap #5
         move.l d3,a0
         moveq #W_setback,d7
@@ -8724,7 +8726,7 @@ l391c:  jsr L_palette3.l
 	move.l amb(a5),a0
 	tst.w 42(a0)
 	beq.s PaCho
-        moveq #17,d0
+        moveq #S_show,d0
         moveq #0,d1
         trap #5
 PaCho:  moveq #M_initsound,d0
@@ -9470,7 +9472,7 @@ L435:   dc.w l435a-L435,0
         tst.l d2
         bmi.s l435z
         move d2,d0
-        moveq #W_windmove,d7        ;fonction #24: move window
+        moveq #W_windmove,d7        ;function #24: move window
         trap #3
 l435a:  jmp L_winderr.l
 l435z:  moveq #13,d0
@@ -9779,7 +9781,7 @@ l461a:  jsr L_adscreen.l
         move.l d3,a0
         moveq #0,d3
         moveq #0,d5
-        moveq #50,d0
+        moveq #S_cls,d0
         trap #5
         rts
 
@@ -9794,7 +9796,7 @@ l462a:  jsr L_adscreen.l
         cmp.l colmax(a5),d5
         bcc.s l462z
         moveq #0,d3
-        moveq #50,d0
+        moveq #S_cls,d0
         trap #5
         rts
 l462z:  moveq #13,d0
@@ -9832,7 +9834,7 @@ L463:   dc.w l463a-L463,0
 l463a:  jsr L_adscreen.l
         move.l d3,a0
         movem.w (sp)+,d1-d5
-        moveq #50,d0
+        moveq #S_cls,d0
         trap #5
         rts
 l463z:  moveq #13,d0
@@ -10337,9 +10339,9 @@ pkp:    move.w (a3)+,(a0)+
         dbra d0,pkp
 l489i:  jsr L_palette3.l             ;envoie la palette au XBIOS
 l489j:  jsr L_waitvbl.l         ;attend le balayage
-        moveq #23,d0
+        moveq #S_backtoscreen,d0
         trap #5             ;DEC TO EC
-        moveq #29,d0
+        moveq #S_drawsprites,d0
         trap #5             ;SPREAFF
 plf:    rts
 l489z:  jmp L_diskerr.l
@@ -11552,7 +11554,7 @@ l525a:  jsr L_namedisk.l
 l525z:  jmp L_diskerr.l
 
 *************************************************************************
-*       DIR$ en fonction
+*       DIR$ function
 L526:   dc.w l526a-L526,l526z-L526,0
 ***********************
         move.l #128,d3
@@ -12679,7 +12681,7 @@ l558c:  jsr L_fillfile.l
 l558d:  jsr L_clearkey.l
 ; boucle d'attente
 fswait:
-fs9:    moveq #20,d0        ;trouve la zone de la souris
+fs9:    moveq #S_mouse,d0        ;trouve la zone de la souris
         trap #5
         clr d2
         move.l defloat(a5),a0
@@ -12856,7 +12858,7 @@ fs19s:  cmp #12,d1
 ; TESTS DE LA SOURIS
 fs19z:  tst fsd+6(a5)         ;pas de choix si rien en inverse!
         bmi fswait
-        moveq #21,d0
+        moveq #S_mousekey,d0
         trap #5             ;mousekey
         tst d0
         bne.s fs20
@@ -13339,16 +13341,16 @@ lp2:    add.w 6(a1),d1
 
 ; FREEZE
 fz1:    moveq #1,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 ; UNFREEZE
 ufz1:   moveq #2,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -14305,16 +14307,16 @@ miv4:   move.w #W_chrout,d7
         rts
 ; FREEZE
 fzm:    moveq #1,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 ; UNFREEZE
 ufzm:   moveq #2,d2
-        moveq #10,d0
+        moveq #S_movesonoff,d0
         trap #5
-        moveq #13,d0
+        moveq #S_animsonoff,d0
         trap #5
         rts
 
@@ -14386,7 +14388,7 @@ L578:   dc.w 0
 ***********************
         tst autoback(a5)
         beq.s l578a
-        moveq #28,d0
+        moveq #S_stopmouse,d0
         trap #5
         move.l adback(a5),$44e.l /* XXX */
 l578a:  rts
@@ -14401,9 +14403,9 @@ L579:   dc.w 0
         move.l a1,$44e.l /* XXX */
         move.l adback(a5),a0
         moveq #0,d5
-        moveq #33,d0
+        moveq #S_scrcopy,d0
         trap #5
-        moveq #29,d0
+        moveq #S_drawsprites,d0
         trap #5
 l579a:  rts
 
@@ -14412,21 +14414,21 @@ l579a:  rts
 L580:   dc.w 0
 ***********************
         move.l table(a5),a0
-        move.l $30(a0),a0
-        move.l 4*$69(a0),a0
+        move.l sys_jumps(a0),a0
+        move.l 4*(T_default-$80)(a0),a0   ; default
         jmp (a0)
 
 *************************************************************************
 *       RUN -seul-
 L581:   dc.w l581a-L581,0
 ***********************
-        tst.w flagem.l /* XXX BUG: missing (a5) */
+        tst.w flaggem.l /* XXX BUG: missing (a5) */
         bne.s l581z
 ; Sous STOS
 l581a:  jsr L_delete.l                  ;Va deloger
         move.l table(a5),a2
-        move.l ext_extjumps(a2),a2               ;extjump
-        move.l 4*$31(a2),a2             ;RUN
+        move.l sys_extjumps(a2),a2               ;extjump
+        move.l 4*(T_exti_run-$70)(a2),a2             ;RUN
         lea $38(a2),a2                  ;RUN -seul-
         jmp (a2)
 ; Sous GEM
@@ -14441,12 +14443,12 @@ L582:   dc.w l582a-L582,l582b-L582,0
 l582a:  jsr L_vername.l                         ;Verifie le nom!
         movem.l d0/a0/a1,-(sp)
 l582b:  jsr L_delete.l                  ;Deloge
-        tst.w flagem(a5)
+        tst.w flaggem(a5)
         bne.s rn1
 ; Sous STOS ---> deloge et appelle le basic
         move.l table(a5),a2
-        move.l ext_extjumps(a2),a2               ;extjump
-        move.l 4*$31(a2),a2             ;RUN
+        move.l sys_extjumps(a2),a2               ;extjump
+        move.l 4*(T_exti_run-$70)(a2),a2             ;RUN
         lea $1c(a2),a2                  ;RUN -NOM-
         movem.l (sp)+,d0/a0/a1
         tst.w d0

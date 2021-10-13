@@ -4,61 +4,61 @@
 
 ; Normal variables
 	.offset 0
-vecteurs:   .ds.l 8
-anc400:     .ds.l 1
-runonly:    .ds.w 1
-ronom:      .ds.l 1
-roold:      .ds.l 1
+vectors:    .ds.l 8 ; copy of system vectors
+anc400:     .ds.l 1 ; vector 50 herz
+runonly:    .ds.w 1 ; flag RUN ONLY or NORMAL
+ronom:      .ds.l 1 ; address of *.BAS filename RUN ONLY
+roold:      .ds.l 1 ; old directory
 ada:        .ds.l 1 ; pointer to TOS adaption vectors
 adm:        .ds.l 1 ; pointer to mouse cursor location GCURX/GCURY
 adk:        .ds.l 1 ; pointer to keyboard input buffer
 ads:        .ds.l 1 ; address of TOS sndtable variable - no longer used
 adc:        .ds.l 1 ; command tail - unused
 runflg:     .ds.w 1
-langue:     .ds.w 1
-foncon:     .ds.w 1
-fonction:   .ds.w 1
-ins:        .ds.w 1
-oldi:       .ds.w 1
+language:   .ds.w 1 ; language used: 0=GB/1=F/2=D
+foncon:     .ds.w 1 ; function keys active?
+funckey:    .ds.w 1 ; current function key being executed
+ins:        .ds.w 1 ; insertion M/A
+oldi:       .ds.w 1 ; old INS during a function key
 undoflg:    .ds.w 1
 remflg:     .ds.w 1
-interflg:   .ds.w 1
-ancdb8:     .ds.w 1
-bip:        .ds.w 1
-waitcpt:    .ds.l 1
-timer:      .ds.l 1
-coldflg:    .ds.w 1
-shift:      .ds.w 1
-ipflg:      .ds.w 1
-lbkflg:     .ds.w 1
-handle:     .ds.w 1
-upperflg:   .ds.w 1
-unewpos:    .ds.l 1
-unewbank:   .ds.l 16
-unewhi:     .ds.l 1
-searchd:    .ds.w 1
-searchf:    .ds.w 1
-mousflg:    .ds.w 1
-inputflg:   .ds.w 1
-inputype:   .ds.w 1
-orinput:    .ds.w 1
-oradinp:    .ds.l 1
-flginp:     .ds.w 1
-chrinp:     .ds.w 1
-autoflg:    .ds.w 1
-autostep:   .ds.w 1
-lastline:   .ds.w 1
-paranth:    .ds.w 1
-gotovar:    .ds.w 1
+interflg:   .ds.w 1 ; flag break/interruption/etc...
+ancdb8:     .ds.w 1 ; test of contrl/c
+bip:        .ds.w 1 ; BEEP keys of on/off
+waitcpt:    .ds.l 1 ; countdown: 50 hertz
+timer:      .ds.l 1 ; timer counter
+coldflg:    .ds.w 1 ; cold start flag
+shift:      .ds.w 1 ; currently displayed function keys
+ipflg:      .ds.w 1 ; flag printer on
+lbkflg:     .ds.w 1 ; list of banks in HEXA or DECIMAL
+handle:     .ds.w 1 ; open file handle
+upperflg:   .ds.w 1 ; listing in lowercase or uppercase
+unewpos:    .ds.l 1 ; size of the first line when unnew
+unewbank:   .ds.l 16 ; copy of banks during NEW
+unewhi:     .ds.l 1 ; start of data banks
+searchd:    .ds.w 1 ; start of search
+searchf:    .ds.w 1 ; end of search
+mousflg:    .ds.w 1 ; anti bounce mouse
+inputflg:   .ds.w 1 ; if INPUT, no more mice in KEY!
+inputype:   .ds.w 1 ; input or lineinput?
+orinput:    .ds.w 1 ; input on keyboard or file?
+oradinp:    .ds.l 1 ; if file: buffer for the address
+flginp:     .ds.w 1 ; flg for input: return = 13/10 or character
+chrinp:     .ds.w 1 ; character serving as return for input #
+autoflg:    .ds.w 1 ; auto active?
+autostep:   .ds.w 1 ; auto STEP
+lastline:   .ds.w 1 ; last line number entered
+paranth:    .ds.w 1 ; parentheses level (interpreter only)
+gotovar:    .ds.w 1 ; flag for GOTO VARIABLE
 
-; Variable du print, un peu modifiees...
-usingflg:   .ds.b 1
+; Print variables, slightly modified...
+usingflg:   .ds.b 1 ; print using active ???
 impflg:     .ds.b 1
 printype:   .ds.w 1
 printpos:   .ds.l 1
 printfile:  .ds.l 1
             .ds.w 1
-sortflg:    .ds.w 1
+sortflg:    .ds.w 1 ; flag: sort of findvar
 tokvar:     .ds.l 1 ; interpreter only
 varlong:    .ds.w 1 ; interpreter only
 tokch:      .ds.l 1 ; interpreter only
@@ -71,10 +71,10 @@ posgsb:     .ds.l 1 ; interpreter only
 cptnext:    .ds.w 1 ; interpreter only
 oldfind:    .ds.l 1 ; interpreter only
 nbdim:      .ds.w 1 ; interpreter only
-scankey:    .ds.w 1
-datastart:  .ds.l 1
-dataline:   .ds.l 1
-datad:      .ds.l 1
+scankey:    .ds.w 1 ; scancode of the last inkey
+datastart:  .ds.l 1 ; address of the line containing the first DATA
+dataline:   .ds.l 1 ; address of the current data line
+datad:      .ds.l 1 ; current data address
 folflg:     .ds.w 1
 erroron:    .ds.w 1
 onerrline:  .ds.l 1
@@ -207,7 +207,7 @@ table:      .ds.l 1            ;Adresse de la table des adresses
 buffer:     .ds.l 1            ;Adresse du buffer
 error:      .ds.l 1            ;Traitement des erreurs
 defloat:    .ds.l 1            ;buffer ecriture float
-lochaine:   .ds.l 1            ;debut du buffer des chaines
+lochaine:   .ds.l 1            ;start of channel buffer
 chvide:     .ds.l 1            ;Adresse de la chaine vide
 bufpar:     .ds.l 1            ;buffer des parametres
 liad:       .ds.l 1            ;Table #LIGNE----> ADRESSE
@@ -220,9 +220,9 @@ ptsin:      .ds.l 1
 vdipb:      .ds.l 1
 fichiers:   .ds.l 1
 dta:        .ds.l 1
-buffonc:    .ds.l 1
-deffonc:    .ds.l 1
-foncnom:    .ds.l 1
+buffunc:    .ds.l 1
+deffunc:    .ds.l 1
+funcname:   .ds.l 1
 work:       .ds.l 1
 dfst:       .ds.l 1
 amb:        .ds.l 1
@@ -231,7 +231,7 @@ name2:      .ds.l 1
 fsbuff:     .ds.l 1
 fsname:     .ds.l 1
 admenu:     .ds.l 1
-flagem:     .ds.l 1
+flaggem:    .ds.l 1
 oend:       .ds.l 1
 flola:      .ds.w 1
 flgrun:     .ds.w 1

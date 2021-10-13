@@ -4,17 +4,23 @@
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
 
-	.include "lib.inc"
-	.include "equates.inc"
-    .include "adapt.inc"
+        .include "lib.inc"
+        .include "equates.inc"
+        .include "adapt.inc"
+        .include "tokens.inc"
+        .include "system.inc"
+        .include "window.inc"
+        .include "music.inc"
+        .include "sprites.inc"
+        .include "float.inc"
 
-	.text
+        .text
 
 *************************************************************************
     bra.w setpar    ;JUMP set params
     bra.w DStos     ;JUMP compile
-    bra.w Grab		;GRABber de programmes
-	bra.w Version	;Get version number
+    bra.w Grab      ;GRABber de programmes
+    bra.w Version   ;Get version number
 *************************************************************************
 
 ;-------------------------> Management of the 30 open files!
@@ -26,12 +32,12 @@ Nfyche          = 32
 
 DebD           = 128                 ;DeD-debprg
 **********************************
-; Non relogeables
+; Non relocatables
 atable         = DebD+$00            ;Adresse de la table
 otbufsp        = DebD+$04
 omaxcop        = DebD+$08
 ovide          = DebD+$12
-; relogeables
+; relocatables
 debrel         = DebD+$10
 ochvide        = DebD+$10            ;Chaine vide
 OReloc         = DebD+$14            ;debut de la table de relocation
@@ -130,7 +136,7 @@ FstData:        dc.l 0
 OlData:         dc.l 0
 
 ; Flag GEM RUN
-FlagGem:        dc.w 0          ;0= STOS-RUN / 1= GEM-RUN
+cflaggem:       dc.w 0          ;0= STOS-RUN / 1= GEM-RUN
 
 ; Flag MENUS
 menucall:       dc.l 0
@@ -653,128 +659,128 @@ crts:           rts
 
 
 *********************************************************************
-*	Ramene la version
+* Ramene la version
 ***************************
 Version:
-	move.w #$0300,d0
-	rts
+        move.w #$0300,d0
+        rts
 
 *********************************************************************
-*	GRABBER DE PROGRAMME POUR LE STOS BASIC
-*	AREG(0)= debut PRG
-*	AREG(1)= fin PRG
-*	AREG(2)= compad
-*	AREG(3)= back
-*	DREG(0)= programme ou grabber
+* GRABBER DE PROGRAMME POUR LE STOS BASIC
+* AREG(0)= debut PRG
+* AREG(1)= fin PRG
+* AREG(2)= compad
+* AREG(3)= back
+* DREG(0)= programme ou grabber
 **************************************
 
 ******* Poke et appelle le grabber
-Grab:	lea Grabber(pc),a4
-	lea GrabEnd(pc),a5
-	move.l a3,-(sp)
-Grb:	move.l (a4)+,(a3)+
-	cmp.l a5,a4
-	bcs.s Grb
-	rts
+Grab:   lea Grabber(pc),a4
+        lea GrabEnd(pc),a5
+        move.l a3,-(sp)
+Grb:    move.l (a4)+,(a3)+
+        cmp.l a5,a4
+        bcs.s Grb
+        rts
 
-Grabber:move.l a2,a6		;A6= compad
-	move.l $4c(a6),a5	;A5= tables
-	move.l a0,a2		;A2= adresse du .PRG
-	move.l a1,d3
-	sub.l a2,d3		;D3= longueur du .PRG
-	move.w d0,d7		;# du programme ou grabber
-	move.w d0,program(a5)
-	clr.w accflg(a5)	;Plus d'accessoire!
+Grabber:move.l a2,a6            ;A6= compad
+        move.l sys_vectors(a6),a5       ;A5= tables
+        move.l a0,a2            ;A2= adresse du .PRG
+        move.l a1,d3
+        sub.l a2,d3             ;D3= longueur du .PRG
+        move.w d0,d7            ;# du programme ou grabber
+        move.w d0,program(a5)
+        clr.w accflg(a5)        ;Plus d'accessoire!
 
-	move.l adatabank(a5),a0
-	move.l (a0)+,d0
-	moveq #14,d1
-Grb1:	clr.l (a0)+		;Efface les banques!
-	dbra d1,Grb1
-	move.l adataprg(a5),a0
-	move.l (a0),a3		;Adresse de recopie
-	move.l d0,4(a0)		;Longueur compil= longueur basic.
-	add.l d0,a3		;Pointe la fin du compilateur
-	move.l d3,-(sp)
-	move.l $28(a6),a0
-	jsr (a0)		;Transmem
-	lsl.w #3,d7
-	lea dataprg(a5),a4
-	add.w d7,a4
-	move.l 8(a4),a2		;debut du prg au dessus
-	move.l (sp),d3
+        move.l adatabank(a5),a0
+        move.l (a0)+,d0
+        moveq #14,d1
+Grb1:   clr.l (a0)+             ;Efface les banques!
+        dbra d1,Grb1
+        move.l adataprg(a5),a0
+        move.l (a0),a3          ;Adresse de recopie
+        move.l d0,4(a0)         ;Longueur compil= longueur basic.
+        add.l d0,a3             ;Pointe la fin du compilateur
+        move.l d3,-(sp)
+        move.l $28(a6),a0
+        jsr (a0)                ;Transmem
+        lsl.w #3,d7
+        lea dataprg(a5),a4
+        add.w d7,a4
+        move.l 8(a4),a2         ;debut du prg au dessus
+        move.l (sp),d3
 ; Fait tourner les buffers
-Tour0:	move.l #32000,d0
-	cmp.l d3,d0
-	bcs.s Tour1
-	move.l d3,d0
-Tour1:	sub.l d0,d3
-	move.l adback(a5),a1	;Recopie dans le buffer
-	add.l #32768,a1
-	move.l a3,a0
-	lsr.w #1,d0
-	subq.w #1,d0
-	move.w d0,d1
-Tour2:	move.w -(a0),-(a1)
-	dbra d0,Tour2
-	move.l a3,a1		;Monte le programme
-Tour3:	move.w -(a0),-(a1)
-	cmp.l a2,a0
-	bhi.s Tour3
-	move.l adback(a5),a0	;Remet le bout d'ecran
-	add.l #32768,a0
-Tour4:	move.w -(a0),-(a1)
-	dbra d1,Tour4
-	tst.l d3
-	bne.s Tour0
+Tour0:  move.l #32000,d0
+        cmp.l d3,d0
+        bcs.s Tour1
+        move.l d3,d0
+Tour1:  sub.l d0,d3
+        move.l adback(a5),a1    ;Recopie dans le buffer
+        add.l #32768,a1
+        move.l a3,a0
+        lsr.w #1,d0
+        subq.w #1,d0
+        move.w d0,d1
+Tour2:  move.w -(a0),-(a1)
+        dbra d0,Tour2
+        move.l a3,a1            ;Monte le programme
+Tour3:  move.w -(a0),-(a1)
+        cmp.l a2,a0
+        bhi.s Tour3
+        move.l adback(a5),a0    ;Remet le bout d'ecran
+        add.l #32768,a0
+Tour4:  move.w -(a0),-(a1)
+        dbra d1,Tour4
+        tst.l d3
+        bne.s Tour0
 ; Remonte le gros bout de basic
-	move.l (sp)+,d3
-	move.l a2,-(sp)
-	add.l d3,a2
-	move.l a3,d3
-	sub.l a2,d3
-	move.l adataprg(a5),a0
-	move.l 8(a0),a3
-	sub.l d3,a3
-	move.l $28(a6),a0
-	jsr (a0)
+        move.l (sp)+,d3
+        move.l a2,-(sp)
+        add.l d3,a2
+        move.l a3,d3
+        sub.l a2,d3
+        move.l adataprg(a5),a0
+        move.l 8(a0),a3
+        sub.l d3,a3
+        move.l $28(a6),a0
+        jsr (a0)
 ; Change les adresses des programmes
-	move.l adataprg(a5),a0
-Tour5:	sub.l 4(a0),a3
-	move.l a3,(a0)
-	subq.l #8,a0
-	cmp.l a4,a0
-	bhi.s Tour5
+        move.l adataprg(a5),a0
+Tour5:  sub.l 4(a0),a3
+        move.l a3,(a0)
+        subq.l #8,a0
+        cmp.l a4,a0
+        bhi.s Tour5
 ; Descend le .PRG
-	lsl.w #3,d7
-	lea databank(a5),a0
-	add.w d7,a0
-	move.l a0,adatabank(a5)
-	move.l a4,adataprg(a5)
-	move.l (a4),a3
-	move.l (sp)+,a2
-	lea 10(a2),a2			;Saute lionpoulos
-	move.l (a2)+,d3
-	move.l d3,4(a4)			;Longueur totale prg
-	moveq #15,d0
-Des1:	move.l (a2)+,(a0)+		;Copie databank
-	dbra d0,Des1
-	move.l $28(a6),a0		;Descend le programme
-	jsr (a0)
-	move.l $74(a6),a0		;Dechaine le programme
-	jsr (a0)
-	move.l $40(a6),a0		;Prend DIR JUMPS
-	move.l 14*4(a0),a0		;WARM
-	jmp (a0)
+        lsl.w #3,d7
+        lea databank(a5),a0
+        add.w d7,a0
+        move.l a0,adatabank(a5)
+        move.l a4,adataprg(a5)
+        move.l (a4),a3
+        move.l (sp)+,a2
+        lea 10(a2),a2                   ;Saute lionpoulos
+        move.l (a2)+,d3
+        move.l d3,4(a4)                 ;Longueur totale prg
+        moveq #15,d0
+Des1:   move.l (a2)+,(a0)+              ;Copie databank
+        dbra d0,Des1
+        move.l $28(a6),a0               ;Descend le programme
+        jsr (a0)
+        move.l $74(a6),a0               ;Dechaine le programme
+        jsr (a0)
+        move.l $40(a6),a0               ;Prend DIR JUMPS
+        move.l 14*4(a0),a0              ;WARM
+        jmp (a0)
 GrabEnd:
 
 *************************************************************************
 *       Depart SEKA
 ***********************
 w:      clr.w flagstos
-	clr.l vtable
-	dc.w $a000
-	move.l a0,LigneA
+        clr.l vtable
+        dc.w $a000
+        move.l a0,LigneA
         move.l #finprg,a0
         move.l #$F0000,a1
         move.l #$F0000,a2
@@ -787,30 +793,30 @@ w:      clr.w flagstos
         move.l #ncr1,nomcr1
         move.l #ncr2,nomcr2
         move.l #nmouse,nommou
-        move.w #1,FlagGem
-	move.w #0,XLine
-	move.w #0,YLine
-	move.w #64,LBar
-	move.w #100,HBar
+        move.w #1,cflaggem
+        move.w #0,XLine
+        move.w #0,YLine
+        move.w #64,LBar
+        move.w #100,HBar
         lea $f0000,sp
         bra.w Ds
 
 *************************************************************************
 *       FIXE LES PARAMETRES DE COMPILATION
-*       A0= table vecteurs
+*       A0= table vectors
 *       A1= Sprites souris
 *       A2= CR0
 *       A3= CR1
 *       A4= CR2
-*	A5= parametres DEFAULT
+*       A5= parametres DEFAULT
 *       D0= pgm#
-*       D1= FlagGem
-*	D2= XBarre
-*	D3= YBarre
-*	D4= Taille barre X
-*	D5= Taille barre Y
-*	D6= Tmaxcopie
-*	D7= BufSprites
+*       D1= flaggem
+*       D2= XBarre
+*       D3= YBarre
+*       D4= Taille barre X
+*       D5= Taille barre Y
+*       D6= Tmaxcopie
+*       D7= BufSprites
 ***********************
 setpar: move.l a0,vtable
         move.l a1,nommou
@@ -819,28 +825,28 @@ setpar: move.l a0,vtable
         move.l a4,nomcr2
         subq.w #1,d0
         move.w d0,prgnb
-        move.w d1,FlagGem
-	move.w d2,XLine
-	move.w d3,YLine
-	move.w d4,LBar
-	move.w d5,HBar
-	move.l d6,maxcop
-	move.l d7,tbufsp
-	moveq #44-1,d0
-	lea oamb(pc),a0
-setp:	move.b (a5)+,(a0)+
-	dbra d0,setp
+        move.w d1,cflaggem
+        move.w d2,XLine
+        move.w d3,YLine
+        move.w d4,LBar
+        move.w d5,HBar
+        move.l d6,maxcop
+        move.l d7,tbufsp
+        moveq #44-1,d0
+        lea oamb(pc),a0
+setp:   move.b (a5)+,(a0)+
+        dbra d0,setp
 ; Adresses ligne A / control-c
-	move.l vtable(pc),d0
-	bmi.s Sp1
-	move.l d0,a0
-	move.l $4c(a0),a0
-	bra.s Sp2
-Sp1:	bclr #31,d0
-	move.l d0,a0
-Sp2:	move.l a0,advector
-	move.l laad(a0),LigneA
-	rts
+        move.l vtable(pc),d0
+        bmi.s Sp1
+        move.l d0,a0
+        move.l sys_vectors(a0),a0
+        bra.s Sp2
+Sp1:    bclr #31,d0
+        move.l d0,a0
+Sp2:    move.l a0,advector
+        move.l laad(a0),LigneA
+        rts
 
 *************************************************************************
 *       COMPILATION STOS
@@ -850,14 +856,14 @@ Sp2:	move.l a0,advector
 *       a3= haut buffer BACK
 *       a4= nom entree / 0 sinon
 *       a5= nom sortie / 0 sinon
-*	d0= compiler TEST 0 / 1 / 2
-*	d1= zero float (1)
-*	d2= zero float (2)
+* d0= compiler TEST 0 / 1 / 2
+* d1= zero float (1)
+* d2= zero float (2)
 **********************************************
 DStos:  move.w #1,flagstos
-	move.w d0,Tests
-	move.l d1,ozero
-	move.l d2,ozero+4
+        move.w d0,Tests
+        move.l d1,ozero
+        move.l d2,ozero+4
         move.l a4,nomin
         move.l a5,nomout
 
@@ -887,8 +893,8 @@ RazB:   clr.l (a0)+
         move.l #$1000,MaxBso
         add.l MaxBso(pc),a2
         move.l #256,BordBso
-	move.l a2,ADtbnk
-	lea 17*4(a2),a2
+        move.l a2,ADtbnk
+        lea 17*4(a2),a2
 ; buffer de sauvegarde OBJET
 Rab1:   tst.l nomout
         beq.s Rab2
@@ -996,7 +1002,7 @@ LdE3:
         bne.s LdSou
 ; Programme en memoire
         move.l vtable,a0
-        move.l $4c(a0),a5
+        move.l sys_vectors(a0),a5
         move.w prgnb,d0
         lea dataprg(a5),a0
         lea databank(a5),a1
@@ -1007,7 +1013,7 @@ LdE3:
         move.l a0,ADtprg
         move.l a1,ADtbnk
         move.l (a0),Source              ;Adresse du source!
-	move.l (a1),LongSou 		;Longueur du source
+        move.l (a1),LongSou             ;Longueur du source
         bra.w FLdSou /* XXX */
 
 ;-----> Ouvre le programme .BAS
@@ -1019,7 +1025,7 @@ LdSou:  moveq #30,d7
         bsr Open2
         move.l d0,TopSou
 ; Charge le debut
-	clr.l Source
+        clr.l Source
         clr.l DebBso
         move.l MaxBso(pc),FinBso
         bsr LoadBso
@@ -1030,15 +1036,15 @@ OpSo:   cmpm.b (a0)+,(a1)+
         bne diskerr
         dbra d0,OpSo
 ; Copie ADATABANK
- 	move.l BufSou(pc),a0
-	lea 10+4(a0),a0
-	move.l ADtbnk(pc),a1
-	move.l (a0),d0
-	addi.l #17*4+10,d0
-	move.l d0,LongSou
-	moveq #15,d0
-Opso1:	move.l (a0)+,(a1)+
-	dbra d0,Opso1
+        move.l BufSou(pc),a0
+        lea 10+4(a0),a0
+        move.l ADtbnk(pc),a1
+        move.l (a0),d0
+        addi.l #17*4+10,d0
+        move.l d0,LongSou
+        moveq #15,d0
+Opso1:  move.l (a0)+,(a1)+
+        dbra d0,Opso1
 FLdSou:
 
 *************************************************************************
@@ -1046,31 +1052,31 @@ FLdSou:
 *************************************************************************
 
 ;-----> Donnees affichage
-	move.w XLine(pc),d0
-	move.w d0,BasBar
-	move.w LBar(pc),d1
-	add.w d1,d0
-	move.w d0,Bar1
-	add.w d1,d0
-	move.w d0,Bar2
-	add.w d1,d0
-	move.w d0,Bar3
-	add.w d1,d0
-	move.w d0,Bar4
-	add.w d1,d0
-	move.w d0,Bar5
-	move.w #4,-(sp)
-	trap #14
-	lea 2(sp),sp
-	move.w d0,resol
+        move.w XLine(pc),d0
+        move.w d0,BasBar
+        move.w LBar(pc),d1
+        add.w d1,d0
+        move.w d0,Bar1
+        add.w d1,d0
+        move.w d0,Bar2
+        add.w d1,d0
+        move.w d0,Bar3
+        add.w d1,d0
+        move.w d0,Bar4
+        add.w d1,d0
+        move.w d0,Bar5
+        move.w #4,-(sp)
+        trap #14
+        lea 2(sp),sp
+        move.w d0,resol
 
 ;-----> passe 0: Test des erreurs / Calcul de la longueur
         clr.w passe
         bsr passe0
         bne cout
-	move.w Bar1(pc),d0
-	move.w d0,BasBar
-	bsr AffBar
+        move.w Bar1(pc),d0
+        move.w d0,BasBar
+        bsr AffBar
 
 ;-----> Ouvre le fichier OBJET si sur disque
         tst.l nomout
@@ -1086,19 +1092,19 @@ PaDis:
 ;-----> passe 1:
         move.w #1,passe
         bsr passe1
-	move.w Bar4(pc),d0
-	move.w d0,BasBar
-	bsr AffBar
+        move.w Bar4(pc),d0
+        move.w d0,BasBar
+        bsr AffBar
 
 ;-----> passe 2
         move.w #2,passe
         bsr passe2
-	move.w Bar5(pc),d0
-	bsr AffBar
+        move.w Bar5(pc),d0
+        bsr AffBar
 
-;-----> Rajoute les headers
+;-----> Add the headers
         move.l stobjet(pc),a5
-        tst.w FlagGem
+        tst.w cflaggem
         bne.s Head1
 ; Header STOS
         lea HeadStos(pc),a0
@@ -1119,30 +1125,30 @@ Head3:
         bsr Close
 
 ;-----> FINI:
-;	si memoire : A0= debut / A1= fin de l'objet
-;	si disque  : a0= longueur objet
-;	a2= longueur buffers
-	tst.w nomout
-	beq.s Head4
+;       si memoire : A0= debut / A1= fin de l'objet
+;       si disque  : a0= longueur objet
+;       a2= longueur buffers
+        tst.w nomout
+        beq.s Head4
 ; Sur disque : taille de l'objet
-	moveq #31,d7
-	bsr GetFich
-	move.l Longfyche(a3),a0
-	bra.s Head5
+        moveq #31,d7
+        bsr GetFich
+        move.l Longfyche(a3),a0
+        bra.s Head5
 ; En memoire---> ramene debut / fin
 Head4:  moveq #0,d0
         move.l stobjet(pc),a0
         move.l objet(pc),a1
         add.l LongOb(pc),a1
-	tst.w FlagGem
-	beq.s Head5
-	addq.l #8,a1
+        tst.w cflaggem
+        beq.s Head5
+        addq.l #8,a1
 ; Taille des buffers
-Head5:  move.l tbuffers(pc),a2		;Taille buffers utilises
-	move.l SauveP,sp
+Head5:  move.l tbuffers(pc),a2          ;Taille buffers utilises
+        move.l SauveP,sp
 ; Nombre d'instructions en D2
-	moveq #0,d2
-	move.w CptInst(pc),d2
+        moveq #0,d2
+        move.w CptInst(pc),d2
         tst.w flagstos
         beq.w FinSeka /* XXX */
         rts
@@ -1156,67 +1162,67 @@ FinSeka:illegal
 
 ;-----> Calcule et affiche un pourcentage: D0 / D1
 AffPour:cmp.w d1,d0
-	bcc.s Afp1
-	swap d0
-	clr.w d0
-	divu d1,d0
-	mulu LBar(pc),d0
-	swap d0
-Afp0:	add.w BasBar(pc),d0
-	bsr AffBar
-	rts
-Afp1:	move.w LBar(pc),d0
-	bra.s Afp0
+        bcc.s Afp1
+        swap d0
+        clr.w d0
+        divu d1,d0
+        mulu LBar(pc),d0
+        swap d0
+Afp0:   add.w BasBar(pc),d0
+        bsr AffBar
+        rts
+Afp1:   move.w LBar(pc),d0
+        bra.s Afp0
 
 ;-----> Affiche une ligne depuis la position courante---> D0
-AffBar:	move.w d1,-(sp)
-	move.w d0,d1
-	move.w XLine,d0
-	bra.s afb1
-afb0:	bsr AffLine
-	addq.w #1,d0
-afb1:	cmp.w d1,d0
-	bcs.s afb0
-	move.w d0,XLine
-	move.w (sp)+,d1
-	rts
+AffBar: move.w d1,-(sp)
+        move.w d0,d1
+        move.w XLine,d0
+        bra.s afb1
+afb0:   bsr AffLine
+        addq.w #1,d0
+afb1:   cmp.w d1,d0
+        bcs.s afb0
+        move.w d0,XLine
+        move.w (sp)+,d1
+        rts
 
 ;-----> Affiche une ligne VERTICALE en X=d0
 AffLine:movem.l d0-d3/a0-a3,-(sp)
-	move.l LigneA(pc),a0
-	move.w YLine(pc),d1
-	move.w d1,d2
-	add.w HBar(pc),d2
-	tst.w resol			;Si HIRES: *2
-	beq.s Ali1
-	lsl.w #1,d0
-	lsl.w #1,d1
-	lsl.w #1,d2
-Ali1:	move.w d0,38(a0)		;X
-	move.w d0,42(a0)
-	move.w d1,40(a0)		;Y
-	move.w d2,44(a0)
-	move.l #$FFFFFFFF,24(a0)	;Plans de couleur
-	move.l #$FFFFFFFF,28(a0)
-	clr.w 36(a0)			;Writing
-	move.w #$FFFF,34(a0)		;Ligne parcourue
-	move.w #-1,32(a0)
-	dc.w $a003
-	tst.l vtable
-	beq.s Ali3
+        move.l LigneA(pc),a0
+        move.w YLine(pc),d1
+        move.w d1,d2
+        add.w HBar(pc),d2
+        tst.w resol                     ;Si HIRES: *2
+        beq.s Ali1
+        lsl.w #1,d0
+        lsl.w #1,d1
+        lsl.w #1,d2
+Ali1:   move.w d0,38(a0)                ;X
+        move.w d0,42(a0)
+        move.w d1,40(a0)                ;Y
+        move.w d2,44(a0)
+        move.l #$FFFFFFFF,24(a0)        ;Plans de couleur
+        move.l #$FFFFFFFF,28(a0)
+        clr.w 36(a0)                    ;Writing
+        move.w #$FFFF,34(a0)            ;Ligne parcourue
+        move.w #-1,32(a0)
+        dc.w $a003
+        tst.l vtable
+        beq.s Ali3
 ; Teste le CONTRL-C
-	move.l advector(pc),a0
-	move.b interflg(a0),d0
-	bpl.s Ali3
-	andi.b #$7f,d0
-	beq.s Ali2
-	bclr #0,d0
-	beq.s Ali2
-	moveq #3,d0			;BREAK!
-	bra.w cerror /* XXX */
-Ali2:	move.b d0,(a0)
-Ali3:	movem.l (sp)+,d0-d3/a0-a3
-	rts
+        move.l advector(pc),a0
+        move.b interflg(a0),d0
+        bpl.s Ali3
+        andi.b #$7f,d0
+        beq.s Ali2
+        bclr #0,d0
+        beq.s Ali2
+        moveq #3,d0                     ;BREAK!
+        bra.w cerror /* XXX */
+Ali2:   move.b d0,(a0)
+Ali3:   movem.l (sp)+,d0-d3/a0-a3
+        rts
 
 
 
@@ -1230,8 +1236,8 @@ Ali3:	movem.l (sp)+,d0-d3/a0-a3
 cout:   moveq #2,d0
         bra.w cerror /* XXX */
 ; Rien a compiler!
-CRien:	moveq #1,d0
-	bra.w cerror /* XXX */
+CRien:  moveq #1,d0
+        bra.w cerror /* XXX */
 ; Message normaux
 csynt:  moveq #12,d0            ;Syntax error
         bra.w cerror /* XXX */
@@ -1243,7 +1249,7 @@ diskerr:moveq #-1,d0
 
 ;-----> Entree ERREURS
 cerror: moveq #0,d1
-	move.w curline(pc),d1
+        move.w curline(pc),d1
 cerror2:andi.w #$ffff,d0 /* YYY useless */
         movem.l d0-d1,-(sp)
         bsr Close
@@ -1280,7 +1286,7 @@ passe0:
         clr.l BAdChai
         clr.l objet
         clr.w ValFlo
-	clr.l NbRout
+        clr.l NbRout
         bsr passe1                      ;Fait la passe 1
         move.w floflag,ValFlo
         move.l debwork,a6
@@ -1330,11 +1336,11 @@ BRel:   addi.l #$400,d0
 bob1:   clr.l stobjet
 ; Rajoute le HEADER (Stos ou Gem)
 bob2:   move.l stobjet(pc),d0
-        tst.w FlagGem
+        tst.w cflaggem
         bne.s bob3
-        addi.l #10,d0
+        addi.l #HeadStosEnd-HeadStos,d0
         bra.s bob4
-bob3:   addi.l #$1c+2,d0
+bob3:   addi.l #HeadTosEnd-HeadTos,d0
 bob4:   move.l d0,objet
 
 ;-----> Out of mem ???
@@ -1398,11 +1404,11 @@ Pap:
         clr.l FstData                   ;Pas de datas
         clr.l OlData
         clr.w flagmenu                  ;Pas de menu!
-	clr.w CptInst			;Compteur instructions
-	move.w #$ffff,curline
+        clr.w CptInst                   ;Compteur instructions
+        move.w #$ffff,curline
 
 ; Extensions
-	clr.l extflag
+        clr.l extflag
         move.l AdExtAp(pc),a0
         move.l AdExtPa(pc),a1
         moveq #26-1,d0
@@ -1422,21 +1428,21 @@ InEx3:  lea 4(a0),a0
 ;-----> Saute les routines d'initialisation
         move.l #debprgf,d1
         subi.l #debprg,d1
-        tst.w FlagGem
+        tst.w cflaggem
         bne.s p1in1
         addi.l #InaF,d1           ;STOS-run
         subi.l #Ina,d1
         bra.s p1in2
 p1in1:  addi.l #inbf,d1           ;GEM-run
         subi.l #Inb,d1
-p1in2:	add.l a5,d1
+p1in2:  add.l a5,d1
 ; Rempli de zero les routines INIT
-p1in3:	clr.w d0
-	bsr outword
-	cmp.l d1,a5
-	bne.s p1in3
-	tst.w FlagGem
-	beq.s p1in4
+p1in3:  clr.w d0
+        bsr outword
+        cmp.l d1,a5
+        bne.s p1in3
+        tst.w cflaggem
+        beq.s p1in4
         move.w #L_defgem,d0          ;JSR redessin
         bsr crefonc
         move.w #L_movedata,d0           ;MOVE DATA
@@ -1448,7 +1454,7 @@ p1in4:
 ;-----> Appel a RAZ PRG
         moveq #L_razprg,d0
         bsr crefonc
-	move.l a5,-(sp)		;Position au debut compilation
+        move.l a5,-(sp)         ;Position au debut compilation
         bra.s DebChr
 
 ;-----> Exploration du source
@@ -1462,7 +1468,7 @@ DebChr: move.l a6,adline
         bsr GetWord
         cmp.w #$ffff,d0         ;Pas de ligne 65535!
         beq csynt
-	move.w d0,curline
+        move.w d0,curline
         tst.w passe             ;Si PASSE=0 ne poke pas!
         bne.s ChG1
         addq.l #6,a0
@@ -1476,12 +1482,12 @@ ChG2:   move.l a0,alitoad
         /* add.w #1,nblines        ;1 ligne de plus! */
         dc.l 0x06790001,nblines /* XXX */
 ; Affiche la position
-	move.l a6,d0
-	sub.l Source,d0
-	lsr.l #8,d0
-	move.l LongSou,d1
-	lsr.l #8,d1
-	bsr AffPour
+        move.l a6,d0
+        sub.l Source,d0
+        lsr.l #8,d0
+        move.l LongSou,d1
+        lsr.l #8,d1
+        bsr AffPour
 ; Prend la prochaine instruction
 ChrGet: bsr getbyte
         move.b d0,d1
@@ -1503,12 +1509,12 @@ Chr1:   andi.w #$7f,d1
         bra.s ChrGet
 
 ;-----> End of the first pass: call of the end routine
-FinPas1:cmp.l (sp)+,a5			;Quelque chose de compile?
-	beq CRien
-	move.l #$49fafffe,d0
+FinPas1:cmp.l (sp)+,a5                  ;Quelque chose de compile?
+        beq CRien
+        move.l #$49fafffe,d0
         bsr outlong
         moveq #L_finistos,d0
-        tst.w FlagGem
+        tst.w cflaggem
         beq.s FinP
         moveq #L_finigem,d0
 FinP:   bsr crefonc
@@ -1528,7 +1534,7 @@ pamen:
         moveq #L_error,d0
         bsr crefonc                     ;routine d'erreur
         moveq #L_error2,d0
-        tst.w FlagGem
+        tst.w cflaggem
         beq.s Ent1
         addq.w #1,d0                    ; -> L_error3
 Ent1:   bsr crefonc                     ;Retour STOS / GEM
@@ -1552,41 +1558,41 @@ CIni2:  btst d7,d6
         tst.w passe
         bne.s CIni3
 ; passe 0 : additionne la taille
-        move.l 	8(a1),d0
-        sub.l 	4(a1),d0
-        add.l 	d0,a5
-        bra.s 	CIni5
+        move.l  8(a1),d0
+        sub.l   4(a1),d0
+        add.l   d0,a5
+        bra.s   CIni5
 ; passe 1 : charge
 CIni3:
-        move.l 	a5,d1
-        sub.l 	objet(pc),d1
-        move.l 	d1,(a2)                  ;Adresse de l'extension
-        move.l 	4(a1),d0                 ;Pointe l'init
-        addi.l 	#$1c,d0
-        bsr 	LSeek
+        move.l  a5,d1
+        sub.l   objet(pc),d1
+        move.l  d1,(a2)                  ;Adresse de l'extension
+        move.l  4(a1),d0                 ;Pointe l'init
+        addi.l  #$1c,d0
+        bsr     LSeek
         
-        move.l 	8(a1),d5                 ;Longueur a charger
-        sub.l 	4(a1),d5
-CIni3a:	move.l	d5,d0
-        cmp.l 	MaxLoad(pc),d5
-        bcs.s	CIni3b
-        move.l	MaxLoad(pc),d0
-CIni3b:  sub.l	d0,d5
-        move.l 	BufLoad(pc),a0
-        bsr 	load
-        move.l 	BufLoad(pc),a1
-        move.l 	d0,d1
-        lsr.w 	#1,d1
-	subq.w	#1,d1
-CIni4:  move.w 	(a1)+,d0
-        bsr 	outword
-        dbra 	d1,CIni4
-	tst.l	d5
-	bne.s	CIni3a
-CIni5:  lea 	4(a2),a2
-        addq.w 	#1,d7
-        cmp.w 	#27,d7
-        bcs.s 	CIni2
+        move.l  8(a1),d5                 ;Longueur a charger
+        sub.l   4(a1),d5
+CIni3a: move.l  d5,d0
+        cmp.l   MaxLoad(pc),d5
+        bcs.s   CIni3b
+        move.l  MaxLoad(pc),d0
+CIni3b:  sub.l  d0,d5
+        move.l  BufLoad(pc),a0
+        bsr     load
+        move.l  BufLoad(pc),a1
+        move.l  d0,d1
+        lsr.w   #1,d1
+        subq.w  #1,d1
+CIni4:  move.w  (a1)+,d0
+        bsr     outword
+        dbra    d1,CIni4
+        tst.l   d5
+        bne.s   CIni3a
+CIni5:  lea     4(a2),a2
+        addq.w  #1,d7
+        cmp.w   #27,d7
+        bcs.s   CIni2
 
 ;------------------------------------> COPIE LES ROUTINES LIBRAIRIE
                                         ;A6= debut des routines
@@ -1601,10 +1607,10 @@ CLib1:  move.l routin,a6                ;A6= debut flags routines
         move.l AdCata,a3                ;A3= debut du catalogue
         moveq #0,d5                     ;D5= debut de la librairie
         moveq #0,d6                     ;Flag
-	tst.w passe
-	beq.s CLib2
-	clr.l CptRout			;Initialise l'affichage
-	move.w Bar2,BasBar
+        tst.w passe
+        beq.s CLib2
+        clr.l CptRout                   ;Initialise l'affichage
+        move.w Bar2,BasBar
 
 ; Prend une routine
 CLib2:  move.l (a6)+,d0                 ;routine selectionnee?
@@ -1646,7 +1652,7 @@ CLib5:  move.l a5,-4(a6)                ;Marque la routin
         tst.w passe
         beq CLib10
 ; Charge le bout de routine dans BUFLOAD
-	movem.l d0-d7/a0-a6,-(sp)
+        movem.l d0-d7/a0-a6,-(sp)
         move.w (a3),-(sp)               ;Longueur de la routine
         move.l d5,d0
         addi.l #$1c,d0
@@ -1661,16 +1667,16 @@ CLib5a: move.l PAdExtAd(pc),a0
 CLib5b: bsr LSeek
         moveq #0,d0
         move.w (sp)+,d0
-        cmp.w MaxLoad+2(pc),d0		;Taille maxi des routines
+        cmp.w MaxLoad+2(pc),d0          ;Taille maxi des routines
         bcc csynt
         move.l BufLoad(pc),a0
         bsr load
-	/* add.l #1,CptRout		;Affyche le nombre de routines */
-	dc.w 0x06b9
-	dc.l 1,CptRout /* XXX */
-	move.l CptRout,d0
-	move.l NbRout,d1
-	bsr AffPour
+        /* add.l #1,CptRout             ;Affyche le nombre de routines */
+        dc.w 0x06b9
+        dc.l 1,CptRout /* XXX */
+        move.l CptRout,d0
+        move.l NbRout,d1
+        bsr AffPour
         movem.l (sp)+,d0-d7/a0-a6
 ; Recopie la routine
         move.l BufLoad(pc),a1
@@ -1713,25 +1719,25 @@ ReR2:   bclr #7,d0                      ;Flag #7=0 ---> JSR
         bclr #31,d0
         beq.s ReR3
 ; Internal call to the extension (BUG BUG BUG!)
-	move.l	d0,d1
-	andi.w	#$00FF,d0
-	swap	d6
-	lsl.w	#8,d6
-	or.w	d6,d0
-	subi.w	#$0100,d0
-	lsr.w	#8,d6
-	swap	d6
-        bset 	#28,d0
-        bsr 	outlong
-        lsl.w 	#2,d1
-        move.l 	PAdExtAp(pc),a0
-        move.l 	-4(a0),a0
-        add.w 	d1,a0
-        tst.l 	(a0)
-        bne.s 	CLib7
-        move.l 	#1,(a0)
-        addq.w 	#1,d6
-        bra.s 	CLib7
+        move.l  d0,d1
+        andi.w  #$00FF,d0
+        swap    d6
+        lsl.w   #8,d6
+        or.w    d6,d0
+        subi.w  #$0100,d0
+        lsr.w   #8,d6
+        swap    d6
+        bset    #28,d0
+        bsr     outlong
+        lsl.w   #2,d1
+        move.l  PAdExtAp(pc),a0
+        move.l  -4(a0),a0
+        add.w   d1,a0
+        tst.l   (a0)
+        bne.s   CLib7
+        move.l  #1,(a0)
+        addq.w  #1,d6
+        bra.s   CLib7
 ; Appelle de la librairie normale
 ReR3:   bsr outlong
         lsl.w #2,d0
@@ -1749,9 +1755,9 @@ CLib10: moveq #0,d3                     ;Longueur de la routine
         addq.l #2,a4
         lea 256(a5),a5                  ;Plus 256 octets/routine
         lea 12(a4),a4                   ;Plus 8 octets relocation
-	/* add.l #1,NbRout */
-	dc.w 0x06b9
-	dc.l 1,NbRout /* XXX */
+        /* add.l #1,NbRout */
+        dc.w 0x06b9
+        dc.l 1,NbRout /* XXX */
         bra CLib3
 ;-----> Fini de copier
 CLibFin:moveq #0,d0                     ;Termine la table de relocation!
@@ -1760,12 +1766,12 @@ CLibFin:moveq #0,d0                     ;Termine la table de relocation!
         move.l a4,LongRel
 
 ;-------------------------------> STOP si passe 0
-	tst.w passe
-	beq EndP1
+        tst.w passe
+        beq EndP1
 ; Initialise l'affichage  COPIE TRAPPES
-	move.w Bar3(pc),d0
-	move.w d0,BasBar
-	bsr AffBar
+        move.w Bar3(pc),d0
+        move.w d0,BasBar
+        bsr AffBar
 
 ;-------------------------------> Longueur du CODE
         move.l a5,d0
@@ -1773,7 +1779,7 @@ CLibFin:moveq #0,d0                     ;Termine la table de relocation!
         move.l d0,LongCode
 
 ;-------------------------------> Recopie la table de relocation
-	move.l a5,d6
+        move.l a5,d6
         sub.l objet,d6          ;Pointeur ---> table relocation
         move.l BReloc,a2
 CRel:   move.b (a2)+,d0
@@ -1791,12 +1797,12 @@ CRel1:  move.w a5,d1            ;Rend pair
         bsr OutByte
 CRel2:  sub.l BReloc,a2         ;Longueur de la table de relocation
         move.l a2,LongRel
-	moveq #1,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #1,d0
+        moveq #28,d1
+        bsr AffPour
 
 ;-------------------------------> Recopie la table litoad
-	move.l a5,d5
+        move.l a5,d5
         sub.l objet,d5
         move.l litoad,a2        ;debut de la table
 CLi:    cmp.l alitoad,a2
@@ -1812,17 +1818,17 @@ CLi1:   move.w #$ffff,d0
         bsr outword
         moveq #0,d0
         bsr outlong
-	moveq #2,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #2,d0
+        moveq #28,d1
+        bsr AffPour
 
 ;-------------------------------> Poke la chaine vide
-	move.l a5,d7            ;D7= ad chaine vide
+        move.l a5,d7            ;D7= ad chaine vide
         clr.w d0
         bsr outword
 
 ;-------------------------------> Recopie les CONSTANTES ALPHANUMERIQUES
-	move.l BAdChai,a1
+        move.l BAdChai,a1
         moveq #0,d2             ;longueur
 p2c1:   tst.l (a1)              ;ZERO= termine
         beq.s p2c4
@@ -1848,9 +1854,9 @@ p2c3:   bsr GetWord             ;Recopie la chaine
 p2c4:   move.l d2,LongChai      ;Longueur des chaines
         moveq #0,d0             ;Securite d'un mot long
         bsr outlong
-	moveq #3,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #3,d0
+        moveq #28,d1
+        bsr AffPour
 
 ;----------------------------> Laisse l'espace pour la table VarChaine
         move.l a5,d4            ;Offset Oadstr
@@ -1863,16 +1869,16 @@ p2c4:   move.l d2,LongChai      ;Longueur des chaines
 
 ;----------------------------> Copie les TRAPPES si programme GEM-RUN
         movem.l d4-d7,-(sp)
-        tst.w FlagGem
+        tst.w cflaggem
         beq.w PaTrap
 ; Copie WINDO101.LIB
 CoTrap: lea nomwin(pc),a0
         /* move.l #otrap3,a1 */
         dc.w 0x227c,0,otrap3 /* XXX */
         bsr LoTrap
-	moveq #4,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #4,d0
+        moveq #28,d1
+        bsr AffPour
         lea debprg(pc),a0       ;Jeux de caracteres par defaut
         move.l a5,d0
         sub.l objet(pc),d0
@@ -1886,18 +1892,18 @@ CoTrap: lea nomwin(pc),a0
         dc.w 0x227c,0,ocr0 /* XXX */
         bsr LoTrap
 Cot1:   moveq #5,d0
-	moveq #28,d1
-	bsr AffPour
-	tst.l nomcr1
+        moveq #28,d1
+        bsr AffPour
+        tst.l nomcr1
         beq.s Cot2
         move.l nomcr1(pc),a0
         /* move.l #ocr1,a1 */
         dc.w 0x227c,0,ocr1 /* XXX */
         bsr LoTrap
 Cot2:   moveq #6,d0
-	moveq #28,d1
-	bsr AffPour
-	tst.l nomcr2
+        moveq #28,d1
+        bsr AffPour
+        tst.l nomcr2
         beq.s Cot3
         move.l nomcr2(pc),a0
         /* move.l #ocr2,a1 */
@@ -1905,31 +1911,31 @@ Cot2:   moveq #6,d0
         bsr LoTrap
 ; Copie SPRIT101.LIB
 Cot3:   moveq #7,d0
-	moveq #28,d1
-	bsr AffPour
-	lea nomspr(pc),a0
+        moveq #28,d1
+        bsr AffPour
+        lea nomspr(pc),a0
         /* move.l #otrap5,a1 */
         dc.w 0x227c,0,otrap5 /* XXX */
         bsr LoTrap
-	moveq #8,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #8,d0
+        moveq #28,d1
+        bsr AffPour
         move.l nommou(pc),a0
         /* move.l #omou,a1 */
         dc.w 0x227c,0,omou /* XXX */
         bsr LoTrap
-	moveq #9,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #9,d0
+        moveq #28,d1
+        bsr AffPour
 ; Copie MUSIC101.LIB
         lea nommus(pc),a0
         /* move.l #otrap7,a1 */
         dc.w 0x227c,0,otrap7 /* XXX */
         bsr LoTrap
-	moveq #10,d0
-	moveq #28,d1
-	bsr AffPour
-; Copie FLOAT101.LIB s'il faut
+        moveq #10,d0
+        moveq #28,d1
+        bsr AffPour
+; Copy FLOAT101.LIB if necessary
 jlo:    lea debprg(pc),a0
         clr.l otrap6(a0)
         tst.w floflag
@@ -1939,9 +1945,9 @@ jlo:    lea debprg(pc),a0
         /* move.l #otrap6,a1 */
         dc.w 0x227c,0,otrap6 /* XXX */
         bsr LoTrap
-	moveq #11,d0
-	moveq #28,d1
-	bsr AffPour
+        moveq #11,d0
+        moveq #28,d1
+        bsr AffPour
 PaTrap:
         movem.l (sp)+,d4-d7
 
@@ -1955,12 +1961,12 @@ PaTrap:
         move.l d0,brdatab       ;---> dans le header
 
 ;----------------------------> Recopie les BANQUES (garder a4/d6/d7)
-	move.l ADtbnk,a3
+        move.l ADtbnk,a3
         move.l Source,a6        ;debut du source
-	tst.w nomin
-	beq.s CopB2a
-	lea 17*4+10(a6),a6	;Saute les entetes
-CopB2a:	lea brdatab+4,a2
+        tst.w nomin
+        beq.s CopB2a
+        lea 17*4+10(a6),a6      ;Saute les entetes
+CopB2a: lea brdatab+4,a2
         add.l (a3)+,a6          ;debut de la premiere banque
         moveq #0,d2
         moveq #0,d3
@@ -1969,19 +1975,19 @@ CopB3:  move.l (a3)+,d1
         andi.l #$ffffff,d1
         beq.s CopB5
 ; Copie la banque
-	add.l d1,d3
+        add.l d1,d3
         lsr.l #2,d1
 CopB4:  bsr GetLong
         bsr outlong
         subq.l #1,d1
         bne.s CopB4
 CopB5:  moveq #12,d0
-	add.w d2,d0
-	moveq #28,d1
-	bsr AffPour
-	addq.w #1,d2
-	cmp.w #15,d2
-	bcs.s CopB3
+        add.w d2,d0
+        moveq #28,d1
+        bsr AffPour
+        addq.w #1,d2
+        cmp.w #15,d2
+        bcs.s CopB3
 FCopB:  move.l d3,LongBank
 
 ;----------------------------> Longueur totale du programme
@@ -2126,34 +2132,34 @@ extpar: moveq #0,d0
         cmp.b #2,d0
         bne.s extp1
 ; Directive compilateur
-	move.w d0,d1
-	bsr getbyte
-	cmp.b #$88,d0
-	beq.s cpt3
-	cmp.b #$86,d0
-	beq.s cpt2
-	cmp.b #$84,d0
-	beq.s cpt1
-	cmp.b #$82,d0
-	beq.s cpt0
-	subq.l #1,a6
-	move.w d1,d0
-	bra.s extp1
+        move.w d0,d1
+        bsr getbyte
+        cmp.b #$88,d0
+        beq.s cpt3
+        cmp.b #$86,d0
+        beq.s cpt2
+        cmp.b #$84,d0
+        beq.s cpt1
+        cmp.b #$82,d0
+        beq.s cpt0
+        subq.l #1,a6
+        move.w d1,d0
+        bra.s extp1
 ; Comptest off
-cpt0:	clr.w Tests
-	bra.s cpt4
+cpt0:   clr.w Tests
+        bra.s cpt4
 ; Comptest on
-cpt1:	move.w #1,Tests
-	bra.s cpt4
+cpt1:   move.w #1,Tests
+        bra.s cpt4
 ; Comptest always
-cpt2:	move.w #2,Tests
-	bra.s cpt4
+cpt2:   move.w #2,Tests
+        bra.s cpt4
 ; Comptest
-cpt3:	moveq #L_tester,d0
-	bsr crefonc
+cpt3:   moveq #L_tester,d0
+        bsr crefonc
 ; Fin: POP!
-cpt4:	addq.l #4,sp
-	rts
+cpt4:   addq.l #4,sp
+        rts
 ; Normale ---> extension presente?
 extp1:  move.w d0,d6
         move.l extflag,d1               ;Marque l'extension appelee
@@ -2236,12 +2242,12 @@ P2a:    move.b (a6)+,d0
         bra.s P2a
 ; Affyche la position
 P2b:    move.w d0,-(sp)
-	move.l a6,d0
-	sub.l BReloc,d0
-	move.l LongRel,d1
-	bsr AffPour
-	move.w (sp)+,d0
-	move.b d0,d1
+        move.l a6,d0
+        sub.l BReloc,d0
+        move.l LongRel,d1
+        bsr AffPour
+        move.w (sp)+,d0
+        move.b d0,d1
         andi.w #$7f,d1
         add.w d1,a5
         btst #7,d0
@@ -2370,7 +2376,7 @@ P2s:    move.l (a0),d0
         move.l #debprg,a0       ;Copie les variables
         move.l #debprgf,a1
         bsr CodeF
-        tst.w FlagGem
+        tst.w cflaggem
         bne.s P2t
         move.l #Ina,a0          ;Initialisation STOS-RESIDENT
         move.l #InaF,a1
@@ -2388,8 +2394,9 @@ P2t:    move.l #Inb,a0          ;Initialisation GEM-run
         even
 ; Header STOS
 HeadStos:
-	dc.b "Lionpoulos"
+        dc.b "Lionpoulos"
    .even
+HeadStosEnd:
 
 ; Header TOS
 HeadTos:
@@ -2397,6 +2404,7 @@ HeadTos:
         dc.l ovide-4
         ds.b $1c-6
         bra.s ButDe
+HeadTosEnd:
 
 ; Programme
 debprg:
@@ -2410,10 +2418,10 @@ brdatab:ds.l 16
 OLong   = 0
 ODataB  = 4
 ;-----> Programme
-ButDe:  bra 	DPrg
-        dc.b 	"STOS basic compiler V 3.0 by Francois Lionet"
+ButDe:  bra     DPrg
+        dc.b    "STOS basic compiler V 3.0 by Francois Lionet"
 glu:
-        dcb.b 128-(glu-debprg),0 /* pad to 128 bytes */
+        dcb.b DebD-(glu-debprg),0 /* pad to 128 bytes */
         even
 
 **********************************
@@ -2425,7 +2433,7 @@ glu:
 ; Flag FLOAT present!
 oflola: dc.w 0
 ooflola = oflola-debprg
-ozero:	dc.l 0,$12345678
+ozero:  dc.l 0,$12345678
 oozero  = ozero-debprg
 
 ; TABLE DE DEFSCROLL
@@ -2437,20 +2445,20 @@ oamb:   dc.w $000,$777,$070,$000,$770,$420,$430,$450
         dc.w $555,$333,$733,$373,$773,$337,$737,$337
 ooamb   = oamb-debprg
 ; CURSEUR PAR DEFAUT
-	dc.w 0
+        dc.w 0
 ; TOUCHES DE FONCTION PAR DEFAUT
-	dc.w 0
+        dc.w 0
 ; MODE PAR DEFAUT
-	dc.w 0
+        dc.w 0
 ; LANGUE PAR DEFAUT
-	dc.w 1
+        dc.w 1
 ; BLACK et WHITE env
-	dc.w 1
+        dc.w 1
 ; HIDE / SHOW
-	dc.w 0
+        dc.w 0
 
 *************************************************************************
-;-----> debut du programme
+;-----> start of program
 DPrg:   lea debprg(pc),a6               ;debut du programme
 
 ;-----> reloge les adresses systeme
@@ -2495,15 +2503,15 @@ debprgf:
 
 
 Ina:    move.l a0,atable(a6)    ;Adresse de la table d'adresses
-        move.l $4C(a0),a0       ;Pointe VECTEURS
+        move.l sys_vectors(a0),a0       ;Pointer to vectors
         move.l topmem(a0),a5    ;Trouve la fin de la memoire!
 
         move.l OReloc(a6),a0    ;Pointe la table de relocation
         move.l a6,a2            ;debut a reloger
         move.l ochvide(a6),a4   ;Chaine vide
         clr.w d7                ;Flag Out of mem
-	move.l oozero(a6),d3	;Prend le ZERO float!
-	move.l oozero+4(a6),d4
+        move.l oozero(a6),d3    ;Prend le ZERO float!
+        move.l oozero+4(a6),d4
 
 Ina1:   move.b (a0)+,d0
         beq.s Ina10
@@ -2535,18 +2543,18 @@ Ina7:   move.b (a0)+,d0         ;Prend le flag de la variable
         bne.s Ina5
         andi.b #$C0,d0
         bmi.s Ina6
-	bne.s Ina8
-Ina5:	clr.l (a3)              ;Clear une entiere
+        bne.s Ina8
+Ina5:   clr.l (a3)              ;Clear une entiere
         bra.s Ina1
 Ina6:   move.l a4,(a3)          ;Adresse de la chaine vide
         bra.s Ina1
-Ina8:	move.l d3,(a3)+		;Clear une float
-	move.l d4,(a3)
-	bra.s Ina1
+Ina8:   move.l d3,(a3)+         ;Clear une float
+        move.l d4,(a3)
+        bra.s Ina1
 ; Sauve les adresses importantes
 Ina10:
-	move.l atable(a6),a0
-        move.l $4c(a0),a5               ;Pointe les vecteurs
+        move.l atable(a6),a0
+        move.l sys_vectors(a0),a5               ;Pointer to vectors
         move.l a6,debut(a5)             ;debut du programme
         move.l oerror(a6),error(a5)     ;Traitement des erreurs
         move.l otrappes(a6),d0
@@ -2564,22 +2572,22 @@ Ina10:
         move.l a0,table(a5)             ;Adresse de la table d'adresses
 
 ; Donnees pour le programme
-        move.l $0c(a0),dta(a5)
-        move.l $10(a0),fichiers(a5)
-        move.l $54(a0),contrl(a5)
-        move.l $58(a0),intin(a5)
-        move.l $5c(a0),ptsin(a5)
-        move.l $68(a0),vdipb(a5)
-	move.l $98(a0),buffonc(a5)	;NOUVEAU 2.04: adresses touches!
-	move.l $a0(a0),foncnom(a5)
+        move.l sys_dta(a0),dta(a5)
+        move.l sys_files(a0),fichiers(a5)
+        move.l sys_contrl(a0),contrl(a5)
+        move.l sys_intin(a0),intin(a5)
+        move.l sys_ptsin(a0),ptsin(a5)
+        move.l sys_vdipb(a0),vdipb(a5)
+        move.l sys_buffunc(a0),buffunc(a5)      ;NOUVEAU 2.04: adresses touches!
+        move.l sys_funcname(a0),funcname(a5)
         lea oodfst(a6),a1
         move.l a1,dfst(a5)
         move.w ooflola(a6),flola(a5)    ;Float present?
-	move.l oozero(a6),zerofl(a5)	;RAZ zero float
-	move.l oozero+4(a6),zerofl+4(a5)
+        move.l oozero(a6),zerofl(a5)    ;RAZ zero float
+        move.l oozero+4(a6),zerofl+4(a5)
         clr.w flgrun(a5)
 ; buffers
-        move.l (a0),d0
+        move.l sys_buffer(a0),d0
         move.l d0,buffer(a5)            ;Adresse du buffer (monte)
         move.l d0,name1(a5)
         move.l d0,name2(a5)
@@ -2597,7 +2605,7 @@ Ina10:
         subi.w #$180,d0
         move.l d0,work(a5)              ;Definition workstation
 
-; Sauve les vecteurs erreurs systeme
+; save some system exception vectors
         lea svect(a5),a0
         move.l $8.l,(a0)+ /* XXX */
         move.l $c.l,(a0)+ /* XXX */
@@ -2615,11 +2623,11 @@ Ina10:
         lea CDbyzer(pc),a0
         move.l a0,$14.l /* XXX */
 
-	tst.w d7			;Si Out of MEM
-	bne.w InaErr /* XXX */
+        tst.w d7                        ;Si Out of MEM
+        bne.w InaErr /* XXX */
 
 ; Initialise les extensions
-        clr.w flagem(a5)
+        clr.w flaggem(a5)
         move.l debut(a5),a3
         lea OExt(a3),a2
         moveq #26-1,d2
@@ -2631,11 +2639,11 @@ Ina20:  cmp.l (a2),a3
         move.l (a2),a2
         clr.w d0
         jsr (a2)
-	move.l a2,d1
+        move.l a2,d1
         movem.l (sp)+,d2/a2/a3/a4/a5/a6
         tst.w d0
         bne.s InaErr
-	move.l d1,26*4(a2)			;Adresse de fin
+        move.l d1,26*4(a2)                      ;Adresse de fin
 Ina21:  lea 4(a2),a2
         dbra d2,Ina20
         move.l a0,lochaine(a5)
@@ -2667,7 +2675,7 @@ Inb:
 ;-----> Efface / Recopie les touches de fonctions ---> buffer
         lea df(pc),a1
         lea bf(pc),a2
-        move #19,d0
+        move #20-1,d0
 cd0:    move.l a2,a3
 cd1:    move.b (a1)+,(a3)+
         bne.s cd1
@@ -2682,7 +2690,7 @@ cd1:    move.b (a1)+,(a3)+
         trap #1
         addq.l #6,sp
 
-;-----> passe en mode SUPERVISEUR -si pas deja-
+;-----> switch to SUPERVISOR mode -if not already-
         clr.l -(sp)         ;passage en mode SUPERVISEUR
         move.w #$20,-(sp)
         trap #1
@@ -2696,7 +2704,7 @@ DejaSup:
         move.l d0,imagec(a5)
 ;-----> SAUVE LA PALETTE et ADAPTE A L'ORDINATEUR
 ;       installe aussi la fausse trappe FLOAT!
-        lea $ff8240,a0
+        lea $ff8240,a0 /* XXX */
         lea dataec(pc),a1
         moveq #15,d0
 bgp1:   move.w (a0)+,(a1)+
@@ -2704,38 +2712,38 @@ bgp1:   move.w (a0)+,(a1)+
 
 ; Adapt to ROMS respecting the system
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	lea	adapt(pc),a4
-	dc.w	$A000
-	lea	-602(a0),a1	; Position souris
-	move.l	a1,adapt_gcurx(a4)
-	lea	-692(a0),a1	; table VDI 1
-	move.l	a1,adapt_devtab(a4)
-	lea	-498(a0),a1	; table VDI 2
-	move.l	a1,adapt_siztab(a4)
+        lea     adapt(pc),a4
+        dc.w    $A000
+        lea     -602(a0),a1     ; Position souris
+        move.l  a1,adapt_gcurx(a4)
+        lea     -692(a0),a1     ; table VDI 1
+        move.l  a1,adapt_devtab(a4)
+        lea     -498(a0),a1     ; table VDI 2
+        move.l  a1,adapt_siztab(a4)
 
-	move.w	#1,-(sp)	; Adresse du buffer clavier
-	move.w	#14,-(sp)
-	trap 	#14
-	addq.l	#4,sp
-	move.l	d0,8(a4)
+        move.w  #1,-(sp)        ; Adresse du buffer clavier
+        move.w  #14,-(sp)
+        trap    #14
+        addq.l  #4,sp
+        move.l  d0,8(a4)
 
-	move.w	#34,-(sp)	; Adresse des interruptions souris
-	trap 	#14
-	addq.l	#2,sp
-	move.l	d0,a0
-	lea	16(a0),a1		; Adresse souris
-	move.l	a1,adapt_mousevec(a4)
-	lea	24(a0),a0
-	lea	Joy_In(pc),a1
-	move.l	a0,Joy_Ad-Joy_In(a1)
-	move.l	(a0),Joy_Sav-Joy_In(a1)
-	move.l	a1,(a0)			; Branche la routine joystick
-	move.l	#Joy_Pos,adapt_joy(a4)		; Adresse du resultat
+        move.w  #34,-(sp)       ; Adresse des interruptions souris
+        trap    #14
+        addq.l  #2,sp
+        move.l  d0,a0
+        lea     16(a0),a1               ; Adresse souris
+        move.l  a1,adapt_mousevec(a4)
+        lea     24(a0),a0
+        lea     Joy_In(pc),a1
+        move.l  a0,Joy_Ad-Joy_In(a1)
+        move.l  (a0),Joy_Sav-Joy_In(a1)
+        move.l  a1,(a0)                 ; Branche la routine joystick
+        move.l  #Joy_Pos,adapt_joy(a4)          ; Adresse du resultat
 
 ; Fausse trappe FLOAT en trappe 6
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         lea FauxFloat(pc),a0
-	move.l a0,$98.l /* XXX */
+        move.l a0,$98.l /* XXX */
 
 ;-----> Suite sauvegarde
         lea dataec+32(pc),a4
@@ -2763,7 +2771,7 @@ sv2:    move.w (a0)+,(a4)+            ;recopie...
         dc.w 0x9bfc,0,libre+256 /* XXX */
         move.l a5,a0
         lea -256*4(a0),a4               ;Taille pile: 256 mots longs
-        move.l #libre+256/4-1,d0
+        move.l #libre+256/4-1,d0 /* XXX bug */
 inbt1:  clr.l (a0)+
         dbra d0,inbt1
 
@@ -2833,7 +2841,7 @@ InbC1:  cmp.l a2,a0
 
         lea ODataB(a6),a0               ;Copie DATABANK
         lea databank(a5),a1
-        moveq #15,d0
+        moveq #16-1,d0
 InbC2:  move.l (a0)+,(a1)+
         dbra d0,InbC2
 
@@ -2844,8 +2852,8 @@ InbC2:  move.l (a0)+,(a1)+
         move.l ochvide(a6),a4   ;Chaine vide
         move.l himem(a5),d5     ;Fin de la memoire
         clr.w d7                ;Flag Out of mem
-	move.l oozero(a6),d3	;Zero float
-	move.l oozero+4(a6),d4
+        move.l oozero(a6),d3    ;Zero float
+        move.l oozero+4(a6),d4
 
 inb1:   move.b (a0)+,d0
         beq.s inb10
@@ -2877,19 +2885,19 @@ inb7:   move.b (a0)+,d0         ;Prend le flag de la variable
         bne.s inb5
         andi.b #$C0,d0
         bmi.s inb6
-	bne.s inb8
+        bne.s inb8
 inb5:   clr.l (a3)              ;Clear une entiere
         bra.s inb1
 inb6:   move.l a4,(a3)          ;Adresse de la chaine vide
         bra.s inb1
-inb8:	move.l d3,(a3)+		;RAZ float
-	move.l d4,(a3)
-	bra.s inb1
+inb8:   move.l d3,(a3)+         ;RAZ float
+        move.l d4,(a3)
+        bra.s inb1
 
 ; Sauve les adresses importantes
 inb10:  tst.w d7
-	bne ErrM1
-	move.l a6,debut(a5)             ;debut du programme
+        bne ErrM1
+        move.l a6,debut(a5)             ;debut du programme
         move.l oerror(a6),error(a5)     ;Traitement des erreurs
         move.l a4,chvide(a5)            ;Chaine vide
         move.l sp,lowpile(a5)           ;Niveau zero de la pile!
@@ -2941,18 +2949,18 @@ inb10:  tst.w d7
         lea 512+512+32(a4),a4
 ; Donnees editeur
         lea bf(pc),a1
-        move.l a1,buffonc(a5)
+        move.l a1,buffunc(a5)
         lea fn(pc),a1
-        move.l a1,foncnom(a5)
+        move.l a1,funcname(a5)
         lea oodfst(a6),a1
         move.l a1,dfst(a5)
         lea ooamb(a6),a1
         move.l a1,amb(a5)
-	move.w 36(a1),defmod(a5)
-	move.w 38(a1),langue(a5)
+        move.w 36(a1),defmod(a5)
+        move.w 38(a1),language(a5)
         clr.w flgrun(a5)
-	move.l oozero(a6),zerofl(a5)
-	move.l oozero+4(a6),zerofl+4(a5)
+        move.l oozero(a6),zerofl(a5)
+        move.l oozero+4(a6),zerofl+4(a5)
 ; Out of mem?
         cmp.l lowvar(a5),a4
         bcc ErrM1
@@ -3003,7 +3011,7 @@ InbPaf: move.l otrap7(a6),a2
         bne ErrM1
         move.l a0,lochaine(a5)
 
-; Sauve les vecteurs erreurs systeme
+; save some system exception vectors
         lea svect(a5),a0
         move.l $8.l,(a0)+ /* XXX */
         move.l $c.l,(a0)+ /* XXX */
@@ -3021,26 +3029,26 @@ InbPaf: move.l otrap7(a6),a2
         lea bdbyzer(pc),a0
         move.l a0,$14.l /* XXX */
 ; Init inter trappes
-        moveq #30,d0
+        moveq #S_startinter,d0
         lea interflg(a5),a0
         trap #5
-        moveq #15,d7
+        moveq #W_startinter,d7
         trap #3
-        moveq #7,d0
+        moveq #M_startinter,d0
         trap #7
         move.l adk(a5),a0
         move.w 8(a0),ancdb8(a5)
         move.l $400.l,anc400(a5) /* XXX */
-        lea inter50(pc),a0
+        lea inter50(pc),a0 /* FIXME: self-modifying */
         move.l a5,2(a0)                 ;LOKE l'adresse de la table
         move.l a0,$400.l /* XXX */
 
 ; Initialise les extensions
-	move.l bufpar(a5),a6
+        move.l bufpar(a5),a6
         lea fingem(pc),a0
         move.l a0,oend(a5)
 
-        move.w #1,flagem(a5)
+        move.w #1,flaggem(a5)
         move.l debut(a5),a3
         lea OExt(a3),a2
         moveq #26-1,d2
@@ -3052,40 +3060,40 @@ inb20:  cmp.l (a2),a3
         move.l (a2),a2
         clr.w d0
         jsr (a2)
-	move.l a2,d1
+        move.l a2,d1
         movem.l (sp)+,d2/a2/a3/a4/a5/a6
         tst.w d0
         bne.w boutmem /* XXX */
-	move.l d1,26*4(a2)
+        move.l d1,26*4(a2)
 inb21:  lea 4(a2),a2
         dbra d2,inb20
         move.l a0,lochaine(a5)
         move.l a0,hichaine(a5)
 
 ; Fin du programme sous GEM
-	move.w #37,-(sp)
-	trap #14
-	lea 2(sp),sp
-	move.l amb(a5),-(sp)		;Envoie la palette
-	move.w #6,-(sp)
-	trap #14
-	lea 6(sp),sp
-	move.l deflog(a5),a0		;Efface l'ecran
-	move.w #32768/8-1,d0
-InEc:	clr.l (a0)+
-	clr.l (a0)+
-	dbra d0,InEc
+        move.w #37,-(sp)
+        trap #14
+        lea 2(sp),sp
+        move.l amb(a5),-(sp)            ;Envoie la palette
+        move.w #6,-(sp)
+        trap #14
+        lea 6(sp),sp
+        move.l deflog(a5),a0            ;Efface l'ecran
+        move.w #32768/8-1,d0
+InEc:   clr.l (a0)+
+        clr.l (a0)+
+        dbra d0,InEc
         bra.w inbf
     
     .IFNE 0 /* 2.08 disabled */
-Ste:	move.w $E00002,d0
-	bra FinSte
-	.ENDC
+Ste:    move.w $E00002,d0
+        bra FinSte
+        .ENDC
     
 **********************************************
 ;-----> Erreurs systeme
 boutmem:move.w #8,d0
-	bra.s berrgo
+        bra.s berrgo
 ; Erreur programme
 berrbus:moveq #31,d0
         bra.s berrgo
@@ -3109,7 +3117,7 @@ FxFl1:  move.b #"0",(a0)      ;Ramene toujours la chaine nulle
         move.b #".",1(a0)
         move.b #"0",2(a0)
         clr.b 3(a0)
-	moveq #3,d0
+        moveq #3,d0
         rte
 **********************************************
 ; ENTREE DES INTERRUPTIONS 50 HERZ
@@ -3160,12 +3168,12 @@ i5c:    cmp #32,d0
         bra.s i5z
 i5d:    lea b4(pc),a0
 i5z:
-	sub.l	#23*2,$4a2.l		; Safe BIOS interrupt call /* XXX */
-	move.l	a0,-(sp)
-	move.w	#32,-(sp)
-	trap 	#14
-	addq.l	#6,sp
-	add.l	#23*2,$4a2.l /* XXX */
+        sub.l   #23*2,$4a2.l            ; Safe BIOS interrupt call /* XXX */
+        move.l  a0,-(sp)
+        move.w  #32,-(sp)
+        trap    #14
+        addq.l  #6,sp
+        add.l   #23*2,$4a2.l /* XXX */
 ; fin des interruptions: se rebranche a la routine normale
 fi5:    move.l anc400(a2),a0
         jmp (a0)
@@ -3208,38 +3216,38 @@ exec3:  movem.l (sp)+,d0-d3/a0-a3
         rts
 
 **********************************************
-*	ROUTINE GESTION DU JOYSTICK
+* ROUTINE GESTION DU JOYSTICK
 **********************************************
 Joy_In:
     .IFNE 0 /* XXX */
-	move.l	a1,-(sp)
-	lea	Joy_Pos(pc),a1
-	move.b	2(a0),(a1)
-	move.l	(sp)+,a1
-	rts
-	.ELSE
-	move.b	2(a0),Joy_Pos
-	rts
-	.ENDC
+        move.l  a1,-(sp)
+        lea     Joy_Pos(pc),a1
+        move.b  2(a0),(a1)
+        move.l  (sp)+,a1
+        rts
+        .ELSE
+        move.b  2(a0),Joy_Pos
+        rts
+        .ENDC
 
 **********************************************
 ;       FIN BASIC SOUS GEM
 **********************************************
 fingem: move.l anc400(a5),$400.l /* XXX */
-        moveq #8,d0
+        moveq #M_stopinter,d0
         trap #7
-        moveq #7,d7
+        moveq #W_stopinter,d7
         trap #3
-        moveq #31,d0
+        moveq #S_stopinter,d0
         trap #5
 ; Enleve la workstation
         lea otrp1(pc),a0
         move.l $84.l,(a0) /* XXX */
-	lea trp1(pc),a0
-	move.l a0,$84.l /* XXX */
+        lea trp1(pc),a0
+        move.l a0,$84.l /* XXX */
         lea trp2(pc),a0
         move.l work(a5),2(a0)
-	move.l contrl(a5),a0
+        move.l contrl(a5),a0
         move.w #101,(a0)
         clr 2(a0)
         clr 6(a0)
@@ -3251,10 +3259,10 @@ fingem: move.l anc400(a5),$400.l /* XXX */
 ; Remet le click des touches
         move.b #7,$484.l /* XXX */
 ; Restore la routine d'entree du joystick
-	move.l	Joy_Ad(pc),d0
-	beq.s	.Skip
-	move.l	d0,a0
-	move.l	Joy_Sav(pc),(a0)
+        move.l  Joy_Ad(pc),d0
+        beq.s   .Skip
+        move.l  d0,a0
+        move.l  Joy_Sav(pc),(a0)
 ; RETOUR au gem
 .Skip:   lea dataec+32(pc),a4
         lea adapt(pc),a3
@@ -3307,14 +3315,14 @@ cvdipb: dc.l 0,0,0,0,0
 ;-----------------------------> Adaptation aux differentes ROMS
 tosversion: .dc.w    0
 adapt:      .ds.b    adapt_sizeof
-Joy_Sav:	dc.l	0		; Adresses de gestion du joystick
-Joy_Pos:	dc.l	0
-Joy_Ad:	dc.l	0
+Joy_Sav:        dc.l    0               ; Adresses de gestion du joystick
+Joy_Pos:        dc.l    0
+Joy_Ad: dc.l    0
 
-dataec: 	ds.b 	152+4+4
-modec	= 	152
-imagec	= 	156
-cursec:	dc.b 	27,"f",0
+dataec:         ds.b    152+4+4
+modec   =       152
+imagec  =       156
+cursec: dc.b    27,"f",0
         even
 ; BUFFER DES TOUCHES DE FONCTIONS
 bf:     ds.b 40*20
@@ -3617,8 +3625,8 @@ CLLet:  bsr getbyte
         bne csynt
 
 ;-----> Entree directe
-Clet:   bsr test0		;Teste les interruptions!
-	bsr vari                ;Cree la variable
+Clet:   bsr test0               ;Teste les interruptions!
+        bsr vari                ;Cree la variable
         move.w d2,-(sp)
         move.l a1,-(sp)
         move.l a0,-(sp)
@@ -4068,8 +4076,8 @@ Op0:    bsr getbyte
         andi.w #$ff,d0
         subi.w #DebFonc,d0
         bcs csynt
-	/* add.w #1,CptInst */
-	dc.l 0x06790001,CptInst /* XXX */
+        /* add.w #1,CptInst */
+        dc.l 0x06790001,CptInst /* XXX */
         lsl.w #2,d0             ;Appelle la routine
         lea fnjumps,a0
         move.l 0(a0,d0.w),a0
@@ -4085,11 +4093,11 @@ Cs5:    tst.b d2
         lea Cs2,a0
         bra code0
 Cs2:    move.l (a6)+,d4
-	move.l (a6)+,d3
-	move.w #$ff00,d0
-	trap #6
-	move.l d3,-(a6)
-	move.l d4,-(a6)
+        move.l (a6)+,d3
+        move.w #F_inv,d0
+        trap #6
+        move.l d3,-(a6)
+        move.l d4,-(a6)
         dc.w 0
 ; Changement de signe entier
 Cs3:    lea Cs4,a0
@@ -4364,12 +4372,12 @@ cfal:   clr.l -(a6)
 
 ;-----> DEF FN
 CDef:   bsr getbyte
-        cmp.b #$c9,d0
+        cmp.b #T_fn,d0
         beq.s df0
-        cmp.b #$a0,d0                 ;Cherche un defscroll
+        cmp.b #T_extinst,d0                 ;Cherche un defscroll
         bne csynt
         bsr getbyte
-        cmp.b #$f9,d0
+        cmp.b #T_exti_scroll,d0
         beq Cdefscroll
         bne csynt
 df0:    move.w cbra,d0
@@ -4567,7 +4575,7 @@ Cinc:   bsr test0
         lea CdIn,a0
         bra code1
 CdIn:   /* add.l #1,(a0) */
-		dc.w 0x0690,0,1 /* XXX */
+                dc.w 0x0690,0,1 /* XXX */
         dc.w $1111
 
 ;-----> DEC
@@ -4922,7 +4930,7 @@ Crem:   addq.l #4,sp            ;Va a la ligne suivante
 
 ;------------------------------> END
 CEnd:   moveq #L_finistos,d0
-        tst.w FlagGem
+        tst.w cflaggem
         beq crefonc
         moveq #L_finigem,d0
         bra crefonc
@@ -4991,10 +4999,10 @@ Cpop:   bsr test0
 ; ON xx GOTO / GOSUB
 Con:    bsr Test1
         bsr getbyte
-        cmp.b #$a0,d0
+        cmp.b #T_extinst,d0
         bne.s Ona1
         bsr getbyte
-        cmp.b #$81,d0
+        cmp.b #T_exti_menu,d0
         beq onmenu
 Ona:    subq.l #1,a6
 Ona1:   subq.l #1,a6
@@ -5004,7 +5012,7 @@ Ona1:   subq.l #1,a6
         bsr getbyte             ;GOTO ou GOSUB
         bsr pair
         addq.l #4,a6
-        cmp.b #$98,d0           ;GOTO?
+        cmp.b #T_goto,d0           ;GOTO?
         bne.s On0
         moveq #L_ongoto,d0
         bra.s On1
@@ -5185,11 +5193,11 @@ Cfor:   bsr test0
 for2:   move.b #$9d,d0
         move.b #$82,d1
         bsr supfind
-	beq CFonx               ;For without next error
+        beq CFonx               ;For without next error
         bmi.s for4
 ; a trouve un FOR
-	bsr GetByt0
-	subq.l #1,a0
+        bsr GetByt0
+        subq.l #1,a0
         cmp.b #$fa,d2           ;si SYNTAX ERR: n'en tient pas compte
         bne.s for2
         lea 1(a0),a6
@@ -5202,8 +5210,8 @@ for2:   move.b #$9d,d0
         bra.s for2
 ; a trouve un NEXT
 for4:   move.l a1,a2            ;a1 pointe le NEXT
-	bsr GetByt0		;Si NEXT seul
-	subq.l #1,a0
+        bsr GetByt0             ;Si NEXT seul
+        subq.l #1,a0
         cmp.b #$fa,d2           ;ou erreur, decremente le compteur
         bne.s for5
         lea 1(a0),a6
@@ -5319,9 +5327,9 @@ CNx1:   lea cdnx2,a0
         bsr code0
         moveq #L_next_f,d0
         bra crefonc
-; Code chargement parametres ENTIERS
-cdnx1:  lea $ffffff,a2          ;adresse de bouclage
-        lea $ffffff,a3          ;adresse de le variable
+; Integer parameter loading code
+cdnx1:  lea $ffffff,a2          ;loopback address
+        lea $ffffff,a3          ;addresse of the variable
         /* move.l #$ffffffff,d1    ;limite
         move.l #$ffffffff,d2    ;step */
         dc.w 0x223c,-1,-1
@@ -5559,31 +5567,31 @@ ftoken: move.l a0,a1        ;ramene l'adresse juste en a1
         bsr GetByt0         ;ramene l'adresse juste apres en a0!
         beq.s ft8           ;fin de la ligne
         bpl.s ft5
-        cmp.b #$a0,d2       ;instruction etendue
+        cmp.b #T_extinst,d2       ;instruction etendue
         beq.s ft1a
-        cmp.b #$b8,d2       ;fonction etendue
+        cmp.b #T_extfunc,d2       ;fonction etendue
         beq.s ft1a
-        cmp.b #$a8,d2       ;.EXT instruction
+        cmp.b #T_extensioninst,d2       ;.EXT instruction
         beq.s ft1
-        cmp.b #$c0,d2       ;.EXT fonction
+        cmp.b #T_extensionfunc,d2       ;.EXT fonction
         bne.s ft2
 ft1:    addq.l #1,a0
 ft1a:   addq.l #1,a0
         bra.s ft5
-ft2:    cmp.b #$fa,d2       ;variable ou constante?
+ft2:    cmp.b #T_var,d2       ;variable ou constante?
         bcc.s ft3
-        cmp.b #$98,d2
+        cmp.b #T_goto,d2
         bcs.s ft5
-        cmp.b #$a0,d2
+        cmp.b #T_repeat+1,d2
         bcc.s ft5
 ft3:    move a0,d3          ;rend pair
         btst #0,d3
         beq.s ft4
         addq.l #1,a0
-ft4:    cmp.b #$ff,d2
+ft4:    cmp.b #T_constflt,d2
         bne.s ft4a
         addq.l #4,a0        ;constantes float sur huit octets!
-ft4a:   cmp.b #$fc,d2
+ft4a:   cmp.b #T_conststr,d2
         bne.s ft0
         move.w d2,-(sp)
         addq.l #2,a0
@@ -5754,9 +5762,9 @@ cbit:   bsr test0
 
 ;-----> BTST
 CBtst:  lea parent,a2
-	bsr parfonc
-	cmp.w #2,d0
-	bne csynt
+        bsr parfonc
+        cmp.w #2,d0
+        bne csynt
         move.w #L_btst,d0
         bra creent
 
@@ -5891,16 +5899,16 @@ CHunt:  lea ParUnt,a2
 ;-----> RESERVE
 CRese:  bsr test0
         bsr getbyte
-        cmp.b #$a0,d0
+        cmp.b #T_extinst,d0
         bne csynt
         bsr getbyte
-        cmp.b #$aa,d0
+        cmp.b #T_exti_asdatascreen,d0
         beq.s res2
-        cmp.b #$ab,d0
+        cmp.b #T_exti_aswork,d0
         beq.s res3
-        cmp.b #$ac,d0
+        cmp.b #T_exti_asscreen,d0
         beq.s res1
-        cmp.b #$7d,d0
+        cmp.b #T_exti_asset,d0
         beq.s res2a
         move #$81,d1                    ;data!
         bra.s res4
@@ -7877,7 +7885,7 @@ csh1:   bcs csynt
 
 ;-----> DEFAULT
 Cdefault:  bsr test0
-        tst.w FlagGem
+        tst.w cflaggem
         beq.s CDefo1
 ; Si GEM
         move.w #L_defgem,d0
@@ -8530,7 +8538,7 @@ OutRel1:tst.w passe
 OutR:   addq.l #1,a4
         rts
 
-;-----> Copie la portion de code A0 dans le source (RELOGEABLE)
+;-----> Copie la portion de code A0 dans le source (RELOCATABLE)
 code1:  movem.l a0/d0/d1,-(sp)
         move.w #$1111,d1        ;Termine par 1
         bra.s cod
@@ -8545,7 +8553,7 @@ cod:    move.w (a0)+,d0
 codfin: movem.l (sp)+,a0/d0/d1
         rts
 
-;-----> Copie la portion de code A0-->A1 dans le source (RELOGEABLE)
+;-----> Copy the code portion A0 -> A1 in the source (RELOCATABLE)
 CodeF:  move.w (a0)+,d0
         bsr outword
         cmp.l a1,a0
@@ -8569,8 +8577,8 @@ OutByte:tst.w passe
 PamB:   rts
 ; En memoire
 PaDB:   move.b d0,(a5)+         ;Poke
-	cmp.l topwork(pc),a5
-	bcc cout
+        cmp.l topwork(pc),a5
+        bcc cout
         rts
 ; passe 0
 PaOB:   addq.l #1,a5

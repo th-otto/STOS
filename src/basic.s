@@ -4,6 +4,9 @@
 
 	.include "adapt.inc"
 	.include "file.inc"
+	.include "tokens.inc"
+	.include "window.inc"
+	.include "float.inc"
 
 	.text
 
@@ -158,7 +161,7 @@ cbk:      dc.b "Lionpoubnk"
 cvr:      dc.b "Lionpouvar"
           even
 ;TABLE OF TEN FILES OPEN ON THE DISK
-fichiers: ds.b tfiche*10
+filetab: ds.b tfiche*10
           even
 ; MESSAGE DE BIENVENUE
 w:        dc.b 10,"STOS",191," BASIC V 2.8",10,10,0
@@ -503,430 +506,542 @@ tfreq:    dc.w 0
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
 ; TABLE DES TOKENS PRIORITAIRES
-minitok:  dc.b "to",$80
-          dc.b "step",$81
-          dc.b "then",$9a
-          dc.b "else",$9b
-          dc.b "xor",$eb
-          dc.b "or",$ec
-          dc.b "and",$ed
-          dc.b "goto",$98
-          dc.b "gosub",$99
-          dc.b "<>",$ee
-          dc.b "><",$ee
-          dc.b "<=",$ef
-          dc.b "=<",$ef
-          dc.b ">=",$f0
-          dc.b "=>",$f0
-          dc.b "=",$f1
-          dc.b "<",$f2
-          dc.b ">",$f3
-          dc.b "+",$f4
-          dc.b "-",$f5
-          dc.b "mod",$f6
-          dc.b "*",$f7
-          dc.b "/",$f8
-          dc.b "^",$f9
-          dc.b "as",$a0
+minitok:  dc.b "to",T_to
+          dc.b "step",T_step
+          dc.b "then",T_then
+          dc.b "else",T_else
+          dc.b "xor",T_xor
+          dc.b "or",T_or
+          dc.b "and",T_and
+          dc.b "goto",T_goto
+          dc.b "gosub",T_gosub
+          dc.b "<>",T_neq
+          dc.b "><",T_neq
+          dc.b "<=",T_leq
+          dc.b "=<",T_leq
+          dc.b ">=",T_geq
+          dc.b "=>",T_geq
+          dc.b "=",T_eq
+          dc.b "<",T_lt
+          dc.b ">",T_gt
+          dc.b "+",T_add
+          dc.b "-",T_sub
+          dc.b "mod",T_mod
+          dc.b "*",T_mul
+          dc.b "/",T_div
+          dc.b "^",T_pow
+          dc.b "as",T_extinst
           dc.b $d3,0,0
 
           dc.b 254  ;securite pour detokenisation
 ; INSTRUCTIONS
-tokens:   dc.b "to",$80
-          dc.b "step",$81
-          dc.b "next",$82
-          dc.b "wend",$83
-          dc.b "until",$84
-          dc.b "dim",$85
-          dc.b "poke",$86
-          dc.b "doke",$87
-          dc.b "loke",$88
-          dc.b "read",$89
-          dc.b "rem",$8a
-          dc.b "'",$8a
-          dc.b "return",$8b
-          dc.b "pop",$8c
-          dc.b "resume next",$8d
-          dc.b "resume",$8e
-          dc.b "on error",$8f
-          dc.b "screen copy",$90
-          dc.b "swap",$91
-          dc.b "plot",$92
-          dc.b "pie",$93
-          dc.b "draw",$94
-          dc.b "polyline",$95
-          dc.b "polymark",$96     ;une place!
-          dc.b "goto",$98
-          dc.b "gosub",$99
-          dc.b "then",$9a
-          dc.b "else",$9b
-          dc.b "restore",$9c
-          dc.b "for",$9d
-          dc.b "while",$9e
-          dc.b "repeat",$9f
-          dc.b "print",$a1
-          dc.b "?",$a1
-          dc.b "if",$a2
-          dc.b "update",$a3
-          dc.b "sprite",$a4
-          dc.b "freeze",$a5
-          dc.b "off",$a6
-          dc.b "on",$a7
-          dc.b "locate",$a9
-          dc.b "paper",$aa
-          dc.b "pen",$ab           ;.EXT: $a8
-          dc.b "home",$ac
-          dc.b ".b",$ad
-          dc.b ".w",$ae
-          dc.b ".l",$af
-          dc.b "cup",$b0
-          dc.b "cdown",$b1
-          dc.b "cleft",$b2
-          dc.b "cright",$b3
-          dc.b "cls",$b4
-          dc.b "inc",$b5
-          dc.b "dec",$b6
-          dc.b "screen swap",$b7
-; FONCTIONS
-debfonc =  $b8
-          dc.b "psg",$b9
-          dc.b "scrn",$ba
-          dc.b "dreg",$bb
-          dc.b "areg",$bc
-          dc.b "point",$bd
-          dc.b "drive$",$be
-          dc.b "dir$",$bf
-          dc.b "abs",$c1
-          dc.b "colour",$c2
-          dc.b "fkey",$c3               ;.EXT: $c0
-          dc.b "sin",$c4
-          dc.b "cos",$c5
-          dc.b "drive",$c6
-          dc.b "timer",$c7
-          dc.b "logic",$c8
-          dc.b "fn",$c9
-          dc.b "not",$ca
-          dc.b "rnd",$cb
-          dc.b "val",$cc
-          dc.b "asc",$cd
-          dc.b "chr$",$ce
-          dc.b "inkey$",$cf
-          dc.b "scancode",$d0
-          dc.b "mid$",$d1
-          dc.b "right$",$d2
-          dc.b "left$",$d3
-          dc.b "length",$d4
-          dc.b "start",$d5
-          dc.b "len",$d6
-          dc.b "pi",$d7
-          dc.b "peek",$d8
-          dc.b "deek",$d9
-          dc.b "leek",$da
-          dc.b "zone",$db
-          dc.b "x sprite",$dc
-          dc.b "y sprite",$dd
-          dc.b "x mouse",$de
-          dc.b "y mouse",$df
-          dc.b "mouse key",$e0
-          dc.b "physic",$e1
-          dc.b "back",$e2
-          dc.b "log",$e3
-          dc.b "pof",$e4
-          dc.b "mode",$e5
-          dc.b "time$",$e6
-          dc.b "date$",$e7
-          dc.b "screen$",$e8
-          dc.b "default",$e9
-; OPERATEURS
-debop     = $ea
-          dc.b " xor ",$eb
-          dc.b " or ",$ec
-          dc.b " and ",$ed
-          dc.b "<>",$ee
-          dc.b "><",$ee
-          dc.b "<=",$ef
-          dc.b "=<",$ef
-          dc.b ">=",$f0
-          dc.b "=>",$f0
-          dc.b "=",$f1
-          dc.b "<",$f2
-          dc.b ">",$f3
-          dc.b "+",$f4
-          dc.b "-",$f5
-          dc.b " mod ",$f6
-          dc.b "*",$f7
-          dc.b "/",$f8
-          dc.b "^",$f9
+tokens:   dc.b "to",T_to
+          dc.b "step",T_step
+          dc.b "next",T_next
+          dc.b "wend",T_wend
+          dc.b "until",T_until
+          dc.b "dim",T_dim
+          dc.b "poke",T_poke
+          dc.b "doke",T_doke
+          dc.b "loke",T_loke
+          dc.b "read",T_read
+          dc.b "rem",T_rem
+          dc.b "'",T_rem
+          dc.b "return",T_return
+          dc.b "pop",T_pop
+          dc.b "resume next",T_resumenext
+          dc.b "resume",T_resume
+          dc.b "on error",T_onerror
+          dc.b "screen copy",T_screencopy
+          dc.b "swap",T_swap
+          dc.b "plot",T_plot
+          dc.b "pie",T_pie
+          dc.b "draw",T_draw
+          dc.b "polyline",T_polyline
+          dc.b "polymark",T_polymark     ;une place!
+          dc.b "goto",T_goto
+          dc.b "gosub",T_gosub
+          dc.b "then",T_then
+          dc.b "else",T_else
+          dc.b "restore",T_restore
+          dc.b "for",T_for
+          dc.b "while",T_while
+          dc.b "repeat",T_repeat
+          dc.b "print",T_print
+          dc.b "?",T_print
+          dc.b "if",T_if
+          dc.b "update",T_update
+          dc.b "sprite",T_sprite
+          dc.b "freeze",T_freeze
+          dc.b "off",T_off
+          dc.b "on",T_on
+          dc.b "locate",T_locate
+          dc.b "paper",T_paper
+          dc.b "pen",T_pen
+          dc.b "home",T_home
+          dc.b ".b",T_sizeb
+          dc.b ".w",T_sizew
+          dc.b ".l",T_sizel
+          dc.b "cup",T_cup
+          dc.b "cdown",T_cdown
+          dc.b "cleft",T_cleft
+          dc.b "cright",T_cright
+          dc.b "cls",T_cls
+          dc.b "inc",T_inc
+          dc.b "dec",T_dec
+          dc.b "screen swap",T_screenswap
+; FUNCTIONS
+          dc.b "psg",T_psg
+          dc.b "scrn",T_scrn
+          dc.b "dreg",T_dreg
+          dc.b "areg",T_areg
+          dc.b "point",T_point
+          dc.b "drive$",T_drivestr
+          dc.b "dir$",T_dirstr
+          dc.b "abs",T_abs
+          dc.b "colour",T_colour
+          dc.b "fkey",T_fkey
+          dc.b "sin",T_sin
+          dc.b "cos",T_cos
+          dc.b "drive",T_drive
+          dc.b "timer",T_timer
+          dc.b "logic",T_logic
+          dc.b "fn",T_fn
+          dc.b "not",T_not
+          dc.b "rnd",T_rnd
+          dc.b "val",T_val
+          dc.b "asc",T_asc
+          dc.b "chr$",T_chr
+          dc.b "inkey$",T_inkey
+          dc.b "scancode",T_scancode
+          dc.b "mid$",T_mid
+          dc.b "right$",T_right
+          dc.b "left$",T_left
+          dc.b "length",T_length
+          dc.b "start",T_start
+          dc.b "len",T_len
+          dc.b "pi",T_pi
+          dc.b "peek",T_peek
+          dc.b "deek",T_deek
+          dc.b "leek",t_leek
+          dc.b "zone",T_zone
+          dc.b "x sprite",T_xsprite
+          dc.b "y sprite",T_ysprite
+          dc.b "x mouse",T_xmouse
+          dc.b "y mouse",T_ymouse
+          dc.b "mouse key",T_mousekey
+          dc.b "physic",T_physic
+          dc.b "back",T_back
+          dc.b "log",T_log
+          dc.b "pof",T_pof
+          dc.b "mode",T_mode
+          dc.b "time$",T_time
+          dc.b "date$",T_date
+          dc.b "screen$",T_screen
+          dc.b "default",T_default
+; OPERATORS
+          dc.b " xor ",T_xor
+          dc.b " or ",T_or
+          dc.b " and ",T_and
+          dc.b "<>",T_neq
+          dc.b "><",T_neq
+          dc.b "<=",T_leq
+          dc.b "=<",T_leq
+          dc.b ">=",T_geq
+          dc.b "=>",T_geq
+          dc.b "=",T_eq
+          dc.b "<",T_lt
+          dc.b ">",T_gt
+          dc.b "+",T_add
+          dc.b "-",T_sub
+          dc.b " mod ",T_mod
+          dc.b "*",T_mul
+          dc.b "/",T_div
+          dc.b "^",T_pow
 ; variables: $fa
 ; constantes: (binaire $fb)(alpha $fc)(hexa $fd)(entier $fe)(float $ff)
-; TABLE DES FONCTIONS ETENDUES: $b8 + code token
-foncext:  dc.b "hsin",$b8,$80
-          dc.b "hcos",$b8,$81
-          dc.b "htan",$b8,$82
-          dc.b "asin",$b8,$83
-          dc.b "acos",$b8,$84
-          dc.b "atan",$b8,$85
-          dc.b "upper$",$b8,$86
-          dc.b "lower$",$b8,$87
-          dc.b "current",$b8,$88
-          dc.b "match",$b8,$89
-          dc.b "errn",$b8,$8a
-          dc.b "errl",$b8,$8b
-          dc.b "varptr",$b8,$8c
-          dc.b "input$",$b8,$8d
-          dc.b "flip$",$b8,$8e
-          dc.b "free",$b8,$8f
-          dc.b "str$",$b8,$90
-          dc.b "hex$",$b8,$91
-          dc.b "bin$",$b8,$92
-          dc.b "string$",$b8,$93
-          dc.b "space$",$b8,$94
-          dc.b "instr",$b8,$95
-          dc.b "max",$b8,$96
-          dc.b "min",$b8,$97
-          dc.b "lof",$b8,$98
-          dc.b "eof",$b8,$99
-          dc.b "dir first$",$b8,$9a
-          dc.b "dir next$",$b8,$9b
-          dc.b "btst",$b8,$9c
-          dc.b "collide",$b8,$9d
-          dc.b "accnb",$b8,$9e
-          dc.b "language",$b8,$9f
-          dc.b "hunt",$b8,$a1           ;token $a0!!!!
-          dc.b "true",$b8,$a2
-          dc.b "false",$b8,$a3
-          dc.b "xcurs",$b8,$a4
-          dc.b "ycurs",$b8,$a5
-          dc.b "jup",$b8,$a6
-          dc.b "jleft",$b8,$a7
-          dc.b "jright",$b8,$a8
-          dc.b "jdown",$b8,$a9
-          dc.b "fire",$b8,$aa
-          dc.b "joy",$b8,$ab
-          dc.b "movon",$b8,$ac
-          dc.b "icon$",$b8,$ad
-          dc.b "tab",$b8,$ae
-          dc.b "exp",$b8,$af
-          dc.b "charlen",$b8,$b0
-          dc.b "mnbar",$b8,$b1
-          dc.b "mnselect",$b8,$b2
-          dc.b "windon",$b8,$b3
-          dc.b "xtext",$b8,$b4
-          dc.b "ytext",$b8,$b5
-          dc.b "xgraphic",$b8,$b6
-          dc.b "ygraphic",$b8,$b7
-          dc.b "sqr",$b8,$b9                              ;token $b8!!!!
-          dc.b "divx",$b8,$ba
-          dc.b "divy",$b8,$bb
-          dc.b "ln",$b8,$bc
-          dc.b "tan",$b8,$bd
-          dc.b "drvmap",$b8,$be
-          dc.b "file select$",$b8,$bf
-          dc.b "dfree",$b8,$c0
-          dc.b "sgn",$b8,$c1
-          dc.b "port",$b8,$c2
-          dc.b "pvoice",$b8,$c3
-          dc.b "int",$b8,$c4
-          dc.b "detect",$b8,$c5
-          dc.b "deg",$b8,$c6
-          dc.b "rad",$b8,$c7
+; TABLE DES FONCTIONS ETENDUES: T_extfunc + code token
+foncext:  dc.b "hsin",T_extfunc,T_extf_sinh
+          dc.b "hcos",T_extfunc,T_extf_cosh
+          dc.b "htan",T_extfunc,T_extf_tanh
+          dc.b "asin",T_extfunc,T_extf_asin
+          dc.b "acos",T_extfunc,T_extf_acos
+          dc.b "atan",T_extfunc,T_extf_atan
+          dc.b "upper$",T_extfunc,T_extf_upper
+          dc.b "lower$",T_extfunc,T_extf_lower
+          dc.b "current",T_extfunc,T_extf_current
+          dc.b "match",T_extfunc,T_extf_match
+          dc.b "errn",T_extfunc,T_extf_errn
+          dc.b "errl",T_extfunc,T_extf_errl
+          dc.b "varptr",T_extfunc,T_extf_varptr
+          dc.b "input$",T_extfunc,T_extf_input
+          dc.b "flip$",T_extfunc,T_extf_flip
+          dc.b "free",T_extfunc,T_extf_free
+          dc.b "str$",T_extfunc,T_extf_str
+          dc.b "hex$",T_extfunc,T_extf_hex
+          dc.b "bin$",T_extfunc,T_extf_bin
+          dc.b "string$",T_extfunc,T_extf_string
+          dc.b "space$",T_extfunc,T_extf_space
+          dc.b "instr",T_extfunc,T_extf_instr
+          dc.b "max",T_extfunc,T_extf_max
+          dc.b "min",T_extfunc,T_extf_min
+          dc.b "lof",T_extfunc,T_extf_lof
+          dc.b "eof",T_extfunc,T_extf_eof
+          dc.b "dir first$",T_extfunc,T_extf_dirfirst
+          dc.b "dir next$",T_extfunc,T_extf_dirnext
+          dc.b "btst",T_extfunc,T_extf_btst
+          dc.b "collide",T_extfunc,T_extf_collide
+          dc.b "accnb",T_extfunc,T_extf_accnb
+          dc.b "language",T_extfunc,T_extf_language
+*          token $a0!!!!
+          dc.b "hunt",T_extfunc,T_extf_hunt
+          dc.b "true",T_extfunc,T_extf_true
+          dc.b "false",T_extfunc,T_extf_false
+          dc.b "xcurs",T_extfunc,T_extf_xcurs
+          dc.b "ycurs",T_extfunc,T_extf_ycurs
+          dc.b "jup",T_extfunc,T_extf_jup
+          dc.b "jleft",T_extfunc,T_extf_jleft
+          dc.b "jright",T_extfunc,T_extf_jright
+          dc.b "jdown",T_extfunc,T_extf_jdown
+          dc.b "fire",T_extfunc,T_extf_fire
+          dc.b "joy",T_extfunc,T_extf_joy
+          dc.b "movon",T_extfunc,T_extf_movon
+          dc.b "icon$",T_extfunc,T_extf_icon
+          dc.b "tab",T_extfunc,T_extf_tab
+          dc.b "exp",T_extfunc,T_extf_exp
+          dc.b "charlen",T_extfunc,T_extf_charlen
+          dc.b "mnbar",T_extfunc,T_extf_mnbar
+          dc.b "mnselect",T_extfunc,T_extf_mnselect
+          dc.b "windon",T_extfunc,T_extf_windon
+          dc.b "xtext",T_extfunc,T_extf_xtext
+          dc.b "ytext",T_extfunc,T_extf_ytext
+          dc.b "xgraphic",T_extfunc,T_extf_xgraphic
+          dc.b "ygraphic",T_extfunc,T_extf_ygraphic
+*token $b8!!!!
+          dc.b "sqr",T_extfunc,T_extf_sqr
+          dc.b "divx",T_extfunc,T_extf_divx
+          dc.b "divy",T_extfunc,T_extf_divy
+          dc.b "ln",T_extfunc,T_extf_ln
+          dc.b "tan",T_extfunc,T_extf_tan
+          dc.b "drvmap",T_extfunc,T_extf_drvmap
+          dc.b "file select$",T_extfunc,T_extf_fileselect
+          dc.b "dfree",T_extfunc,T_extf_dfree
+          dc.b "sgn",T_extfunc,T_extf_sgn
+          dc.b "port",T_extfunc,T_extf_port
+          dc.b "pvoice",T_extfunc,T_extf_pvoice
+          dc.b "int",T_extfunc,T_extf_int
+          dc.b "detect",T_extfunc,T_extf_detect
+          dc.b "deg",T_extfunc,T_extf_deg
+          dc.b "rad",T_extfunc,T_extf_rad
 
-; TABLE DES TOKENS ETENDUS: $a0 + code token > $70
-tokext:   dc.b "dir/w",$a0,$70
-          dc.b "fade",$a0,$71
-          dc.b "bcopy",$a0,$72
-          dc.b "square",$a0,$73
-          dc.b "previous",$a0,$74
-          dc.b "transpose",$a0,$75
-          dc.b "shift",$a0,$76
-          dc.b "wait key",$a0,$77
-          dc.b "dir",$a0,$78
-          dc.b "ldir",$a0,$79
-          dc.b "bload",$a0,$7a
-          dc.b "bsave",$a0,$7b
-          dc.b "qwindow",$a0,$7c
-          dc.b "as set",$a0,$7d
-          dc.b "charcopy",$a0,$7e
-          dc.b "under",$a0,$7f
-          dc.b "menu$",$a0,$80
-          dc.b "menu",$a0,$81
-          dc.b "title",$a0,$82
-          dc.b "border",$a0,$83
-          dc.b "hardcopy",$a0,$84
-          dc.b "windcopy",$a0,$85
-          dc.b "redraw",$a0,$86
-          dc.b "centre",$a0,$87
-          dc.b "tempo",$a0,$88
-          dc.b "volume",$a0,$89
-          dc.b "envel",$a0,$8a
-          dc.b "boom",$a0,$8b
-          dc.b "shoot",$a0,$8c
-          dc.b "bell",$a0,$8d
-          dc.b "play",$a0,$8e
-          dc.b "noise",$a0,$8f
-          dc.b "voice",$a0,$90
-          dc.b "music",$a0,$91
-          dc.b "box",$a0,$92
-          dc.b "rbox",$a0,$93
-          dc.b "bar",$a0,$94
-          dc.b "rbar",$a0,$95
-          dc.b "appear",$a0,$96
-          dc.b "bclr",$a0,$97
-          dc.b "bset",$a0,$98
-          dc.b "rol",$a0,$99
-          dc.b "ror",$a0,$9a
-          dc.b "curs",$a0,$9b
-          dc.b "clw",$a0,$9c
-          dc.b "bchg",$a0,$9d
-          dc.b "call",$a0,$9e
-          dc.b "trap",$a0,$9f
-          dc.b "run",$a0,$a1
-          dc.b "clear key",$a0,$a2
-          dc.b "line input",$a0,$a3
-          dc.b "input",$a0,$a4
-          dc.b "clear",$a0,$a5
-          dc.b "data",$a0,$a6
-          dc.b "end",$a0,$a7
-          dc.b "erase",$a0,$a8
-          dc.b "reserve",$a0,$a9
-          dc.b "as datascreen",$a0,$aa
-          dc.b "as work",$a0,$ab
-          dc.b "as screen",$a0,$ac
-          dc.b "as data",$a0,$ad
-          dc.b "copy",$a0,$ae
-          dc.b "def",$a0,$af
-          dc.b "hide",$a0,$b0
-          dc.b "show",$a0,$b1
-          dc.b "change mouse",$a0,$b2
-          dc.b "limit mouse",$a0,$b3
-          dc.b "move x",$a0,$b4
-          dc.b "move y",$a0,$b5
-          dc.b "fix",$a0,$b6
-          dc.b "bgrab",$a0,$b7
+; TABLE OF EXTENDED TOKENS: $a0 + code token > $70
+tokext:   dc.b "dir/w",T_extinst,T_exti_dirw
+          dc.b "fade",T_extinst,T_exti_fade
+          dc.b "bcopy",T_extinst,T_exti_bcopy
+          dc.b "square",T_extinst,T_exti_square
+          dc.b "previous",T_extinst,T_exti_previous
+          dc.b "transpose",T_extinst,T_exti_transpose
+          dc.b "shift",T_extinst,T_exti_shift
+          dc.b "wait key",T_extinst,T_exti_waitkey
+          dc.b "dir",T_extinst,T_exti_dir
+          dc.b "ldir",T_extinst,T_exti_ldir
+          dc.b "bload",T_extinst,T_exti_bload
+          dc.b "bsave",T_extinst,T_exti_bsave
+          dc.b "qwindow",T_extinst,T_exti_qwindow
+          dc.b "as set",T_extinst,T_exti_asset
+          dc.b "charcopy",T_extinst,T_exti_charcopy
+          dc.b "under",T_extinst,T_exti_under
+          dc.b "menu$",T_extinst,T_exti_menustr
+          dc.b "menu",T_extinst,T_exti_menu
+          dc.b "title",T_extinst,T_exti_title
+          dc.b "border",T_extinst,T_exti_border
+          dc.b "hardcopy",T_extinst,T_exti_hardcopy
+          dc.b "windcopy",T_extinst,T_exti_windcopy
+          dc.b "redraw",T_extinst,T_exti_redraw
+          dc.b "centre",T_extinst,T_exti_centre
+          dc.b "tempo",T_extinst,T_exti_tempo
+          dc.b "volume",T_extinst,T_exti_volume
+          dc.b "envel",T_extinst,T_exti_envel
+          dc.b "boom",T_extinst,T_exti_boom
+          dc.b "shoot",T_extinst,T_exti_shoot
+          dc.b "bell",T_extinst,T_exti_bell
+          dc.b "play",T_extinst,T_exti_play
+          dc.b "noise",T_extinst,T_exti_noise
+          dc.b "voice",T_extinst,T_exti_voice
+          dc.b "music",T_extinst,T_exti_music
+          dc.b "box",T_extinst,T_exti_box
+          dc.b "rbox",T_extinst,T_exti_rbox
+          dc.b "bar",T_extinst,T_exti_bar
+          dc.b "rbar",T_extinst,T_exti_rbar
+          dc.b "appear",T_extinst,T_exti_appear
+          dc.b "bclr",T_extinst,T_exti_bclr
+          dc.b "bset",T_extinst,T_exti_bset
+          dc.b "rol",T_extinst,T_exti_rol
+          dc.b "ror",T_extinst,T_exti_ror
+          dc.b "curs",T_extinst,T_exti_curs
+          dc.b "clw",T_extinst,T_exti_clw
+          dc.b "bchg",T_extinst,T_exti_bchg
+          dc.b "call",T_extinst,T_exti_call
+          dc.b "trap",T_extinst,T_exti_trap
+          dc.b "run",T_extinst,T_exti_run
+          dc.b "clear key",T_extinst,T_exti_clearkey
+          dc.b "line input",T_extinst,T_exti_lineinput
+          dc.b "input",T_extinst,T_exti_input
+          dc.b "clear",T_extinst,T_exti_clear
+          dc.b "data",T_extinst,T_exti_data
+          dc.b "end",T_extinst,T_exti_end
+          dc.b "erase",T_extinst,T_exti_erase
+          dc.b "reserve",T_extinst,T_exti_reserve
+          dc.b "as datascreen",T_extinst,T_exti_asdatascreen
+          dc.b "as work",T_extinst,T_exti_aswork
+          dc.b "as screen",T_extinst,T_exti_asscreen
+          dc.b "as data",T_extinst,T_exti_asdata
+          dc.b "copy",T_extinst,T_exti_copy
+          dc.b "def",T_extinst,T_exti_def
+          dc.b "hide",T_extinst,T_exti_hide
+          dc.b "show",T_extinst,T_exti_show
+          dc.b "change mouse",T_extinst,T_exti_changemouse
+          dc.b "limit mouse",T_extinst,T_exti_limitmouse
+          dc.b "move x",T_extinst,T_exti_movex
+          dc.b "move y",T_extinst,T_exti_movey
+          dc.b "fix",T_extinst,T_exti_fix
+          dc.b "bgrab",T_extinst,T_exti_bgrab
 ; fonctions etendues: $b8
-          dc.b "fill",$a0,$b9
-          dc.b "key list",$a0,$ba
-          dc.b "key speed",$a0,$bb
-          dc.b "move",$a0,$bc
-          dc.b "anim",$a0,$bd
-          dc.b "unfreeze",$a0,$be
-          dc.b "set zone",$a0,$bf
-          dc.b "reset zone",$a0,$c0
-          dc.b "limit sprite",$a0,$c1
-          dc.b "priority",$a0,$c2
-          dc.b "reduce",$a0,$c3
-          dc.b "put sprite",$a0,$c4
-          dc.b "get sprite",$a0,$c5
-          dc.b "load",$a0,$c6
-          dc.b "save",$a0,$c7
-          dc.b "palette",$a0,$c8
-          dc.b "synchro",$a0,$c9
-          dc.b "error",$a0,$ca
-          dc.b "break",$a0,$cb
-          dc.b "let",$a0,$cc
-          dc.b "key",$a0,$cd
-          dc.b "open in",$a0,$ce
-          dc.b "open out",$a0,$cf
-          dc.b "open",$a0,$d0
-          dc.b "close",$a0,$d1
-          dc.b "field",$a0,$d2
-          dc.b " as",$a0,$d3
-          dc.b "put key",$a0,$d4
-          dc.b "get palette",$a0,$d5
-          dc.b "kill",$a0,$d6
-          dc.b "rename",$a0,$d7
-          dc.b "rm dir",$a0,$d8
-          dc.b "mk dir",$a0,$d9
-          dc.b "stop",$a0,$da
-          dc.b "wait vbl",$a0,$db
-          dc.b "sort",$a0,$dc
-          dc.b "get",$a0,$dd
-          dc.b "flash",$a0,$de
-          dc.b "using",$a0,$df
-          dc.b "lprint",$a0,$e0
-          dc.b "auto back",$a0,$e1
-          dc.b "set line",$a0,$e2
-          dc.b "gr writing",$a0,$e3
-          dc.b "set mark",$a0,$e4
-          dc.b "set paint",$a0,$e5
-          dc.b "set pattern",$a0,$e7              ;une place
-          dc.b "clip",$a0,$e8
-          dc.b "arc",$a0,$e9
-          dc.b "polygon",$a0,$ea
-          dc.b "circle",$a0,$eb
-          dc.b "earc",$a0,$ec
-          dc.b "epie",$a0,$ed
-          dc.b "ellipse",$a0,$ee
-          dc.b "writing",$a0,$ef
-          dc.b "paint",$a0,$f0
-          dc.b "ink",$a0,$f1
-          dc.b "wait",$a0,$f2
-          dc.b "click",$a0,$f3
-          dc.b "put",$a0,$f4
-          dc.b "zoom",$a0,$f5
-          dc.b "set curs",$a0,$f6
-          dc.b "scroll down",$a0,$f7
-          dc.b "scroll up",$a0,$f8
-          dc.b "scroll",$a0,$f9
-          dc.b "inverse",$a0,$fa
-          dc.b "shade",$a0,$fb
-          dc.b "windopen",$a0,$fc
-          dc.b "window",$a0,$fd
-          dc.b "windmove",$a0,$fe
-          dc.b "windel",$a0,$ff
+          dc.b "fill",T_extinst,T_exti_fill
+          dc.b "key list",T_extinst,T_exti_keylist
+          dc.b "key speed",T_extinst,T_exti_keyspeed
+          dc.b "move",T_extinst,T_exti_move
+          dc.b "anim",T_extinst,T_exti_anim
+          dc.b "unfreeze",T_extinst,T_exti_unfreeze
+          dc.b "set zone",T_extinst,T_exti_setzone
+          dc.b "reset zone",T_extinst,T_exti_resetzone
+          dc.b "limit sprite",T_extinst,T_exti_limitsprite
+          dc.b "priority",T_extinst,T_exti_priority
+          dc.b "reduce",T_extinst,T_exti_reduce
+          dc.b "put sprite",T_extinst,T_exti_putsprite
+          dc.b "get sprite",T_extinst,T_exti_getsprite
+          dc.b "load",T_extinst,T_exti_load
+          dc.b "save",T_extinst,T_exti_save
+          dc.b "palette",T_extinst,T_exti_palette
+          dc.b "synchro",T_extinst,T_exti_synchro
+          dc.b "error",T_extinst,T_exti_error
+          dc.b "break",T_extinst,T_exti_break
+          dc.b "let",T_extinst,T_exti_let
+          dc.b "key",T_extinst,T_exti_key
+          dc.b "open in",T_extinst,T_exti_openin
+          dc.b "open out",T_extinst,T_exti_openout
+          dc.b "open",T_extinst,T_exti_open
+          dc.b "close",T_extinst,T_exti_close
+          dc.b "field",T_extinst,T_exti_field
+          dc.b " as",T_extinst,T_exti_as
+          dc.b "put key",T_extinst,T_exti_putkey
+          dc.b "get palette",T_extinst,T_exti_getpalette
+          dc.b "kill",T_extinst,T_exti_kill
+          dc.b "rename",T_extinst,T_exti_rename
+          dc.b "rm dir",T_extinst,T_exti_rmdir
+          dc.b "mk dir",T_extinst,T_exti_mkdir
+          dc.b "stop",T_extinst,T_exti_stop
+          dc.b "wait vbl",T_extinst,T_exti_waitvbl
+          dc.b "sort",T_extinst,T_exti_sort
+          dc.b "get",T_extinst,T_exti_get
+          dc.b "flash",T_extinst,T_exti_flash
+          dc.b "using",T_extinst,T_exti_using
+          dc.b "lprint",T_extinst,T_exti_lprint
+          dc.b "auto back",T_extinst,T_exti_autoback
+          dc.b "set line",T_extinst,T_exti_setline
+          dc.b "gr writing",T_extinst,T_exti_grwriting
+          dc.b "set mark",T_extinst,T_exti_setmark
+          dc.b "set paint",T_extinst,T_exti_setpaint
+          dc.b "set pattern",T_extinst,T_exti_setpattern
+          dc.b "clip",T_extinst,T_exti_clip
+          dc.b "arc",T_extinst,T_exti_arc
+          dc.b "polygon",T_extinst,T_exti_polygon
+          dc.b "circle",T_extinst,T_exti_circle
+          dc.b "earc",T_extinst,T_exti_earc
+          dc.b "epie",T_extinst,T_exti_epie
+          dc.b "ellipse",T_extinst,T_exti_ellipse
+          dc.b "writing",T_extinst,T_exti_writing
+          dc.b "paint",T_extinst,T_exti_paint
+          dc.b "ink",T_extinst,T_exti_ink
+          dc.b "wait",T_extinst,T_exti_wait
+          dc.b "click",T_extinst,T_exti_click
+          dc.b "put",T_extinst,T_exti_put
+          dc.b "zoom",T_extinst,T_exti_zoom
+          dc.b "set curs",T_extinst,T_exti_setcurs
+          dc.b "scroll down",T_extinst,T_exti_scrolldown
+          dc.b "scroll up",T_extinst,T_exti_scrollup
+          dc.b "scroll",T_extinst,T_exti_scroll
+          dc.b "inverse",T_extinst,T_exti_inverse
+          dc.b "shade",T_extinst,T_exti_shade
+          dc.b "windopen",T_extinst,T_exti_windopen
+          dc.b "window",T_extinst,T_exti_window
+          dc.b "windmove",T_extinst,T_exti_windmove
+          dc.b "windel",T_extinst,T_exti_windel
 
-; TABLE DES TOKENS DIRECTS: $a0 + $00 < code token < $20
-          dc.b "listbank",$a0,$00
-          dc.b "llistbank",$a0,$01
-          dc.b "follow",$a0,$02
-          dc.b "frequency",$a0,$03
-          dc.b "cont",$a0,$04
-          dc.b "change",$a0,$05
-          dc.b "search",$a0,$06
-          dc.b "delete",$a0,$07
-          dc.b "merge",$a0,$08
-          dc.b "auto",$a0,$09
-          dc.b "new",$a0,$0a
-          dc.b "unnew",$a0,$0b
-          dc.b "fload",$a0,$0c
-          dc.b "fsave",$a0,$0d
-          dc.b "reset",$a0,$0e
-          dc.b "system",$a0,$0f
-          dc.b "env",$a0,$10
-          dc.b "renum",$a0,$11
-          dc.b "multi",$a0,$12
-          dc.b "full",$a0,$13
-          dc.b "grab",$a0,$14
-          dc.b "list",$a0,$15
-          dc.b "llist",$a0,$16
-          dc.b "hexa",$a0,$17                     ;une place libre!
-          dc.b "accload",$a0,$19
-          dc.b "accnew",$a0,$1a
-          dc.b "lower",$a0,$1b
-          dc.b "upper",$a0,$1c
-          dc.b "english",$a0,$1d
-          dc.b "francais",$a0,$1e
+; TABLE DES TOKENS DIRECTS: T_extinst + $00 < code token < $20
+          dc.b "listbank",T_extinst,T_exti_listbank
+          dc.b "llistbank",T_extinst,T_exti_llistbank
+          dc.b "follow",T_extinst,T_exti_follow
+          dc.b "frequency",T_extinst,T_exti_frequency
+          dc.b "cont",T_extinst,T_exti_cont
+          dc.b "change",T_extinst,T_exti_change
+          dc.b "search",T_extinst,T_exti_search
+          dc.b "delete",T_extinst,T_exti_delete
+          dc.b "merge",T_extinst,T_exti_merge
+          dc.b "auto",T_extinst,T_exti_auto
+          dc.b "new",T_extinst,T_exti_new
+          dc.b "unnew",T_extinst,T_exti_unnew
+          dc.b "fload",T_extinst,T_exti_fload
+          dc.b "fsave",T_extinst,T_exti_fsave
+          dc.b "reset",T_extinst,T_exti_reset
+          dc.b "system",T_extinst,T_exti_system
+          dc.b "env",T_extinst,T_exti_env
+          dc.b "renum",T_extinst,T_exti_renum
+          dc.b "multi",T_extinst,T_exti_multi
+          dc.b "full",T_extinst,T_exti_full
+          dc.b "grab",T_extinst,T_exti_grab
+          dc.b "list",T_extinst,T_exti_list
+          dc.b "llist",T_extinst,T_exti_llist
+          dc.b "hexa",T_extinst,T_exti_hexa
+          dc.b "accload",T_extinst,T_exti_accload
+          dc.b "accnew",T_extinst,T_exti_accnew
+          dc.b "lower",T_extinst,T_exti_lower
+          dc.b "upper",T_extinst,T_exti_upper
+          dc.b "english",T_extinst,T_exti_english
+          dc.b "francais",T_extinst,T_exti_francais
           dc.b 0
           even
 ; ADRESSE DES ROUTINES D'EXECUTION
           dc.b "Jinstr"       ;repere JUMPS instructions
-jumps:    dc.l syntax,syntax,next,wend,until,dim,poke,doke
-          dc.l loke,read,data,retourne,pop,resnext,resume,onerror ;$80-$8f
-          dc.l scrcopy,swap,plot,pie,draw,polyline,polymark,pasimp
-          dc.l goto,gosub,syntax,else,restore,for,while,repeat    ;$90-$9f
-          dc.l etendu,print,if,update,sprite,freeze,auff,on
-          dc.l extinst,locate,paper,pen,home,syntax,syntax,syntax
-          dc.l curup,curdown,curleft,curight,cls,inc,dec,scrswap
+jumps:    dc.l syntax           ;$80
+          dc.l syntax
+          dc.l next
+          dc.l wend
+          dc.l until
+          dc.l dim
+          dc.l poke
+          dc.l doke
+          dc.l loke             ;$88
+          dc.l read
+          dc.l data
+          dc.l retourne
+          dc.l pop
+          dc.l resnext
+          dc.l resume
+          dc.l onerror
+          dc.l scrcopy          ;$90
+          dc.l swap
+          dc.l plot
+          dc.l pie
+          dc.l draw
+          dc.l polyline
+          dc.l polymark
+          dc.l pasimp
+          dc.l goto             ;$98
+          dc.l gosub
+          dc.l syntax
+          dc.l else
+          dc.l restore
+          dc.l for
+          dc.l while
+          dc.l repeat
+          dc.l etendu           ;$a0
+          dc.l print
+          dc.l if
+          dc.l update
+          dc.l sprite
+          dc.l freeze
+          dc.l auff
+          dc.l on
+          dc.l extinst          ;$a8
+          dc.l locate
+          dc.l paper
+          dc.l pen
+          dc.l home
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l curup            ;$b0
+          dc.l curdown
+          dc.l curleft
+          dc.l curight
+          dc.l cls
+          dc.l inc
+          dc.l dec
+          dc.l scrswap
 ; fonctions/instructions
-          dc.l syntax,psginst,syntax,instdreg,instareg,syntax,drived,dirinst
-          dc.l syntax,syntax,color,syntax,syntax,syntax,drive,setimer
-          dc.l loginst,syntax,syntax,syntax,syntax,syntax,syntax,syntax
-          dc.l syntax,midinst,rightinst,leftinst,syntax,syntax,syntax,syntax ;$d0-$df
-          dc.l syntax,syntax,syntax,syntax,syntax,syntax,xminst,yminst
-          dc.l syntax,physinst,backinst,syntax,pofins,setmode,settime,setdate
-          dc.l scrinst,defolt,syntax,syntax,syntax,syntax,syntax,syntax
-          dc.l syntax,syntax,syntax,syntax,syntax,syntax,syntax,syntax ;$f0-$ff
-          dc.l syntax,syntax,let,syntax,syntax,syntax,syntax,syntax
+          dc.l syntax           ;$b8
+          dc.l psginst
+          dc.l syntax
+          dc.l instdreg
+          dc.l instareg
+          dc.l syntax
+          dc.l drived
+          dc.l dirinst
+          dc.l syntax           ;$c0
+          dc.l syntax
+          dc.l color
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l drive
+          dc.l setimer
+          dc.l loginst          ;$c8
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax           ;$d0
+          dc.l midinst
+          dc.l rightinst
+          dc.l leftinst
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax           ;$d8
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l xminst
+          dc.l yminst
+          dc.l syntax           ;$e0
+          dc.l physinst
+          dc.l backinst
+          dc.l syntax
+          dc.l pofins
+          dc.l setmode
+          dc.l settime
+          dc.l setdate
+          dc.l scrinst          ;$e8
+          dc.l defolt
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax           ;$f0
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax           ;$f8
+          dc.l syntax
+          dc.l let
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax           ;$ff
 
 ; ADRESSE DES FONCTIONS
           dc.b "Jfonct"                 ;repere JUMPS FONCTIONS
@@ -945,20 +1060,83 @@ opejumps: dc.l fetendu,psgfonc,screen,dreg,areg,point,fndrived,fndir
 ; ADRESSE DES OPERATEURS
 evajumps: dc.l syntax,opxor,opor,opand
           dc.l diff,infeg,supeg,egale,inf,sup
-          dc.l plus,moins,modulo,multiplie,divise,puissant
+          dc.l plus,moins,modulo,multiplie,divise,power
           dc.l syntax,syntax,syntax,syntax,syntax       ;debut des constantes
 
 ; ADRESSE DES FONCTIONS ETENDUES
           dc.b "Jfctex"       ;repere JUMPS FONCTIONS ETENDUES
-extfonc:  dc.l sinh,cosh,tanh,asin,acos,atan,fnlower,fnupper
-          dc.l current,dichot,errnumber,errline,varptr,inputn,flip,free
-          dc.l str,hex,bin,string,space,instr,max,min
-          dc.l lof,eof,dirfirst,dirnext,btest,collide,accnb,langage
-          dc.l syntax,faind,vrai,faux,cursx,cursy,jup,jleft
-          dc.l jright,jdown,fire,joy,movon,icon,tab,exp
-          dc.l charlen,choice,item,fwindon,xtext,ytext,xgraphic,ygraphic
-          dc.l syntax,sqr,divx,divy,log,tan,drvmap,fselector
-          dc.l dfree,sgn,port,pvoice,int,dtct,deg,rad
+extfonc:  dc.l sinh             ; $80
+          dc.l cosh
+          dc.l tanh
+          dc.l asin
+          dc.l acos
+          dc.l atan
+          dc.l fnlower
+          dc.l fnupper
+          dc.l current          ; $88
+          dc.l dichot
+          dc.l errnumber
+          dc.l errline
+          dc.l varptr
+          dc.l inputn
+          dc.l flip
+          dc.l free
+          dc.l str              ; $90
+          dc.l hex
+          dc.l bin
+          dc.l string
+          dc.l space
+          dc.l instr
+          dc.l max
+          dc.l min
+          dc.l lof              ; $98
+          dc.l eof
+          dc.l dirfirst
+          dc.l dirnext
+          dc.l btest
+          dc.l collide
+          dc.l accnb
+          dc.l getlanguage
+          dc.l syntax           ; $a0
+          dc.l faind
+          dc.l vrai
+          dc.l faux
+          dc.l cursx
+          dc.l cursy
+          dc.l jup
+          dc.l jleft
+          dc.l jright           ; $a8
+          dc.l jdown
+          dc.l fire
+          dc.l joy
+          dc.l movon
+          dc.l icon
+          dc.l tab
+          dc.l exp
+          dc.l charlen          ; $b0
+          dc.l choice
+          dc.l item
+          dc.l fwindon
+          dc.l xtext
+          dc.l ytext
+          dc.l xgraphic
+          dc.l ygraphic
+          dc.l syntax           ; $b8
+          dc.l sqr
+          dc.l divx
+          dc.l divy
+          dc.l log
+          dc.l tan
+          dc.l drvmap
+          dc.l fselector
+          dc.l dfree            ; $c0
+          dc.l sgn
+          dc.l port
+          dc.l pvoice
+          dc.l int
+          dc.l dtct
+          dc.l deg
+          dc.l rad              ; $c7
 
 ; ADRESSE DES ROUTINES DIRECTES $60< token < $80
           dc.b "Jdirec"       ;repere JUMPS FONCTIONS DIRECTES
@@ -991,17 +1169,48 @@ extjumps: dc.l dirw,fde,bcopy,textbox
           dc.l scrollup,scroll,inverse,shade,windopen,window,windmov,windel
 
 ; TABLE OF USEFUL ADDRESSES FOR EXTENSION ROUTINES
-routines: dc.l buffer,fltoint,inttofl,dta               ;$00
-          dc.l fichiers,erreur,err2,demande             ;$10
-          dc.l start1,leng1,transmem,fe                 ;$20
-          dc.l jumps,opejumps,evajumps,extfonc          ;$30
-          dc.l dirjumps,extjumps,merreur,vecteurs       ;$40
-          dc.l mode,contrl,intin,ptsin                  ;$50
-          dc.l intout,ptsout,vdipb,chrget               ;$60
-          dc.l chaine,dechaine,active,savect            ;$70
-          dc.l loadvect,menage,adoubank,adecran         ;$80
-          dc.l abck,abis,buffonc,deffonc                ;$90
-          dc.l foncnom                                  ;$A0
+; must match the layout defined in system.inc
+routines: dc.l buffer               ;$00
+          dc.l fltoint
+          dc.l inttofl
+          dc.l dta
+          dc.l filetab             ;$10
+          dc.l erreur
+          dc.l err2
+          dc.l demande
+          dc.l start1               ;$20
+          dc.l leng1
+          dc.l transmem
+          dc.l fe
+          dc.l jumps                ;$30
+          dc.l opejumps
+          dc.l evajumps
+          dc.l extfonc
+          dc.l dirjumps             ;$40
+          dc.l extjumps
+          dc.l merreur
+          dc.l vectors
+          dc.l mode                 ;$50
+          dc.l contrl
+          dc.l intin
+          dc.l ptsin
+          dc.l intout               ;$60
+          dc.l ptsout
+          dc.l vdipb
+          dc.l chrget
+          dc.l chaine               ;$70
+          dc.l dechaine
+          dc.l active
+          dc.l savect
+          dc.l loadvect             ;$80
+          dc.l menage
+          dc.l adoubank
+          dc.l adscreen
+          dc.l abck                 ;$90
+          dc.l abis
+          dc.l buffonc
+          dc.l deffonc
+          dc.l foncnom              ;$A0
 
 ; EXTENSION NON PRESENTE
 pxt:      dc.b "extension #"
@@ -1131,11 +1340,11 @@ merreur:  dc.b "Not done",0                          ;0---> erreurs editeur
           dc.b "Chaine trop longue",0
           dc.b "Bus error",0                         ;31
           dc.b "Erreur de bus",0
-          dc.b "Address error",0                      ;32
+          dc.b "Address error",0                     ;32
           dc.b "Erreur d'adresse",0
-          dc.b "No data on this line",0             ;33
+          dc.b "No data on this line",0              ;33
           dc.b "Pas de 'data' sur cette ligne",0
-          dc.b "No more data",0                     ;34
+          dc.b "No more data",0                      ;34
           dc.b "Plus de donn‚e",0
           dc.b "Too many gosubs",0                   ;35
           dc.b "Trop de gosubs",0
@@ -1161,7 +1370,7 @@ merreur:  dc.b "Not done",0                          ;0---> erreurs editeur
           dc.b "R‚solution non autoris‚e",0
           dc.b "Division by zero",0                  ;46
           dc.b "Division par z‚ro",0
-          dc.b "Illegal negative operand",0         ;47
+          dc.b "Illegal negative operand",0          ;47
           dc.b "Op‚rande n‚gatif",0
           dc.b "File not found",0                    ;48
           dc.b "Fichier introuvable",0
@@ -1247,74 +1456,75 @@ inline:   dc.b " in line ",0," en ligne ",0
           even
           dc.b "Varsys"       ;repere GENIAL ---> debut des variables
 ; VARIABLES SYSTEME DIVERSES
-vecteurs: ds.l 8              ;copie des vecteurs systeme
-anc400:   dc.l 0              ;vecteur 50 herz!!!
-runonly:  dc.w 0              ;flag RUN ONLY ou NORMAL
-ronom:    dc.l 0              ;adresse du nom du RUN ONLY
-roold:    dc.l 0              ;ancien directory
-ada:      dc.l 0              ;adresse des adresses
-adm:      dc.l 0              ;adresse tables souris
-adk:      dc.l 0              ;adresse buffer clavier
-ads:      dc.l 0              ;adresse depart sons
-adc:      dc.l 0              ;adresse command tail
+; must match the layout defined in equates.inc
+vectors:  ds.l 8              ; copy of system vectors
+anc400:   dc.l 0              ; vector 50 herz
+runonly:  dc.w 0              ; flag RUN ONLY or NORMAL
+ronom:    dc.l 0              ; address of *.BAS filename RUN ONLY
+roold:    dc.l 0              ; old directory
+ada:      dc.l 0              ; pointer to TOS adaption vectors
+adm:      dc.l 0              ; pointer to mouse cursor location GCURX/GCURY
+adk:      dc.l 0              ; pointer to keyboard input buffer
+ads:      dc.l 0              ; address of TOS sndtable variable - no longer used
+adc:      dc.l 0              ; command tail - unused 
 runflg:   dc.w 0
-langue:   dc.w 0              ;langue utilisee: 0=GB/1=F/2=D
-foncon:   dc.w 0              ;touches de fonction en route?
-fonction: dc.w 0
-ins:      dc.w 0              ;insertion M/A
-oldi:     dc.w 0              ;ancien INS pendant une touche de fonction
+language: dc.w 0              ; language used: 0=GB/1=F/2=D
+foncon:   dc.w 0              ; function keys active?
+funckey:  dc.w 0              ; current function key being executed
+ins:      dc.w 0              ; insertion M/A
+oldi:     dc.w 0              ; old INS during a function key
 undoflg:  dc.w 0
 remflg:   dc.w 0
-interflg: dc.w 0              ;flag break/interruption/etc...
-ancdb8:   dc.w 0              ;test du contrl/c
-bip:      dc.w 0              ;BIP des touches on/off
-waitcpt:  dc.l 0              ;compteur a rebour: 50 herz
-timer:    dc.l 0              ;compteur timer
-coldflg:  dc.w 0              ;flag demarrage a froid
-shift:    dc.w 0              ;touches de fonction actuellement affichees
-impflg:   dc.w 0              ;flag imprimante en marche
-lbkflg:   dc.w 0              ;liste banques en HEXA ou DECIMAL
-handle:   dc.w 0              ;handle du fichier ouvert
-upperflg: dc.w 0              ;listing en minuscule ou majuscule
-unewpos:  dc.l 0              ;taille de la premiere ligne lors d'unnew
-unewbank: ds.l 16             ;recopie des banques lors de NEW
-unewhi:   dc.l 0              ;debut des banques de donnee
-searchd:  dc.w 0              ;debut du search
-searchf:  dc.w 0              ;fin du search
-mousflg:  dc.w 0              ;anti rebond souris
-inputflg: dc.w 0              ;si INPUT, plus de souris dans KEY!
-inputype: dc.w 0              ;input ou lineinput?
-orinput:  dc.w 0              ;input sur clavier ou fichier?
-oradinp:  dc.l 0              ;si fichier: tampon pour l'adresse
-flginp:   dc.w 0              ;flg pour input: return=13/10 ou caractere
-chrinp:   dc.w 0              ;caractere servant de return pour input #
-autoflg:  dc.w 0              ;auto en marche?
-autostep: dc.w 0              ;STEP de l'auto
-lastline: dc.w 0              ;dernier numero de ligne entr‚
-parenth:  dc.w 0              ;niveau de parentheses
-gotovar:  dc.w 0              ;flag pour les GOTO VARIABLE
-printflg: dc.w 0              ;flag pour SSPRINT
-printpos: dc.l 0              ;recuperation du print apres un menage
+interflg: dc.w 0              ; flag break/interruption/etc...
+ancdb8:   dc.w 0              ; test of contrl/c
+bip:      dc.w 0              ; BEEP keys of on/off
+waitcpt:  dc.l 0              ; countdown: 50 hertz
+timer:    dc.l 0              ; timer counter
+coldflg:  dc.w 0              ; cold start flag
+shift:    dc.w 0              ; currently displayed function keys
+impflg:   dc.w 0              ; flag printer on
+lbkflg:   dc.w 0              ; list of banks in HEXA or DECIMAL
+handle:   dc.w 0              ; open file handle
+upperflg: dc.w 0              ; listing in lowercase or uppercase
+unewpos:  dc.l 0              ; size of the first line when unnew
+unewbank: ds.l 16             ; copy of banks during NEW
+unewhi:   dc.l 0              ; start of data banks
+searchd:  dc.w 0              ; start of search
+searchf:  dc.w 0              ; end of search
+mousflg:  dc.w 0              ; anti bounce mouse
+inputflg: dc.w 0              ; if INPUT, no more mice in KEY!
+inputype: dc.w 0              ; input or lineinput?
+orinput:  dc.w 0              ; input on keyboard or file?
+oradinp:  dc.l 0              ; if file: buffer for the address
+flginp:   dc.w 0              ; flg for input: return = 13/10 or character
+chrinp:   dc.w 0              ; character serving as return for input #
+autoflg:  dc.w 0              ; auto active?
+autostep: dc.w 0              ; auto STEP
+lastline: dc.w 0              ; last line number entered
+parenth:  dc.w 0              ; parentheses level
+gotovar:  dc.w 0              ; flag for GOTO VARIABLE
+printflg: dc.w 0              ; flag for SSPRINT
+printpos: dc.l 0              ; recovery of the print after a household
 printype: dc.w 0              ;     "                  "
 printfile:dc.l 0              ;     "                  "
-usingflg: dc.w 0              ;print using en route???
-sortflg:  dc.w 0              ;flag: sort de findvar
-tokvar:   dc.l 0              ;tokenisation: adresse du flag variable
-varlong:  dc.w 0              ;tokenisation: flag de la variable en question!
-tokch:    dc.l 0              ;tokenisation: adresse du flag chaine
-chlong:   dc.w 0              ;tokenisation: longueur de la chaine
-nboucle:  dc.w 0              ;nombre de boucles ouvertes en ce moment
-tstnbcle: dc.w 0              ;numero de la premiere boucle a tester
-posbcle:  dc.l 0              ;adresse dans la pile des boucles
-tstbcle:  dc.l 0              ;ou commencer a tester lors d'un goto
-posgsb:   dc.l 0              ;adresse dans la pile des gosub
-cptnext:  dc.w 0              ;recherche des FOR/NEXT dans le source
-oldfind:  dc.l 0              ;recherche ancien ligneact
-nbdim:    dc.w 0              ;nombre de dimensions pendant DIM
-scankey:  dc.w 0              ;scancode du dernier inkey
-datastart:dc.l 0              ;address of the line containing the first DATA
-dataline: dc.l 0              ;address of the current data line
-datad:    dc.l 0              ;current data address
+usingflg: dc.w 0              ; print using active ???
+sortflg:  dc.w 0              ; flag: sort of findvar
+tokvar:   dc.l 0              ; tokenization: variable flag address
+varlong:  dc.w 0              ; tokenization: flag of the variable in question!
+tokch:    dc.l 0              ; tokenization: chain flag address
+chlong:   dc.w 0              ; tokenization: length of the chain
+nboucle:  dc.w 0              ; number of loops currently open
+tstnbcle: dc.w 0              ; number of the first loop to test
+posbcle:  dc.l 0              ; address in loop stack
+tstbcle:  dc.l 0              ; or start to test during a goto
+posgsb:   dc.l 0              ; address in the gosub stack
+cptnext:  dc.w 0              ; search for FOR / NEXT in the source
+oldfind:  dc.l 0              ; old line research
+nbdim:    dc.w 0              ; number of dimensions during DIM
+scankey:  dc.w 0              ; scancode of the last inkey
+datastart:dc.l 0              ; address of the line containing the first DATA
+dataline: dc.l 0              ; address of the current data line
+datad:    dc.l 0              ; current data address
 folflg:   dc.w 0
 erroron:  dc.w 0              ;erreur en route?
 onerrline:dc.l 0              ;adresse ou se brancher en cas d'erreur
@@ -1476,7 +1686,7 @@ cold:     move d0,runonly     ;flag NORMAL/RUN ONLY
           move.l adapt_kbiorec(a3),adk    ;adresse clavier
           move.l adapt_sndtable(a3),ads   ;adresse sons
 
-          move.l (sp),vecteurs  ;Adresse de retour
+          move.l (sp),vectors  ;Adresse de retour
           clr.l -(sp)           ;passage en mode SUPERVISEUR
           move.w #$20,-(sp)
           trap #1
@@ -1564,7 +1774,7 @@ cd1:      move.b (a0)+,(a2)+
           clr upperflg        ;listing en minuscule
           clr mnd+14
           move #1,coldflg
-          move #0,langue      ;En Anglais par defaut
+          move #0,language      ;En Anglais par defaut
           clr.b buffer+810    ;Marque la position accessoires charges
           move.w #1,defmod    ;Mode couleur par defaut: 1
 
@@ -1613,8 +1823,8 @@ cf1:      addq.l #2,a6
           move.w d0,db
           move.w (a6)+,d0       ;Pen
           move.w d0,db+2
-; Poke la langue de demarrage
-          move.w (a6)+,langue
+; Poke the boot language
+          move.w (a6)+,language
 ; Poke les touches de fonction
           move.w #20*40-1,d0
           lea buffonc,a0
@@ -1642,7 +1852,7 @@ warm:     lea pile,sp
           beq ok
 ; FIN DU DEPART A FROID
 ; affiche le message de bienvenue
-          tst langue          ;trouve la bonne langue
+          tst language        ;find the right language
           beq.s langgb
           lea w1,a0
           bra.s affwell
@@ -1657,7 +1867,7 @@ affwell:  bsr tcentre
           move.l a5,a1
           bsr transtext
           lea buffer,a0
-          move #18,d7
+          move #W_centre,d7
           trap #3
 ; initialisation des extensions
 cd3:      move.l adext,a5
@@ -1676,7 +1886,7 @@ cd4:      tst.l (a5)
           bsr traduit
           tst runonly
           bne.s cd5
-          moveq #18,d7        ;message de l'extension
+          moveq #W_centre,d7        ;message de l'extension
           trap #3
 cd5:      addq.l #8,a6
           addq.l #4,a5
@@ -1722,15 +1932,15 @@ cd7:      bsr retour           ;Curseur---> en bas
 cf4:      move.l a0,-(sp)
           lea cfld,a0           ;Affiche LOADING
           bsr traduit
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           move.l (sp),a0        ;Affiche le nom du programme
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           move.l (sp),a0
           bsr accldbis
           lea cfef,a0           ;Efface la ligne
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           move.l (sp)+,a0
           add.l #13,a0
@@ -1757,7 +1967,7 @@ cd9:      move.b (a2)+,d0     ;filtre les codes de fonction
 cd10:     move.b #'"',(a0)+
           move.b #'`',(a0)+
           clr.b (a0)
-          move.w #40*20+1,fonction
+          move.w #40*20+1,funckey
           bra boucle
 
 ; AUTOEXEC.BAS sur la disquette? si oui, ecrit RUN...
@@ -1770,7 +1980,7 @@ cd11:     bsr setdta
           lea 40*20+buffonc,a0
 cd12:     move.b (a2)+,(a0)+
           bne.s cd12
-          move.w #40*20+1,fonction
+          move.w #40*20+1,funckey
           bra boucle
 
 ; BOUCLE D'ATTENTE DE L'INTERPRETEUR
@@ -1780,7 +1990,7 @@ ok:       lea pile,sp         ;RESET de la pile
           tst runonly         ;RUN ONLY: revient au systeme!
           bne sysbis
           lea ready,a0
-          move #1,d7
+          move #W_prtstring,d7
           trap #3             ;affichage du OK
 
 boucle:   lea pile,sp         ;RESET de la pile
@@ -1802,23 +2012,23 @@ bc1:      clr undoflg
           move d0,-(sp)
           tst ins
           bne.s bc8           ;insertion automatique
-          moveq #17,d7
+          moveq #W_coordcurs,d7
           trap #3             ;ramene la position du curseur
           move d0,d1
           swap d0
-          moveq #5,d7         ;caractere sous le curseur
+          moveq #W_tstscreen,d7         ;caractere sous le curseur
           trap #3
           cmp.b #255,d0
           bne.s bc9
-bc8:      moveq #20,d7        ;appel de AUTOINS (#20)
+bc8:      moveq #W_autoins,d7        ;appel de AUTOINS (#20)
           move (sp)+,d0
           trap #3
           bra boucle
 bc9:      move (sp)+,d0
-bc10:     clr d7              ;affichage du caractere
+bc10:     move.w #W_chrout,d7              ;affichage du caractere
           trap #3
           bra.s boucle
-bc11:     moveq #21,d7        ;fonction #21: JOIN
+bc11:     moveq #W_join,d7        ;function #21: JOIN
           trap #3
           bra boucle
 ; traitement special des fonctions: d1=code de celle ci
@@ -1830,7 +2040,7 @@ special:  andi.w #$7f,d1
           bra boucle
 
 ; SAVECT: SAVE EXCEPTIONAL VECTORS / START OF INTERRUPTS
-savect:   lea vecteurs+4,a6   ;pile deja stockee
+savect:   lea vectors+4,a6   ;pile deja stockee
           move.l $8,(a6)+     ;puis BUS ERROR
           move.l $c,(a6)+     ;puis ADRESS ERROR
           move.l $404,(a6)+   ;puis CRITICAL ERROR
@@ -1845,7 +2055,7 @@ savect:   lea vecteurs+4,a6   ;pile deja stockee
           moveq #30,d0        ;init INTERRUPTIONS TRAPPE #5
           lea interflg,a0     ;flag DOIT ACTUALISER
           trap #5
-          moveq #15,d7        ;init INTERRUPTIONS TRAPPE #3
+          moveq #W_startinter,d7        ;init INTERRUPTIONS TRAPPE #3
           trap #3
           moveq #7,d0         ;init INTERRUPTIONS TRAPPE #7
           trap #7
@@ -1859,7 +2069,7 @@ critic:   rts                   ;critical error pointe sur RTS
 loadvect: move.l anc400,$400
           moveq #8,d0         ;arret interruptions de la trappe #7
           trap #7
-          moveq #7,d7         ;arret interruptions de la trappe #3
+          moveq #W_stopinter,d7         ;arret interruptions de la trappe #3
           trap #3
           moveq #31,d0        ;arret interruptions de la trappe #5
           trap #5
@@ -1873,7 +2083,7 @@ loadvect: move.l anc400,$400
           jsr vdi
           move.l buffer,$84   ;remet la vraie trappe
 ; remet tout le reste
-          lea vecteurs+4,a6
+          lea vectors+4,a6
           move.l (a6)+,$8     ;remet BUS ERROR
           move.l (a6)+,$c     ;remet ADRESS ERROR
           move.l (a6)+,$404   ;remet CRITICAL ERROR
@@ -1905,7 +2115,7 @@ system:   tst.b (a6)
 sysbis:   bsr clause          	;Ferme tous les fichiers!
 	bsr stopext		;Arrete les extensions
           bsr loadvect        	;Remet les vecteurs
-          move.l vecteurs,a0
+          move.l vectors,a0
 	move.l deflog,sp		;Restore la pile de merde
 	lea -12(sp),sp
 	jmp (a0)
@@ -1913,7 +2123,7 @@ sysbis:   bsr clause          	;Ferme tous les fichiers!
 ; SURE (Y/N): retour BEQ= OUI / BNE= NON
 sure:     jsr clearkey
           lea ct,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
 se:       bsr incle
           tst.l d0
@@ -1995,7 +2205,7 @@ defaut:   movem.l d1-d7/a0,-(sp)
           move (a0)+,d6       ;pen
           swap d6
           move (a0),d6        ;paper
-          move #6,d7
+          move #W_initwind,d7
           trap #3
           movem.l (sp)+,d1-d7/a0
           rts
@@ -2003,7 +2213,7 @@ defaut:   movem.l d1-d7/a0,-(sp)
 ; AFFICHAGE TEXTE CENTRE POINTE PAR A0
 tcentre:  cmp.b #255,(a0)
           beq.s tc1
-          move #18,d7
+          move #W_centre,d7
           trap #3
           bra.s tcentre
 tc1:      rts
@@ -2033,13 +2243,13 @@ ev2:      rts
 
 ; RETOUR CHARIOT
 retour:   lea rchar,a0
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           rts
 
 ; Fonction speciale: RETURN
 return:   clr undoflg
-          move #11,d7         ;ne teste pas si la ligne est tronquee!
+          move #W_getbuffer,d7         ;ne teste pas si la ligne est tronquee!
           lea buffer,a0
           move #510,d0
           trap #3             ;rempli le buffer et met le curseur
@@ -2055,12 +2265,12 @@ insere:   clr undoflg
           bne.s ains
 ; MISE EN ROUTE insertion
 mins:     move #1,ins
-          moveq #23,d7
+          moveq #W_largecursor,d7
           trap #3
           rts
 ; ARRET insertion
 ains:     clr ins
-          moveq #22,d7
+          moveq #W_smallcursor,d7
           trap #3
           rts
 
@@ -2079,7 +2289,7 @@ ud1:      clr undoflg
 ud2:      rts
 
 ; TEST DES TOUCHES ET DES TOUCHES DE FONCTION
-key:      move fonction,d0
+key:      move funckey,d0
           beq.s k0
           subq #1,d0
           lea buffonc,a0
@@ -2088,15 +2298,15 @@ key:      move fonction,d0
           cmp.b #'`',d0
           beq.s fct1
           clr d1
-          addq.w #1,fonction
+          addq.w #1,funckey
           rts
 fct1:     move.b #13,d0       ;ascii: return
           move.b #$80,d1      ;special: return
-          clr fonction
+          clr funckey
           tst.w oldi          ;remet ou non l'insertion
           bne mins
           rts
-fct2:     clr fonction
+fct2:     clr funckey
           tst.w oldi
           beq.s k0
           bsr mins
@@ -2171,7 +2381,7 @@ k6:       clr d1
           subi.w #32,d1          ;appui sur une touche de fonction
 k9:       mulu #40,d1
           addq #1,d1
-          move d1,fonction
+          move d1,funckey
           move ins,oldi ;ancienne insertion
           bsr ains            ;plus d'insertion (ca fait nul !!!)
           bra key             ;commence a lire la table
@@ -2201,11 +2411,11 @@ affonc:   move.l a5,-(sp)
           bne af10        ;les menus sont actives!
           tst foncon
           beq af10        ;les touches ne sont pas en route!
-          move #13,d7
+          move #W_getcurwindow,d7
           trap #3             ;getcourante
           move d0,-(sp)
           move #15,d0
-          move #16,d7
+          move #W_qwindon,d7
           trap #3             ;activation rapide: windon #15
           lea defloat,a5
           move.b #30,(a5)+    ;Home
@@ -2265,10 +2475,10 @@ af9:      cmp.w #11,d1
           bne af5
           clr.b (a5)
           lea defloat,a0      ;affichage rapide de toutes les touches
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           move (sp)+,d0
-          move #16,d7
+          move #W_qwindon,d7
           trap #3             ;reactivation rapide de la fenetre de travail
 af10:     move.l (sp)+,a5
           rts
@@ -2475,7 +2685,7 @@ hb4:      dbra d2,hb1
 
 ; CONVERSION D'UN CHIFFRE FLOAT (d3/d4) EN ASCII ---> (a5), FIX=d0
 strflasc: movem.l d0/a0/a1,-(sp)	;Teste le signe
-	move.w #$ff01,d0		;SI >=0 ---> espace
+	move.w #F_getsgn,d0		;SI >=0 ---> espace
 	trap #6
 	tst.w d0
 	bmi.s sfl
@@ -2494,7 +2704,7 @@ floatasc: move.l d3,d1
           move (sp)+,d4
 ; entree pour la tokenisation
 dtokfl:   lea defloat,a0      ;buffer d'ecriture du float
-          moveq #$c,d0
+          moveq #F_ftoa,d0
           trap #6
           tst d4
           bmi.s p0b
@@ -2567,7 +2777,7 @@ affauto:  clr.l d0
           move.b #32,(a5)+
           clr.b (a5)
           lea buffer,a0
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           rts
 
@@ -2611,9 +2821,9 @@ so6:      bne.s so7           ;essai du token
 ; Passe au token suivant
 so7:      move.b (a3)+,d1
           bpl.s so7
-so8:      cmp.b #$a0,d1       ;code d'extention
+so8:      cmp.b #T_extinst,d1       ;code d'extention
           beq.s so9
-          cmp.b #$b8,d1
+          cmp.b #T_extfunc,d1
           bne.s sstok         ;reinitialise le pointeur sur la lettre
 so9:      addq.l #1,a3
           bra sstok
@@ -2706,26 +2916,26 @@ t9:       addq.l #4,a1
 ; token extension TROUVE! PAIR: instruction, IMPAIR:fonction
 t10:      btst #0,d1
           bne.s t11
-          move.b #$a8,(a5)+   ;token .EXT instructions
+          move.b #T_extensioninst,(a5)+   ;token .EXT instructions
           bra.s t12
-t11:      move.b #$c0,(a5)+   ;token .EXT fonctions
+t11:      move.b #T_extensionfunc,(a5)+   ;token .EXT fonctions
 t12:      move.b d2,(a5)+     ;numero de l'extension
           move.b d1,(a5)+     ;puis token
           clr d1
           bra.s t18b          ;va tout finir
 ; Token normal trouve! le poke
 t17:      move.b d1,(a5)+
-          cmp.b #$8a,d1       ;est-ce une REM?
+          cmp.b #T_rem,d1       ;est-ce une REM?
           bne.s pasrem
           bset #0,d5          ;oui: on saisit tout ce qui suit!
-pasrem:   cmp.b #$a0,d1       ;est-ce un token d'extention?
+pasrem:   cmp.b #T_extinst,d1       ;est-ce un token d'extention?
           beq.s t17a
-          cmp.b #$b8,d1
+          cmp.b #T_extfunc,d1
           bne.s t18
 t17a:     move.b (a3)+,(a5)+  ;oui: on poke le code d'extention
-t18:      cmp.b #$98,d1       ;est-ce un token a branchement?
+t18:      cmp.b #T_goto,d1       ;est-ce un token a branchement?
           bcs.s t18b
-          cmp.b #$a0,d1
+          cmp.b #T_repeat+1,d1
           bcc.s t18b
           clr.l d0            ;laisse la place pour l'adresse
           bsr pokepair
@@ -2735,7 +2945,7 @@ t18b:     move.l a4,a6        ;change le pointeur CHRGET
           clr d0              ;variable a fermer!
           bra tikd
 t18c:     bclr #4,d5
-          cmp.b #$c9,d1       ;est le token de FN?
+          cmp.b #T_fn,d1       ;est le token de FN?
           bne btoken
           bset #4,d5
           bra btoken
@@ -3136,15 +3346,15 @@ dt10:     cmp.b #$ea,d1       ;si operateur avant: pas d'espace
           tst.b d1            ;si fonction ET lettre avant: pas d'espace
           beq.s dt10aa
 dt10ac:   move.b #32,(a5)+    ;espace!
-dt10aa:   cmp.b #$8a,d0
+dt10aa:   cmp.b #T_rem,d0
           bne.s dt10ab
           move #1,remflg      ;si une REM: doit TOUT afficher apres!!!
 dt10ab:   move.b d0,d1
-          cmp.b #$a0,d0       ;est-ce un token etendu?
+          cmp.b #T_extinst,d0       ;est-ce un token etendu?
           bne.s dt10a
           lea tokext,a4       ;instruction etendue
           bra.s dt10b
-dt10a:    cmp.b #$b8,d0       ;fonction etendue?
+dt10a:    cmp.b #T_extfunc,d0       ;fonction etendue?
           bne.s dt11
           lea foncext,a4
 dt10b:    move.b (a6)+,d0     ;prend le second code
@@ -3161,9 +3371,9 @@ dt10d:    move.b -(a4),d0
           addq.l #1,a4
           bra dt15
 ; est-ce une .EXT?
-dt11:     cmp.b #$a8,d1       ;instruction .EXT
+dt11:     cmp.b #T_extensioninst,d1       ;instruction .EXT
           beq.s dt11y
-          cmp.b #$c0,d1       ;fonction .EXT
+          cmp.b #T_extensionfunc,d1       ;fonction .EXT
           bne dt11z
 dt11y:    addq.l #2,a6        ;saute l'extension
           clr d0
@@ -3282,7 +3492,7 @@ impretour:lea rchar,a0
 ; SORT SUR ECRAN OU IMPRIMANTE UNE CHAINE
 impchaine:tst impflg
           bne.s ip
-          move #1,d7          ;sur l'ecran!
+          move #W_prtstring,d7          ;sur l'ecran!
           trap #3
           jmp avantint        ;teste les interruptions et revient!
 ; sortie sur imprimante
@@ -3474,13 +3684,13 @@ renum15:  tst.w (a0)
 renum16:  move.b (a1)+,d0
           beq.s renum19
           bpl.s renum16
-          cmp.b #$a0,d0
+          cmp.b #T_extinst,d0
           beq.s renum17
-          cmp.b #$b8,d0
+          cmp.b #T_extfunc,d0
           beq.s renum17
-          cmp.b #$a8,d0
+          cmp.b #T_extensioninst,d0
           beq.s renum16a
-          cmp.b #$c0,d0
+          cmp.b #T_extensionfunc,d0
           bne.s renum18
 renum16a: addq.l #1,a1
 renum17:  addq.l #1,a1
@@ -3661,7 +3871,7 @@ sh2:      clr d0              ;trouve le premier
           beq.s sh0
 ;trouv‚!
           lea buffer,a0
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           bsr retour
           bra ok
@@ -3742,7 +3952,7 @@ ex11:     add (a6),a6         ;ligne suivante
           bra braik
 ; ne peut pas changer la ligne!
 ex12:     lea cantex,a0
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           bsr detok           ;remet la ligne
           lea buffer,a0       ;va l'afficher
@@ -4127,7 +4337,7 @@ sg3:      move.b (a1)+,(a2)+  ;folder STOS\ ajoute a NAME1
 ; message
           lea prgmes,a0
           bsr traduit
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3             ;introduce and press...
           bsr clearkey
           bsr waitkey         ;attend
@@ -4365,7 +4575,7 @@ lz8:      addq.l #1,a0
 lz5:      move.l d1,-(sp)
           clr.b -1(a0)
           lea buffer,a0         ;va afficher la chaine
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           bsr retour            ;retour chariot
           lea buffer,a0
@@ -4475,7 +4685,7 @@ npic3:    tst.b (a2)+
           clr.l d0            ;pas trouvee!
           rts
 
-; LOAD "xx.NEO/.PI1/.PI2/.PI3"[,adecran[,0]]: SCREEN LOAD
+; LOAD "xx.NEO/.PI1/.PI2/.PI3"[,adscreen[,0]]: SCREEN LOAD
 picload:  move.l adback,a0    ;par defaut: dans le decor des sprites
           clr d1              ; "    "   : poke la palette
           bsr finie
@@ -4484,7 +4694,7 @@ picload:  move.l adback,a0    ;par defaut: dans le decor des sprites
           bne syntax
           movem.l d0-d1,-(sp)
           bsr expentier
-          bsr adecran
+          bsr adscreen
           movem.l (sp)+,d0-d1
           move.l d3,a0
           bsr finie
@@ -4550,7 +4760,7 @@ pokpal1:  move.w (a3)+,(a0)+
           trap #5             ;SPREAFF
 picldfin: rts
 
-; SAVE "aa.NEO/.PI1/.PI2/.PI3"[,adecran]: SCREEN SAVE
+; SAVE "aa.NEO/.PI1/.PI2/.PI3"[,adscreen]: SCREEN SAVE
 picsave:  move.l adback,d3    ;par defaut: adresse du decor
           bsr finie
           beq pics1
@@ -4558,7 +4768,7 @@ picsave:  move.l adback,d3    ;par defaut: adresse du decor
           bne syntax
           movem.l d0/d3,-(sp)
           bsr expentier
-          bsr adecran
+          bsr adscreen
           movem.l (sp)+,d0/d1
 pics1:    move d0,d4          ;ouvre le fichier sur la disquette
           clr d0
@@ -5141,7 +5351,7 @@ getf2:    tst.l d3
           bhi foncall
           subq #1,d3
           mulu #tfiche,d3
-          lea fichiers,a2
+          lea filetab,a2
           add d3,a2
           move.w fhmode(a2),d0
           rts
@@ -5321,7 +5531,7 @@ klos1:    bsr expentier
           bra.s cs1             ;va fermer, puis revient
 ; CLAUSE: FERME TOUS LES FICHIERS
 clause:   bsr close           ;va fermer le fichier systeme
-          lea fichiers,a2
+          lea filetab,a2
           moveq #10-1,d2
 cs1:      move.w fhmode(a2),d0
           beq.s cs4
@@ -5474,11 +5684,11 @@ field0:   move d1,d0          ;nettoie la definition de la fiche
 field1:   movem.l d2/d7/a2,-(sp)
           bsr expentier
           move.l d3,-(sp)
-          cmp.b #$a0,(a6)+
+          cmp.b #T_extinst,(a6)+
           bne syntax
-          cmp.b #$d3,(a6)+    ;token de AS
+          cmp.b #T_exti_as,(a6)+    ;token de AS
           bne syntax
-          cmp.b #$fa,(a6)+    ;veut une variable
+          cmp.b #T_var,(a6)+    ;veut une variable
           bne syntax
           lea bufcalc,a3
           bsr findvar
@@ -5671,7 +5881,7 @@ dirinst:  cmp.b #$f1,(a6)+
           bne diskerr
           rts
 
-; DIR$ en fonction
+; DIR$ function
 fndir:    move.l #128,d3
           bsr demande         ;longueur de la chaine
           addq.l #2,a0
@@ -6222,13 +6432,13 @@ norminv:  tst d1
           bne.s fsinv
 fsnorm:   movem.l d0/d7/a0,-(sp)
           moveq #0,d7
-          moveq #18,d0
+          moveq #W_centre,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
 fsinv:    movem.l d0/d7/a0,-(sp)
           moveq #0,d7
-          moveq #21,d0
+          moveq #W_join,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
@@ -6236,9 +6446,9 @@ fsinv:    movem.l d0/d7/a0,-(sp)
 ; memorise le curseur
 memocurs: movem.l d0/d7/a0,-(sp)
           moveq #0,d7
-          moveq #20,d0
+          moveq #W_autoins,d0
           trap #3
-          moveq #17,d7
+          moveq #W_coordcurs,d7
           trap #3
           move.l d0,fsd+10
           movem.l (sp)+,d0/d7/a0
@@ -6249,9 +6459,9 @@ remetcurs:movem.l d0/d7/a0,-(sp)
           move.l fsd+10,d0
           move d0,d1
           swap d0
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
-          moveq #0,d7
+          moveq #W_chrout,d7
           moveq #17,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
@@ -6264,28 +6474,28 @@ writepos: movem.l d0-d7/a0-a2,-(sp)
           add d2,a2
           move.l a0,a1
           move d0,d2
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3             ;locate
           move d2,d0
-          moveq #35,d7
+          moveq #W_xgraphic,d7
           trap #3
           move d0,(a2)+       ;fixe DX
           move d1,d0
-          moveq #36,d7
+          moveq #W_ygraphic,d7
           trap #3
           move d0,(a2)+       ;fixe DY
           move.l a1,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3             ;imprime le mot
-          moveq #17,d7
+          moveq #W_coordcurs,d7
           trap #3
           move d0,d1
           swap d0
-          moveq #35,d7
+          moveq #W_xgraphic,d7
           trap #3
           move d0,(a2)+       ;fixe FX
           move d1,d0
-          moveq #36,d7
+          moveq #W_ygraphic,d7
           trap #3
           cmpi.w #2,mode
           bne.s wrtp1
@@ -6320,7 +6530,7 @@ pathaff:  bsr memocurs
           lea 7*8+fstext,a0
           move.w 4(a0),d0     ;locate
           move.w 6(a0),d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           bsr fndrive         ;cherche le disque courant
           lea name1,a0
@@ -6338,7 +6548,7 @@ ph1:      tst.b (a1)+
           bne.s ph1
           move.b #"\",-1(a1)
           clr.b (a1)
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           lea name2,a0     ;affiche le filtre
           trap #3
@@ -6377,13 +6587,13 @@ da3:      lea fsdriv,a2
           add d0,a2
           move 0(a2),d0
           move 2(a2),d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3             ;locate
           bsr fsnorm
           move fsd+22,d0
           moveq #3,d1
           moveq #3,d2
-          moveq #39,d7
+          moveq #W_box,d7
           trap #3             ;cadre
           moveq #0,d1
           cmp d3,d5
@@ -6440,7 +6650,7 @@ locnom:   movem.l d0/d1/d7/a0,-(sp)
           move.w 4(a0),d0
           add fsd+16,d0
           move.w 6(a0),d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           clr fsd+14
           movem.l (sp)+,d0/d1/d7/a0
@@ -6463,7 +6673,7 @@ lp1:      tst.b (a0)+
           moveq #1,d1
           subi.w #32,d0
 lp2:      add.w 6(a1),d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           move #1,fsd+14
           movem.l (sp)+,d0/d1/d7/a0/a1
@@ -6553,36 +6763,36 @@ fs3c:     clr.l (a0)+
           move.w valpen,d6    ;pen
           swap d6
           move.w valpaper,d6  ;paper
-          moveq #6,d7         ;initwind
+          moveq #W_initwind,d7         ;initwind
           trap #3
           tst d0
           beq.s fs4
           jmp winderr
 fs4:      moveq #0,d7
-          moveq #20,d0        ;arret curs
+          moveq #W_autoins,d0        ;arret curs
           trap #3
-          moveq #25,d0        ;scroll off
+          moveq #W_currwindow,d0        ;scroll off
           trap #3
           tst fsd+24           ;imprime le titre
           bne.s fs4a
           lea fst,a0
           bsr traduit
-          moveq #18,d7
+          moveq #W_centre,d7
           trap #3
           bra.s fs4b
 fs4a:     lea fsbuff,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
 fs4b:     lea fsc,a2      ;imprime les cadres
           moveq #5,d3
 fs5:      move.w (a2)+,d0
           move.w (a2)+,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           move.w (a2)+,d1
           move.w (a2)+,d2
           move.w fsd+22,d0
-          moveq #39,d7
+          moveq #W_box,d7
           trap #3
           dbra d3,fs5
           clr d0
@@ -6618,7 +6828,7 @@ fswait:   tst.b interflg
           bclr #0,interflg
           beq.s fs9
           moveq #13,d0
-          moveq #9,d7
+          moveq #W_delwindow,d7
           trap #3             ;efface la fenetre
           bsr ufz1            ;remet tout en route!
           jmp braik           ;et fait le break
@@ -6704,7 +6914,7 @@ fs19b:    tst d1              ;backspace
           move.b 0(a1,d1.w),d2
           move.b #32,0(a1,d1.w)
           lea fsr,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           cmp.b #32,d2
           beq.s fs19b
@@ -6717,7 +6927,7 @@ fs19g:    cmp.w #8,d1
           beq fs19h
           move.b #32,0(a1,d1.w)
           moveq #32,d0
-          moveq #0,d7
+          moveq #W_chrout,d7
           trap #3
           addq #1,d1
           bra fs19g
@@ -6744,7 +6954,7 @@ fs19f:    cmp.w #12,d1
           move.b d0,0(a1,d1.w)
           addq #1,d1
           move d1,fsd+16
-          moveq #0,d7
+          moveq #W_chrout,d7
           trap #3
           bra fswait
 ; dans le path
@@ -6758,7 +6968,7 @@ fs19p:    lea name2,a1
           move d1,fsd+18
           clr.b 0(a1,d1.w)
           lea fsr,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           bra fswait
 fs19q:    cmp.b #97,d0
@@ -6790,7 +7000,7 @@ fs19s:    cmp.w #12,d1
           addq #1,d1
  	clr.b 0(a1,d1.w)
           move d1,fsd+18
-          moveq #0,d7
+          moveq #W_chrout,d7
           trap #3
           bra fswait
 
@@ -6875,7 +7085,7 @@ fs24:     cmp.w #4,d1
           bne fs25
 ; QUIT
 fs24a:    moveq #13,d0
-          moveq #9,d7
+          moveq #W_delwindow,d7
           trap #3             ;efface la fenetre
           bsr ufz1            ;remet tout en route!
           jmp mid9            ;chaine vide, et revient!
@@ -6884,7 +7094,7 @@ fs25:     cmp.w #5,d1
           bne fs26
 ; RETURN
 fs25c:    moveq #13,d0
-          moveq #9,d7
+          moveq #W_delwindow,d7
           trap #3
           moveq #12,d3
           jsr demande
@@ -6991,7 +7201,7 @@ fs29g:    move.b d0,(a1)+
           clr.b (a1)
           move.w d2,fsd+16
           lea fsname,a0       ;reaffiche
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           bsr locnom          ;curseur a la fin du nom
           cmp.w #12,d3
@@ -7049,17 +7259,17 @@ clickfen: subi.w #10,d1            ;d1: numero fenetre de 1->4
 clck1:    moveq #20,d0
           trap #5
 	move.l d1,d2
-	moveq #37,d7
+	moveq #W_xtext,d7
 	trap #3
 	tst.w d0
 	bmi boucle
 	exg d0,d2
-	moveq #38,d7
+	moveq #W_ytext,d7
 	trap #3
 	tst.w d0
 	bmi boucle
  	move d0,d1
-	moveq #17,d7        ;coordonnees actuelles du curseur
+	moveq #W_coordcurs,d7        ;coordonnees actuelles du curseur
           trap #3
           cmp d0,d1           ;si l'on clique au meme endroit
           bne.s clck4
@@ -7067,7 +7277,7 @@ clck1:    moveq #20,d0
           cmp d0,d2
           beq return          ;alors RETURN
 clck4:    move d2,d0
-          move #2,d7
+          move #W_locate,d7
           trap #3             ;locate! super!
           bra boucle
 
@@ -7155,7 +7365,7 @@ ml1c:     move program,d0
           move.b d0,errmult2
           lea errmult,a0
           bsr traduit
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           lea errmult2,a0
           trap #3
@@ -7186,7 +7396,7 @@ chge1:    clr d0              ;effectue le changement d'ecran
           tst d0
           beq.s chge2
           move d1,d0
-          move #8,d7
+          move #W_windon,d7
           trap #3
 chge2:    dbra d2,chge1
 chge3:    movem (sp)+,d0-d1    ;active la fenetre d0
@@ -7196,7 +7406,7 @@ chge3:    movem (sp)+,d0-d1    ;active la fenetre d0
           move (sp)+,d0
 ;activation rapide fenetre d0
 chge4:    move d0,fenetre
-          moveq #16,d7
+          moveq #W_qwindon,d7
           trap #3
           eori.w #1,ins    ;provoque le REENVOI de la taille du curseur
           bsr insere
@@ -7252,7 +7462,7 @@ poshelp:  lea tposhelp,a0
           add d0,a0
           move.b (a0)+,d0
           move.b (a0),d1
-          move #2,d7
+          moveq #W_locate,d7
           trap #3
 ;positionnne a3 et a4 sur les pointeurs fenetre/programme!
 pospoint: lea defloat,a3
@@ -7276,7 +7486,7 @@ helprg:   movem.l d4/d5/a4,-(sp)
           clr d5
           bsr poshelp         ;curseur en dessous de SIZE
           lea effsize,a0
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3
           bsr poshelp
           move d4,d1
@@ -7290,7 +7500,7 @@ helprg:   movem.l d4/d5/a4,-(sp)
           move (sp)+,d4
           clr.b (a5)
           lea defloat,a0
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3             ;affiche le chiffre
           bra.s hp3
 ;affiche et poke les numeros de ligne
@@ -7314,7 +7524,7 @@ hp4:      move.l a3,a5
           bsr longdec
           move (sp)+,d4
 hp5:      move.l a3,a0
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3
           cmp.w #4,d5
           bne.s hp3
@@ -7337,7 +7547,7 @@ rep2:     move d4,d5
 ;EFFACE LA LIGNE OU SE TROUVE LE CURSEUR
 lignen:   movem d4-d5,-(sp)
           move #18,d0         ;retour a la normale
-          clr d7
+          move.w #W_chrout,d7
           trap #3
           bsr helprg2         ;reaffiche la ligne
           movem (sp)+,d4-d5
@@ -7352,7 +7562,7 @@ help:     clr undoflg
           bne boucle
           bsr stopall
           bsr putchar         ;remet les caracteres !!!
-          moveq #13,d7
+          moveq #W_getcurwindow,d7
           trap #3             ;get courante
           move d0,avanthelp   ;sauve pour retablir apres le help!
 ; fait apparaitre la fenetre
@@ -7363,33 +7573,33 @@ help:     clr undoflg
           lea helptext,a0
           bsr tcentre         ;affiche le fond
           bra.s hc5
-hc1:      moveq #8,d7         ;Deja cree! l'active!
+hc1:      moveq #W_windon,d7         ;Deja cree! l'active!
           moveq #14,d0
           trap #3             ;activation de la fenetre #14
-; affiche le texte dans la bonne langue
+; display the text in the correct language
 hc5:      clr d0
           moveq #2,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           lea thelp2,a0
           bsr traduit
-          moveq #18,d7
+          moveq #W_centre,d7
           trap #3             ;entete du tableau
           clr d0
           moveq #10,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           lea thelp3,a0
           bsr traduit
-          moveq #18,d7
+          moveq #W_centre,d7
           trap #3             ;Basic accessorie loaded
           clr d0
           moveq #16,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           lea thelp4,a0
           bsr traduit
-          moveq #18,d7
+          moveq #W_centre,d7
           trap #3             ;remaining memory
           clr d4
 hlp1:     bsr helprg          ;affiche les donnees des 4 programmes
@@ -7401,7 +7611,7 @@ hlp1:     bsr helprg          ;affiche les donnees des 4 programmes
           moveq #4,d4
 hd1:      clr.l d5
 hd2:      bsr poshelp         ;va positionner le curseur
-          clr d7
+          move.w #W_chrout,d7
           move #7,d2
 hd3:      move.b (a2)+,d0     ;affiche le nom
           trap #3
@@ -7422,7 +7632,7 @@ hd3:      move.b (a2)+,d0     ;affiche le nom
           bsr longdec
           clr.b (a5)
           lea defloat,a0
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3
 ;saisie des numeros de ligne
           move program,d4     ;pointe au debut sur le programme EDITE!
@@ -7430,18 +7640,18 @@ hd3:      move.b (a2)+,d0     ;affiche le nom
 
 hlp3:     clr d0
           clr d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3
           lea thelp1,a0
           bsr traduit
-          moveq #18,d7
+          moveq #W_centre,d7
           trap #3
           move d4,d0
           addi.w #49,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3             ;affiche prg edited #, centre.
           move #21,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3
           bsr helprg2         ;affiche la ligne en inverse
 
@@ -7496,14 +7706,14 @@ hlp6:     cmp.b #$4b,d1       ;gauche?
           beq hlp5
           move.b d0,(a3)+     ;stocke et affiche le caractere
           addq #1,d3
-          clr d7
+          move.w #W_chrout,d7
           trap #3
           bra hlp5
 ;backspace
 hlp16:    tst d3
           beq hlp5
           move #3,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3
           move #32,d0
           trap #3
@@ -7614,10 +7824,10 @@ finhelp:  bsr lignen          ;effacement ligne courante
 finhh1:   tst.w (a0)+         ;pointe la bonne table
           bpl.s finhh1
           dbra d0,finhh1
-finhh2:   moveq #27,d7
+finhh2:   moveq #W_actcache,d7
           trap #3             ;affiche tout l'ecran
           move.w avanthelp,d0
-          moveq #16,d7
+          moveq #W_qwindon,d7
           trap #3             ;active rapidement la fenetre d'avant HELP
 ; LANCE L'ACCESSOIRE
           tst accflg
@@ -7629,7 +7839,7 @@ finhh2:   moveq #27,d7
           lea pile,sp
           bra lignesvt
 ; RETOUR D'UN ACCESSOIRE
-retacc:   move #9,d7          ;efface toutes les autres fenetres
+retacc:   moveq #W_delwindow,d7          ;efface toutes les autres fenetres
           move #8,d6
 retacc1:  move d6,d0
           trap #3
@@ -7668,7 +7878,7 @@ edit4:    clr d0              ;pas besoin de reafficher!
           bra boucle
 
 ; WINDCOPY
-windcopy: move #12,d7
+windcopy: moveq #W_hardcopy,d7
           trap #3
           tst d0
           bne prtnotr
@@ -7680,19 +7890,19 @@ hardcopy: move.w #20,-(sp)
           addq.l #2,sp
           rts
 
-; TROUVE LA PHRASE DANS LA LANGUE CHOISIE (EN A0)
-traduit:  tst langue
+; FIND THE SENTENCE IN THE CHOSEN LANGUAGE (IN A0)
+traduit:  tst language
           beq.s trad2
 trad1:    tst.b (a0)+
           bne.s trad1
 trad2:    rts
 
 ; ENGLISH
-english:  clr langue
+english:  clr language
           rts
 
 ; FRANCAIS
-francais: move #1,langue
+francais: move #1,language
           rts
 
 ;-----------------------------------------    --- ----- ---   ---    -------
@@ -7772,13 +7982,13 @@ o1:       move (a0),d1
           move #4,d0
 o2:       move.b 0(a0,d0.w),d2
           bpl o8
-          cmp.b #$a0,d2       ;instruction etendue?
+          cmp.b #T_extinst,d2       ;instruction etendue?
           beq.s ob
-          cmp.b #$b8,d2       ;fonction etendue?
+          cmp.b #T_extfunc,d2       ;fonction etendue?
           beq.w o7
-          cmp.b #$a8,d2       ;.EXT instruction
+          cmp.b #T_extensioninst,d2       ;.EXT instruction
           beq.w o6a
-          cmp.b #$c0,d2       ;.EXT fonction
+          cmp.b #T_extensionfunc,d2       ;.EXT fonction
           beq.s o6a
           cmp.b #$fa,d2       ;vaoiable ou nomboe
           bcc.s o3
@@ -8080,12 +8290,12 @@ folprg:   tst runflg
           bhi chr3
 ; ok! affiche tout!
           movem.l d0-d6/a0-a6,-(sp)
-          moveq #17,d7
+          moveq #W_coordcurs,d7
           trap #3
           move.l d0,-(sp)               ;sauve les coordonnes du curseur!
           lea fl,a0
           bsr traduit
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3                       ;affiche LINE
           clr.l d0
           move.w 2(a5),d0               ;numero de ligne
@@ -8093,7 +8303,7 @@ folprg:   tst runflg
           bsr longdec
           clr.b (a5)
           lea buffer,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           lea fl1,a0                ;" : "
           trap #3
@@ -8116,7 +8326,7 @@ folp2:    move.b (a1),d0
 folp3:    move.b (a1)+,(a0)+
           dbra d0,folp3
           clr.b (a0)
-          moveq #1,d7                   ;affiche le nom de la variable
+          moveq #W_prtstring,d7                   ;affiche le nom de la variable
           lea buffer,a0
           trap #3
           lea fl2,a0
@@ -8126,24 +8336,24 @@ folp3:    move.b (a1)+,(a0)+
           clr printflg
           bsr finprint                  ;print: retour normal!
           lea buffer,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3                       ;affiche le contenu
           move.l (sp)+,a0
           andi.l #$ff000000,(a0)         ;efface le flag de la variable!!!
           tst.b (a6)                    ;le point virgule est pris par PRINT
           beq.s folp5
           lea fl3,a0                ;", "
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           bra folp1
 ; SORTIE NORMALE: remet a6 et le curseur
 folp5:    lea fl4,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           move.l (sp)+,d0
           move d0,d1                    ;Y en d1
           swap d0                       ;X en d0
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3                       ;locate!
 folp6:    bsr avantint
           bsr incle
@@ -8228,7 +8438,7 @@ fv11:     move.l lowvar,a1
           bra.s fv15
 fv13:  	movem.l d3/d4,-(sp)	 	;Va demander le ZERO
 	movem.l a0/a1,-(sp)
-	move.w #$ff05,d0
+	move.w #F_zero,d0
 	trap #6
 	movem.l (sp)+,a0/a1
 	move.l d4,-(a1)
@@ -8413,7 +8623,7 @@ dim5:     lsr.l #2,d3         ;travaille par mot longs
 	bmi.s dim6
 ; Init tableau FLOAT ---> demande le vrai ZERO
 	movem.l a0-a1/d3-d4,-(sp)
-	move.w #$ff05,d0
+	move.w #F_zero,d0
 	trap #6
 	move.l d3,d0
 	move.l d4,d1
@@ -8541,7 +8751,7 @@ ope0:     move.b (a6)+,d0
           beq.s ope2
           lea opejumps,a0
           andi.w #$00ff,d0
-          subi.w #debfonc,d0         ;branchement a la routine:
+          subi.w #T_operand,d0         ;branchement a la routine:
           bcs syntax              ;pas une fonction!
           lsl #2,d0               ;ramene le resultat en d2-d3-d4
           move.l 0(a0,d0.w),a0
@@ -8552,7 +8762,7 @@ ope1:     move (sp)+,d0           ;ressort le signe
           tst.b d2
           beq.s chs1
           bmi syntax
-	move.w #$ff00,d0	  ;Change le signe sur D3!
+	move.w #F_inv,d0	  ;Change le signe sur D3!
 	trap #6
           rts
 chs1:     neg.l d3                ;changement entier
@@ -8573,7 +8783,7 @@ ope3:     cmp.b #"(",d0
 evalue:   lea bufcalc,a3      ;pour le moment, le buffer entree/sortie
           clr parenth
 ; EVALUATION D'UNE EXPRESSION: ENTREE RECURSIVE
-evalbis:  move #debop,d0      ;operateur de poids faible et signal de fin
+evalbis:  move #T_operator,d0      ;operateur de poids faible et signal de fin
           bra.s eval1
 eval0:    movem.l d2-d4,-(a3)
 eval1:    move d0,-(a3)
@@ -8585,7 +8795,7 @@ eval2:    move.b (a6)+,d0     ;cherche operateur suivant
 
           subq.l #1,a6        ;reste sur le meme pointeur!
           move.w (a3)+,d1     ;depile l'operateur
-          subi.w #debop,d1
+          subi.w #T_operator,d1
           beq.s evalfin         ;c'est fini!
           lsl #2,d1
           lea evajumps,a0
@@ -8609,7 +8819,7 @@ quent1:   tst.b d5
           bmi typemis
 	beq.s quent2
 	movem.l d2/d3/d4,-(sp)
-	moveq #$d,d0	;FLTOINT
+	moveq #F_ftol,d0	;FLTOINT
 	move.l d6,d1
 	move.l d7,d2
 	trap #6
@@ -8637,7 +8847,7 @@ cpt1:     tst.b d5
           bmi typemis
           bne.s cpt2
 cpt0:     move.l d3,d1
-          move #$e,d0
+          move #F_ltof,d0
           trap #6             ;INTTOFL
           move.l d0,d3
           move.l d1,d4
@@ -8645,7 +8855,7 @@ cpt0:     move.l d3,d1
           rts
 cpt2:     movem.l d2-d4,-(sp)
           move.l d6,d1
-          move #$e,d0
+          move #F_ltof,d0
           trap #6             ;INTTOFL
           move.l d0,d6
           move.l d1,d7
@@ -8694,7 +8904,7 @@ entierbis:bsr evalbis
 fltoint:  move.l a1,-(sp)
           move.l d3,d1
           move.l d4,d2
-          move #$d,d0         ;FLTOINT
+          move #F_ftol,d0         ;FLTOINT
           trap #6
           move.l d0,d3
           move.l (sp)+,a1
@@ -8711,7 +8921,7 @@ floatbis: bsr evalbis
 ; CONVERSION ENTIER->FLOAT SUR D2/D3/D4
 inttofl:  move.l a1,-(sp)
           move.l d3,d1
-          move #$e,d0         ;INTTOFL
+          move #F_ltof,d0         ;INTTOFL
           trap #6
           move.l d0,d3
           move.l d1,d4
@@ -9082,7 +9292,7 @@ dec:      cmp.b #$fa,(a6)+
 plus:     bsr compat
           beq.s plus1
           bmi.s plus2
-plusfl:   moveq #0,d0
+plusfl:   moveq #F_add,d0
 opfloat:  move.l d6,d1        ;entree des operateurs en float
           move.l d7,d2
           trap #6
@@ -9297,7 +9507,7 @@ dvc:      tst d7
 dvd:      rts
 
 ; OPERATEUR PUISSANCE
-puissant: bsr quefloat        ;que des float
+power: bsr quefloat        ;que des float
           moveq #28,d0
           bra opfloat
 
@@ -9449,7 +9659,7 @@ naut:     bsr fentier
           rts
 
 ; PI=constante
-pi:     move.w #$ff02,d0
+pi:     move.w #F_pi,d0
 	trap #6
 	move.b #$40,d2
 	rts
@@ -9457,7 +9667,7 @@ pi:     move.w #$ff02,d0
 ; DEG(xx)---> conversion RADIANS->DEGRES
 ; / pi * 160
 deg:    bsr ffloat            ;operande FLOAT -> D2/D3/D4
-	move.w #$ff03,d0
+	move.w #F_deg,d0
 	trap #6
 	move.b #$40,d2
 	rts
@@ -9465,14 +9675,14 @@ deg:    bsr ffloat            ;operande FLOAT -> D2/D3/D4
 ; RAD(xx)---> conversion DEGRES->RADIANS
 ; / 160 * pi
 rad:    bsr ffloat            ;operande FLOAT -> D2/D3/D4
-	move.w #$ff04,d0
+	move.w #F_rad,d0
 	trap #6
 	move.b #$40,d2
 	rts
 
 ; SINus
 sin:      bsr ffloat
-          moveq #4,d0         ;sin
+          moveq #F_sin,d0         ;sin
 foncfl:   move.l d3,d1        ;entree des fonctions float
           move.l d4,d2
           trap #6
@@ -9498,7 +9708,7 @@ exp:      bsr ffloat
 
 ; LOGNarythme neperien (pour attendre)
 log:      bsr ffloat
- 	move.w #$ff01,d0
+ 	move.w #F_getsgn,d0
 	trap #6
 	tst.w d0
 	bmi illneg
@@ -9507,7 +9717,7 @@ log:      bsr ffloat
 
 ; LOGarythme decimal
 log10:    bsr ffloat
- 	move.w #$ff01,d0
+ 	move.w #F_getsgn,d0
 	trap #6
 	tst.w d0
 	bmi illneg
@@ -9516,7 +9726,7 @@ log10:    bsr ffloat
 
 ; SQR
 sqr:      bsr ffloat
- 	move.w #$ff01,d0
+ 	move.w #F_getsgn,d0
 	trap #6
 	tst.w d0
 	bmi illneg
@@ -9585,7 +9795,7 @@ sgn3:     moveq.l #1,d3
 sgn4:     clr.l d3
           clr.b d2
           rts
-sgn5:     move.w #$ff01,d0		;Fonction GET SGN
+sgn5:     move.w #F_getsgn,d0		;Fonction GET SGN
 	trap #6
 	move.l d0,d3
 	clr.b d2
@@ -9680,7 +9890,7 @@ typemis:  moveq #19,d0
 ;NON DIMENSIONE
 nondim:   moveq #18,d0
           bra erreur
-; PAS IMPLEMENTE!
+; NOT IMPLEMENTED!
 pasimp:   moveq #20,d0
           bra erreur
 ; OVERFLOW
@@ -9806,8 +10016,8 @@ subsout:  moveq #85,d0
 
 ; TRAITEMENT DES ERREURS: D0=NUMERO DE L'ERREUR
 erreur:   move d0,d4
-          lsl #1,d0           ;ecris dans 2 langues!!!
-          lea merreur,a2      ;trouve le message, en a2
+          lsl #1,d0           ;write in 2 languages !!!
+          lea merreur,a2      ;find the message, in a2
           subq #1,d0
           bmi.s err2
 err1:     tst.b (a2)+
@@ -9833,10 +10043,10 @@ err2:     movem.l a0/d4,-(sp)
           bsr retour
           move.l a2,a0
           bsr traduit         ;va traduire! genial
-          move #1,d7
+          move #W_prtstring,d7
           trap #3
           move.b #".",d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3
 err2a:    jmp ok
 ; erreur en MODE PROGRAMME
@@ -9877,8 +10087,8 @@ err6a:    clr erroron
           clr runflg          ;retour en direct
           bsr retour
           move.l a2,a0
-          bsr traduit         ;dans toutes les langues
-          move #1,d7
+          bsr traduit         ;in all languages
+          moveq #W_prtstring,d7
           trap #3
           lea inline,a0
           bsr traduit
@@ -9890,7 +10100,7 @@ err6a:    clr erroron
           move.b #".",(a5)+
           clr.b (a5)+
           lea buffer,a0
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3
           move #1,contflg     ;autorise un cont!!!
 ; liste la ligne de l'erreur, et revient a l'editeur
@@ -9903,7 +10113,7 @@ err6a:    clr erroron
           move.l errorline,a6
           bsr detok
           lea buffer,a0
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3
           jmp ok
 
@@ -9986,13 +10196,13 @@ rn0:      move.b (a0)+,d2
           beq rn8
           tst.b d2            ;saute tous les caracteres > 0
           bpl.s rn0
-          cmp.b #$a0,d2       ;instruction etendue
+          cmp.b #T_extinst,d2       ;instruction etendue
           beq.s rn1
-          cmp.b #$b8,d2       ;fonction etendue
+          cmp.b #T_extfunc,d2       ;fonction etendue
           beq.s rn1
-          cmp.b #$a8,d2       ;.EXT instruction
+          cmp.b #T_extensioninst,d2       ;.EXT instruction
           beq.s rn6
-          cmp.b #$c0,d2       ;.EXT fonction
+          cmp.b #T_extensionfunc,d2       ;.EXT fonction
           bne.s rn2
 rn6:      addq.l #2,a0
 rn1:      addq.l #1,a0
@@ -10410,31 +10620,31 @@ ftoken:   move.l a0,a1        ;ramene l'adresse juste en a1
           move.b (a0)+,d2     ;ramene l'adresse juste apres en a0!
           beq.s ft8           ;fin de la ligne
           bpl.s ft5
-          cmp.b #$a0,d2       ;instruction etendue
+          cmp.b #T_extinst,d2       ;instruction etendue
           beq.s ft1a
-          cmp.b #$b8,d2       ;fonction etendue
+          cmp.b #T_extfunc,d2       ;fonction etendue
           beq.s ft1a
-          cmp.b #$a8,d2       ;.EXT instruction
+          cmp.b #T_extensioninst,d2       ;.EXT instruction
           beq.s ft1
-          cmp.b #$c0,d2       ;.EXT fonction
+          cmp.b #T_extensionfunc,d2       ;.EXT fonction
           bne.s ft2
 ft1:      addq.l #1,a0
 ft1a:     addq.l #1,a0
           bra.s ft5
-ft2:      cmp.b #$fa,d2       ;variable ou constante?
+ft2:      cmp.b #T_var,d2       ;variable ou constante?
           bcc.s ft3
-          cmp.b #$98,d2
+          cmp.b #T_goto,d2
           bcs.s ft5
-          cmp.b #$a0,d2
+          cmp.b #T_repeat+1,d2
           bcc.s ft5
 ft3:      move a0,d3          ;rend pair
           btst #0,d3
           beq.s ft4
           addq.l #1,a0
-ft4:      cmp.b #$ff,d2
+ft4:      cmp.b #T_constflt,d2
           bne.s ft4a
           addq.l #4,a0        ;constantes float sur huit octets!
-ft4a:     cmp.b #$fc,d2
+ft4a:     cmp.b #T_conststr,d2
           bne.s ft0
           add.w 2(a0),a0      ;chaines alphanumerique! saute la chaine
 ft0:      addq.l #4,a0        ;saute le flag
@@ -10586,7 +10796,7 @@ next:     move tstnbcle,d0    ;si pas de nouvelle boucle
           move.l 4(a1),d2
           move.l a1,-(sp)
           move.l d3,d5        ;stocke pour plus tard
-          clr d0
+          move.w #F_add,d0
           trap #6             ;addition en float
           move.l (sp)+,a1
           move.l d0,(a1)
@@ -10594,14 +10804,14 @@ next:     move tstnbcle,d0    ;si pas de nouvelle boucle
           move.l d1,d2
           move.l d0,d1
 	movem.l d1/d2,-(sp)
-	move.w #$ff01,d0
+	move.w #F_getsgn,d0
 	trap #6
 	movem.l (sp)+,d1/d2
           tst d0                ;signe de la step?
           bpl.s nexta
-          moveq #$13,d0         ;step negative
+          moveq #F_lt,d0         ;step negative
           bra.s nextb
-nexta:    moveq #$11,d0         ;step positive
+nexta:    moveq #F_gt,d0         ;step positive
 nextb:    movem.l (a2)+,d3-d4   ;depile la limite float
           trap #6
           tst d0
@@ -10863,8 +11073,8 @@ fonkey5:  rts
 ; KEY LIST: LISTE LES TOUCHES DE FONCTION
 keylist:  lea foncnom,a1
           lea buffonc,a2
-          move #19,d2
-          move #1,d7
+          moveq #20-1,d2
+          moveq #W_prtstring,d7
 kylst1:   move.l a1,a0        ;numero de la touche
           trap #3
           move.l a2,a0        ;nom de la touche
@@ -10998,7 +11208,7 @@ input0:   clr orinput         ;origine de l'input
           move (a2)+,d2
           beq.s input1b
           subq #1,d2
-          clr d7
+          move.w #W_chrout,d7
 input1:   move.b (a2)+,d0
           trap #3
           dbra d2,input1
@@ -11009,10 +11219,10 @@ input1b:  cmp.b #";",(a6)+    ;un point virgule!!!
           bra.s i2b
 ; point d'interrogation
 input2:   move.b #"?",d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3
 i2b:      move.b #255,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3
 
 ; INPUT AU CLAVIER, RAMENE UNE LIGNE (500 car) DANS LE BUFFER
@@ -11034,7 +11244,7 @@ rtin1:    cmp.b #8,d0
           subq #1,d2
           clr.b 0(a1,d2.w)
           moveq #3,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3
           moveq #32,d0
           trap #3
@@ -11047,7 +11257,7 @@ rtin15:   cmp.w #255,d2       ;pas plus de 255 caracteres
           move.b d0,0(a1,d2.w)
           addq #1,d2
           clr.b 0(a1,d2.w)
-          clr d7
+          move.w #W_chrout,d7
           trap #3             ;envoi a la trappe
           bra rtin0
 ; code special: seul accepte=return
@@ -11151,7 +11361,7 @@ input12:  tst orinput         ;type mismatch
           bne typemis
           lea redofrom,a0
           bsr traduit         ;va traduire
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3             ;affichage du message
           move.l a4,a6        ;chrget au debut de l'input
           addq.l #1,a6        ;c'est une routine etendue: double token!!!
@@ -11170,7 +11380,7 @@ input15:  move.b (a6)+,d0
 input16:  tst orinput         ;si vient du disque: n'ecris rien
           bne inpd0
           lea encore,a0       ;affiche deux points d'interrogation
-          move #1,d7
+          moveq #W_prtstring,d7
           trap #3
           bra input3          ;va retester le clavier
 ; fini!
@@ -11298,7 +11508,7 @@ in2:      move.b d0,(a0)+
 clearkey: bsr incle
           tst.l d0
           bne clearkey
-          clr fonction        ;plus de touche de fonction!
+          clr funckey        ;plus de touche de fonction!
           rts
 
 ; PUT KEY a$: met une chaine dans le buffer TOUCHES DE FONCTION !!!GENIAL!!!
@@ -11315,7 +11525,7 @@ putk1:    move.b (a2)+,d0     ;filtre les codes de fonction
 putk2:    move.b d0,(a0)+
           dbra d2,putk1
           clr.b (a0)
-          move.w #40*20+1,fonction
+          move.w #40*20+1,funckey
 putk3:    rts
 
 ;-----------------------------------------    --- ----- ---   ---    -------
@@ -12116,7 +12326,7 @@ val4:     tst d3              ;si d3=0: c'est un entier
           move.l a0,-(sp)
           clr.b (a0)          ;arrete la conversion ICI!
           move.l a2,a0        ;pointe le debut du chiffre
-          move #$b,d0
+          move #F_atof,d0
           trap #6             ;conversion ASCII--->float
           move.l d0,d3
           move.l d1,d4
@@ -12384,14 +12594,14 @@ stopall:  cmpi.w #1,runonly      ;si c'est le premier appel pour un RUN ONLY
           trap #7             ;music off
           move nbjeux,d6
 stpall1:  lea merreur,a0      ;pointe un message <>06071963
-          moveq #29,d7
+          moveq #W_setcharset,d7
           move d6,d0
           trap #3             ;arrete tous les jeux > 3
           addq #1,d6
           cmp.w #16,d6
           bne.s stpall1
           lea merreur,a0      ;pointe un message <>28091960
-          moveq #26,d7
+          moveq #W_newicon,d7
           trap #3             ;arrete les icones
           movem.l (sp)+,d0-d7/a0-a6
 stpall2:  rts
@@ -12429,7 +12639,7 @@ mvd3:     cmp.b #$84,(a3)     ;banque caractere?
           bsr adbank
           move.l d6,d0        ;reloge la banque de caracteres
           move.l a1,a0
-          moveq #29,d7
+          moveq #W_setcharset,d7
           trap #3
           cmp.w #16,d6
           bcc.s mvd4
@@ -12444,7 +12654,7 @@ mvd4:     addq.l #4,a3
           bne.s mvd1a
           lea merreur,a1      ;pointe un message fixe <> $28091960
 mvd1a:    move.l a1,a0
-          moveq #26,d7        ;new icones
+          moveq #W_newicon,d7        ;new icones
           trap #3
           rts
 
@@ -12679,9 +12889,9 @@ accnb:    clr.l d3
           addq #1,d3
 accnb1:   rts
 
-; LANGAGE: ramene la langue selectionnee
-langage:  clr.l d3
-          move.w langue,d3
+; LANGUAGE: return the selected language
+getlanguage:  clr.l d3
+          move.w language,d3
           clr.b d2
           rts
 
@@ -12781,7 +12991,7 @@ eras5:    move.l (sp)+,d3
           rts
 
 ; RESERVE
-reserve:  cmp.b #$a0,(a6)+    ;as data/as work/as screen/as datascreen
+reserve:  cmp.b #T_extinst,(a6)+    ;as data/as work/as screen/as datascreen
           bne syntax
           move.b (a6)+,d0
           cmp.b #$aa,d0
@@ -13590,8 +13800,8 @@ munt05:   move.l d3,d0
           subq.l #1,a6
 munt2:    rts
 
-; ADECRAN: bring back and verify a screen address
-adecran:  cmp.l #16,d3
+; adscreen: return and verify a screen address
+adscreen:  cmp.l #16,d3
           bcc.s adec1
           bsr adoubank
           andi.w #$7f,d0
@@ -13639,7 +13849,7 @@ defolt:   jmp redessin        ;refait completement l'ecran!
 loginst:  cmp.b #$f1,(a6)+    ;veut un egal
           bne syntax
           bsr expentier       ;va evaluer l'expression
-          bsr adecran         ;va verifier les adresses ecran
+          bsr adscreen         ;va verifier les adresses ecran
 logicbis: move.l d3,adlogic
           move.w #-1,-(sp)
           move.l #-1,-(sp)
@@ -13653,7 +13863,7 @@ logicbis: move.l d3,adlogic
 physinst: cmp.b #$f1,(a6)+
           bne syntax
           bsr expentier
-          bsr adecran
+          bsr adscreen
 physicbis:move.l d3,adphysic
           move.w #-1,-(sp)
           move.l d3,-(sp)
@@ -13679,13 +13889,13 @@ scrsw1:   bsr physicbis       ;change l'ecran PHYSIQUE
 backinst: cmp.b #$f1,(a6)+
           bne syntax
           bsr expentier
-          bsr adecran
+          bsr adscreen
 backbis:  move.l d3,adback
           move.l d3,a0
           moveq #27,d0        ;change screen sprites
           trap #5
           move.l d3,a0
-          moveq #19,d7        ;change back fenetres
+          moveq #W_setback,d7        ;change back fenetres
           trap #3
           rts
 
@@ -13734,7 +13944,7 @@ maude2:   move.l d1,(a0)+
 modebis:  movem.l d0-d7/a0-a6,-(sp)
           clr d0
           trap #5             ;initmode sprites
-          move #10,d7
+          moveq #W_initmode,d7
           trap #3             ;initmode fenetres
           move d0,nbjeux      ;nombre de jeux de caracteres par defaut!
           bsr putchar         ;remet les jeux de caracteres !!!
@@ -13752,7 +13962,7 @@ md03:     jsr curseur         ;met (ou non) le curseur
           beq.s md05
 ; la barre de menu est affichee!!!
           clr d0
-          move #9,d7
+          moveq #W_delwindow,d7
           trap #3             ;arret du plein ecran
           tst mnd+10
           bne.s md04
@@ -13761,7 +13971,7 @@ md03:     jsr curseur         ;met (ou non) le curseur
 md04:     moveq #12,d0        ;menu DEUX lignes
 md04a:    jsr defaut
           move #20,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3             ;arret du curseur
           move #25,d0
           trap #3             ;scrolloff
@@ -13778,14 +13988,14 @@ md05:     tst foncon          ;pas de touche de fonction: on reste comme ca!
           beq.s md10
 ;les touches de fonction sont en route: affichage
           clr d0
-          move #9,d7
+          moveq #W_delwindow,d7
           trap #3             ;arret du plein ecran
           move #8,d0
           jsr defaut          ;creation de la fenetre de fonction
           move #20,d0
-          clr d7
+          move.w #W_chrout,d7
           trap #3             ;arret du curseur
-          move #25,d0
+          moveq #W_currwindow,d0
           trap #3             ;scrolloff
           clr.w d0
           jsr affonc
@@ -13984,10 +14194,10 @@ s1:       addq #1,d0
           beq.s s0
           bne syntax
 
-; GET PALETTE(adecran): ENVOIE AU XBIOS LA PALETTE DE L'IMAGE
+; GET PALETTE(adscreen): ENVOIE AU XBIOS LA PALETTE DE L'IMAGE
 getpalet: lea bufcalc,a3
           bsr fentier
-          bsr adecran
+          bsr adscreen
           move.l d3,a0
           move.l a0,a1
           move.l adlogic,a2
@@ -14174,13 +14384,13 @@ limous2:  move #32,d0         ;LIMOUSE
           trap #5
           rts
 
-; a$=SCREEN$ ( adecran , x1,y1 to x2,y2 ): FONCTION SCREEN$
+; a$=SCREEN$ ( adscreen , x1,y1 to x2,y2 ): FONCTION SCREEN$
 scrfonc:  move.w parenth,-(sp)
           cmp.b #"(",(a6)+
           bne syntax
           clr.w parenth
           bsr entierbis
-          bsr adecran
+          bsr adscreen
           move.l d3,-(sp)       ;Pousse l'adresse ecran
           cmp.b #",",(a6)+
           bne syntax
@@ -14239,7 +14449,7 @@ scrfonc:  move.w parenth,-(sp)
           move.l (sp)+,a1       ;Debut de la chaine
           bra mid7a
 
-; SCREEN$ ( adecran,x,y )=a$: INSTRUCTION SCREEN$
+; SCREEN$ ( adscreen,x,y )=a$: INSTRUCTION SCREEN$
 scrinst:  lea bufcalc,a3
           cmp.b #"(",(a6)+
           bne syntax
@@ -14249,7 +14459,7 @@ scrinst:  lea bufcalc,a3
 
           movem.l d2/d3,-(sp) ;Calcule l'adresse ecran
           move.l d1,d3
-          bsr adecran
+          bsr adscreen
           move.l d3,-(sp)
 
           cmp.b #$f1,(a6)+    ;Cherche un egal
@@ -14272,7 +14482,7 @@ st1:      rts
 ; SCREEN COPY ec1[,x1,y1,x2,y2] to ec2[,x3,y3] ! PAS SUCCEPTIBLE !
 ; C'EST L'INSTRUCTION LA PLUS GENIALE QU'ON AI JAMAIS FAIT DANS UN BASIC
 scrcopy:  bsr expentier
-          bsr adecran
+          bsr adscreen
           move.l d3,-(sp)     ;adresse de l'ecran 1
           move.b (a6)+,d0
           cmp.b #$80,d0
@@ -14293,7 +14503,7 @@ scrcopy:  bsr expentier
 scc1:     moveq #1,d0         ;flag: tout l'ecran!
 scc2:     movem d0/d1/d2/d5/d6,-(sp)
           bsr expentier
-          bsr adecran
+          bsr adscreen
           move.l d3,a1        ;adresse ecran 2
           cmp.b #",",(a6)
           beq.s scc3
@@ -14486,11 +14696,11 @@ scr1:     moveq #86,d0          ;Scrolling non defini
 
 ; SSPGM ON/OFF: returns 0 if OFF, 1 if ON, -1 if NEITHER THE ONE NOR THE OTHER!
 onoff:    move.b (a6)+,d0
-          cmp.b #$a6,d0         ;Off
+          cmp.b #T_off,d0         ;Off
           beq.s onof1
-          cmp.b #$a7,d0         ;On
+          cmp.b #T_on,d0         ;On
           beq.s onof2
-          cmp.b #$a5,d0         ;Freeze
+          cmp.b #T_freeze,d0         ;Freeze
           beq.s onof3
           subq.l #1,a6
           moveq #-1,d0        ;autre: Bmi et Bcc
@@ -14535,12 +14745,12 @@ update:   bsr onoff
           bmi.s upd2
           bne.s upd1
           clr actualise       ;update off
-          moveq #40,d7
+          moveq #W_update,d7
           moveq #0,d0
           trap #3
           rts
 upd1:     move #1,actualise   ;update on
-          moveq #40,d7
+          moveq #W_update,d7
           moveq #1,d0
           trap #3
           rts
@@ -14926,7 +15136,7 @@ reduce:   cmp.b #$80,(a6)
           beq rdc0
 ; ecran d'origine fixe
           bsr expentier
-          bsr adecran
+          bsr adscreen
           move.l d3,-(sp)
           cmp.b #$80,(a6)+
           beq.s rdc1
@@ -14945,7 +15155,7 @@ rdc1:     bsr mentiers
 ; une adresse d'ecran
 rdc2:     movem.l d0-d4,-(sp)
           move.l d5,d3
-          bsr adecran         ;va chercher l'adresse d'ecran
+          bsr adscreen         ;va chercher l'adresse d'ecran
           move.l d3,a1
           movem.l (sp)+,d0-d4
 rdc3:     exg d1,d4
@@ -14997,7 +15207,7 @@ zoom:     bsr mentiers
 ; ecran d'origine fixe
 zm0:      movem.l d1-d4,-(sp)
           move.l d5,d3
-          bsr adecran
+          bsr adscreen
           move.l d3,a0
           movem.l (sp)+,d1-d4
 zm05:     move.l a0,-(sp)
@@ -15030,7 +15240,7 @@ zm05:     move.l a0,-(sp)
 ; ecran choisi
 zm1:      movem.l d0-d4,-(sp)
           move.l d5,d3
-          bsr adecran
+          bsr adscreen
           move.l d3,a1
           movem.l (sp)+,d0-d4
 zm2:      exg d1,d4
@@ -15096,7 +15306,7 @@ app1:     moveq #71,d3        ;APPEAR ecran: tire un chiffre au hasard!
 ; deux params
 app5:     move.l d1,-(sp)
           move.l d2,d3
-          bsr adecran
+          bsr adscreen
           move.l d3,a0
           move.l adphysic,a1
           move.l (sp)+,d1
@@ -15137,7 +15347,7 @@ g1:       move.b (a6)+,d0
           bra.w g5
 ; FADE <speed> TO image#
 g2:       bsr expentier
-          bsr adecran         ;adresse de l'image
+          bsr adscreen         ;adresse de l'image
           move.l d3,a0
           move.l adlogic,a1
           lea 32000(a0),a0
@@ -15258,11 +15468,11 @@ sautoback:bsr onoff
           bmi syntax
           bne.s autob3
           clr autoback        ;OFF
-          moveq #33,d7
+          moveq #W_autobackoff,d7
           trap #3             ;autoback off TEXTE
           rts
 autob3:   move #1,autoback    ;ON
-          moveq #32,d7
+          moveq #W_autobackon,d7
           trap #3             ;autoback on  TEXTE
           rts
 
@@ -15912,12 +16122,12 @@ music:    bsr onoff
 ; MUSIC OFF
           moveq #0,d0
           trap #7
-          bclr #1,bip                   ;remet les bruits de touche
+          bclr #1,bip                   ;resets keystrokes
           rts
 ; MUSIC ON
 mus1:     moveq #5,d0
           trap #7
-          bset #1,bip                   ;plus de bruits de touche
+          bset #1,bip                   ;no more keystrokes
           rts
 mus2:     bcc.s mus3
 ; MUSIC FREEZE
@@ -16537,7 +16747,7 @@ mt16:     clr.l (a1)          ;fin des tests!
           beq mt41          ;pas de rubrique !!!
 
 ; FAIT APPARAITRE LA FENETRE DE SOUS MENU
-          moveq #33,d7
+          moveq #W_autobackoff,d7
           trap #3             ;autoback OFF: ca va plus vite!
           addq #2,d4          ;TX
           addq #2,d5          ;TY
@@ -16576,9 +16786,9 @@ mt21:     moveq #1,d3         ;DY text
           lsl #3,d0
           add d0,2(a0)         ;FX pour la souris
           moveq #14,d0
-          moveq #6,d7
+          moveq #W_initwind,d7
           trap #3
-          clr.l d7
+          moveq #W_chrout,d7
           moveq #25,d0
           trap #3              ;scroll off!
           moveq #20,d0
@@ -16590,7 +16800,7 @@ mt23:     bsr affsschx
           addq #1,d3
           cmp mnd+24,d3
           bne.s mt23
-          moveq #34,d7        ;remet l'ancien autoback, (reaffiche les sprites)
+          moveq #W_autobackrest,d7        ;remet l'ancien autoback, (reaffiche les sprites)
           trap #3
 
 ; TESTS DE LA SOURIS!!!
@@ -16714,9 +16924,9 @@ finmenu:  movem.l (sp)+,d0-d7/a0-a6
 
 ; EFFACE LES MENUS
 effmenus: moveq #14,d0        ;effacemt rapide de la fenetre
-          moveq #25,d7
+          moveq #W_currwindow,d7
           trap #3
-          moveq #16,d7        ;activation rapide de la barre
+          moveq #W_qwindon,d7        ;activation rapide de la barre
           moveq #15,d0
           trap #3
           moveq #15,d3
@@ -16760,7 +16970,7 @@ ac1:      move.w 0(a0,d3.w),d2    ;taille de la chaine!
           beq.s ac3
 ; deux lignes de titre!
           moveq #1,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3             ;locate!
           move d2,d0
           subq #1,d0
@@ -16769,22 +16979,22 @@ ac2:      move.b #32,(a0)+    ;que des 32
           dbra d0,ac2
           clr.b (a0)+
           moveq #31,d0
-          clr d7              ;souligne
+          move.w #W_chrout,d7              ;souligne
           trap #3
           lea buffer,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3             ;affiche la ligne du bas, soulignee
           moveq #29,d0
-          clr d7              ;desouligne
+          move.w #W_chrout,d7              ;desouligne
           trap #3
           bra ac4
 ; une seule ligne dans la barre
 ac3:      moveq #31,d0
-          clr d7              ;souligne
+          move.w #W_chrout,d7              ;souligne
           trap #3
 ac4:      move (sp)+,d0
           moveq #0,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3             ;locate
           lea buffer,a0
           subq #1,d2
@@ -16792,7 +17002,7 @@ ac5:      move.b (a3)+,(a0)+
           dbra d2,ac5
           clr.b (a0)
           lea buffer,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
 ac10:     movem.l (sp)+,d0-d3/a0-a3
           rts
@@ -16818,12 +17028,12 @@ as1:      move.b #32,(a0)+    ;nettoie le buffer d'affichage
 ; affiche sur plusieurs lignes
 as2:      movem d0-d2,-(sp)
           add d2,d1
-          moveq #2,d7         ;locate
+          moveq #W_locate,d7         ;locate
           trap #3
           tst d2              ;derniere ligne!
           beq.s as3
           lea buffer,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           movem (sp)+,d0-d2
           subq #1,d2          ;remonte d'une ligne
@@ -16836,7 +17046,7 @@ as4:      move.b (a3)+,d1     ;poke le nom
           beq.s as5
           move.b d1,(a0)+
           bra.s as4
-as5:      moveq #1,d7
+as5:      moveq #W_prtstring,d7
           lea buffer,a0
           trap #3
           movem.l (sp)+,d0-d3/a0-a3
@@ -16844,17 +17054,17 @@ as5:      moveq #1,d7
 
 ; QACTIVE: ACTIVATION RAPIDE D'UNE FENETRE
 qactive:  move d0,-(sp)
-          moveq #13,d7
+          moveq #W_getcurwindow,d7
           trap #3
           move d0,mnd+32     ;ancienne fenetre activee
           move (sp)+,d0
-          moveq #16,d7
+          moveq #W_qwindon,d7
           trap #3
           rts
 
 ; REACTIVATION DE L'ANCIENNE FENETRE
 qreactive:move mnd+32,d0
-          moveq #16,d7
+          moveq #W_qwindon,d7
           trap #3
           rts
 
@@ -16864,21 +17074,21 @@ menuinv:  tst.b (a3)+
           moveq #22,d0
           bra.s mi1
 mi0:      moveq #19,d0
-mi1:      clr d7
+mi1:      move.w #W_chrout,d7
           trap #3             ;SHADE ON/OFF
 mi2:      clr d0
           move.b (a3)+,d0
-          moveq #3,d7         ;SET PAPER
+          moveq #W_setpaper,d7         ;SET PAPER
           trap #3
           clr d0
           move.b (a3)+,d0
-          moveq #4,d7         ;SET PEN
+          moveq #W_setpen,d7         ;SET PEN
           trap #3
           tst d2
           beq.s mi3
           moveq #21,d0        ;inverse on
           bra.s mi4
-mi3:      moveq #18,d0        ;inverse off
+mi3:      moveq #W_centre,d0        ;inverse off
 mi4:      clr d7
           trap #3
           rts
@@ -17182,16 +17392,16 @@ ab9:      moveq #15,d0
           bsr qactive         ;active la fenetre de menus
 ; prepare la fenetre
           move mnd+30,d0   ;set paper
-          moveq #3,d7
+          moveq #W_setpaper,d7
           trap #3
           move mnd+28,d0     ;set pen
-          moveq #4,d7
+          moveq #W_setpen,d7
           trap #3
-          moveq #18,d0
-          clr.l d7            ;pas en inverse!
+          moveq #18,d0            ;pas en inverse!
+          moveq #W_chrout,d7
           trap #3
           moveq #12,d0        ;cls
-          clr.l d7
+          moveq #W_chrout,d7
           trap #3
 ; souligne la ligne du menu, sur toute la largeur
           lea buffer,a0
@@ -17204,19 +17414,19 @@ ab9a:     move.b #32,(a0)+
           dbra d0,ab9a
           clr.b (a0)
           moveq #31,d0        ;SOULIGNE
-          clr d7
+          move.w #W_chrout,d7
           trap #3
           tst mnd+10
           beq.s ab9b
           moveq #0,d0
           moveq #1,d1
-          moveq #2,d7
+          moveq #W_locate,d7
           trap #3             ;si DEUX LIGNES: souligne la ligne du bas!
 ab9b:     lea buffer,a0
-          moveq #1,d7
+          moveq #W_prtstring,d7
           trap #3
           moveq #29,d0        ;DESOULIGNE
-          clr d7
+          move.w #W_chrout,d7
           trap #3
 ; affiche tous les choix
           move.l (sp)+,a3     ;adresse de la banque
@@ -17268,7 +17478,7 @@ charlbis: subq #1,d3
           cmp.l #16,d3
           bcc foncall
           move.l d3,d0
-          moveq #28,d7        ;ramene l'adresse du jeu de caracteres
+          moveq #W_getcharset,d7        ;ramene l'adresse du jeu de caracteres
           trap #3
           move.l d0,d3
           tst.l d3
@@ -17355,7 +17565,7 @@ wp5:      move.l d7,d0        ;D0.L numero de la fenetre
           bhi foncall
           cmp.l #$10000,d5
           bhi foncall
-wp7:      moveq #6,d7
+wp7:      moveq #W_initwind,d7
           trap #3             ;init window
 ; erreurs fenetres
 winderr:  tst d0
@@ -17381,7 +17591,7 @@ ww1:      cmp.l #16,d1
           dbra d0,ww0
           move.w #-1,(a0)
           lea buffer,a0
-          moveq #27,d7
+          moveq #W_actcache,d7
           trap #3
           bra winderr
 
@@ -17392,12 +17602,12 @@ qwindow:  bsr expentier
           cmp.l #14,d3
           bcc syswind
           move.l d3,d0
-          moveq #16,d7
+          moveq #W_qwindon,d7
           trap #3
           bra winderr
 
 ; WINDON: RAMENE LA FENETRE ACTIVEE
-fwindon:  moveq #13,d7
+fwindon:  moveq #W_getcurwindow,d7
           trap #3
           clr.l d3
           move d0,d3
@@ -17413,7 +17623,7 @@ windmov:  bsr mentiers
           tst.l d2
           bmi foncall
           move d2,d0
-          moveq #24,d7        ;fonction #24: move window
+          moveq #W_windmove,d7        ;fonction #24: move window
           trap #3
           bra winderr
 
@@ -17425,7 +17635,7 @@ windel:   bsr expentier
           bcc foncall
           cmp.l #14,d3
           bcc syswind
-          moveq #9,d7
+          moveq #W_delwindow,d7
           move.l d3,d0
           trap #3
           bra winderr
@@ -17434,7 +17644,7 @@ windel:   bsr expentier
 locate:   bsr mentiers
           cmp.w #2,d0
           bne syntax
-          moveq #2,d7
+          moveq #W_locate,d7
           move.l d2,d0
           bmi foncall
           tst.l d1
@@ -17445,7 +17655,7 @@ locate:   bsr mentiers
           rts
 
 ; CURS X
-cursx:    moveq #17,d7
+cursx:    moveq #W_coordcurs,d7
           trap #3
           swap d0
           clr.l d3
@@ -17454,7 +17664,7 @@ cursx:    moveq #17,d7
           rts
 
 ; CURS Y
-cursy:    moveq #17,d7
+cursy:    moveq #W_coordcurs,d7
           trap #3
           clr.l d3
           move d0,d3
@@ -17463,7 +17673,7 @@ cursy:    moveq #17,d7
 
 ; XTEXT (xx): CONVERTION GRAPHIQUE ---> TEXTE X
 xtext:    bsr fentier
-          moveq #37,d7
+          moveq #W_xtext,d7
 xtext1:   move.l d3,d0
           trap #3
           move.l d0,d3
@@ -17472,17 +17682,17 @@ xtext1:   move.l d3,d0
 
 ; YTEXT (yy): CONVERTION GRAPHIQUE ---> TEXTE Y
 ytext:    bsr fentier
-          moveq #38,d7
+          moveq #W_ytext,d7
           bra xtext1
 
 ; XGRAPHIC (xx): CONVERTION TEXTE X ---> GRAPHIQUE
 xgraphic: bsr fentier
-          moveq #35,d7
+          moveq #W_xgraphic,d7
           bra xtext1
 
 ; YGRAPHIC (yy): CONVERSION TEXTE Y ---> GRAPHIQUE
 ygraphic: bsr fentier
-          moveq #36,d7
+          moveq #W_ygraphic,d7
           bra xtext1
 
 ; DIVX: diviseur en X selon le mode
@@ -17513,7 +17723,7 @@ screen:   cmp.b #"(",(a6)+
           bmi foncall
           move.l d2,d1
           bmi foncall
-          moveq #5,d7
+          moveq #W_tstscreen,d7
           trap #3
           tst d0
           bmi foncall
@@ -17529,7 +17739,7 @@ paper:    bsr expentier
           bcc foncall
           move d3,valpaper
           move.l d3,d0
-          moveq #3,d7
+          moveq #W_setpaper,d7
           trap #3
           rts
 
@@ -17539,7 +17749,7 @@ pen:      bsr expentier
           bcc foncall
           move d3,valpen
           move.l d3,d0
-          moveq #4,d7
+          moveq #W_setpen,d7
           trap #3
           rts
 
@@ -17569,7 +17779,7 @@ curson:   move #1,cursflg
           moveq #40,d0
           trap #5
 curs2:    moveq #17,d0
-curs1:    clr.l d7
+curs1:    moveq #W_chrout,d7
           trap #3
           rts
 
@@ -17583,7 +17793,7 @@ setcurs:  bsr mentiers
           bmi foncall
           tst.l d1
           bmi foncall
-          moveq #14,d7
+          moveq #W_fixcursor,d7
           trap #3
           rts                 ;pasimp!!! tester les erreurs
 
@@ -17644,7 +17854,7 @@ textbox:  bsr mentiers
           bcs foncall
           cmp.l #80,d2
           bcc foncall
-          moveq #39,d7
+          moveq #W_box,d7
           trap #3
           rts
 
@@ -17656,7 +17866,7 @@ cls:      bsr finie           ;pas de parametre: MODEBIS!
           jmp Red             ;mode direct: redessin sans changer MODE!
 ; cls complexe!
 cls0:     bsr expentier       ;Premier param ---> ECRAN
-          bsr adecran
+          bsr adscreen
           move.l d3,-(sp)
           clr.l -(sp)         ;Couleur par defaut: 0
           moveq #0,d3         ;Par defaut, tout l'ecran
@@ -17748,7 +17958,7 @@ writing:  bsr expentier
           bcc foncall
           addi.w #13,d3
           move d3,d0
-          clr.l d7
+          moveq #W_chrout,d7
           trap #3
           rts
 
@@ -17759,7 +17969,7 @@ center:   bsr expalpha
           cmp.l #80,d2
           bcc foncall
           bsr chverbuf
-          moveq #18,d7
+          moveq #W_centre,d7
           lea buffer,a0
           trap #3
           rts
@@ -17771,7 +17981,7 @@ title:    bsr expalpha
           cmp.l #80,d2
           bcc foncall
           bsr chverbuf
-          moveq #31,d7
+          moveq #W_title,d7
           lea buffer,a0
           trap #3
           tst d0
@@ -17787,7 +17997,7 @@ bd1:      bsr expentier
           cmp.l #17,d3
           bcc foncall
 bd2:      move.l d3,d0
-          moveq #30,d7
+          moveq #W_border,d7
           trap #3
           tst d0
           bne foncall
