@@ -203,11 +203,11 @@ NbRout:     dc.l 0
 ; Filtres / Noms des fichiers
 nomsrc:         dc.b "ESSAI.BAS",0
 nomobj:         dc.b "ESSAIRUN.PRG",0
-nomlib:         dc.b "COMPILER\BASIC???.LIB",0
-nomspr:         dc.b "COMPILER\SPRIT???.LIB",0
-nomwin:         dc.b "COMPILER\WINDO???.LIB",0
-nommus:         dc.b "COMPILER\MUSIC???.LIB",0
-nomflo:         dc.b "COMPILER\FLOAT???.LIB",0
+nomlib:         dc.b "COMPILER\BASIC*.LIB",0
+nomspr:         dc.b "COMPILER\SPRIT*.LIB",0
+nomwin:         dc.b "COMPILER\WINDO*.LIB",0
+nommus:         dc.b "COMPILER\MUSIC*.LIB",0
+nomflo:         dc.b "COMPILER\FLOAT*.LIB",0
 ncr0:           dc.b "COMPILER\8X8.CR0",0
 ncr1:           dc.b "COMPILER\8X8.CR1",0
 ncr2:           dc.b "COMPILER\8X16.CR2",0
@@ -662,7 +662,7 @@ crts:           rts
 * Ramene la version
 ***************************
 Version:
-        move.w #$0300,d0
+        move.w #$0301,d0
         rts
 
 *********************************************************************
@@ -908,11 +908,9 @@ Rab2:
         lea Nfyche*TFyche(a2),a2
 ; table des IFTHENELSE longueur FIXE
         move.l a2,Tif
-        /* add.l #8*32,a2 */
-        dc.w 0xd5fc,0,8*32 /* XXX */
+        add.l #8*32,a2
 ; buffer de calcul, longueur FIXE, descendant
-        /* add.l #4*100,a2 */
-        dc.w 0xd5fc,0,4*100 /* XXX */
+        add.l #4*100,a2
         move.l a2,bufcalc
 ; table des routines a copier: routin, longueur FIXE
         move.l a2,routin
@@ -1014,7 +1012,7 @@ LdE3:
         move.l a1,ADtbnk
         move.l (a0),Source              ;Adresse du source!
         move.l (a1),LongSou             ;Longueur du source
-        bra.w FLdSou /* XXX */
+        bra FLdSou
 
 ;-----> Ouvre le programme .BAS
 LdSou:  moveq #30,d7
@@ -1150,7 +1148,7 @@ Head5:  move.l tbuffers(pc),a2          ;Taille buffers utilises
         moveq #0,d2
         move.w CptInst(pc),d2
         tst.w flagstos
-        beq.w FinSeka /* XXX */
+        beq FinSeka
         rts
 FinSeka:illegal
 
@@ -1219,7 +1217,7 @@ Ali1:   move.w d0,38(a0)                ;X
         bclr #0,d0
         beq.s Ali2
         moveq #3,d0                     ;BREAK!
-        bra.w cerror /* XXX */
+        bra cerror
 Ali2:   move.b d0,(a0)
 Ali3:   movem.l (sp)+,d0-d3/a0-a3
         rts
@@ -1234,18 +1232,18 @@ Ali3:   movem.l (sp)+,d0-d3/a0-a3
 ;-----------------------------------------    ---       ---   ---    -------
 ; Out of memory!
 cout:   moveq #2,d0
-        bra.w cerror /* XXX */
+        bra cerror
 ; Rien a compiler!
 CRien:  moveq #1,d0
-        bra.w cerror /* XXX */
+        bra cerror
 ; Message normaux
 csynt:  moveq #12,d0            ;Syntax error
-        bra.w cerror /* XXX */
+        bra cerror
 ctype:  moveq #19,d0            ;Type mismatch
-        bra.w cerror /* XXX */
+        bra cerror
 diskerr:moveq #-1,d0
         moveq #0,d1
-        bra.w cerror2 /* XXX */
+        bra cerror2
 
 ;-----> Entree ERREURS
 cerror: moveq #0,d1
@@ -1479,8 +1477,7 @@ ChG2:   move.l a0,alitoad
         lea -4(a6),a1
         add.w d1,a1
         move.l a1,newline
-        /* add.w #1,nblines        ;1 ligne de plus! */
-        dc.l 0x06790001,nblines /* XXX */
+        addq.w #1,nblines        ;1 ligne de plus! */
 ; Affiche la position
         move.l a6,d0
         sub.l Source,d0
@@ -1494,7 +1491,7 @@ ChrGet: bsr getbyte
         beq.s FinLine
         bmi.s Chr1
         cmp.b #":",d1
-        beq.w ChrGet /* XXX */
+        beq ChrGet
         bra csynt
 ; Appele l'instruction
 Chr1:   andi.w #$7f,d1
@@ -1503,8 +1500,7 @@ Chr1:   andi.w #$7f,d1
         move.l (a1,d1.w),a1
         move.l #$49fafffe,d0
         bsr outlong
-        /* add.w #1,CptInst */
-        dc.l 0x06790001,CptInst /* XXX */
+        addq.w #1,CptInst
         jsr (a1)
         bra.s ChrGet
 
@@ -1671,9 +1667,7 @@ CLib5b: bsr LSeek
         bcc csynt
         move.l BufLoad(pc),a0
         bsr load
-        /* add.l #1,CptRout             ;Affyche le nombre de routines */
-        dc.w 0x06b9
-        dc.l 1,CptRout /* XXX */
+        addq.l #1,CptRout             ;Affyche le nombre de routines */
         move.l CptRout,d0
         move.l NbRout,d1
         bsr AffPour
@@ -1755,9 +1749,7 @@ CLib10: moveq #0,d3                     ;Longueur de la routine
         addq.l #2,a4
         lea 256(a5),a5                  ;Plus 256 octets/routine
         lea 12(a4),a4                   ;Plus 8 octets relocation
-        /* add.l #1,NbRout */
-        dc.w 0x06b9
-        dc.l 1,NbRout /* XXX */
+        addq.l #1,NbRout
         bra CLib3
 ;-----> Fini de copier
 CLibFin:moveq #0,d0                     ;Termine la table de relocation!
@@ -1873,8 +1865,7 @@ p2c4:   move.l d2,LongChai      ;Longueur des chaines
         beq.w PaTrap
 ; Copie WINDO101.LIB
 CoTrap: lea nomwin(pc),a0
-        /* move.l #otrap3,a1 */
-        dc.w 0x227c,0,otrap3 /* XXX */
+        move.l #otrap3,a1
         bsr LoTrap
         moveq #4,d0
         moveq #28,d1
@@ -1888,8 +1879,7 @@ CoTrap: lea nomwin(pc),a0
         tst.l nomcr0
         beq.s Cot1
         move.l nomcr0(pc),a0
-        /* move.l #ocr0,a1 */
-        dc.w 0x227c,0,ocr0 /* XXX */
+        move.l #ocr0,a1
         bsr LoTrap
 Cot1:   moveq #5,d0
         moveq #28,d1
@@ -1897,8 +1887,7 @@ Cot1:   moveq #5,d0
         tst.l nomcr1
         beq.s Cot2
         move.l nomcr1(pc),a0
-        /* move.l #ocr1,a1 */
-        dc.w 0x227c,0,ocr1 /* XXX */
+        move.l #ocr1,a1
         bsr LoTrap
 Cot2:   moveq #6,d0
         moveq #28,d1
@@ -1906,31 +1895,27 @@ Cot2:   moveq #6,d0
         tst.l nomcr2
         beq.s Cot3
         move.l nomcr2(pc),a0
-        /* move.l #ocr2,a1 */
-        dc.w 0x227c,0,ocr2 /* XXX */
+        move.l #ocr2,a1
         bsr LoTrap
 ; Copie SPRIT101.LIB
 Cot3:   moveq #7,d0
         moveq #28,d1
         bsr AffPour
         lea nomspr(pc),a0
-        /* move.l #otrap5,a1 */
-        dc.w 0x227c,0,otrap5 /* XXX */
+        move.l #otrap5,a1
         bsr LoTrap
         moveq #8,d0
         moveq #28,d1
         bsr AffPour
         move.l nommou(pc),a0
-        /* move.l #omou,a1 */
-        dc.w 0x227c,0,omou /* XXX */
+        move.l #omou,a1
         bsr LoTrap
         moveq #9,d0
         moveq #28,d1
         bsr AffPour
 ; Copie MUSIC101.LIB
         lea nommus(pc),a0
-        /* move.l #otrap7,a1 */
-        dc.w 0x227c,0,otrap7 /* XXX */
+        move.l #otrap7,a1
         bsr LoTrap
         moveq #10,d0
         moveq #28,d1
@@ -1942,8 +1927,7 @@ jlo:    lea debprg(pc),a0
         beq.s PaTrap
         moveq #31,d7
         lea nomflo(pc),a0
-        /* move.l #otrap6,a1 */
-        dc.w 0x227c,0,otrap6 /* XXX */
+        move.l #otrap6,a1
         bsr LoTrap
         moveq #11,d0
         moveq #28,d1
@@ -2269,7 +2253,7 @@ P2b:    move.w d0,-(sp)
         sub.l d7,d0
         bsr outlong
         subq.l #4,a5
-        bra.w P2a /* XXX */
+        bra P2a
 ; Trouve l'adresse d'une constante alphanumerique
 P2g:    andi.l #$ffffff,d0
         move.l d0,a0
@@ -2419,7 +2403,7 @@ OLong   = 0
 ODataB  = 4
 ;-----> Programme
 ButDe:  bra     DPrg
-        dc.b    "STOS basic compiler V 3.0 by Francois Lionet"
+        dc.b    "STOS basic compiler V3.01 by Francois Lionet"
 glu:
         dcb.b DebD-(glu-debprg),0 /* pad to 128 bytes */
         even
@@ -2563,8 +2547,7 @@ Ina10:
         move.l a4,chvide(a5)            ;Chaine vide
         move.l sp,spile(a5)             ;Sauve la pile
         move.l sp,lowpile(a5)           ;Niveau zero de la pile!
-        /* add.l #4,lowpile(a5) */
-        dc.w 0x06ad,0,4,lowpile /* XXX */
+        addq.l #4,lowpile(a5)
         move.l Oliad(a6),liad(a5)       ;Adresse des litoad
         move.l Oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
         move.l OFData(a6),datastart(a5) ;Datas
@@ -2607,24 +2590,24 @@ Ina10:
 
 ; save some system exception vectors
         lea svect(a5),a0
-        move.l $8.l,(a0)+ /* XXX */
-        move.l $c.l,(a0)+ /* XXX */
-        move.l $404.l,(a0)+ /* XXX */
-        move.l $10.l,(a0)+ /* XXX */
-        move.l $14.l,(a0)+ /* XXX */
+        move.l $8,(a0)+
+        move.l $c,(a0)+
+        move.l $404,(a0)+
+        move.l $10,(a0)+
+        move.l $14,(a0)+
         lea CErrbus(pc),a0
-        move.l a0,$8.l /* XXX */
+        move.l a0,$8
         lea CErradr(pc),a0
-        move.l a0,$c.l /* XXX */
+        move.l a0,$c
         lea CCritic(pc),a0
-        move.l a0,$404.l /* XXX */
+        move.l a0,$404
         lea CIllins(pc),a0
-        move.l a0,$10.l /* XXX */
+        move.l a0,$10
         lea CDbyzer(pc),a0
-        move.l a0,$14.l /* XXX */
+        move.l a0,$14
 
         tst.w d7                        ;Si Out of MEM
-        bne.w InaErr /* XXX */
+        bne InaErr
 
 ; Initialise les extensions
         clr.w flaggem(a5)
@@ -2652,14 +2635,14 @@ Ina21:  lea 4(a2),a2
 
 ;-----> Erreurs systeme
 InaErr: moveq #8,d0
-        bra.w errgo /* XXX */
+        bra errgo
 CErrbus:moveq #31,d0
-        bra.w errgo /* XXX */
+        bra errgo
 CErradr:moveq #32,d0
-        bra.w errgo /* XXX */
+        bra errgo
 CCritic:rts
 CIllins:moveq #82,d0
-        bra.w errgo /* XXX */
+        bra errgo
 CDbyzer:moveq #46,d0
 errgo:  move.l error(a5),a0
         jmp (a0)
@@ -2704,7 +2687,7 @@ DejaSup:
         move.l d0,imagec(a5)
 ;-----> SAUVE LA PALETTE et ADAPTE A L'ORDINATEUR
 ;       installe aussi la fausse trappe FLOAT!
-        lea $ff8240,a0 /* XXX */
+        lea $ffff8240,a0
         lea dataec(pc),a1
         moveq #15,d0
 bgp1:   move.w (a0)+,(a1)+
@@ -2738,12 +2721,13 @@ bgp1:   move.w (a0)+,(a1)+
         move.l  a0,Joy_Ad-Joy_In(a1)
         move.l  (a0),Joy_Sav-Joy_In(a1)
         move.l  a1,(a0)                 ; Branche la routine joystick
-        move.l  #Joy_Pos,adapt_joy(a4)          ; Adresse du resultat
+        lea     Joy_Pos+1(pc),a1
+        move.l  a1,adapt_joy(a4)          ; Adresse du resultat
 
 ; Fausse trappe FLOAT en trappe 6
 ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         lea FauxFloat(pc),a0
-        move.l a0,$98.l /* XXX */
+        move.l a0,$98
 
 ;-----> Suite sauvegarde
         lea dataec+32(pc),a4
@@ -2760,18 +2744,16 @@ sv1:    move.w (a0)+,(a4)+            ;recopie...
         moveq #$18/2-1,d0
 sv2:    move.w (a0)+,(a4)+            ;recopie...
         dbra d0,sv2
-        /* move.l adapt_gcurx(a3),a0               ;coordonnees de la souris */
-        dc.w 0x206b,0 /* XXX */
+        move.l adapt_gcurx(a3),a0               ;coordonnees de la souris
         move.l (a0),(a4)+
 
 *********************** CREE LA FAUSSE TABLE DE DONNEES
-        move.l $42e.l,a5 /* XXX */
+        move.l $42e,a5
         sub.l #$10000,a5
-        /* sub.l #libre+256,a5             ;debut VAR / Fin Pile! */
-        dc.w 0x9bfc,0,libre+256 /* XXX */
+        sub.l #libre+256,a5             ;debut VAR / Fin Pile!
         move.l a5,a0
         lea -256*4(a0),a4               ;Taille pile: 256 mots longs
-        move.l #libre+256/4-1,d0 /* XXX bug */
+        move.l #(libre+256)/4-1,d0
 inbt1:  clr.l (a0)+
         dbra d0,inbt1
 
@@ -2812,15 +2794,14 @@ ig4:    clr.l (a0)+                   ;Autre banques: longueur nulle
         dbra d1,ig4
         dbra d0,ig3
 
-        move.l $42e.l,d0                  ;fin de la memoire physique /* XXX */
+        move.l $42e,d0                  ;fin de la memoire physique
         subi.l #$8000,d0                 ;moins 32 k
         move.l d0,deflog(a5)            ;= ecran logique & physique
         subi.l #$8000,d0                 ;moins 32 k
         move.l d0,defback(a5)           ;= decor des sprites
 
 *********************** BOUGE LES BANQUES AU BOUT DE LA MEMOIRE
-        /* move.l OLong(a6),d0             ;Longueur TOTALE */
-        dc.w 0x202e,0 /* XXX */
+        move.l OLong(a6),d0             ;Longueur TOTALE
         move.l d0,dataprg+4(a5)
         sub.l ODataB(a6),d0             ;- banque 0 = long banques
         move.l dsource(a5),a0
@@ -2901,8 +2882,7 @@ inb10:  tst.w d7
         move.l oerror(a6),error(a5)     ;Traitement des erreurs
         move.l a4,chvide(a5)            ;Chaine vide
         move.l sp,lowpile(a5)           ;Niveau zero de la pile!
-        /* add.l #4,lowpile(a5) */
-        dc.w 0x06ad,0,4,lowpile /* XXX */
+        addq.l #4,lowpile(a5)
         move.l Oliad(a6),liad(a5)       ;Adresse des litoad
         move.l Oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
         move.l OFData(a6),datastart(a5) ;Datas
@@ -3013,21 +2993,21 @@ InbPaf: move.l otrap7(a6),a2
 
 ; save some system exception vectors
         lea svect(a5),a0
-        move.l $8.l,(a0)+ /* XXX */
-        move.l $c.l,(a0)+ /* XXX */
-        move.l $404.l,(a0)+ /* XXX */
-        move.l $10.l,(a0)+ /* XXX */
-        move.l $14.l,(a0)+ /* XXX */
+        move.l $8,(a0)+
+        move.l $c,(a0)+
+        move.l $404,(a0)+
+        move.l $10,(a0)+
+        move.l $14,(a0)+
         lea berrbus(pc),a0
-        move.l a0,$8.l /* XXX */
+        move.l a0,$8
         lea berradr(pc),a0
-        move.l a0,$c.l /* XXX */
+        move.l a0,$c
         lea bcritic(pc),a0
-        move.l a0,$404.l /* XXX */
+        move.l a0,$404
         lea billins(pc),a0
-        move.l a0,$10.l /* XXX */
+        move.l a0,$10
         lea bdbyzer(pc),a0
-        move.l a0,$14.l /* XXX */
+        move.l a0,$14
 ; Init inter trappes
         moveq #S_startinter,d0
         lea interflg(a5),a0
@@ -3038,10 +3018,10 @@ InbPaf: move.l otrap7(a6),a2
         trap #7
         move.l adk(a5),a0
         move.w 8(a0),ancdb8(a5)
-        move.l $400.l,anc400(a5) /* XXX */
+        move.l $400,anc400(a5)
         lea inter50(pc),a0 /* FIXME: self-modifying */
         move.l a5,2(a0)                 ;LOKE l'adresse de la table
-        move.l a0,$400.l /* XXX */
+        move.l a0,$400
 
 ; Initialise les extensions
         move.l bufpar(a5),a6
@@ -3063,7 +3043,7 @@ inb20:  cmp.l (a2),a3
         move.l a2,d1
         movem.l (sp)+,d2/a2/a3/a4/a5/a6
         tst.w d0
-        bne.w boutmem /* XXX */
+        bne boutmem
         move.l d1,26*4(a2)
 inb21:  lea 4(a2),a2
         dbra d2,inb20
@@ -3122,8 +3102,7 @@ FxFl1:  move.b #"0",(a0)      ;Ramene toujours la chaine nulle
 **********************************************
 ; ENTREE DES INTERRUPTIONS 50 HERZ
 inter50:lea $ffffff,a2
-        /* add.l #1,timer(a2)                ;timer! */
-        dc.w 0x06aa,0,1,timer /* XXX */
+        addq.l #1,timer(a2)                ;timer!
         tst.l waitcpt(a2)
         beq.s i5
         subq.l #1,waitcpt(a2)             ;compteur WAIT
@@ -3131,7 +3110,7 @@ inter50:lea $ffffff,a2
 i5:     move.l adk(a2),a1
         move 8(a1),d1
         cmp.w ancdb8(a2),d1
-        beq.w fi5 /* XXX */
+        beq fi5
 ; BUFFER PLEIN ???
         addq #4,d1
         cmp 6(a1),d1                  ;buffer PLEIN!
@@ -3168,12 +3147,12 @@ i5c:    cmp #32,d0
         bra.s i5z
 i5d:    lea b4(pc),a0
 i5z:
-        sub.l   #23*2,$4a2.l            ; Safe BIOS interrupt call /* XXX */
+        sub.l   #23*2,$4a2            ; Safe BIOS interrupt call
         move.l  a0,-(sp)
         move.w  #32,-(sp)
         trap    #14
         addq.l  #6,sp
-        add.l   #23*2,$4a2.l /* XXX */
+        add.l   #23*2,$4a2
 ; fin des interruptions: se rebranche a la routine normale
 fi5:    move.l anc400(a2),a0
         jmp (a0)
@@ -3219,21 +3198,17 @@ exec3:  movem.l (sp)+,d0-d3/a0-a3
 * ROUTINE GESTION DU JOYSTICK
 **********************************************
 Joy_In:
-    .IFNE 0 /* XXX */
         move.l  a1,-(sp)
         lea     Joy_Pos(pc),a1
+        move.b  1(a0),(a1)+
         move.b  2(a0),(a1)
         move.l  (sp)+,a1
         rts
-        .ELSE
-        move.b  2(a0),Joy_Pos
-        rts
-        .ENDC
 
 **********************************************
 ;       FIN BASIC SOUS GEM
 **********************************************
-fingem: move.l anc400(a5),$400.l /* XXX */
+fingem: move.l anc400(a5),$400
         moveq #M_stopinter,d0
         trap #7
         moveq #W_stopinter,d7
@@ -3242,9 +3217,9 @@ fingem: move.l anc400(a5),$400.l /* XXX */
         trap #5
 ; Enleve la workstation
         lea otrp1(pc),a0
-        move.l $84.l,(a0) /* XXX */
+        move.l $84,(a0)
         lea trp1(pc),a0
-        move.l a0,$84.l /* XXX */
+        move.l a0,$84
         lea trp2(pc),a0
         move.l work(a5),2(a0)
         move.l contrl(a5),a0
@@ -3255,9 +3230,9 @@ fingem: move.l anc400(a5),$400.l /* XXX */
         moveq #$73,d0
         move.l vdipb(a5),d1
         trap #2
-        move.l otrp1(pc),$84.l /* XXX */
+        move.l otrp1(pc),$84
 ; Remet le click des touches
-        move.b #7,$484.l /* XXX */
+        move.b #7,$484
 ; Restore la routine d'entree du joystick
         move.l  Joy_Ad(pc),d0
         beq.s   .Skip
@@ -3274,8 +3249,7 @@ lv1:    move.w (a4)+,(a0)+
         moveq #$18/2-1,d0
 lv2:    move.w (a4)+,(a0)+
         dbra d0,lv2
-        /* move.l adapt_gcurx(a3),a0       ;adresse souris */
-        dc.w 0x206b,0 /* XXX */
+        move.l adapt_gcurx(a3),a0       ;adresse souris
         move.l (a4)+,(a0)     ;coords de la souris
 ; Palette / images
         lea dataec(pc),a4
@@ -3303,8 +3277,7 @@ trp1:   cmp.b #$48,6(sp)
         beq.s trp3
         move.l otrp1(pc),-(sp)
         rts
-trp2:   /* moveq.l #-1,d0 */
-        dc.w 0x203c,-1,-1 /* XXX */
+trp2:   moveq.l #-1,d0
         rte
 trp3:   clr.l d0
         rte
@@ -3382,8 +3355,7 @@ Al1:    rol.l #4,d7
         andi.w #$f,d0
         cmp.b #10,d0
         bcs.s Al2
-        /* addi.b #7,d0 */
-        dc.w 0x0600,7 /* XXX */
+        addq.b #7,d0
 Al2:    addi.b #48,d0
         move.w d0,-(sp)
         move.w #2,-(sp)
@@ -3498,8 +3470,7 @@ Open2:  clr.w -(sp)
         bmi DErr
         move.l a3,-(sp)
         bsr GetFich
-        /* move.w d0,Poignee(a3)           ;Ouvre la fyche */
-        dc.w 0x3740,Poignee /* XXX */
+        move.w d0,Poignee(a3)           ;Ouvre la fyche
         move.l cdta+26(pc),d0
         move.l d0,Longfyche(a3)
         clr.l Posfyche(a3)
@@ -3517,8 +3488,7 @@ Create2:clr.w -(sp)
         bmi DErr
         move.l a3,-(sp)
         bsr GetFich
-        /* move.w d0,Poignee(a3) */
-        dc.w 0x3740,Poignee /* XXX */
+        move.w d0,Poignee(a3)
         clr.l Longfyche(a3)
         clr.l Posfyche(a3)
         move.l (sp)+,a3
@@ -3552,7 +3522,7 @@ load:   move.l a3,-(sp)
         trap #1
         lea 4(sp),sp
         cmp.l (sp)+,d0
-        bne.w DErr /* XXX */
+        bne DErr
         add.l d0,Posfyche(a3)           ;Change la position du pointeur
         move.l (sp)+,a0
         add.l d0,a0
@@ -3565,12 +3535,12 @@ Write:  move.l a3,-(sp)
         move.l a0,-(sp)                 ;adresse de sauvegarde
         move.l d0,-(sp)                 ;taille du fichier!
         move.w (a3),-(sp)
-        beq.w DErr /* XXX */
+        beq DErr
         move.w #$40,-(sp)
         trap #1
         lea 4(sp),sp
         cmp.l (sp)+,d0
-        bne.w DErr /* XXX */
+        bne DErr
         add.l d0,Posfyche(a3)           ;Position du pointeur
         move.l Posfyche(a3),d0
         cmp.l Longfyche(a3),d0          ;Augmente la taille de la fyche
@@ -3732,7 +3702,7 @@ Vt8:    move.b d1,3(a0)         ;Nombre de shifts
 ;---> Encore une variable?
         bsr getbyte
         cmp.b #",",d0
-        beq.w Cdim /* XXX */
+        beq Cdim
         subq.l #1,a6
         rts
 cddim:  moveq #0,d0             ;Nb Dim-1
@@ -4061,8 +4031,7 @@ Ev2:    bsr getbyte             ;Prend l'operateur
 
 EvFin:  cmp.b #")",d0           ;Fermeture d'une parenthese?
         bne.s Ev3
-        /* sub.w #1,parenth */
-        dc.l 0x04790001,parenth /* XXX */
+        subq.w #1,parenth
         bsr getbyte
 Ev3:    rts
 
@@ -4076,8 +4045,7 @@ Op0:    bsr getbyte
         andi.w #$ff,d0
         subi.w #DebFonc,d0
         bcs csynt
-        /* add.w #1,CptInst */
-        dc.l 0x06790001,CptInst /* XXX */
+        addq.w #1,CptInst
         lsl.w #2,d0             ;Appelle la routine
         lea fnjumps,a0
         move.l 0(a0,d0.w),a0
@@ -4112,10 +4080,9 @@ Op2:    tst.w (sp)
 ; parenthese?
 Op3:    cmp.b #"(",d0
         bne csynt
-        /* add.w #1,parenth */
-        dc.l 0x06790001,parenth /* XXX */
+        addq.w #1,parenth
         bsr EvalBis
-        bra.w Op1 /* XXX */
+        bra Op1
 
 ;-----> Egalise le type du resultat (D2/(A6))
 ;       au type demande D1
@@ -4194,9 +4161,7 @@ CCh1:   addq.l #4,a0            ;Ne poke pas si passe 0
         bsr GetWord             ;Compte la longueur des constantes
         add.w d0,a6
         add.l d0,LongChai
-        /* add.l #2,LongChai */
-        dc.w 0x06b9
-        dc.l 2,LongChai /* XXX */
+        addq.l #2,LongChai
         move.b #$80,d2
         rts
 
@@ -4574,8 +4539,7 @@ Cinc:   bsr test0
         bne ctype
         lea CdIn,a0
         bra code1
-CdIn:   /* add.l #1,(a0) */
-                dc.w 0x0690,0,1 /* XXX */
+CdIn:   addq.l #1,(a0)
         dc.w $1111
 
 ;-----> DEC
@@ -4589,8 +4553,7 @@ Cdec:   bsr test0
         bne ctype
         lea CdDe,a0
         bra code1
-CdDe:   /* sub.l #1,(a0) */
-        dc.w 0x490,0,1 /* XXX */
+CdDe:   subq.l #1,(a0)
         dc.w $1111
 
 ;-----> SORT
@@ -4781,21 +4744,21 @@ CNt:    not.l (a6)
 ;-----> RAD
 CRad:   bsr fflo
         moveq #50,d0
-        bra.w creflo /* XXX */
+        bra creflo
 ;-----> DEG
 CDeg:   bsr fflo
         moveq #48,d0
-        bra.w creflo /* XXX */
+        bra creflo
 ;-----> PI
 CPi:    moveq #46,d0
-        bra.w creflo /* XXX */
+        bra creflo
 
 ;-----> SINUS
 CSin:   moveq #51,d0
 CS1:    move.w d0,-(sp)
         bsr fflo                ;1 param FLOAT
         move.w (sp)+,d0
-        bra.w creflo              ;Cree le JSR / ramene un FLOAT /* XXX */
+        bra creflo              ;Cree le JSR / ramene un FLOAT
 ;-----> COSINUS
 CCos:   moveq #52,d0
         bra.s CS1
@@ -4848,22 +4811,22 @@ creflo: move.w #1,floflag
 CInt:   bsr FArg
         beq.s Ci1               ;INT(entier)= IDIOT!
         moveq #66,d0
-        bra.w creflo /* XXX */
+        bra creflo
 Ci1:    rts
 
 ;-----> SGN
 CSgn:   bsr FArg
         bne.s Ci2
         moveq #67,d0
-        bra.w creent /* XXX */
+        bra creent
 Ci2:    move.w #1,floflag
         moveq #68,d0
-        bra.w creent /* XXX */
+        bra creent
 
 ;-----> RND
 CRnd:   bsr fent
         moveq #69,d0
-        bra.w creent /* XXX */
+        bra creent
 
 ;-----> Sous prg MAX / MIN
 MaxMin: bsr getbyte
@@ -5038,8 +5001,7 @@ On2:    move.w cjmp,d0
         move.l d1,d0
         bset #29,d0
         bsr outlong
-        /* add.w #1,(sp) */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)
         bsr getbyte
         cmp.b #",",d0
         beq.s On2
@@ -5068,7 +5030,7 @@ Cif:    bsr test0
         bne csynt
         bsr pair                ;Saute le flag du THEN
         addq.l #4,a6
-        lea cthen,a0            ;Poke TST.L (A6)+ / BEQ XXXXX
+        lea cthen(pc),a0        ;Poke TST.L (A6)+ / BEQ XXXXX
         bsr code1
 ; Cherche le ELSE
         move.l a6,a0
@@ -5079,18 +5041,15 @@ If1:    move.b #$9a,d0
         beq.s If3
         bmi.s If2
 ; Found a THEN
-        /* addq.w #1,ccptnext */
-        dc.l 0x06790001,ccptnext /* XXX */
+        addq.w #1,ccptnext
         bra.s If1
 ; Found an ELSE
-If2:    /* subq.w #1,ccptnext */
-        dc.l 0x04790001,ccptnext /* XXX */
+If2:    subq.w #1,ccptnext
         bne.s If1
 ; Found the right ELSE
         bra.s If4
 ; Pas de ELSE
-If3:    /* move.l #$1,a1 */
-        dc.w 0x227c,0,1 /* XXX */
+If3:    move.l #$1,a1
 ; Store in the addressing table
 If4:    move.l Pif,a0
         move.l a1,(a0)+
@@ -5205,8 +5164,7 @@ for2:   move.b #$9d,d0
         cmp.l (sp),a0
         move.l a6,a0            ;La meme variable?
         bne.s for2
-        /* add #1,ccptnext */
-        dc.l 0x06790001,ccptnext /* XXX */
+        addq.w #1,ccptnext
         bra.s for2
 ; a trouve un NEXT
 for4:   move.l a1,a2            ;a1 pointe le NEXT
@@ -5220,10 +5178,9 @@ for4:   move.l a1,a2            ;a1 pointe le NEXT
         move.l (sp)+,a2
         cmp.l (sp),a0           ;compare la variable
         move.l a6,a0
-        bne.w for2 /* XXX */
-for5:   /* sub #1,ccptnext */
-        dc.l 0x04790001,ccptnext /* XXX */
-        bne.w for2 /* XXX */
+        bne for2
+for5:   subq.w #1,ccptnext
+        bne for2
         move.l a2,(sp)          ;pointe le NEXT
         move.l 4(sp),a6         ;a6 repointe le TO
 
@@ -5256,8 +5213,7 @@ for12:  move.w 8(sp),d1
         move.l cposbcle,a0
         lea -16(a0),a0
         move.l a0,cposbcle
-        /* add.w #1,cnboucle */
-        dc.l 0x06790001,cnboucle /* XXX */
+        addq.w #1,cnboucle
         move.l a6,(a0)          ;debut de la boucle
         move.l (sp)+,4(a0)      ;Fin de la boucle
         move.l a5,8(a0)         ;Adresse du chargement de adresses
@@ -5302,10 +5258,9 @@ CNx0:   move.l (sp)+,d0
 ; Verifie qu'il s'agit du bon next
         move.l cposbcle,a0
         cmp.l 4(a0),d0          ;Bonne boucle?
-        bne.w cnxfo /* XXX */
+        bne cnxfo
         add.l #16,cposbcle      ;depile
-        /* sub.w #1,cnboucle */
-        dc.l 0x04790001,cnboucle /* XXX */
+        subq.w #1,cnboucle
         move.w 12(a0),d2        ;Type de la boucle
 ; Loke l'adresse du NEXT dans le LEA du FOR -completement genial merde-
         move.l a5,-(sp)
@@ -5363,12 +5318,10 @@ wh2:    move.b #$9e,d0
         beq.s cwhw
         bmi.s wh3
 ; a trouve un while
-        /* addq.w #1,ccptnext */
-        dc.l 0x06790001,ccptnext /* XXX */
+        addq.w #1,ccptnext
         bra.s wh2
 ; a trouve un wend
-wh3:    /* subq.w #1,ccptnext */
-        dc.l 0x04790001,ccptnext /* XXX */
+wh3:    subq.w #1,ccptnext
         bne.s wh2
 ; a trouve le bon wend
         move.l a5,-(sp)         ;Adresse du debut de la boucle (objet)
@@ -5378,8 +5331,7 @@ wh3:    /* subq.w #1,ccptnext */
         move.l cposbcle,a0
         lea -16(a0),a0
         move.l a0,cposbcle
-        /* add.w #1,cnboucle */
-        dc.l 0x06790001,cnboucle /* XXX */
+        addq.w #1,cnboucle
         move.l a6,(a0)          ;debut de la boucle (source)
         move.l (sp)+,4(a0)      ;Fin de la boucle (source)
         move.l a5,8(a0)         ;Adresse de l'adresse NEXT (objet)
@@ -5408,8 +5360,7 @@ Cwend:  move.w ctstnbcle,d0
         addq.l #1,a6
 ; Une boucle de moins
         add.l #16,cposbcle
-        /* sub.w #1,cnboucle */
-        dc.l 0x04790001,cnboucle /* XXX */
+        subq.w #1,cnboucle
 ; Loke l'adresse du WEND dans le LEA du WHILE
         bsr Test1
         move.l a5,-(sp)
@@ -5442,19 +5393,16 @@ rp2:    move.b #$9f,d0
         beq.w crpu
         bmi.s rp3
 ; a trouve un repeat
-        /* add.w #1,ccptnext */
-        dc.l 0x06790001,ccptnext /* XXX */
+        addq.w #1,ccptnext
         bra.s rp2
 ; a trouve un until
-rp3:    /* sub.w #1,ccptnext */
-        dc.l 0x04790001,ccptnext /* XXX */
+rp3:    subq.w #1,ccptnext
         bne.s rp2
 ; a trouve le bon until
         move.l cposbcle,a0
         lea -16(a0),a0
         move.l a0,cposbcle
-        /* add.w #1,cnboucle */
-        dc.l 0x06790001,cnboucle /* XXX */
+        addq.w #1,cnboucle
         move.l a6,(a0)          ;debut de la boucle (source)
         move.l a1,4(a0)         ;Fin de la boucle (source)
         move.l a5,8(a0)         ;Adresse de la boucle (objet)
@@ -5471,8 +5419,7 @@ Cuntil:  move.w ctstnbcle,d0
         addq.l #1,a6
 ; Une boucle de moins
         add.l #16,cposbcle
-        /* sub.w #1,cnboucle */
-        dc.l 0x04790001,cnboucle /* XXX */
+        subq.w #1,cnboucle
 ; evalue l'expression
         bsr Test1
         move.l a2,-(sp)
@@ -5559,7 +5506,7 @@ supfind:bsr ftoken
         beq.s sf5
         move.l a0,coldf
         addq.l #4,a0
-        bra.w supfind /* XXX */
+        bra supfind
 sf5:    rts
 
 ; FIND TOKEN: CHERCHE UN TOKEN DANS LA LIGNE ACTUELLE
@@ -6062,7 +6009,7 @@ CIright:  bsr Cim
 ;-----> MID$(a$,xx)= / MID$(a$,xx,yy)=
 Cmidset:  bsr Cim
         cmp.w #2,d7
-        beq.w cimd /* XXX */
+        beq cimd
         moveq #L_imid1,d0
         bra crefonc
 cimd:   moveq #L_imid2,d0
@@ -6703,8 +6650,7 @@ Ccharcopy:   bsr test0
 Cwindopen:  bsr test0
         lea parent(pc),a2
         bsr parinst
-        /* subq.w #5,d0 */
-        dc.w 0x440,5 /* XXX */
+        subq.w #5,d0
         bcs csynt
         cmp.w #3,d0
         bcc csynt
@@ -6988,7 +6934,7 @@ Cmeno:  move.w #1,flagmenu
         bsr onoff
         bcs.s cmnf
         bmi csynt
-        bne.w cmno /* XXX */
+        bne cmno
 ; Off
         move.w #L_menuoff,d0
         bra crefonc
@@ -7043,8 +6989,7 @@ onmn3:  bsr Constant
         bsr outword
         move.l d1,d0
         bsr outlong
-        /* addq.w #1,(sp) */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)
         bsr getbyte
         cmp.b #",",d0
         beq.s onmn3
@@ -7282,16 +7227,14 @@ polyp:  bsr test0
         cmp.b #$80,d0
         bne.s cpp1
         addq.l #1,a6
-        /* addq.w #1,(sp) */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)
         move.w #1,2(sp)
 cpp1:   bsr expentier
         bsr getbyte
         cmp.b #",",d0
         bne csynt
         bsr expentier
-        /* addq.w #1,(sp) */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)
         bsr getbyte
         cmp.b #$80,d0
         beq.s cpp1
@@ -7337,8 +7280,7 @@ pm1:    bsr expentier
         cmp.b #",",d0
         bne csynt
         bsr expentier
-        /* addq.w #1,(sp) */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)
         bsr getbyte
         cmp.b #";",d0
         beq.s pm1
@@ -7512,8 +7454,7 @@ cho:    bsr test0
         bsr onoff
         bmi csynt
         beq csynt
-        /* addq.w #1,(sp) */ /* -> L_showon/L_Hideon */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp) ; -> L_showon/L_Hideon
 cho1:   move.w (sp)+,d0
         bra crefonc
 
@@ -7542,10 +7483,8 @@ CSy:    bsr test0
         bsr onoff
         bmi.s csy2
         beq.s csy1
-        /* addq.w #1,(sp) */ /* -> L_syncon */
-        dc.w 0x0657,1 /* XXX */
-csy1:   /* addq.w #1,(sp) */ /* -> L_syncoff */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp) ; -> L_syncon
+csy1:   addq.w #1,(sp) ; -> L_syncoff
 csy2:   bcs csynt
         move.w (sp)+,d0
         bra crefonc
@@ -7596,11 +7535,9 @@ mv0:    bsr test0
         bcs.s mv1
         bmi.s mv5
         beq.s mv2               ;Off
-        /* addq.w #1,(sp)           ;On */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)          ;On
         bra.s mv2
-mv1:    /* addq.w #2,(sp)           ;Freeze */
-        dc.w 0x0657,2 /* XXX */
+mv1:    addq.w #2,(sp)           ;Freeze
 mv2:    bsr finie
         bne.s mv3
         move.w (sp)+,d0          ;Pas de param
@@ -8240,8 +8177,7 @@ CFld:   bsr expentier
         bsr varad
         lea Cfield(pc),a0
         bsr code0
-        /* addq.w #1,(sp) */
-        dc.w 0x0657,1 /* XXX */
+        addq.w #1,(sp)
         bsr getbyte
         cmp.b #",",d0
         beq.s CFld
@@ -8543,8 +8479,7 @@ code1:  movem.l a0/d0/d1,-(sp)
         move.w #$1111,d1        ;Termine par 1
         bra.s cod
 code0:  movem.l a0/d0/d1,-(sp)
-        /* clr.w d1        ;Termine par 0 */
-        dc.w 0x323c,0 /* XXX */
+        clr.w d1        ;Termine par 0
 cod:    move.w (a0)+,d0
         cmp.w d0,d1
         beq.s codfin

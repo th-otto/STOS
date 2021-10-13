@@ -125,7 +125,7 @@ Skip0:
     lea     16(a0),a1
     move.l  a1,adapt_mousevec(a5)
     lea     24(a0),a0
-    lea     Joy_Pos(pc),a1
+    lea     Joy_Pos+1(pc),a1
     move.l  a0,Joy_Ad-Joy_Pos(a1)
     move.l  (a0),Joy_Sav-Joy_Pos(a1)
     move.l  a1,adapt_joy(a5)        ; Result address
@@ -448,8 +448,11 @@ bcl8:
 
 ; Joystick input routine
 ; ~~~~~~~~~~~~~~~~~~~~~~
-Joy_In: lea     Joy_Pos(pc),a2
-        move.b  2(a0),(a2)
+Joy_In: move.l  a1,-(sp)
+        lea     Joy_Pos(pc),a1
+        move.b  1(a0),(a1)+
+        move.b  2(a0),(a1)
+        move.l  (sp)+,a1
         rts
 
 ; As supervisor
