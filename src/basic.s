@@ -2,6 +2,7 @@
 
           /* Output Stos\Basic208.Bin */
 
+	.include "system.inc"
 	.include "adapt.inc"
 	.include "file.inc"
 	.include "tokens.inc"
@@ -1254,7 +1255,7 @@ dirjumps: dc.l listbank
 
 ; ADDRESS OF EXTENDED ROUTINES
           dc.b "Jexten"
-extjumps: dc.l dirw
+extjumps: dc.l dirw             ; $70
           dc.l fde
           dc.l bcopy
           dc.l textbox
@@ -1270,7 +1271,7 @@ extjumps: dc.l dirw
           dc.l syntax
           dc.l charcopy
           dc.l underline
-          dc.l menu
+          dc.l menu             ; $80
           dc.l menuonof
           dc.l title
           dc.l border
@@ -1286,7 +1287,7 @@ extjumps: dc.l dirw
           dc.l ping
           dc.l note
           dc.l noise
-          dc.l voice
+          dc.l voice            ; $90
           dc.l music
           dc.l box
           dc.l rbox
@@ -1302,7 +1303,7 @@ extjumps: dc.l dirw
           dc.l bchge
           dc.l call
           dc.l trahp
-          dc.l syntax
+          dc.l syntax           ; $a0
           dc.l run
           dc.l clearkey
           dc.l lineinput
@@ -1318,7 +1319,7 @@ extjumps: dc.l dirw
           dc.l syntax
           dc.l copy
           dc.l def
-          dc.l hide
+          dc.l hide             ; $b0
           dc.l show
           dc.l chgmouse
           dc.l limouse
@@ -1334,7 +1335,7 @@ extjumps: dc.l dirw
           dc.l anime
           dc.l unfreeze
           dc.l setzone
-          dc.l reszone
+          dc.l reszone          ; $c0
           dc.l limsprite
           dc.l priority
           dc.l reduce
@@ -1350,7 +1351,7 @@ extjumps: dc.l dirw
           dc.l keyfnc
           dc.l openin
           dc.l openout
-          dc.l hopen
+          dc.l hopen            ; $d0
           dc.l klose
           dc.l field
           dc.l syntax
@@ -1366,7 +1367,7 @@ extjumps: dc.l dirw
           dc.l get
           dc.l flash
           dc.l syntax
-          dc.l lprint
+          dc.l lprint           ; $e0
           dc.l sautoback
           dc.l setline
           dc.l setwrite
@@ -1382,7 +1383,7 @@ extjumps: dc.l dirw
           dc.l epie
           dc.l ellipse
           dc.l writing
-          dc.l paint
+          dc.l paint            ; $f0
           dc.l setink
           dc.l wait
           dc.l clik
@@ -1718,7 +1719,7 @@ lbkflg:   dc.w 0              ; list of banks in HEXA or DECIMAL
 handle:   dc.w 0              ; open file handle
 upperflg: dc.w 0              ; listing in lowercase or uppercase
 unewpos:  dc.l 0              ; size of the first line when unnew
-unewbank: ds.l 16             ; copy of banks during NEW
+unewbank: ds.l MAX_BANKS      ; copy of banks during NEW
 unewhi:   dc.l 0              ; start of data banks
 searchd:  dc.w 0              ; start of search
 searchf:  dc.w 0              ; end of search
@@ -1826,10 +1827,10 @@ accflg:   dc.w 0              ;programme accessoire?
 reactive: dc.w 0              ;programme a activer a la sortie d'un accessoire
 avanthelp:dc.w 0              ;fenetre activee avant l'appel de HELP
 ;autres PROGRAMMES: 16 en tout
-dataprg:  ds.l 16*2           ;en premier: ADPRG, puis LPRG
+dataprg:  ds.l MAX_PROGRAMS*2 ;en premier: ADPRG, puis LPRG
 fbufprg:  dc.l 0              ;FUTE! fin de la memoire des programmes
 ;BANKS de memoire dans les programmes: 16/PROGRAMMES
-databank: ds.l 16*16
+databank: ds.l MAX_BANKS*MAX_PROGRAMS
 ;Multifenetrage
 fenetre:  dc.w 0              ;fenetre actuellement ouverte
 typecran: dc.w 0              ;full:0, 2,3,4 actuellement active
@@ -1970,7 +1971,7 @@ ig1:      clr.l (a0)+         ;nettoie la memoire VITE
           addq.l #2,fsource
           move.l d1,a1        ;initialise les autres programmes
           add.l lbufprg,a1
-          sub.l #2*16,a1
+          sub.l #2*MAX_PROGRAMS,a1
           move.l a1,d2
           clr.b d2            ;rend TOPMEM multiple de 256!
 ig0:      move.l d2,himem     ;fin de la memoire basic
@@ -3449,20 +3450,20 @@ detok:    movem.l d0-d7/a0-a6,-(sp)
           addq.l #2,a6
           clr.l d0
           move.w (a6)+,d0
-          bsr longdec         ;numero de ligne
+          bsr longdec         ;line number
           move.b #' ',(a5)+
           move.b #$ff,d1      ;no space after!
           clr remflg
 
-dt1:      cmp.l a3,a6         ;fin de la ligne?
+dt1:      cmp.l a3,a6         ;end of line?
           bcc dt20
           move.b (a6)+,d0
-          tst remflg          ;si REM: affiche tout!
+          tst remflg          ;if REM: display all!
           bne dt5a
           tst.b d0
           bmi dt2
 
-; CE N'EST PAS UN TOKEN
+; THIS IS NOT A TOKEN 
           cmp.b #":",d0
           bne.s dt1a
           move.b #' ',(a5)+    ;deux points, toujours avec des espaces!
@@ -3498,7 +3499,7 @@ dr0:      move a6,d2          ;format: TOKEN/pair/ADRESSE MOT LONG/
           btst #0,d2
           beq.s dr1
           addq.l #1,a6        ;si impair: rend pair
-dr1:      cmp.b #$a0,d0
+dr1:      cmp.b #T_repeat+1,d0
           bcs dr21         ;branchement: va detokeniser
           tst.b d1
           beq.s dr1a         ;si lettre avant: RIEN
@@ -3545,7 +3546,7 @@ dr7:      cmp.b #T_constflt,d0
           move.l (a6)+,d1
           move.l (a6),d2
           move.l a5,-(sp)
-          move #$3134,d3      ;jusqu'a 14 chiffres apres la virgule
+          move #$3134,d3      ;up to 14 decimal places
           moveq #-1,d4        ;representation normale des floats
           moveq #0,d5         ;mode listings!
           bsr dtokfl
@@ -3564,10 +3565,10 @@ dr8:      cmp.b #".",(a0)     ;recherche un point
 dr19:     clr d1              ;simule une lettre AVANT!
 dr20:     addq.l #4,a6
           bra dt1
-; TOKEN A BRANCHEMENT: saute l'adresse et dtokenise!
+; BRANCHEMENT TOKEN: skip the address and dtokenise!
 dr21:     addq.l #4,a6
 
-; DETOKENISE LES TOKENS NORMAUX
+; DETOKENIZE NORMAL TOKENS
 dt10:     cmp.b #T_operator,d1       ;if front operator: no space
           bcc.s dt10aa
           cmp.b #T_operator,d0       ;if operator: no space
@@ -4646,7 +4647,7 @@ ouvreacc: move.l dta+26,d6    ;entree pour ACCLOAD (pas de SFIRST)
           bsr open            ;va ouvrir le fichier
           bmi diskerr
           move d0,handle
-          moveq.l #10,d0       ;lis le codage du fichier
+          moveq.l #10,d0      ;read the encoding of the file
           lea buffer,a0
           bsr readisk
           bmi diskerr
@@ -4656,7 +4657,7 @@ ouvre2:   move.b (a0)+,d1
           cmp.b (a1)+,d1
           bne noformat
           dbra d0,ouvre2
-          subi.l #10,d6        ;ramene la longueur du fichier en D6
+          subi.l #10,d6       ;reduce the length of the file to D6
           clr d0
           rts
 noformat: moveq #1,d0         ;ne branche au message d'erreur
@@ -4733,8 +4734,8 @@ load2:    tst runflg
 load3:    lea name1,a0
           bsr ouvrebas        ;ouvre un fichier SOURCE BASIC
           subq.l #4,d6
-          subi.l #16*4,d6
-          add.l dsource,d6    ;d6= taille du prg + banques
+          subi.l #MAX_BANKS*4,d6
+          add.l dsource,d6    ;d6 = size of prg + banks
           cmp.l topmem,d6
           bcc outofmem
 ; OK: charge le programme BASIC
@@ -4745,7 +4746,7 @@ loadbis:  bsr new             ;va faire un new
           bsr readisk         ;lis dataprg
           bmi errload
           move.l adatabank,a0
-          moveq.l #16*4,d0
+          moveq.l #MAX_BANKS*4,d0
           bsr readisk         ;lis databank
           bmi errload
           move.l adataprg,a0
@@ -13126,13 +13127,13 @@ getlanguage:  clr.l d3
           clr.b d2
           rts
 
-; POINTE LA BANQUE D3 DANS LA DATAZONE ACTUELLE (A0), RAMENE SON ADRESSE (A1)
+; POINTS BANK D3 IN THE CURRENT DATAZONE (A0), RETURNS ITS ADDRESS (A1)
 adbank:   move.l adatabank,a0
           move.l himem,a1     ;depart des banques
 adbis:    move.l d1,-(sp)     ;entree pour bgrab
           tst.l d3
           beq foncall
-          cmp.l #16,d3
+          cmp.l #MAX_BANKS,d3
           bcc foncall
           addq.l #4,a0        ;saute le source
           move d3,d1
@@ -13602,7 +13603,7 @@ llistbank:move #1,impflg
 listbank: clr impflg
 lstbk1:   move.l adatabank,a0
           addq.l #4,a0
-          move #14,d0
+          move #MAX_BANKS-2,d0
 lstbk0:   tst.l (a0)+         ;cherche une banque pleine
           bne.s lstbkb
           dbra d0,lstbk0
@@ -13667,7 +13668,7 @@ lstbk6:   bsr ttlist
           beq.s lstbk6
           bmi.s lstbk8
 lstbk7:   addq #1,d5
-          cmp.w #16,d5
+          cmp.w #MAX_BANKS,d5
           bcs lstbk2
 lstbk8:   move.l (sp)+,a5
 lstbk9:   rts

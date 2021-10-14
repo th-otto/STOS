@@ -1,3 +1,6 @@
+MAX_BANKS    = 16
+MAX_PROGRAMS = 16
+
 *
 * internal vectors.
 * A pointer to this structure is passed in A0 to extensions
