@@ -1045,23 +1045,102 @@ jumps:    dc.l syntax           ;$80
 
 ; ADRESSE DES FONCTIONS
           dc.b "Jfonct"                 ;repere JUMPS FONCTIONS
-opejumps: dc.l fetendu,psgfonc,screen,dreg,areg,point,fndrived,fndir
-          dc.l extfunc,abs,colorf,fonkey,sin,cos,fndrive,getimer
-          dc.l logical,fn,naut,rnd,bval,asc,chr,inkey
-          dc.l scancode,mid,right,left,length,start,len,pi
-          dc.l peek,deek,leek,zone,xsprite,ysprite,xmouse,ymouse
-          dc.l mousekey,physical,backgrnd,log10,pofonc,fnmode,time,date
-          dc.l scrfonc,default
+opejumps: dc.l fetendu
+          dc.l psgfonc
+          dc.l screen
+          dc.l dreg
+          dc.l areg
+          dc.l point
+          dc.l fndrived
+          dc.l fndir
+          dc.l extfunc
+          dc.l abs
+          dc.l colorf
+          dc.l fonkey
+          dc.l sin
+          dc.l cos
+          dc.l fndrive
+          dc.l getimer
+          dc.l logical
+          dc.l fn
+          dc.l naut
+          dc.l rnd
+          dc.l bval
+          dc.l asc
+          dc.l chr
+          dc.l inkey
+          dc.l scancode
+          dc.l mid
+          dc.l right
+          dc.l left
+          dc.l length
+          dc.l start
+          dc.l len
+          dc.l pi
+          dc.l peek
+          dc.l deek
+          dc.l leek
+          dc.l zone
+          dc.l xsprite
+          dc.l ysprite
+          dc.l xmouse
+          dc.l ymouse
+          dc.l mousekey
+          dc.l physical
+          dc.l backgrnd
+          dc.l log10
+          dc.l pofonc
+          dc.l fnmode
+          dc.l time
+          dc.l date
+          dc.l scrfonc
+          dc.l default
 ; operateurs: ne peuvent etre appeles que par EVALUE
-          dc.l syntax,syntax,syntax,syntax,syntax,syntax  ;debut des operateurs
-          dc.l syntax,syntax,syntax,syntax,syntax,syntax,syntax,syntax
-          dc.l syntax,syntax,findvar,entier,alpha,entier,entier,float
+          dc.l syntax  ;start of operators
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l findvar
+          dc.l entier
+          dc.l alpha
+          dc.l entier
+          dc.l entier
+          dc.l float
 
 ; ADRESSE DES OPERATEURS
-evajumps: dc.l syntax,opxor,opor,opand
-          dc.l diff,infeg,supeg,egale,inf,sup
-          dc.l plus,moins,modulo,multiplie,divise,power
-          dc.l syntax,syntax,syntax,syntax,syntax       ;debut des constantes
+evajumps: dc.l syntax
+          dc.l opxor
+          dc.l opor
+          dc.l opand
+          dc.l diff
+          dc.l infeg
+          dc.l supeg
+          dc.l egale
+          dc.l inf
+          dc.l sup
+          dc.l plus
+          dc.l moins
+          dc.l modulo
+          dc.l multiplie
+          dc.l divise
+          dc.l power
+          dc.l syntax       ;start of constants
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
 
 ; ADRESSE DES FONCTIONS ETENDUES
           dc.b "Jfctex"       ;repere JUMPS FONCTIONS ETENDUES
@@ -1140,33 +1219,185 @@ extfonc:  dc.l sinh             ; $80
 
 ; ADRESSE DES ROUTINES DIRECTES $60< token < $80
           dc.b "Jdirec"       ;repere JUMPS FONCTIONS DIRECTES
-dirjumps: dc.l listbank,llistbank,follow,freq,cont,exchange,search,delete
-          dc.l merge,auto,new,unnew,fload,fsave,warm,system
-          dc.l ambiance,renum,multi,fullscreen,grab,list,llist,hexa
-          dc.l pasimp,accload,accnew,upper,lower,english,francais,pasimp
+dirjumps: dc.l listbank
+          dc.l llistbank
+          dc.l follow
+          dc.l freq
+          dc.l cont
+          dc.l exchange
+          dc.l search
+          dc.l delete
+          dc.l merge
+          dc.l auto
+          dc.l new
+          dc.l unnew
+          dc.l fload
+          dc.l fsave
+          dc.l warm
+          dc.l system
+          dc.l ambiance
+          dc.l renum
+          dc.l multi
+          dc.l fullscreen
+          dc.l grab
+          dc.l list
+          dc.l llist
+          dc.l hexa
+          dc.l pasimp
+          dc.l accload
+          dc.l accnew
+          dc.l upper
+          dc.l lower
+          dc.l english
+          dc.l francais
+          dc.l pasimp
 
 ; ADDRESS OF EXTENDED ROUTINES
           dc.b "Jexten"
-extjumps: dc.l dirw,fde,bcopy,textbox
-          dc.l previous,transpose,colshift,waitkey
-          dc.l dir,ldir,bload,bsave,qwindow,syntax,charcopy,underline
-          dc.l menu,menuonof,title,border,hardcopy,windcopy,redraw,center
-          dc.l tempo,volume,envel,explode,shoot,ping,note,noise
-          dc.l voice,music,box,rbox,bar,rbar,appear,bclair
-          dc.l bsait,raul,raur,curs,clw,bchge,call,trahp
-          dc.l syntax,run,clearkey,lineinput,input,clear,data,end
-          dc.l erase,reserve,syntax,syntax,syntax,syntax,copy,def
-          dc.l hide,show,chgmouse,limouse,mouvex,mouvey,fix,bgrab
-          dc.l pasimp,fill,keylist,keyspeed,mouve,anime,unfreeze,setzone
-          dc.l reszone,limsprite,priority,reduce,putspr,getspr,load,save
-          dc.l palet,sync,erraur,breaque,llet,keyfnc,openin,openout
-          dc.l hopen,klose,field,syntax,putkey,getpalet,kill,rename
-          dc.l rmdir,mkdir,stop,waitvbl,sort,get,flash,syntax
-          dc.l lprint,sautoback,setline,setwrite,setmark,setpaint,pasimp
+extjumps: dc.l dirw
+          dc.l fde
+          dc.l bcopy
+          dc.l textbox
+          dc.l previous
+          dc.l transpose
+          dc.l colshift
+          dc.l waitkey
+          dc.l dir
+          dc.l ldir
+          dc.l bload
+          dc.l bsave
+          dc.l qwindow
+          dc.l syntax
+          dc.l charcopy
+          dc.l underline
+          dc.l menu
+          dc.l menuonof
+          dc.l title
+          dc.l border
+          dc.l hardcopy
+          dc.l windcopy
+          dc.l redraw
+          dc.l center
+          dc.l tempo
+          dc.l volume
+          dc.l envel
+          dc.l explode
+          dc.l shoot
+          dc.l ping
+          dc.l note
+          dc.l noise
+          dc.l voice
+          dc.l music
+          dc.l box
+          dc.l rbox
+          dc.l bar
+          dc.l rbar
+          dc.l appear
+          dc.l bclair
+          dc.l bsait
+          dc.l raul
+          dc.l raur
+          dc.l curs
+          dc.l clw
+          dc.l bchge
+          dc.l call
+          dc.l trahp
+          dc.l syntax
+          dc.l run
+          dc.l clearkey
+          dc.l lineinput
+          dc.l input
+          dc.l clear
+          dc.l data
+          dc.l end
+          dc.l erase
+          dc.l reserve
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l copy
+          dc.l def
+          dc.l hide
+          dc.l show
+          dc.l chgmouse
+          dc.l limouse
+          dc.l mouvex
+          dc.l mouvey
+          dc.l fix
+          dc.l bgrab
+          dc.l pasimp
+          dc.l fill
+          dc.l keylist
+          dc.l keyspeed
+          dc.l mouve
+          dc.l anime
+          dc.l unfreeze
+          dc.l setzone
+          dc.l reszone
+          dc.l limsprite
+          dc.l priority
+          dc.l reduce
+          dc.l putspr
+          dc.l getspr
+          dc.l load
+          dc.l save
+          dc.l palet
+          dc.l sync
+          dc.l erraur
+          dc.l breaque
+          dc.l llet
+          dc.l keyfnc
+          dc.l openin
+          dc.l openout
+          dc.l hopen
+          dc.l klose
+          dc.l field
+          dc.l syntax
+          dc.l putkey
+          dc.l getpalet
+          dc.l kill
+          dc.l rename
+          dc.l rmdir
+          dc.l mkdir
+          dc.l stop
+          dc.l waitvbl
+          dc.l sort
+          dc.l get
+          dc.l flash
+          dc.l syntax
+          dc.l lprint
+          dc.l sautoback
+          dc.l setline
+          dc.l setwrite
+          dc.l setmark
+          dc.l setpaint
+          dc.l pasimp
           dc.l setpatt
-          dc.l clip,arc,polygone,circle,earc,epie,ellipse,writing
-          dc.l paint,setink,wait,clik,put,zoom,setcurs,scrolldn
-          dc.l scrollup,scroll,inverse,shade,windopen,window,windmov,windel
+          dc.l clip
+          dc.l arc
+          dc.l polygone
+          dc.l circle
+          dc.l earc
+          dc.l epie
+          dc.l ellipse
+          dc.l writing
+          dc.l paint
+          dc.l setink
+          dc.l wait
+          dc.l clik
+          dc.l put
+          dc.l zoom
+          dc.l setcurs
+          dc.l scrolldn
+          dc.l scrollup
+          dc.l scroll
+          dc.l inverse
+          dc.l shade
+          dc.l windopen
+          dc.l window
+          dc.l windmov
+          dc.l windel
 
 ; TABLE OF USEFUL ADDRESSES FOR EXTENSION ROUTINES
 ; must match the layout defined in system.inc
@@ -1174,7 +1405,7 @@ routines: dc.l buffer               ;$00
           dc.l fltoint
           dc.l inttofl
           dc.l dta
-          dc.l filetab             ;$10
+          dc.l filetab              ;$10
           dc.l erreur
           dc.l err2
           dc.l demande
@@ -3208,19 +3439,19 @@ upper:    clr upperflg
 lower:    move #1,upperflg
           rts
 
-; DETOKENISATION DU BUFFER DE TOKENISATION--->BUFFER D'ENTREE
+; DETOKENIZATION OF THE TOKENIZATION BUFFER ---> STARTER BUFFER
 detokbuf: lea buftok,a6
 detok:    movem.l d0-d7/a0-a6,-(sp)
           sub.l a3,a3
           move (a6),a3
-          add.l a6,a3         ;adresse de fin de la ligne en a3
+          add.l a6,a3         ;end of line address in a3
           lea buffer,a5
           addq.l #2,a6
           clr.l d0
           move.w (a6)+,d0
           bsr longdec         ;numero de ligne
-          move.b #32,(a5)+
-          move.b #$ff,d1      ;pas d'espace apres!
+          move.b #' ',(a5)+
+          move.b #$ff,d1      ;no space after!
           clr remflg
 
 dt1:      cmp.l a3,a6         ;fin de la ligne?
@@ -3234,16 +3465,16 @@ dt1:      cmp.l a3,a6         ;fin de la ligne?
 ; CE N'EST PAS UN TOKEN
           cmp.b #":",d0
           bne.s dt1a
-          move.b #32,(a5)+    ;deux points, toujours avec des espaces!
+          move.b #' ',(a5)+    ;deux points, toujours avec des espaces!
           move.b #":",(a5)+
-          move.b #32,(a5)+
+          move.b #' ',(a5)+
           move.b #$ff,d1
           bra.s dt1
 dt1a:     tst.b d1
           beq.s dt1b           ;pas un token: pas d'espace
           cmp.b #$b0,d1
           bcc.s dt1b         ;une fonction/operateur: pas d'espace!
-          move.b #32,(a5)+    ;met un espace!
+          move.b #' ',(a5)+    ;met un espace!
 dt1b:     tst upperflg
           beq.s dt5a
           cmp.b #"A",d0       ;transforme en minuscule si flg a un!
@@ -3256,13 +3487,13 @@ dt5a:     move.b d0,(a5)+     ;on stocke
           bra dt1            ;et on boucle
 
 ; C'EST UN TOKEN
-dt2:      cmp.b #$98,d0       ;token particulier?
+dt2:      cmp.b #T_goto,d0       ;token particulier?
           bcs dt10
-          cmp.b #$a0,d0
+          cmp.b #T_repeat+1,d0
           bcs dr0
-          cmp.b #$fa,d0
+          cmp.b #T_var,d0
           bcs dt10
-; DETOKENISE LES CODES PARTICULIERS
+; DETOKENIZE SPECIAL CODES
 dr0:      move a6,d2          ;format: TOKEN/pair/ADRESSE MOT LONG/
           btst #0,d2
           beq.s dr1
@@ -3271,26 +3502,26 @@ dr1:      cmp.b #$a0,d0
           bcs dr21         ;branchement: va detokeniser
           tst.b d1
           beq.s dr1a         ;si lettre avant: RIEN
-          cmp.b #$ea,d1
+          cmp.b #T_operator,d1
           bcc.s dr1a       ;si OPERATEUR avant: RIEN
-          move.b #32,(a5)+
-dr1a:     cmp.b #$fa,d0       ;variable ?
+          move.b #' ',(a5)+
+dr1a:     cmp.b #T_var,d0       ;variable ?
           beq dr19
 ; CHIFFRE HEXA
-          cmp.b #$fd,d0
+          cmp.b #T_consthex,d0
           bne.s dr2
           move.l (a6),d0
           moveq.l #-1,d3       ;representation limitee
           bsr longascii
           bra dr19
 ; CHIFFRE ENTIER
-dr2:      cmp.b #$fe,d0
+dr2:      cmp.b #T_constint,d0
           bne.s dr3
           move.l (a6),d0      ;chiffer ENTIER
           bsr longdec
           bra dr19
 ; CHAINE ALPHANUMERIQUE
-dr3:      cmp.b #$fc,d0
+dr3:      cmp.b #T_conststr,d0
           bne.s dr6
           move.b #'"',(a5)+   ;guillemets!
           move.l (a6)+,d0
@@ -3302,14 +3533,14 @@ dr5:      move.b #'"',(a5)+   ;guillemets!
           clr d1              ;simule une lettre avant
           bra dt1
 ; CHIFFRE BINAIRE
-dr6:      cmp.b #$fb,d0
+dr6:      cmp.b #T_constbin,d0
           bne.s dr7
           moveq.l #-1,d3       ;representation limitee
           move.l (a6),d0
           bsr longbin
           bra dr19
 ; CHIFFRE FLOAT
-dr7:      cmp.b #$ff,d0
+dr7:      cmp.b #T_constflt,d0
           bne dt10
           move.l (a6)+,d1
           move.l (a6),d2
@@ -3337,29 +3568,29 @@ dr20:     addq.l #4,a6
 dr21:     addq.l #4,a6
 
 ; DETOKENISE LES TOKENS NORMAUX
-dt10:     cmp.b #$ea,d1       ;si operateur avant: pas d'espace
+dt10:     cmp.b #T_operator,d1       ;if front operator: no space
           bcc.s dt10aa
-          cmp.b #$ea,d0       ;si operateur: pas d'espace
+          cmp.b #T_operator,d0       ;if operator: no space
           bcc.s dt10aa
-          cmp.b #$b8,d0       ;si instruction: espace!
+          cmp.b #T_extfunc,d0        ;if instruction: space!
           bcs.s dt10ac
-          tst.b d1            ;si fonction ET lettre avant: pas d'espace
+          tst.b d1                   ;if function AND letter before: no space
           beq.s dt10aa
-dt10ac:   move.b #32,(a5)+    ;espace!
+dt10ac:   move.b #' ',(a5)+          ;space!
 dt10aa:   cmp.b #T_rem,d0
           bne.s dt10ab
-          move #1,remflg      ;si une REM: doit TOUT afficher apres!!!
+          move #1,remflg             ;if a REM: must display EVERYTHING afterwards !!!
 dt10ab:   move.b d0,d1
-          cmp.b #T_extinst,d0       ;est-ce un token etendu?
+          cmp.b #T_extinst,d0        ;is it an extended token?
           bne.s dt10a
-          lea tokext,a4       ;instruction etendue
+          lea tokext,a4              ;instruction etendue
           bra.s dt10b
-dt10a:    cmp.b #T_extfunc,d0       ;fonction etendue?
+dt10a:    cmp.b #T_extfunc,d0        ;extended function?
           bne.s dt11
           lea foncext,a4
-dt10b:    move.b (a6)+,d0     ;prend le second code
-; trouve un token etendu
-dt10c:    cmp.b (a4)+,d1      ;cherche un code d'extension
+dt10b:    move.b (a6)+,d0            ;take the second code
+; find an extended token
+dt10c:    cmp.b (a4)+,d1             ;look for an extension code
           bne.s dt10c
           cmp.b (a4)+,d0      ;compare le second code
           bne.s dt10c
@@ -3375,45 +3606,45 @@ dt11:     cmp.b #T_extensioninst,d1       ;instruction .EXT
           beq.s dt11y
           cmp.b #T_extensionfunc,d1       ;fonction .EXT
           bne dt11z
-dt11y:    addq.l #2,a6        ;saute l'extension
+dt11y:    addq.l #2,a6                    ;skip the extension
           clr d0
-          move.b -2(a6),d0    ;prend le numero de l'extension
+          move.b -2(a6),d0                ;take the extension number
           move.l adext,a0
           lsl #2,d0
-          tst.l 0(a0,d0.w)    ;l'extension est-elle presente?
+          tst.l 0(a0,d0.w)                ;is the extension present?
           bne.s dt11b
-dt11a:    lea pxt-1,a4        ;l'extension n'est pas presente! EXTEND
+dt11a:    lea pxt-1,a4                    ;extension is not present! EXTEND
           move.b -2(a6),pxt1
-          addi.b #"A",pxt1
+          addi.b #'A',pxt1
           bra dt15
 dt11b:    lea datext,a4
           lsl #1,d0
           move.l 0(a4,d0.w),a4
-          move.b -1(a6),d2    ;prend le token
+          move.b -1(a6),d2                ;take the token
 dt11c:    move.b (a4)+,d0
-          beq.s dt11a         ;protection si l'extension n'est pas la bonne!
+          beq.s dt11a                     ;protection if the extension is wrong!
           cmp.b d0,d2
           bne.s dt11c
           subq.l #1,a4
 dt11d:    tst.b -(a4)
           bpl.s dt11d
           bra dt15
-; token NORMAL
+; NORMAL token
 dt11z:    lea tokens,a4
-dt12:     cmp.b (a4)+,d1      ;exploration rapide de toute la table
+dt12:     cmp.b (a4)+,d1                  ;quick exploration of the whole table
           bne.s dt12
           subq.l #1,a4
-dt13:     move.b -(a4),d0     ;le token est trouve
-          bpl.s dt13         ;on retourne en arriere pour trouver le debut
+dt13:     move.b -(a4),d0                 ;the token is found
+          bpl.s dt13                      ;we go back to find the beginning
 ; affiche le nom
-dt15:     addq.l #1,a4        ;pointe le debut
-dt16:     move.b (a4)+,d0     ;transfert du mot
+dt15:     addq.l #1,a4                    ;point to the beginning
+dt16:     move.b (a4)+,d0                 ;word transfer
           bmi dt1
-          tst upperflg        ;si flg a un: transforme en majuscule
+          tst upperflg                    ;if flg has one: transform to uppercase
           beq.s dt17
-          cmp.b #"a",d0
+          cmp.b #'a',d0
           bcs.s dt17
-          cmp.b #"z",d0
+          cmp.b #'z',d0
           bhi.s dt17
           subi.b #$20,d0
 dt17:     move.b d0,(a5)+
@@ -3581,7 +3812,7 @@ lt6:      bsr ttlist
           beq.s lt6
           bmi.s lt11
           bra.s lt1
-lt10:     bsr lstbk1          ;on liste-->fin, imprime les banques
+lt10:     bsr lstbk1          ;we list -> end, print the banks
 lt11:     bra ok
 
 ; DELETE
@@ -13690,7 +13921,7 @@ trahp:    bsr expentier
           move.w trahpapel,d0           ;prepare l'appel de la trappe
           andi.w #%1111111111110000,d0
           or.w d3,d0
-          move.w d0,trahpapel
+          move.w d0,trahpapel /* FIXME: self-modifying code */
 ; recupere tous les parametres! Quelle merde
           lea buffer,a2
           clr d0

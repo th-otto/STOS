@@ -38,4 +38,3 @@ F_pi          = $ff00+2
 F_deg         = $ff00+3
 F_rad         = $ff00+4
 F_zero        = $ff00+5
-

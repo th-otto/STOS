@@ -13,6 +13,7 @@
         .include "music.inc"
         .include "sprites.inc"
         .include "float.inc"
+        .include "errors.inc"
 
         .text
 
@@ -40,19 +41,19 @@ ovide          = DebD+$12
 ; relocatables
 debrel         = DebD+$10
 ochvide        = DebD+$10            ;Chaine vide
-OReloc         = DebD+$14            ;debut de la table de relocation
+oreloc         = DebD+$14            ;debut de la table de relocation
 otrappes       = DebD+$18            ;debut des buffers trappes
 oerror         = DebD+$1c            ;Traitement des erreur
-Oliad          = DebD+$20            ;table #LIGNE----> ADRESSE
-Oadstr         = DebD+$24
-OFData         = DebD+$28
-Oadmenu        = DebD+$2C
+oliad          = DebD+$20            ;table #LIGNE----> ADRESSE
+oadstr         = DebD+$24
+ofdata         = DebD+$28
+oadmenu        = DebD+$2C
 otrap3         = DebD+$30            ;Adresses des trappes
 otrap5         = DebD+$34
 otrap6         = DebD+$38
 otrap7         = DebD+$3C
-OExt           = DebD+$40            ;Offset (debut/fin) des 26 extensions
-ocr0           = 26*8+OExt
+oext           = DebD+$40            ;Offset (debut/fin) des 26 extensions
+ocr0           = 26*8+oext
 ocr1           = ocr0+4
 ocr2           = ocr1+4
 omou           = ocr2+4
@@ -914,8 +915,7 @@ Rab2:
         move.l a2,bufcalc
 ; table des routines a copier: routin, longueur FIXE
         move.l a2,routin
-        /* add.l #(L_RoutMx+1)*4,a2    ;Nombre de routines */
-        dc.w 0xd5fc,0,(L_RoutMx+1)*4
+        add.l #(L_RoutMx+1)*4,a2    ;Nombre de routines
         move.l a2,a6
 
 *************************************************************************
@@ -1216,7 +1216,7 @@ Ali1:   move.w d0,38(a0)                ;X
         beq.s Ali2
         bclr #0,d0
         beq.s Ali2
-        moveq #3,d0                     ;BREAK!
+        moveq #E_noline,d0                     ;BREAK!
         bra cerror
 Ali2:   move.b d0,(a0)
 Ali3:   movem.l (sp)+,d0-d3/a0-a3
@@ -1231,15 +1231,15 @@ Ali3:   movem.l (sp)+,d0-d3/a0-a3
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
 ; Out of memory!
-cout:   moveq #2,d0
+cout:   moveq #E_nomem,d0
         bra cerror
 ; Rien a compiler!
-CRien:  moveq #1,d0
+CRien:  moveq #E_badformat,d0
         bra cerror
 ; Message normaux
-csynt:  moveq #12,d0            ;Syntax error
+csynt:  moveq #E_syntax,d0            ;Syntax error
         bra cerror
-ctype:  moveq #19,d0            ;Type mismatch
+ctype:  moveq #E_typemismatch,d0            ;Type mismatch
         bra cerror
 diskerr:moveq #-1,d0
         moveq #0,d1
@@ -1537,7 +1537,7 @@ Ent1:   bsr crefonc                     ;Retour STOS / GEM
 
 ;------------------------------------> COPIE LES INITS DES EXTENSIONS
         lea debprg(pc),a0
-        lea OExt(a0),a0
+        lea oext(a0),a0
         move.l a0,a2
         moveq #26-1,d0                  ;Nettoie la table
 CIni1:  clr.l (a0)+
@@ -1851,7 +1851,7 @@ p2c4:   move.l d2,LongChai      ;Longueur des chaines
         bsr AffPour
 
 ;----------------------------> Laisse l'espace pour la table VarChaine
-        move.l a5,d4            ;Offset Oadstr
+        move.l a5,d4            ;Offset oadstr
         sub.l objet,d4
         move.l adstring,d0
         sub.l Badstring,d0
@@ -1991,15 +1991,15 @@ FCopB:  move.l d3,LongBank
 
 ;----------------------------> Loke les pointeurs dans l'initialisation
         lea debprg,a5
-        move.l d4,Oadstr(a5)            ;table adresse var alphanumeriques
-        move.l d5,Oliad(a5)             ;table #LIGNE----> Adresse
-        move.l d6,OReloc(a5)            ;Sauve la position relocation
+        move.l d4,oadstr(a5)            ;table adresse var alphanumeriques
+        move.l d5,oliad(a5)             ;table #LIGNE----> Adresse
+        move.l d6,oreloc(a5)            ;Sauve la position relocation
         sub.l objet,d7
         move.l d7,ochvide(a5)           ;Sauve la position chaine vide
-        move.l FstData,OFData(a5)       ;Premiere ligne de datas
+        move.l FstData,ofdata(a5)       ;Premiere ligne de datas
         move.l menucall,d0              ;Adresse de l'appel des menus
         sub.l objet,d0
-        move.l d0,Oadmenu(a5)
+        move.l d0,oadmenu(a5)
         move.l tbufsp(pc),otbufsp(a5)
         move.l maxcop(pc),omaxcop(a5)
         move.w ValFlo(pc),oflola
@@ -2055,7 +2055,7 @@ Cextensions:  clr.w d0
         move.l 0(a0,d0.w),a0
         jmp (a0)
 ; Commande directe!
-CEt1:   moveq #15,d0
+CEt1:   moveq #E_directcommand,d0
         bra cerror
 
 ;-----> Entree des fonctions etendues (en $B8)
@@ -2095,7 +2095,7 @@ extcall:movem.w (sp)+,d2/d6/d7
         bsr outword
         move.w d6,d0
         lsl.b #2,d0
-        addi.w #OExt,d0
+        addi.w #oext,d0
         bsr outword
         move.w cjsr,d0
         bsr outword
@@ -2171,7 +2171,7 @@ extp1:  move.w d0,d6
         clr.w d2
         move.b (a2)+,d2                 ;Ramene le type de retour
         rts
-Expala: moveq #84,d0
+Expala: moveq #E_extension_noent,d0
         bra cerror
 
 ;-----> L'instruction est-elle finie
@@ -2291,7 +2291,7 @@ p2l1:   lea 6(a0),a0
         bhi.s p2l1
 p2l2:   moveq #0,d1
         move.w -6(a0),d1
-        moveq #29,d0
+        moveq #E_undefined_line,d0
         bra cerror2
 ; Trouve l'adresse d'un appel a une extension
 p2m:    move.l AdExtAp(pc),a0
@@ -2347,7 +2347,7 @@ P2f:    clr.l (a2)              ;Arret adstring
         move.l a4,LongVar
 
 ;--------------------------------> Copie la table adstring
-        move.l Oadstr(a5),a5
+        move.l oadstr(a5),a5
         add.l objet,a5
         move.l Badstring,a0
 P2s:    move.l (a0),d0
@@ -2455,7 +2455,7 @@ DPrg2:  cmp.w #$FF00,(a5)
 DPrg3:
 
 ;-----> reloge la table des GOTO
-        move.l Oliad(a6),a5
+        move.l oliad(a6),a5
 DPrg4:  cmp.w #65535,(a5)+
         beq.s DPrg5
         add.l d6,(a5)+
@@ -2463,7 +2463,7 @@ DPrg4:  cmp.w #65535,(a5)+
 DPrg5:
 
 ;-----> reloge la table des adstring
-        move.l Oadstr(a6),a5
+        move.l oadstr(a6),a5
 DPrg6:  tst.l (a5)
         beq.s DPrg7
         add.l d6,(a5)+
@@ -2490,7 +2490,7 @@ Ina:    move.l a0,atable(a6)    ;Adresse de la table d'adresses
         move.l sys_vectors(a0),a0       ;Pointer to vectors
         move.l topmem(a0),a5    ;Trouve la fin de la memoire!
 
-        move.l OReloc(a6),a0    ;Pointe la table de relocation
+        move.l oreloc(a6),a0    ;Pointe la table de relocation
         move.l a6,a2            ;debut a reloger
         move.l ochvide(a6),a4   ;Chaine vide
         clr.w d7                ;Flag Out of mem
@@ -2548,10 +2548,10 @@ Ina10:
         move.l sp,spile(a5)             ;Sauve la pile
         move.l sp,lowpile(a5)           ;Niveau zero de la pile!
         addq.l #4,lowpile(a5)
-        move.l Oliad(a6),liad(a5)       ;Adresse des litoad
-        move.l Oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
-        move.l OFData(a6),datastart(a5) ;Datas
-        move.l Oadmenu(a6),admenu(a5)   ;Menus
+        move.l oliad(a6),liad(a5)       ;Adresse des litoad
+        move.l oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
+        move.l ofdata(a6),datastart(a5) ;Datas
+        move.l oadmenu(a6),admenu(a5)   ;Menus
         move.l a0,table(a5)             ;Adresse de la table d'adresses
 
 ; Donnees pour le programme
@@ -2612,7 +2612,7 @@ Ina10:
 ; Initialise les extensions
         clr.w flaggem(a5)
         move.l debut(a5),a3
-        lea OExt(a3),a2
+        lea oext(a3),a2
         moveq #26-1,d2
         move.l lochaine(a5),a0
         move.l lowvar(a5),a1
@@ -2737,11 +2737,11 @@ bgp1:   move.w (a0)+,(a1)+
         move d0,modec(a5)
         lea adapt(pc),a3
         move.l adapt_devtab(a3),a0              ;table VDI 1
-        moveq #$5a/2-1,d0
+        moveq #45-1,d0
 sv1:    move.w (a0)+,(a4)+            ;recopie...
         dbra d0,sv1
         move.l adapt_siztab(a3),a0              ;table VDI 2
-        moveq #$18/2-1,d0
+        moveq #12-1,d0
 sv2:    move.w (a0)+,(a4)+            ;recopie...
         dbra d0,sv2
         move.l adapt_gcurx(a3),a0               ;coordonnees de la souris
@@ -2784,20 +2784,20 @@ inbb1:  move.l a4,(a0)+
         lea 17*4(a6),a0
         move.l a0,dsource(a5)
         move.l a0,dataprg(a5)
-        lea databank(a5),a0           ;DATABANK
+        lea databank(a5),a0             ;DATABANK
         move.l a0,adatabank(a5)
         lea 16*4(a0),a0
         moveq #14,d0
-ig3:    move.l #2,(a0)+               ;Premiere banque: source de deux octets
+ig3:    move.l #2,(a0)+                 ;Premiere banque: source de deux octets
         moveq #14,d1
-ig4:    clr.l (a0)+                   ;Autre banques: longueur nulle
+ig4:    clr.l (a0)+                     ;Autre banques: longueur nulle
         dbra d1,ig4
         dbra d0,ig3
 
         move.l $42e,d0                  ;fin de la memoire physique
-        subi.l #$8000,d0                 ;moins 32 k
+        subi.l #$8000,d0                ;moins 32 k
         move.l d0,deflog(a5)            ;= ecran logique & physique
-        subi.l #$8000,d0                 ;moins 32 k
+        subi.l #$8000,d0                ;moins 32 k
         move.l d0,defback(a5)           ;= decor des sprites
 
 *********************** BOUGE LES BANQUES AU BOUT DE LA MEMOIRE
@@ -2828,7 +2828,7 @@ InbC2:  move.l (a0)+,(a1)+
 
 *********************** RELOGE LE PROGRAMME
         move.l a6,d6            ;Addition a reloger
-        move.l OReloc(a6),a0    ;Pointe la table de relocation
+        move.l oreloc(a6),a0    ;Pointe la table de relocation
         move.l a6,a2            ;debut a reloger
         move.l ochvide(a6),a4   ;Chaine vide
         move.l himem(a5),d5     ;Fin de la memoire
@@ -2883,10 +2883,10 @@ inb10:  tst.w d7
         move.l a4,chvide(a5)            ;Chaine vide
         move.l sp,lowpile(a5)           ;Niveau zero de la pile!
         addq.l #4,lowpile(a5)
-        move.l Oliad(a6),liad(a5)       ;Adresse des litoad
-        move.l Oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
-        move.l OFData(a6),datastart(a5) ;Datas
-        move.l Oadmenu(a6),admenu(a5)   ;Menus
+        move.l oliad(a6),liad(a5)       ;Adresse des litoad
+        move.l oadstr(a6),adstr(a5)     ;Adresse Ad-Strings
+        move.l ofdata(a6),datastart(a5) ;Datas
+        move.l oadmenu(a6),admenu(a5)   ;Menus
 
 ; tables VDI...
         lea cvdipb(pc),a2
@@ -3030,7 +3030,7 @@ InbPaf: move.l otrap7(a6),a2
 
         move.w #1,flaggem(a5)
         move.l debut(a5),a3
-        lea OExt(a3),a2
+        lea oext(a3),a2
         moveq #26-1,d2
         move.l lochaine(a5),a0
         move.l lowvar(a5),a1
@@ -3064,11 +3064,6 @@ InEc:   clr.l (a0)+
         clr.l (a0)+
         dbra d0,InEc
         bra.w inbf
-    
-    .IFNE 0 /* 2.08 disabled */
-Ste:    move.w $E00002,d0
-        bra FinSte
-        .ENDC
     
 **********************************************
 ;-----> Erreurs systeme
@@ -3242,11 +3237,11 @@ fingem: move.l anc400(a5),$400
 .Skip:   lea dataec+32(pc),a4
         lea adapt(pc),a3
         move.l adapt_devtab(a3),a0      ;table VDI 1
-        moveq #$5a/2-1,d0
+        moveq #45-1,d0
 lv1:    move.w (a4)+,(a0)+
         dbra d0,lv1
         move.l adapt_siztab(a3),a0      ;table VDI 2
-        moveq #$18/2-1,d0
+        moveq #12-1,d0
 lv2:    move.w (a4)+,(a0)+
         dbra d0,lv2
         move.l adapt_gcurx(a3),a0       ;adresse souris
@@ -3661,7 +3656,7 @@ Cdim:   bsr getbyte
         bne csynt
         bsr vari                ;Va chercher la variable
 ; Si revient: elle etait deja dimensionnee
-RetDim: moveq #28,d0             ;Erreur: deja dimensionne!
+RetDim: moveq #E_array_dim,d0             ;Erreur: deja dimensionne!
         bra cerror
 
 ;-----> Veritable entree de DIM
@@ -3669,7 +3664,7 @@ EntDim: cmp.l #RetDim,(sp)      ;Vient de DIM???
         addq.l #4,sp
         beq.s CDi1              ;OUI! continue!
 ; Variable non dimensionnee
-        moveq #18,d0
+        moveq #E_noarray,d0
         bra cerror
 ; Va chercher le nombre de dimension
 CDi1:   bset #4,d1              ;Flag nettoyage!
@@ -3770,9 +3765,7 @@ Va7:    move.b (a2)+,(a0)+      ;Recopie le nom
         move.b d1,d0
         andi.b #$c0,d0
         bpl.s Va7a
-        /* add.l #4,adstring       ;Taille de la table Ad variables alpha */
-        dc.w 0x06b9
-        dc.l 4,adstring
+        addq.l #4,adstring       ;Taille de la table Ad variables alpha
 Va7a:   btst #6,d1              ;Variable FLOAT?
         beq.s Va7b
         move.w #1,floflag       ;Met le FLOAT!
@@ -4489,9 +4482,9 @@ cdfn2:  move.l (sp)+,a2
 cdfn3:  move.l (sp)+,a2
         jsr (a2)
         dc.w 0
-CFn8:   moveq #40,d0                    ;Illegal user
+CFn8:   moveq #E_illegalcall,d0                    ;Illegal user
         bra cerror
-CFn9:   moveq #39,d0                    ;User not def
+CFn9:   moveq #E_userfunction,d0                    ;User not def
         bra cerror
 
 ;-----> SWAP
@@ -4743,66 +4736,66 @@ CNt:    not.l (a6)
 
 ;-----> RAD
 CRad:   bsr fflo
-        moveq #50,d0
+        moveq #L_raddbl,d0
         bra creflo
 ;-----> DEG
 CDeg:   bsr fflo
-        moveq #48,d0
+        moveq #L_degdbl,d0
         bra creflo
 ;-----> PI
-CPi:    moveq #46,d0
+CPi:    moveq #L_pidbl,d0
         bra creflo
 
 ;-----> SINUS
-CSin:   moveq #51,d0
+CSin:   moveq #L_sin,d0
 CS1:    move.w d0,-(sp)
         bsr fflo                ;1 param FLOAT
         move.w (sp)+,d0
         bra creflo              ;Cree le JSR / ramene un FLOAT
 ;-----> COSINUS
-CCos:   moveq #52,d0
+CCos:   moveq #L_cos,d0
         bra.s CS1
 ;-----> TANGENTE
-CTan:   moveq #53,d0
+CTan:   moveq #L_tan,d0
         bra.s CS1
 ;-----> EXPONANTIELLE
-CExp:   moveq #54,d0
+CExp:   moveq #L_exp,d0
         bra.s CS1
 ;-----> LOGN
-Clogn:  moveq #55,d0
+Clogn:  moveq #L_logn,d0
         bra.s CS1
 ;-----> LOG10
-Clog1:  moveq #56,d0
+Clog1:  moveq #L_log,d0
         bra.s CS1
 ;-----> SQR
-CSqr:   moveq #57,d0
+CSqr:   moveq #L_sqr,d0
         bra.s CS1
 ;-----> SINH
-CSinh:  moveq #58,d0
+CSinh:  moveq #L_sinh,d0
         bra.s CS1
 ;-----> CCOSH
-CCosh:  moveq #59,d0
+CCosh:  moveq #L_cosh,d0
         bra.s CS1
 ;-----> CTANH
-CTanh:  moveq #60,d0
+CTanh:  moveq #L_tanh,d0
         bra.s CS1
 ;-----> ASIN
-CAsin:  moveq #61,d0
+CAsin:  moveq #L_asin,d0
         bra.s CS1
 ;-----> ACOS
-CAcos:  moveq #62,d0
+CAcos:  moveq #L_acos,d0
         bra.s CS1
 ;-----> ATAN
-CAtan:  moveq #63,d0
+CAtan:  moveq #L_atan,d0
         bra.s CS1
 
 ;-----> ABS
 CAbs:   bsr FArg
         bne.s Ca1
-        moveq #64,d0
+        moveq #L_abs,d0
 creent: clr.b d2
         bra crefonc
-Ca1:    moveq #65,d0
+Ca1:    moveq #L_fabs,d0
 creflo: move.w #1,floflag
         move.b #$40,d2
         bra crefonc
@@ -4810,22 +4803,22 @@ creflo: move.w #1,floflag
 ;-----> INT
 CInt:   bsr FArg
         beq.s Ci1               ;INT(entier)= IDIOT!
-        moveq #66,d0
+        moveq #L_int,d0
         bra creflo
 Ci1:    rts
 
 ;-----> SGN
 CSgn:   bsr FArg
         bne.s Ci2
-        moveq #67,d0
+        moveq #L_sgn,d0
         bra creent
 Ci2:    move.w #1,floflag
-        moveq #68,d0
+        moveq #L_sgnf,d0
         bra creent
 
 ;-----> RND
 CRnd:   bsr fent
-        moveq #69,d0
+        moveq #L_rnd,d0
         bra creent
 
 ;-----> Sous prg MAX / MIN
@@ -5232,39 +5225,39 @@ for12:  move.w 8(sp),d1
         addq.w #1,d0            ; -> L_for_f
 For13:  bra crefonc
 
-CFonx:  moveq #22,d0
+CFonx:  moveq #E_missing_next,d0
         bra cerror
 
 ;-----> Code pour FOR
 forcd1: move.l a0,-(a6)
         dc.w 0
-forcd2: move.l #$1,-(a6)
+forcd2: move.l #1,-(a6)
         dc.w $1111
 
 ;-----------------------------------> NEXT
 Cnext:  bsr Test1
-        move.w ctstnbcle,d0     ;un boucle depuis le dernier gosub?
+        move.w ctstnbcle,d0     ;a loop from the last gosub?
         cmp.w cnboucle,d0
         beq cnxfo
-; Saute la variable (si elle existe)
-        pea -1(a6)              ;adresse du NEXT
+; Skip the variable (if it exists)
+        pea -1(a6)              ;address of NEXT
         bsr getbyte
         subq.l #1,a6
-        cmp.b #$fa,d0
+        cmp.b #T_var,d0
         bne.s CNx0
         addq.l #1,a6
         bsr vari
 CNx0:   move.l (sp)+,d0
-; Verifie qu'il s'agit du bon next
+; Check that it is the right next
         move.l cposbcle,a0
-        cmp.l 4(a0),d0          ;Bonne boucle?
+        cmp.l 4(a0),d0          ;Good loop?
         bne cnxfo
-        add.l #16,cposbcle      ;depile
+        add.l #16,cposbcle      ;unstack
         subq.w #1,cnboucle
-        move.w 12(a0),d2        ;Type de la boucle
-; Loke l'adresse du NEXT dans le LEA du FOR -completement genial merde-
+        move.w 12(a0),d2        ;loop type
+; Loke the address of the NEXT in the LEA of the FOR -completely brilliant shit-
         move.l a5,-(sp)
-        move.l a5,d0            ;Pointe l'adresse du RTS apres l'appel
+        move.l a5,d0            ;Indicates the RTS address after the call
         sub.l objet,d0          ;en relatif
         bset #30,d0             ;Signale une adresse INTERNE au prg
         move.l 8(a0),a5         ;Adresse du LEA
@@ -5285,25 +5278,19 @@ CNx1:   lea cdnx2,a0
 ; Integer parameter loading code
 cdnx1:  lea $ffffff,a2          ;loopback address
         lea $ffffff,a3          ;addresse of the variable
-        /* move.l #$ffffffff,d1    ;limite
-        move.l #$ffffffff,d2    ;step */
-        dc.w 0x223c,-1,-1
-        dc.w 0x243c,-1,-1 /* XXX */
+        move.l #$00ffffff,d1    ;limite
+        move.l #$00ffffff,d2    ;step
         dc.w 0
 ; Code chargement parametres FLOAT
 cdnx2:  lea $ffffff,a2
         lea $ffffff,a3
-        /* move.l #$ffffffff,d5
-        move.l #$ffffffff,d6
-        move.l #$ffffffff,d3
-        move.l #$ffffffff,d4 */
-        dc.w 0x2a3c,-1,-1
-        dc.w 0x2c3c,-1,-1
-        dc.w 0x263c,-1,-1
-        dc.w 0x283c,-1,-1 /* XXX */
+        move.l #$00ffffff,d5
+        move.l #$00ffffff,d6
+        move.l #$00ffffff,d3
+        move.l #$00ffffff,d4
         dc.w 0
 ; For without next
-cnxfo:  moveq #23,d0
+cnxfo:  moveq #E_missing_for,d0
         bra cerror
 
 ;-----> WHILE
@@ -5344,9 +5331,9 @@ wh3:    subq.w #1,ccptnext
         moveq #L_while,d0
         bra crefonc
 
-cwhw:   moveq #24,d0
+cwhw:   moveq #E_missing_wend,d0
         bra cerror
-cwwh:   moveq #25,d0
+cwwh:   moveq #E_missing_while,d0
         bra cerror
 
 ;-----> WEND
@@ -5436,9 +5423,9 @@ Cuntil:  move.w ctstnbcle,d0
 ; Appelle la librairie
         moveq #L_until,d0
         bra crefonc
-crpu:   moveq #26,d0
+crpu:   moveq #E_missing_until,d0
         bra cerror
-curp:   moveq #27,d0
+curp:   moveq #E_missing_repeat,d0
         bra cerror
 
 ;-----> ON ERROR GOTO
@@ -5893,7 +5880,7 @@ Cerase:  bsr test0
         bne csynt
         move.w #L_erase,d0
         bra crefonc
-cer1:   moveq #15,d0
+cer1:   moveq #E_directcommand,d0
         bra cerror
 
 ;-----> BCOPY
