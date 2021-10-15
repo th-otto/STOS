@@ -103,11 +103,11 @@ pi:	move.l #$c90fd942,d3
 ;-----> DEG
 deg:	move.l #$c90fc942,-(sp)		;/pi
 	move.l d3,-(sp)
-	bsr Divi
+	bsr fpdiv
 	addq.l #8,sp
 	move.l d0,-(sp)
 	move.l #$b4000048,-(sp)		;*180
-	bsr Mult
+	bsr fpmul
 	addq.l #8,sp
 	move.l d0,d3
 	move.l #$12345678,d4
@@ -115,11 +115,11 @@ deg:	move.l #$c90fc942,-(sp)		;/pi
 ;-----> RAD
 rad:	move.l #$b4000048,-(sp)		;/180
 	move.l d3,-(sp)
-	bsr Divi
+	bsr fpdiv
 	addq.l #8,sp
 	move.l d0,-(sp)
 	move.l #$c90fc942,-(sp)		;*PI
-	bsr Mult
+	bsr fpmul
 	addq.l #8,sp
 	move.l d0,d3
 	move.l #$12345678,d4
@@ -135,7 +135,7 @@ zerau:	moveq #0,d3
 * Adds two floating point numbers together
 Cadd:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Plus
+	bsr fpadd
 	addq.l #8,sp
 	move.l #$12345678,d1
 	rte
@@ -145,7 +145,7 @@ Cadd:	move.l d3,-(sp)
 * Parameters used identical to ADFL
 Csub:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Moins
+	bsr fpsub
 	addq.l #8,sp
 	move.l #$12345678,d1
 	rte
@@ -154,7 +154,7 @@ Csub:	move.l d3,-(sp)
 * Multiply two floating point numbers
 CMult:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Mult
+	bsr fpmul
 	addq.l #8,sp
 	move.l #$12345678,d1
 	rte
@@ -165,7 +165,7 @@ CDivi:	tst.l d3
 	beq.s CD0
 	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Divi
+	bsr fpdiv
 	addq.l #8,sp
 	move.l #$12345678,d1
 	rte
@@ -198,7 +198,7 @@ Ca2:	clr.b (a1)
 * an Ascii string
 CFtoa:	cmp.l #$12345678,d2
 	beq.s paplant
-; Empeche le plantage lors du listing!
+; Prevents crashes when listing!
 	move.l a0,-(sp)
 	lea badflo(pc),a1
 papl:	move.b (a1)+,(a0)+
@@ -454,14 +454,14 @@ Exv8:	tst.w d3
 * TRAP #6,$0D
 * Convert a FP number in D1-D2 into an integer in D0
 CFtol:	move.l d1,-(sp)
-	bsr ftol
+	bsr fpftol
 	addq.l #4,sp
 	rte
 
 * TRAP #6,$0E
 * Convert an integer in 01 into an FP no in D0-D1
 CLtof:	move.l d1,-(sp)
-	bsr ltof
+	bsr fpltof
 	addq.l #4,sp
 	move.l #$12345678,d1
 	rte
@@ -472,7 +472,7 @@ CLtof:	move.l d1,-(sp)
 * contains a zero.
 CEq:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Comp
+	bsr fpcmp
 	addq.l #8,sp
 	beq.s Vrai
 Faux:	moveq #0,d0
@@ -486,7 +486,7 @@ Vrai:	moveq #-1,d0
 * it contains a zero.
 CDif:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Comp
+	bsr fpcmp
 	addq.l #8,sp
 	bne.s Vrai
 	bra.s Faux
@@ -495,7 +495,7 @@ CDif:	move.l d3,-(sp)
 * Test if less than
 CLt:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Comp
+	bsr fpcmp
 	addq.l #8,sp
 	blt.s Vrai
 	bra.s Faux
@@ -504,7 +504,7 @@ CLt:	move.l d3,-(sp)
 * Test if less than or equal
 CLe:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Comp
+	bsr fpcmp
 	addq.l #8,sp
 	ble.s Vrai
 	bra.s Faux
@@ -514,7 +514,7 @@ CLe:	move.l d3,-(sp)
 * first is greater than the second.
 CGt:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Comp
+	bsr fpcmp
 	addq.l #8,sp
 	bgt.s Vrai
 	bra.s Faux
@@ -523,7 +523,7 @@ CGt:	move.l d3,-(sp)
 * Test if greater than or equal
 CGe:	move.l d3,-(sp)
 	move.l d1,-(sp)
-	bsr Comp
+	bsr fpcmp
 	addq.l #8,sp
 	bge.s Vrai
 	bra.s Faux
@@ -537,7 +537,7 @@ CTAN:	MOVE.L 	D1,-(SP)
 	BSR 	COS
 	MOVE.L 	D0,(SP)
 	MOVE.L 	tempfl,-(SP)
-	BSR 	Divi
+	BSR 	fpdiv
 	ADDQ.L 	#8,SP
 	MOVE.L 	#$12345678,D1
 	RTE
@@ -683,7 +683,7 @@ CLOG:
 	BSR 	LN
 	MOVE.L	#$935D8D42,(SP)
 	MOVE.L 	D0,-(SP)
-	BSR	Divi
+	BSR	fpdiv
 	ADDQ.L 	#8,SP
 	MOVE.L	#$12345678,D1
 	RTE
@@ -719,18 +719,18 @@ ASIN:
 	MOVE.L 	D1,D7
 	MOVE.L 	D1,-(SP)
 	MOVE.L 	D1,-(SP)
-	BSR 	Mult
+	BSR 	fpmul
 	ADDQ.L 	#8,SP
 	BCHG	#7,D0
 	MOVE.L	D0,-(SP)
 	MOVE.L 	#$80000041,-(SP)
-	BSR 	Plus
+	BSR 	fpadd
 	ADDQ.L 	#8,SP
 	BTST	#7,D0
 	BNE	CAS
 	MOVE.L 	D0,-(SP)
 	MOVE.L 	D7,-(SP)
-	BSR 	Divi
+	BSR 	fpdiv
 	ADDQ.L 	#8,SP
 	MOVE.L	D0,-(SP)
 	BSR	ATAN
@@ -746,7 +746,7 @@ CACOS:
 	BSR 	ASIN
 	MOVE.L	D0,-(SP)
 	MOVE.L	#$C90FD941,-(SP)
-	BSR 	Moins
+	BSR 	fpsub
 	ADDQ.L 	#8,SP
 	MOVE.L 	#$12345678,D1
 	RTE
@@ -782,11 +782,11 @@ CCOSH:
 	BSR	EXP
 	MOVE.L	D0,(SP)
 	MOVE.L	tempfl,-(SP)
-	BSR	Plus
+	BSR	fpadd
 	ADDQ.L	#8,SP
 	MOVE.L 	#$80000042,-(SP)
 	MOVE.L	D0,-(SP)
-	BSR 	Divi
+	BSR 	fpdiv
 	ADDQ.L 	#8,SP
 	MOVE.L 	#$12345678,D1
 	RTE
@@ -833,34 +833,34 @@ L27CEC:
 	CLR.W	D7
 	CLR.L	-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BGE.S	L27D1C
 	MOVEA.L	$C(A6),A0
 	MOVE.B	#$2D,(A0)
 	ADDQ.L	#1,$C(A6)
 	MOVE.L	8(A6),-(A7)
-	JSR	L283A8
+	JSR	fpneg
 	ADDQ.L	#4,A7
 	MOVE.L	D0,8(A6)
 L27D1C:
 	CLR.L	-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BLE.S	L27D5A
 	BRA.S	L27D46
 L27D2E:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 	SUBQ.W	#1,D7
 L27D46:
 	MOVE.L	#$80000041,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BLT.S	L27D2E
 L27D5A:
@@ -868,14 +868,14 @@ L27D5A:
 L27D5C:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28250
+	JSR	fpdiv
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 	ADDQ.W	#1,D7
 L27D74:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BGE.S	L27D5C
 	ADD.W	D7,D4
@@ -890,7 +890,7 @@ L27D74:
 L27DA0:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	-8(A6),-(A7)
-	JSR	L28250
+	JSR	fpdiv
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-8(A6)
 	ADDQ.W	#1,D6
@@ -899,16 +899,16 @@ L27DB8:
 	BLT.S	L27DA0
 	MOVE.L	#$80000042,-(A7)
 	MOVE.L	-8(A6),-(A7)
-	JSR	L28250
+	JSR	fpdiv
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28212
+	JSR	fpadd
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BLT.S	L27DFE
 	MOVE.L	#$80000041,8(A6)
@@ -963,12 +963,12 @@ L27E68:
 	MOVE.L	D0,-8(A6)
 	MOVE.L	D0,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L283C4
+	JSR	fpsub
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 	ADDQ.W	#1,D6
@@ -1110,7 +1110,7 @@ L27FF8:
 	BSR.S	L28040
 	ADDQ.L	#2,A7
 	MOVE.L	D0,-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-$2E(A6)
 	MOVE.L	-$2E(A6),(A7)
@@ -1134,7 +1134,7 @@ L28040:
 L28054:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	-4(A6),-(A7)
-	JSR	L28250
+	JSR	fpdiv
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-4(A6)
 	ADDQ.W	#1,8(A6)
@@ -1148,7 +1148,7 @@ L28076:
 L28080:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	-4(A6),-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-4(A6)
 	SUBQ.W	#1,8(A6)
@@ -1166,7 +1166,7 @@ L280A8:
 L280B6:
 	MOVE.L	#$A0000044,-(A7)
 	MOVE.L	-4(A6),-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-4(A6)
 	MOVE.L	-4(A6),-(A7)
@@ -1179,7 +1179,7 @@ L280B6:
 	JSR	L28270
 	ADDQ.L	#4,A7
 	MOVE.L	D0,-(A7)
-	JSR	L28212
+	JSR	fpadd
 	ADDQ.L	#8,A7
 	MOVE.L	D0,-4(A6)
 	ADDQ.L	#1,8(A6)
@@ -1199,7 +1199,7 @@ L28116:
 	MOVEM.L	D4-D7,-(A7)
 	CLR.L	-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BNE.S	L28134
 	CLR.L	D0
@@ -1207,11 +1207,11 @@ L28116:
 L28134:
 	CLR.L	-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BGE.S	L28158
 	MOVE.L	8(A6),-(A7)
-	JSR	L283A8
+	JSR	fpneg
 	ADDQ.L	#4,A7
 	MOVE.L	D0,8(A6)
 	MOVEQ	#1,D5
@@ -1225,13 +1225,13 @@ L2815E:
 	ADDQ.W	#1,D7
 	MOVE.L	#$80000042,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28250
+	JSR	fpdiv
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 L28176:
 	MOVE.L	#$80000041,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BGE.S	L2815E
 	BRA.S	L281A4
@@ -1239,18 +1239,18 @@ L2818C:
 	SUBQ.W	#1,D7
 	MOVE.L	#$80000042,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 L281A4:
 	MOVE.L	#$80000040,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28232
+	JSR	fpcmp
 	ADDQ.L	#8,A7
 	BLT.S	L2818C
 	MOVE.L	#$80000059,-(A7)
 	MOVE.L	8(A6),-(A7)
-	JSR	L28388
+	JSR	fpmul
 	ADDQ.L	#8,A7
 	MOVE.L	D0,8(A6)
 	MOVE.L	8(A6),-(A7)
@@ -1275,35 +1275,7 @@ L28208:
 	MOVEM.L	(A7)+,D5-D7
 	UNLK	A6
 	RTS
-L28212:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	L28422
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-L28232:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	L283E4
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-L28250:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	L28518
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
+
 L28270:
 	LINK	A6,#0
 	MOVEM.L	D5-D7,-(A7)
@@ -1359,6 +1331,7 @@ L282F6:
 	MOVEM.L	(A7)+,D6-D7
 	UNLK	A6
 	RTS
+
 L28300:
 	LINK	A6,#0
 	MOVEM.L	D4-D7,-(A7)
@@ -1418,327 +1391,56 @@ L2837E:
 	MOVEM.L	(A7)+,D5-D7
 	UNLK	A6
 	RTS
-L28388:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	L2858A
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-L283A8:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	JSR	L28406
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-L283C4:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	L28410
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-L283E4:
-	TST.B	D6
-	BPL.S	L283F4
-	TST.B	D7
-	BPL.S	L283F4
-	CMP.B	D7,D6
-	BNE.S	L283FA
-	CMP.L	D7,D6
-	RTS
-L283F4:
-	CMP.B	D6,D7
-	BNE.S	L283FA
-	CMP.L	D6,D7
-L283FA:
-	RTS
-	TST.B	D7
-	RTS
-	ANDI.B	#$7F,D7
-	RTS
-L28406:
-	TST.B	D7
-	BEQ.S	L2840E
-	EORI.B	#$80,D7
-L2840E:
-	RTS
-L28410:
-	MOVE.B	D6,D4
-	BEQ.S	L28466
-	EORI.B	#$80,D4
-	BMI.S	L28484
-	MOVE.B	D7,D5
-	BMI.S	L2848A
-	BNE.S	L2842E
-	BRA.S	L28460
-L28422:
-	MOVE.B	D6,D4
-	BMI.S	L28484
-	BEQ.S	L28466
-	MOVE.B	D7,D5
-	BMI.S	L2848A
-	BEQ.S	L28460
-L2842E:
-	SUB.B	D4,D5
-	BMI.S	L2846A
-	MOVE.B	D7,D4
-	CMP.B	#$18,D5
-	BCC.S	L28466
-	MOVE.L	D6,D3
-	CLR.B	D3
-	LSR.L	D5,D3
-	MOVE.B	#$80,D7
-	ADD.L	D3,D7
-	BCS.S	L2844C
-L28448:
-	MOVE.B	D4,D7
-	RTS
-L2844C:
-	ROXR.L	#1,D7
-	ADDQ.B	#1,D4
-	BVS.S	L28454
-	BCC.S	L28448
-L28454:
-	MOVEQ	#-1,D7
-	SUBQ.B	#1,D4
-	MOVE.B	D4,D7
-	ORI.B	#2,CCR
-	RTS
-L28460:
-	MOVE.L	D6,D7
-	MOVE.B	D4,D7
-	RTS
-L28466:
-	TST.B	D7
-	RTS
-L2846A:
-	CMP.B	#$E8,D5
-	BLE.S	L28460
-	NEG.B	D5
-	MOVE.L	D6,D3
-	CLR.B	D7
-	LSR.L	D5,D7
-	MOVE.B	#$80,D3
-	ADD.L	D3,D7
-	BCS.S	L2844C
-	MOVE.B	D4,D7
-	RTS
-L28484:
-	MOVE.B	D7,D5
-	BMI.S	L2842E
-	BEQ.S	L28460
-L2848A:
-	MOVEQ	#-$80,D3
-	EOR.B	D3,D5
-	SUB.B	D4,D5
-	BEQ.S	L284E2
-	BMI.S	L284D0
-	CMP.B	#$18,D5
-	BCC.S	L28466
-	MOVE.B	D7,D4
-	MOVE.B	D3,D7
-	MOVE.L	D6,D3
-L284A0:
-	CLR.B	D3
-	LSR.L	D5,D3
-	SUB.L	D3,D7
-	BMI.S	L28448
-L284A8:
-	MOVE.B	D4,D5
-L284AA:
-	CLR.B	D7
-	SUBQ.B	#1,D4
-	CMP.L	#$7FFF,D7
-	BHI.S	L284BC
-	SWAP	D7
-	SUBI.B	#$10,D4
-L284BC:
-	ADD.L	D7,D7
-	DBMI	D4,L284BC
-	EOR.B	D4,D5
-	BMI.S	L284CC
-	MOVE.B	D4,D7
-	BEQ.S	L284CC
-	RTS
-L284CC:
-	MOVEQ	#0,D7
-	RTS
-L284D0:
-	CMP.B	#$E8,D5
-	BLE.S	L28460
-	NEG.B	D5
-	MOVE.L	D7,D3
-	MOVE.L	D6,D7
-	MOVE.B	#$80,D7
-	BRA.S	L284A0
-L284E2:
-	MOVE.B	D7,D5
-	EXG	D5,D4
-	MOVE.B	D6,D7
-	SUB.L	D6,D7
-	BEQ.S	L284CC
-	BPL.S	L284A8
-	NEG.L	D7
-	MOVE.B	D5,D4
-	BRA.S	L284AA
-L284F4:
-	DIVU	#0,D7
-	TST.L	D6
-	BNE.S	L28518
-L284FC:
-	ORI.L	#$FFFFFF7F,D7
-	TST.B	D7
-	ORI.B	#2,CCR
-L28508:
-	RTS
-L2850A:
-	SWAP	D6
-	SWAP	D7
-L2850E:
-	EOR.B	D6,D7
-	BRA.S	L284FC
-L28512:
-	BMI.S	L2850E
-L28514:
-	MOVEQ	#0,D7
-	RTS
-L28518:
-	MOVE.B	D6,D5
-	BEQ.S	L284F4
-	MOVE.L	D7,D4
-	BEQ.S	L28508
-	MOVEQ	#-$80,D3
-	ADD.W	D5,D5
-	ADD.W	D4,D4
-	EOR.B	D3,D5
-	EOR.B	D3,D4
-	SUB.B	D5,D4
-	BVS.S	L28512
-	CLR.B	D7
-	SWAP	D7
-	SWAP	D6
-	CMP.W	D6,D7
-	BMI.S	L2853E
-	ADDQ.B	#2,D4
-	BVS.S	L2850A
-	ROR.L	#1,D7
-L2853E:
-	SWAP	D7
-	MOVE.B	D3,D5
-	EOR.W	D5,D4
-	LSR.W	#1,D4
-	MOVE.L	D7,D3
-	DIVU	D6,D3
-	MOVE.W	D3,D5
-	MULU	D6,D3
-	SUB.L	D3,D7
-	SWAP	D7
-	SWAP	D6
-	MOVE.W	D6,D3
-	CLR.B	D3
-	MULU	D5,D3
-	SUB.L	D3,D7
-	BCC.S	L28566
-	MOVE.L	D6,D3
-	CLR.B	D3
-	ADD.L	D3,D7
-	SUBQ.W	#1,D5
-L28566:
-	MOVE.L	D6,D3
-	SWAP	D3
-	CLR.W	D7
-	DIVU	D3,D7
-	SWAP	D5
-	BMI.S	L2857A
-	MOVE.W	D7,D5
-	ADD.L	D5,D5
-	SUBQ.B	#1,D4
-	MOVE.W	D5,D7
-L2857A:
-	MOVE.W	D7,D5
-	ADDI.L	#$80,D5
-	MOVE.L	D5,D7
-	MOVE.B	D4,D7
-	BEQ.S	L28514
-	RTS
-L2858A:
-	MOVE.B	D7,D5
-	BEQ.S	L285E0
-	MOVE.B	D6,D4
-	BEQ.S	L285FA
-	ADD.W	D5,D5
-	ADD.W	D4,D4
-	MOVEQ	#-$80,D3
-	EOR.B	D3,D4
-	EOR.B	D3,D5
-	ADD.B	D4,D5
-	BVS.S	L285FE
-	MOVE.B	D3,D4
-	EOR.W	D4,D5
-	ROR.W	#1,D5
-	SWAP	D5
-	MOVE.W	D6,D5
-	CLR.B	D7
-	CLR.B	D5
-	MOVE.W	D5,D4
-	MULU	D7,D4
-	SWAP	D4
-	MOVE.L	D7,D3
-	SWAP	D3
-	MULU	D5,D3
-	ADD.L	D3,D4
-	SWAP	D6
-	MOVE.L	D6,D3
-	MULU	D7,D3
-	ADD.L	D3,D4
-	CLR.W	D4
-	ADDX.B	D4,D4
-	SWAP	D4
-	SWAP	D7
-	MULU	D6,D7
-	SWAP	D6
-	SWAP	D5
-	ADD.L	D4,D7
-	BPL.S	L285E2
-	ADDI.L	#$80,D7
-	MOVE.B	D5,D7
-	BEQ.S	L285FA
-L285E0:
-	RTS
-L285E2:
-	SUBQ.B	#1,D5
-	BVS.S	L285FA
-	BCS.S	L285FA
-	MOVEQ	#$40,D4
-	ADD.L	D4,D7
-	ADD.L	D7,D7
-	BCC.S	L285F4
-	ROXR.L	#1,D7
-	ADDQ.B	#1,D5
-L285F4:
-	MOVE.B	D5,D7
-	BEQ.S	L285FA
-	RTS
-L285FA:
-	MOVEQ	#0,D7
-	RTS
-L285FE:
-	BPL.S	L285FA
-	EOR.B	D6,D7
-	ORI.L	#$FFFFFF7F,D7
-	TST.B	D7
-	ORI.B	#2,CCR
-	RTS
+
+* 
+*	Floating Point Negation :
+*		Front End to FFP Floating Point Package.
+*
+*		double
+*		fpneg(farg)
+*		double farg;
+*
+*	Returns : negated Floating point number
+*
+fpneg:
+	link	a6,#-4
+	movem.l	d3-d7,-(sp)
+	move.l	8(a6),d7
+	jsr		ffpneg
+	move.l	d7,d0
+	movem.l	(sp)+,d3-d7
+	unlk	a6
+	rts
+
+*************************************************************
+*                     ffpneg                                *
+*           fast floating point negate                      *
+*                                                           *
+*  input:  d7 - fast floating point argument                *
+*                                                           *
+*  output: d7 - fast floating point negated result          *
+*                                                           *
+*      condition codes:                                     *
+*              n - set if result is negative                *
+*              z - set if result is zero                    *
+*              v - cleared                                  *
+*              c - undefined                                *
+*              x - undefined                                *
+*                                                           *
+*               all registers transparent                   *
+*                                                           *
+*************************************************************
+ 
+**********************
+* negate entry point *
+**********************
+ffpneg:  tst.b     d7        ; ? is argument a zero
+         beq.s     ffprtn    ; return if so
+         eori.b    #$80,d7   ; invert the sign bit
+ffprtn:  rts                 ; and return to caller
+
+
+
 
 L28654:
 	LINK	A6,#0
@@ -1795,10 +1497,17 @@ L286B6:
 	UNLK	A6
 	RTS
 
-*********************************************************
-*	LONG TO FLOAT
-*********************
-ltof:
+* 
+*	Floating Point Long to Float Routine :
+*		Front End to FFP Floating Point Package.
+*
+*		double
+*		fpltof(larg)
+*		long larg;
+*
+*	Return : Floating Point representation of Long Fixed point integer
+*
+fpltof:
 	LINK	A6,#0
 	MOVEM.L	D5-D7,-(A7)
 	TST.L	8(A6)
@@ -1854,10 +1563,17 @@ LB005A:
 	UNLK	A6
 	RTS
 
-************************************************************
-*	FLOAT TO LONG
-************************
-ftol:
+* 
+*	Floating Point Float to Long Routine :
+*		Front End to IEEE Floating Point Package.
+*
+*	long
+*	fpftol(fparg)
+*	double fparg;
+*
+*	Return : Fixed Point representation of Floating Point Number
+*
+fpftol:
 	LINK	A6,#0
 	MOVEM.L	D4-D7,-(A7)
 	MOVE.L	8(A6),D0
@@ -1920,359 +1636,649 @@ LB00E2:
 
 
 *************************************************************
-*	ADDITION FLOAT
+*	Floating Point Addition :
+*		Front End to FFP Floating Point Package.
+*
+*		double
+*		fpadd(addend,adder)
+*		double addend, adder;
+*
+*	Returns : Sum of two floating point numbers
+*
+fpadd:
+	link	a6,#-4
+	movem.l	d3-d7,-(sp)
+	move.l	8(a6),d7
+	move.l	12(a6),d6
+	jsr		ffpadd
+	move.l	d7,d0
+	movem.l	(sp)+,d3-d7
+	unlk	a6
+	rts
+
+* 
+*	Floating Point Compare :
+*		Front End to FFP Floating Point Package.
+*
+*		int
+*		fpcmp(source,dest)
+*		double source, dest;
+*
+*	Returns : Condition codes based on Floating Point Compare
+*
+fpcmp:
+	link	a6,#-4
+	movem.l	d3-d7,-(sp)
+	move.l	8(a6),d7
+	move.l	12(a6),d6
+	jsr		ffpcmp
+	movem.l	(sp)+,d3-d7
+	unlk	a6
+	rts
+
+* 
+*	Floating Point Division :
+*		Front End to FFP Floating Point Package.
+*
+*		double
+*		fpdiv(divisor,dividend)
+*		double divisor, dividend;
+*
+*	Return : Floating Point Quotient
+*
+fpdiv:
+	link	a6,#-4
+	movem.l	d3-d7,-(sp)
+	move.l	8(a6),d7
+	move.l	12(a6),d6
+	jsr		ffpdiv
+	move.l	d7,d0
+	movem.l	(sp)+,d3-d7
+	unlk	a6
+	rts
+
+* 
+*	Floating Point Multiplication :
+*		Front End to FFP Floating Point Package.
+*
+*		double
+*		fpmul(multiplier,multiplicand)
+*		double multiplier, multiplicand;
+*
+*	Return : Result of Floating Point Multiply
+*
+fpmul:
+	link	a6,#-4
+	movem.l	d3-d7,-(sp)
+	move.l	8(a6),d7
+	move.l	12(a6),d6
+	jsr		ffpmul2
+	move.l	d7,d0
+	movem.l	(sp)+,d3-d7
+	unlk	a6
+	rts
+
+* 
+*	Floating Point Subtraction :
+*		Front End to FFP Floating Point Package.
+*
+*		double
+*		fpsub(subtrahend,minuend)
+*		double subtrahend, minuend;
+*
+*	Returns : Floating point subtraction result
+*
+fpsub:
+	link	a6,#-4
+	movem.l	d3-d7,-(sp)
+	move.l	8(a6),d7
+	move.l	12(a6),d6
+	jsr		ffpsub
+	move.l	d7,d0
+	movem.l	(sp)+,d3-d7
+	unlk	a6
+	rts
+
+*************************************************************
+*                      ffpcmp                               *
+*              fast floating point compare                  *
+*                                                           *
+*  input:  d6 - fast floating point argument (source)       *
+*          d7 - fast floating point argument (destination)  *
+*                                                           *
+*  output: condition code reflecting the following branches *
+*          for the result of comparing the destination      *
+*          minus the source:                                *
+*                                                           *
+*                  gt - destination greater                 *
+*                  ge - destination greater or equal to     *
+*                  eq - destination equal                   *
+*                  ne - destination not equal               *
+*                  lt - destination less than               *
+*                  le - destination less than or equal to   *
+*                                                           *
+*      condition codes:                                     *
+*              n - cleared                                  *
+*              z - set if result is zero                    *
+*              v - cleared                                  *
+*              c - undefined                                *
+*              x - undefined                                *
+*                                                           *
+*               all registers transparent                   *
+*                                                           *
+*************************************************************
+
 ***********************
-Plus:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	CB018C
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-
-*************************************************************
-*	COMPARAISON FLOAT
-**************************
-Comp:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	CB015E
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
-
-*************************************************************
-*	DIVISION FLOAT
+* compare entry point *
 ***********************
-Divi:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	CB0282
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
+ffpcmp:  tst.b     d6
+         bpl.s     ffpcp
+         tst.b     d7
+         bpl.s     ffpcp
+         cmp.b     d7,d6
+         bne.s     ffpcrtn
+         cmp.l     d7,d6
+         rts
+ffpcp:
+         cmp.b     d6,d7     ; compare sign and exponent only first
+         bne.s     ffpcrtn   ; return if that is sufficient
+         cmp.l     d6,d7     ; no, compare full longwords then
+ffpcrtn: rts                 ; and return to the caller
 
 *************************************************************
-*	MULTIPLICATION FLOAT
-*****************************
-Mult:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	CB02F4
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
+*                     ffptst                                *
+*           fast floating point test                        *
+*                                                           *
+*  input:  d7 - fast floating point argument                *
+*                                                           *
+*  output: condition codes set for the following branches:  *
+*                                                           *
+*                  eq - argument equals zero                *
+*                  ne - argument not equal zero             *
+*                  pl - argument is positive (includes zero)*
+*                  mi - argument is negative                *
+*                                                           *
+*      condition codes:                                     *
+*              n - set if result is negative                *
+*              z - set if result is zero                    *
+*              v - cleared                                  *
+*              c - undefined                                *
+*              x - undefined                                *
+*                                                           *
+*               all registers transparent                   *
+*                                                           *
+*************************************************************
+ 
+********************
+* test entry point *
+********************
+ffptst:  tst.b     d7        ; return tested condition code
+         rts                 ; to caller
 
 *************************************************************
-*	SOUSTRACTION FLOAT
-***************************
-Moins:
-	LINK	A6,#-4
-	MOVEM.L	D3-D7,-(A7)
-	MOVE.L	8(A6),D7
-	MOVE.L	$C(A6),D6
-	JSR	CB017A
-	MOVE.L	D7,D0
-	MOVEM.L	(A7)+,D3-D7
-	UNLK	A6
-	RTS
+*                  ffpadd/ffpsub                            *
+*             fast floating point add/subtract              *
+*                                                           *
+*  ffpadd/ffpsub - fast floating point add and subtract     *
+*                                                           *
+*  input:                                                   *
+*      ffpadd                                               *
+*          d6 - floating point addend                       *
+*          d7 - floating point adder                        *
+*      ffpsub                                               *
+*          d6 - floating point subtrahend                   *
+*          d7 - floating point minuend                      *
+*                                                           *
+*  output:                                                  *
+*          d7 - floating point add result                   *
+*                                                           *
+*  condition codes:                                         *
+*          n - result is negative                           *
+*          z - result is zero                               *
+*          v - overflow has occured                         *
+*          c - undefined                                    *
+*          x - undefined                                    *
+*                                                           *
+*           registers d3 thru d5 are volatile               *
+*                                                           *
+*  code size: 228 bytes       stack work area:  0 bytes     *
+*                                                           *
+*  notes:                                                   *
+*    1) addend/subtrahend unaltered (d6).                   *
+*    2) underflow returns zero and is unflagged.            *
+*    3) overflow returns the highest value with the         *
+*       correct sign and the 'v' bit set in the ccr.        *
+*                                                           *
+*  time: (8 mhz no wait states assumed)                     *
+*                                                           *
+*           composite average  20.625 microseconds          *
+*                                                           *
+*  add:         arg1=0              7.75 microseconds       *
+*               arg2=0              5.25 microseconds       *
+*                                                           *
+*          like signs  14.50 - 26.00  microseconds          *
+*                    average   18.00  microseconds          *
+*         unlike signs 20.13 - 54.38  microceconds          *
+*                    average   22.00  microseconds          *
+*                                                           *
+*  subtract:    arg1=0              4.25 microseconds       *
+*               arg2=0              9.88 microseconds       *
+*                                                           *
+*          like signs  15.75 - 27.25  microseconds          *
+*                    average   19.25  microseconds          *
+*         unlike signs 21.38 - 55.63  microseconds          *
+*                    average   23.25  microseconds          *
+*                                                           *
+*************************************************************
 
-CB015E:
-	TST.B	D6
-	BPL.S	CB016E
-	TST.B	D7
-	BPL.S	CB016E
-	CMP.B	D7,D6
-	BNE.S	CB0174
-	CMP.L	D7,D6
-	RTS
-CB016E:
-	CMP.B	D6,D7
-	BNE.S	CB0174
-	CMP.L	D6,D7
-CB0174:
-	RTS
-	TST.B	D7
-	RTS
-CB017A:
-	MOVE.B	D6,D4
-	BEQ.S	CB01D0
-	EORI.B	#$80,D4
-	BMI.S	CB01EE
-	MOVE.B	D7,D5
-	BMI.S	CB01F4
-	BNE.S	CB0198
-	BRA.S	CB01CA
+************************
+* subtract entry point *
+************************
+ffpsub:   move.b  d6,d4   ; test arg1
+         beq.s   fpart2   ; return arg2 if arg1 zero
+         eor.b   #$80,d4  ; invert copied sign of arg1
+         bmi.s   fpami1   ; branch arg1 minus
+* + arg1
+         move.b  d7,d5    ; copy and test arg2
+         bmi.s   fpams    ; branch arg2 minus
+         bne.s   fpals    ; branch positive not zero
+         bra.s   fpart1   ; return arg1 since arg2 is zero
 
-CB018C:
-	MOVE.B	D6,D4
-	BMI.S	CB01EE
-	BEQ.S	CB01D0
-	MOVE.B	D7,D5
-	BMI.S	CB01F4
-	BEQ.S	CB01CA
-CB0198:
-	SUB.B	D4,D5
-	BMI.S	CB01D4
-	MOVE.B	D7,D4
-	CMP.B	#$18,D5
-	BCC.S	CB01D0
-	MOVE.L	D6,D3
-	CLR.B	D3
-	LSR.L	D5,D3
-	MOVE.B	#$80,D7
-	ADD.L	D3,D7
-	BCS.S	CB01B6
-CB01B2:
-	MOVE.B	D4,D7
-	RTS
-CB01B6:
-	ROXR.L	#1,D7
-	ADDQ.B	#1,D4
-	BVS.S	CB01BE
-	BCC.S	CB01B2
-CB01BE:
-	MOVEQ	#-1,D7
-	SUBQ.B	#1,D4
-	MOVE.B	D4,D7
-	ORI.B	#2,CCR
-	RTS
-CB01CA:
-	MOVE.L	D6,D7
-	MOVE.B	D4,D7
-	RTS
-CB01D0:
-	TST.B	D7
-	RTS
-CB01D4:
-	CMP.B	#$E8,D5
-	BLE.S	CB01CA
-	NEG.B	D5
-	MOVE.L	D6,D3
-	CLR.B	D7
-	LSR.L	D5,D7
-	MOVE.B	#$80,D3
-	ADD.L	D3,D7
-	BCS.S	CB01B6
-	MOVE.B	D4,D7
-	RTS
-CB01EE:
-	MOVE.B	D7,D5
-	BMI.S	CB0198
-	BEQ.S	CB01CA
-CB01F4:
-	MOVEQ	#-$80,D3
-	EOR.B	D3,D5
-	SUB.B	D4,D5
-	BEQ.S	CB024C
-	BMI.S	CB023A
-	CMP.B	#$18,D5
-	BCC.S	CB01D0
-	MOVE.B	D7,D4
-	MOVE.B	D3,D7
-	MOVE.L	D6,D3
-CB020A:
-	CLR.B	D3
-	LSR.L	D5,D3
-	SUB.L	D3,D7
-	BMI.S	CB01B2
-CB0212:
-	MOVE.B	D4,D5
-CB0214:
-	CLR.B	D7
-	SUBQ.B	#1,D4
-	CMP.L	#$7FFF,D7
-	BHI.S	CB0226
-	SWAP	D7
-	SUBI.B	#$10,D4
-CB0226:
-	ADD.L	D7,D7
-	DBMI	D4,CB0226
-	EOR.B	D4,D5
-	BMI.S	CB0236
-	MOVE.B	D4,D7
-	BEQ.S	CB0236
-	RTS
-CB0236:
-	MOVEQ	#0,D7
-	RTS
-CB023A:
-	CMP.B	#$E8,D5
-	BLE.S	CB01CA
-	NEG.B	D5
-	MOVE.L	D7,D3
-	MOVE.L	D6,D7
-	MOVE.B	#$80,D7
-	BRA.S	CB020A
-CB024C:
-	MOVE.B	D7,D5
-	EXG	D5,D4
-	MOVE.B	D6,D7
-	SUB.L	D6,D7
-	BEQ.S	CB0236
-	BPL.S	CB0212
-	NEG.L	D7
-	MOVE.B	D5,D4
-	BRA.S	CB0214
-CB025E:
-	DIVU	#0,D7
-	TST.L	D6
-	BNE.S	CB0282
-CB0266:
-	ORI.L	#$FFFFFF7F,D7
-	TST.B	D7
-	ORI.B	#2,CCR
-CB0272:
-	RTS
-CB0274:
-	SWAP	D6
-	SWAP	D7
-CB0278:
-	EOR.B	D6,D7
-	BRA.S	CB0266
-CB027C:
-	BMI.S	CB0278
-CB027E:
-	MOVEQ	#0,D7
-	RTS
-CB0282:
-	MOVE.B	D6,D5
-	BEQ.S	CB025E
-	MOVE.L	D7,D4
-	BEQ.S	CB0272
-	MOVEQ	#-$80,D3
-	ADD.W	D5,D5
-	ADD.W	D4,D4
-	EOR.B	D3,D5
-	EOR.B	D3,D4
-	SUB.B	D5,D4
-	BVS.S	CB027C
-	CLR.B	D7
-	SWAP	D7
-	SWAP	D6
-	CMP.W	D6,D7
-	BMI.S	CB02A8
-	ADDQ.B	#2,D4
-	BVS.S	CB0274
-	ROR.L	#1,D7
-CB02A8:
-	SWAP	D7
-	MOVE.B	D3,D5
-	EOR.W	D5,D4
-	LSR.W	#1,D4
-	MOVE.L	D7,D3
-	DIVU	D6,D3
-	MOVE.W	D3,D5
-	MULU	D6,D3
-	SUB.L	D3,D7
-	SWAP	D7
-	SWAP	D6
-	MOVE.W	D6,D3
-	CLR.B	D3
-	MULU	D5,D3
-	SUB.L	D3,D7
-	BCC.S	CB02D0
-	MOVE.L	D6,D3
-	CLR.B	D3
-	ADD.L	D3,D7
-	SUBQ.W	#1,D5
-CB02D0:
-	MOVE.L	D6,D3
-	SWAP	D3
-	CLR.W	D7
-	DIVU	D3,D7
-	SWAP	D5
-	BMI.S	CB02E4
-	MOVE.W	D7,D5
-	ADD.L	D5,D5
-	SUBQ.B	#1,D4
-	MOVE.W	D5,D7
-CB02E4:
-	MOVE.W	D7,D5
-	ADDI.L	#$80,D5
-	MOVE.L	D5,D7
-	MOVE.B	D4,D7
-	BEQ.S	CB027E
-	RTS
-CB02F4:
-	MOVE.B	D7,D5
-	BEQ.S	CB034A
-	MOVE.B	D6,D4
-	BEQ.S	CB0364
-	ADD.W	D5,D5
-	ADD.W	D4,D4
-	MOVEQ	#-$80,D3
-	EOR.B	D3,D4
-	EOR.B	D3,D5
-	ADD.B	D4,D5
-	BVS.S	CB0368
-	MOVE.B	D3,D4
-	EOR.W	D4,D5
-	ROR.W	#1,D5
-	SWAP	D5
-	MOVE.W	D6,D5
-	CLR.B	D7
-	CLR.B	D5
-	MOVE.W	D5,D4
-	MULU	D7,D4
-	SWAP	D4
-	MOVE.L	D7,D3
-	SWAP	D3
-	MULU	D5,D3
-	ADD.L	D3,D4
-	SWAP	D6
-	MOVE.L	D6,D3
-	MULU	D7,D3
-	ADD.L	D3,D4
-	CLR.W	D4
-	ADDX.B	D4,D4
-	SWAP	D4
-	SWAP	D7
-	MULU	D6,D7
-	SWAP	D6
-	SWAP	D5
-	ADD.L	D4,D7
-	BPL.S	CB034C
-	ADDI.L	#$80,D7
-	MOVE.B	D5,D7
-	BEQ.S	CB0364
-CB034A:
-	RTS
-CB034C:
-	SUBQ.B	#1,D5
-	BVS.S	CB0364
-	BCS.S	CB0364
-	MOVEQ	#$40,D4
-	ADD.L	D4,D7
-	ADD.L	D7,D7
-	BCC.S	CB035E
-	ROXR.L	#1,D7
-	ADDQ.B	#1,D5
-CB035E:
-	MOVE.B	D5,D7
-	BEQ.S	CB0364
-	RTS
-CB0364:
-	MOVEQ	#0,D7
-	RTS
-CB0368:
-	BPL.S 	CB0364
-	EOR.B	D6,D7
-	ORI.L	#$FFFFFF7F,D7
-	TST.B 	D7
-	ORI.B	#2,CCR
-	RTS
+*******************
+* add entry point *
+*******************
+ffpadd:  move.b  d6,d4    ; test argument1
+         bmi.s   fpami1   ; branch if arg1 minus
+         beq.s   fpart2   ; return arg2 if zero
+ 
+* + arg1
+         move.b  d7,d5    ; test argument2
+         bmi.s   fpams    ; branch if mixed signs
+         beq.s   fpart1   ; zero so return argument1
+ 
+* +arg1 +arg2
+* -arg1 -arg2
+fpals:   sub.b   d4,d5    ; test exponent magnitudes
+         bmi.s   fpa2lt   ; branch arg1 greater
+         move.b  d7,d4    ; setup stronger s+exp in d4
+ 
+* arg1exp <= arg2exp
+         cmp.b   #24,d5   ; overbearing size
+         bcc.s   fpart2   ; branch yes, return arg2
+         move.l  d6,d3    ; copy arg1
+         clr.b   d3       ; clean off sign+exponent
+         lsr.l   d5,d3    ; shift to same magnitude
+         move.b  #$80,d7  ; force carry if lsb-1 on
+         add.l   d3,d7    ; add arguments
+         bcs.s   fpa2gc   ; branch if carry produced
+fparsr:  move.b  d4,d7    ; restore sign/exponent
+         rts              ; return to caller
+ 
+* add same sign overflow normalization
+fpa2gc:  roxr.l  #1,d7    ; shift carry back into result
+         add.b   #1,d4    ; add one to exponent
+         bvs.s   fpa2os   ; branch overflow
+         bcc.s   fparsr   ; branch if no exponent overflow
+fpa2os:  moveq   #-1,d7   ; create all ones
+         sub.b   #1,d4    ; back to highest exponent+sign
+         move.b  d4,d7    ; replace in result
+         ori.b   #$02,ccr ; show overflow occurred
+         rts              ; return to caller
+ 
+* return argument1
+fpart1:  move.l  d6,d7    ; move in as result
+         move.b  d4,d7    ; move in prepared sign+exponent
+         rts              ; return to caller
+ 
+* return argument2
+fpart2:  tst.b   d7       ; test for returned value
+         rts              ; return to caller
+ 
+* -arg1exp > -arg2exp
+* +arg1exp > +arg2exp
+fpa2lt:  cmp.b   #-24,d5  ; ? arguments within range
+         ble.s   fpart1   ; nope, return larger
+         neg.b   d5       ; change difference to positive
+         move.l  d6,d3    ; setup larger value
+         clr.b   d7       ; clean off sign+exponent
+         lsr.l   d5,d7    ; shift to same magnitude
+         move.b  #$80,d3  ; force carry if lsb-1 on
+         add.l   d3,d7    ; add arguments
+         bcs.s   fpa2gc   ; branch if carry produced
+         move.b  d4,d7    ; restore sign/exponent
+         rts              ; return to caller
+ 
+* -arg1
+fpami1:  move.b  d7,d5    ; test arg2's sign
+         bmi.s   fpals    ; branch for like signs
+         beq.s   fpart1   ; if zero return argument1
+ 
+* -arg1 +arg2
+* +arg1 -arg2
+fpams:   moveq   #-128,d3  ; create a carry mask ($80)
+         eor.b   d3,d5    ; strip sign off arg2 s+exp copy
+         sub.b   d4,d5    ; compare magnitudes
+         beq.s   fpaeq    ; branch equal magnitudes
+         bmi.s   fpatlt   ; branch if arg1 larger
+* arg1 <= arg2
+         cmp.b   #24,d5   ; compare magnitude difference
+         bcc.s   fpart2   ; branch arg2 much bigger
+         move.b  d7,d4    ; arg2 s+exp dominates
+         move.b  d3,d7    ; setup carry on arg2
+         move.l  d6,d3    ; copy arg1
+fpamss:  clr.b   d3       ; clear extraneous bits
+         lsr.l   d5,d3    ; adjust for magnitude
+         sub.l   d3,d7    ; subtract smaller from larger
+         bmi.s   fparsr   ; return final result if no overflow
+
+* mixed signs normalize
+fpanor:  move.b  d4,d5    ; save correct sign
+fpanrm:  clr.b   d7       ; clear subtract residue
+         sub.b   #1,d4    ; make up for first shift
+         cmp.l   #$00007fff,d7   ; ? small enough for swap
+         bhi.s   fpaxqn   ; branch nope
+         swap.w  d7       ; shift left 16 bits real fast
+         subi.b  #16,d4   ; make up for 16 bit shift
+fpaxqn:  add.l   d7,d7    ; shift up one bit
+         dbmi    d4,fpaxqn ; decrement and branch if positive
+         eor.b   d4,d5    ; ? same sign
+         bmi.s   fpazro   ; branch underflow to zero
+         move.b  d4,d7    ; restore sign/exponent
+         beq.s   fpazro   ; return zero if exponent underflowed
+         rts              ; return to caller
+
+* exponent underflowed - return zero
+fpazro:  moveq.l #0,d7    ; create a true zero
+         rts              ; return to caller
+
+* arg1 > arg2
+fpatlt:  cmp.b   #-24,d5  ; ? arg1 >> arg2
+         ble.s   fpart1   ; return it if so
+         neg.b   d5       ; absolutize difference
+         move.l  d7,d3    ; move arg2 as lower value
+         move.l  d6,d7    ; set up arg1 as high
+         move.b  #$80,d7  ; setup rounding bit
+         bra.s   fpamss   ; perform the addition
+
+* equal magnitudes
+fpaeq:   move.b  d7,d5    ; save arg1 sign
+         exg     d5,d4    ; swap arg2 with arg1 s+exp
+         move.b  d6,d7    ; insure same low byte
+         sub.l   d6,d7    ; obtain difference
+         beq.s   fpazro   ; return zero if identical
+         bpl.s   fpanor   ; branch if arg2 bigger
+         neg.l   d7       ; correct difference to positive
+         move.b  d5,d4    ; use arg2's sign + exponent
+         bra.s   fpanrm   ; and go normalize
+
+********************************************
+*           ffpdiv subroutine              *
+*                                          *
+* input:                                   *
+*        d6 - floating point divisor       *
+*        d7 - floating point dividend      *
+*                                          *
+* output:                                  *
+*        d7 - floating point quotient      *
+*                                          *
+* condition codes:                         *
+*        n - set if result negative        *
+*        z - set if result zero            *
+*        v - set if result overflowed      *
+*        c - undefined                     *
+*        x - undefined                     *
+*                                          *
+* registers d3 thru d5 volatile            *
+*                                          *
+* code: 150 bytes     stack work: 0 bytes  *
+*                                          *
+* notes:                                   *
+*   1) divisor is unaltered (d6).          *
+*   2) underflows return zero without      *
+*      any indicators set.                 *
+*   3) overflows return the highest value  *
+*      with the proper sign and the 'v'    *
+*      bit set in the ccr.                 *
+*   4) if a divide by zero is attempted    *
+*      the divide by zero exception trap   *
+*      is forced by this code with the     *
+*      original arguments intact.  if the  *
+*      exception returns with the denom-   *
+*      inator altered the divide operation *
+*      continues, otherwise an overflow    *
+*      is forced with the proper sign.     *
+*      the floating divide by zero can be  *
+*      distinguished from true zero divide *
+*      by the fact that it is an immediate *
+*      zero dividing into register d7.     *
+*                                          *
+* time: (8 mhz no wait states assumed)     *
+* dividend zero         5.250 microseconds *
+* minimum time others  72.750 microseconds *
+* maximum time others  85.000 microseconds *
+* average others       76.687 microseconds *
+*                                          *
+********************************************
+
+* divide by zero exit
+fpddzr: divu.w #0,d7     ; **force divide by zero **
+ 
+* if the exception returns with altered denominator - continue divide
+         tst.l     d6        ; ? exception alter the zero
+         bne.s     ffpdiv    ; branch if so to continue
+* setup maximum number for divide overflow
+fpdovf: ori.l   #$ffffff7f,d7 ; maximize with proper sign
+       tst.b  d7        ; set condition code for sign
+*      or.w   #$02,ccr  set overflow bit
+       dc.l   $003c0002 ; ******sick assembler******
+fpdrtn: rts              ; return to caller
+ 
+* over or underflow detected
+fpdov2:   swap.w    d6        ; restore arg1
+         swap.w    d7        ; restore arg2 for sign
+fpdovfs: eor.b  d6,d7     ; setup correct sign
+        bra.s  fpdovf    ; and enter overflow handling
+fpdouf: bmi.s  fpdovfs   ; branch if overflow
+fpdund: move.l #0,d7     ; underflow to zero
+        rts              ; and return to caller
+ 
+***************
+* entry point *
+***************
+ 
+* first subtract exponents
+ffpdiv: move.b d6,d5    ; copy arg1 (divisor)
+       beq.s  fpddzr    ; branch if divide by zero
+       move.l d7,d4     ; copy arg2 (dividend)
+       beq.s  fpdrtn    ; return zero if dividend zero
+       moveq  #-128,d3  ; setup sign mask
+       add.w  d5,d5     ; isolate arg1 sign from exponent
+       add.w  d4,d4     ; isolate arg2 sign from exponent
+       eor.b  d3,d5     ; adjust arg1 exponent to binary
+       eor.b  d3,d4     ; adjust arg2 exponent to binary
+       sub.b  d5,d4     ; subtract exponents
+       bvs.s  fpdouf    ; branch if overflow/underflow
+       clr.b  d7        ; clear arg2 s+exp
+       swap.w d7        ; prepare high 16 bit compare
+       swap.w d6        ; against arg1 and arg2
+       cmp.w  d6,d7     ; ? check if overflow will occur
+       bmi.s  fpdnov    ; branch if not
+* adjust for fixed point ; divide overflow
+       add.b  #2,d4     ; adjust exponent up one
+       bvs.s  fpdov2    ; branch overflow here
+       ror.l  #1,d7     ; shift down by power of two
+fpdnov: swap.w d7       ; correct arg2
+       move.b d3,d5     ; move $80 into d5.b
+       eor.w  d5,d4     ; create sign and absolutize exponent
+       lsr.w  #1,d4     ; d4.b now has sign+exponent of result
+ 
+* now divide just using 16 bits into 24
+       move.l d7,d3     ; copy arg1 for initial divide
+       divu.w d6,d3     ; obtain test quotient
+       move.w d3,d5     ; save test quotient
+ 
+* now multiply 16-bit divide result times full 24 bit divisor and compare
+* with the dividend.  multiplying back out with the full 24-bits allows
+* us to see if the result was too large due to the 8 missing divisor bits
+* used in the hardware divide.  the result can only be too large by 1 unit.
+       mulu.w d6,d3     ; high divisor x quotient
+       sub.l  d3,d7     ; d7=partial subtraction
+       swap.w d7        ; to low divisor
+       swap.w d6        ; rebuild arg1 to normal
+       move.w d6,d3     ; setup arg1 for product
+       clr.b  d3        ; zero low byte
+       mulu.w d5,d3     ; find remaining product
+       sub.l  d3,d7     ; now have full subtraction
+       bcc.s  fpdqok    ; branch first 16 bits correct
+ 
+* estimate too high, decrement quotient by one
+       move.l d6,d3     ; rebuild divisor
+       clr.b  d3        ; reverse halves
+       add.l  d3,d7     ; add another divisor
+       sub.w  #1,d5     ; decrement quotient
+ 
+* compute last 8 bits with another divide.  the exact remainder from the
+* multiply and compare above is divided again by a 16-bit only divisor.
+* however, this time we require only 9 bits of accuracy in the result
+* (8 to make 24 bits total and 1 extra bit for rounding purposes) and this
+* divide always returns a precision of at least 9 bits.
+fpdqok: move.l d6,d3    ; copy arg1 again
+       swap.w d3        ; first 16 bits divisor in d3.w
+       clr.w  d7        ; into first 16 bits of dividend
+       divu.w d3,d7     ; obtain final 16 bit result
+       swap.w d5        ; first 16 quotient to high half
+       bmi.s  fpdisn    ; branch if normalized
+* rare occurrance - unnormalized
+* happends when mantissa arg1 < arg2 and they differ only in last 8 bits
+       move.w d7,d5     ; insert low word of quotient
+       add.l  d5,d5     ; shift mantissa left one
+       sub.b  #1,d4     ; adjust exponent down (cannot zero)
+       move.w d5,d7     ; cancel next instruction
+ 
+* rebuild our final result and return
+fpdisn: move.w d7,d5    ; append next 16 bits
+       addi.l  #$80,d5  ; round to 24 bits (cannot overflow)
+       move.l d5,d7     ; return in d7
+       move.b d4,d7     ; finish result with sign+exponent
+       beq.s  fpdund    ; underflow if zero exponent
+       rts              ; return result to caller
+
+
+
+********************************************
+*          ffpmul2 subroutine              *
+*                                          *
+*   this module is the second of the       *
+*   multiply routines.  it is 18% slower   *
+*   but provides the highest accuracy      *
+*   possible.  the error is exactly .5     *
+*   least significant bit versus an error  *
+*   in the high-speed default routine of   *
+*   .50390625 least significant bit due    *
+*   to truncation.                         *
+*                                          *
+* input:                                   *
+*          d6 - floating point multiplier  *
+*          d7 - floating point multiplican *
+*                                          *
+* output:                                  *
+*          d7 - floating point result      *
+*                                          *
+* registers d3 thru d5 are volatile        *
+*                                          *
+* condition codes:                         *
+*          n - set if result negative      *
+*          z - set if result is zero       *
+*          v - set if overflow occurred    *
+*          c - undefined                   *
+*          x - undefined                   *
+*                                          *
+* code: 134 bytes    stack work: 0 bytes   *
+*                                          *
+* notes:                                   *
+*   1) multipier unaltered (d6).           *
+*   2) underflows return zero with no      *
+*      indicator set.                      *
+*   3) overflows will return the maximum   *
+*      value with the proper sign and the  *
+*      'v' bit set in the ccr.             *
+*                                          *
+*  times: (8mhz no wait states assumed)    *
+* arg1 zero            5.750 microseconds  *
+* arg2 zero            3.750 microseconds  *
+* minimum time others 45.750 microseconds  *
+* maximum time others 61.500 microseconds  *
+* average others      52.875 microseconds  *
+*                                          *
+********************************************
+ffpmul2: move.b d7,d5   ; prepare sign/exponent work       4
+       beq.s  ffmrtn    ; return if result already zero    8/10
+       move.b d6,d4     ; copy arg1 sign/exponent          4
+       beq.s  ffmrt0    ; return zero if arg1=0            8/10
+       add.w  d5,d5     ; shift left by one                4
+       add.w  d4,d4     ; shift left by one                4
+       moveq  #-128,d3  ; prepare exponent modifier ($80)  4
+       eor.b  d3,d4     ; adjust arg1 exponent to binary   4
+       eor.b  d3,d5     ; adjust arg2 exponent to binary   4
+       add.b  d4,d5     ; add exponents                    4
+       bvs.s  ffmouf    ; branch if overflow/underflow     8/10
+       move.b d3,d4     ; overlay $80 constant into d4     4
+       eor.w  d4,d5     ; d5 now has sign and exponent     4
+       ror.w  #1,d5     ; move to low 8 bits               8
+       swap.w d5        ; save final s+exp in high word    4
+       move.w d6,d5     ; copy arg1 low byte               4
+       clr.b  d7        ; clear s+exp out of arg2          4
+       clr.b  d5        ; clear s+exp out of arg1 low byte 4
+       move.w d5,d4     ; prepare arg1lowb for multiply    4
+       mulu.w d7,d4     ; d4 = arg2lowb x arg1lowb         38-54 (46)
+       swap.w d4        ; place result in low word         4
+       move.l d7,d3     ; copy arg2                        4
+       swap.w d3        ; to arg2highw                     4
+       mulu.w d5,d3     ; d3 = arg1lowb x arg2highw        38-54 (46)
+       add.l  d3,d4     ; d4 = partial product (no carry)  8
+       swap.w d6        ; to arg1 high two bytes           4
+       move.l d6,d3     ; copy arg1highw over              4
+       mulu.w d7,d3     ; d3 = arg2lowb x arg1highw        38-54 (46)
+       add.l  d3,d4     ; d4 = partial product             8
+       clr.w  d4        ; clear low end runoff             4
+       addx.b d4,d4     ; shift in carry if any            4
+       swap.w d4        ; put carry into high word         4
+       swap.w d7        ; now top of arg2                  4
+       mulu.w d6,d7     ; d7 = arg1highw x arg2highw       40-70 (54)
+       swap.w d6        ; restore arg1                     4 
+       swap.w d5        ; restore s+exp to low word
+       add.l  d4,d7     ; add partial products             8
+       bpl    ffmnor    ; branch if must normalize         8/10
+       addi.l  #$80,d7  ; round up (cannot overflow)       16
+       move.b d5,d7     ; insert sign and exponent         4
+       beq.s  ffmrt0    ; return zero if zero exponent     8/10
+ffmrtn: rts             ; return to caller                 16
+ 
+* must normalize result
+ffmnor: subi.b   #1,d5   ; bump exponent down by one        4
+       bvs.s   ffmrt0   ; return zero if underflow         8/10
+       bcs.s   ffmrt0   ; return zero if sign inverted     8/10
+       moveq   #$40,d4  ; rounding factor                  4
+       add.l   d4,d7    ; add in rounding factor           8
+       add.l   d7,d7    ; shift to normalize               8
+       bcc.s   ffmcln   ; return normalized number         8/10
+       roxr.l  #1,d7    ; rounding forced carry in top bit 10
+       addi.b   #1,d5    ; undo normalize attempt           4
+ffmcln: move.b  d5,d7   ; insert sign and exponent         4
+       beq.s   ffmrt0   ; return zero if exponent zero     8/10
+       rts              ; return to caller                 16
+ 
+* arg1 zero
+ffmrt0: move.l #0,d7    ; return zero                      4
+       rts              ; return to caller                 16
+ 
+* overflow or underflow exponent
+ffmouf: bpl.s  ffmrt0    ; branch if underflow to give zero 8/10
+       eor.b  d6,d7     ; calculate proper sign            4
+       ori.l   #$ffffff7f,d7 ; force highest value possible 16
+       tst.b  d7        ; set sign in return code
+       ori.b   #$02,ccr ; set overflow bit
+       rts              ; return to caller                 16
 
 	even
 FinPrg:	dc.l 0
