@@ -1,16 +1,16 @@
-		.include "lib.inc"
-		.include "file.inc"
-		.include "equates.inc"
-		.include "system.inc"
-		.include "music.inc"
-		.include "window.inc"
-		.include "sprites.inc"
-		.include "tokens.inc"
-		.include "errors.inc"
-		.include "adapt.inc"
-		.include "float.inc"
+        .include "lib.inc"
+        .include "file.inc"
+        .include "equates.inc"
+        .include "system.inc"
+        .include "music.inc"
+        .include "window.inc"
+        .include "sprites.inc"
+        .include "tokens.inc"
+        .include "errors.inc"
+        .include "adapt.inc"
+        .include "float.inc"
 
-		.text
+        .text
 
 **************************** 05/01/1989 *********************************
 delib:  dc.l librairie-delib
@@ -180,26 +180,26 @@ L0:     nop
 L1:     dc.w 0
 ****************************
 ; Empeche le plantage en cas de STOS RUN
-	move.l himem(a5),lowvar(a5)
-	move.l fsource(a5),a0
-	clr.w (a0)+
-	move.l a0,hichaine(a5)
+        move.l himem(a5),lowvar(a5)
+        move.l fsource(a5),a0
+        clr.w (a0)+
+        move.l a0,hichaine(a5)
 
         move.l debut(a5),a6     ;debut du programme
 ; Appelle la fin des trappes
-	lea oext(a6),a2
-	moveq #26-1,d2
-Ft1:	cmp.l (a2),a6
-	beq.s Ft2
-	move.l 26*4(a2),a0
-	movem.l a2/a5/a6/d2,-(sp)
-	jsr (a0)
-	movem.l (sp)+,a2/a5/a6/d2
-Ft2:	lea 4(a2),a2
-	dbra d2,Ft1
+        lea oext(a6),a2
+        moveq #26-1,d2
+Ft1:    cmp.l (a2),a6
+        beq.s Ft2
+        move.l 26*4(a2),a0
+        movem.l a2/a5/a6/d2,-(sp)
+        jsr (a0)
+        movem.l (sp)+,a2/a5/a6/d2
+Ft2:    lea 4(a2),a2
+        dbra d2,Ft1
 
 ; Delete the program
-	move.l a6,d6
+        move.l a6,d6
 Del0:   move.l oreloc(a6),a0    ;Pointe la table de relocation
         move.l a6,a2            ;debut a reloger
 Del1:   move.b (a0)+,d0
@@ -244,7 +244,7 @@ Del10:  cmp.w #$FF00,(a0)
         bra.s Del10
 
 ; Restore exception vectors
-Del11:	lea svect(a5),a0
+Del11:  lea svect(a5),a0
         move.l (a0)+,$8
         move.l (a0)+,$c
         move.l (a0)+,$404
@@ -1038,19 +1038,19 @@ L40:    dc.w 0
 **************
         move.l a4,-(sp)         ;Utilise A4
         move.l a0,a4            ;comme pointeur sur le buffer
-	movem.l a0/a1/d0,-(sp)
+        movem.l a0/a1/d0,-(sp)
         move.l (a6),d4
         move.l 4(a6),d3
-	move.w #F_getsgn,d0
-	trap #6
-	tst.w d0
+        move.w #F_getsgn,d0
+        trap #6
+        tst.w d0
         bmi.s L40a              ;met un espace si positif
         move.b #32,(a4)+
 L40a:   movem.l (sp)+,a0/a1/d0
-	move.l (a6)+,d2
-	move.l (a6)+,d1
-	moveq #0,d4
-	moveq #0,d5
+        move.l (a6)+,d2
+        move.l (a6)+,d1
+        moveq #0,d4
+        moveq #0,d5
         move.w d0,d4
         move expflg(a5),d5
 ; entree pour la tokenisation
@@ -1240,7 +1240,7 @@ us25:   lea usip(pc),a3
         addq #1,d2
         bra us16
 finus:  clr.b usingflg(a5)
-	clr.b (a0)
+        clr.b (a0)
         rts
 usip:   dc.b "E+000  "
         even
@@ -1286,7 +1286,7 @@ us54:   addq.l #1,a1
         move.b d0,(a0)+
         bra.s us52
 fnusc:  clr.b usingflg(a5)
-	clr.b (a0)
+        clr.b (a0)
         rts
 
 *************************************************************************
@@ -1413,12 +1413,12 @@ L55:    dc.w 0
 *************
         move.l (a6)+,d4
         move.l (a6)+,d3
-	move.w #F_getsgn,d0
-	trap #6
-	tst d0
+        move.w #F_getsgn,d0
+        trap #6
+        tst d0
         bmi.s L55a
-	move.l d3,d1
-	move.l d4,d2
+        move.l d3,d1
+        move.l d4,d2
         moveq #F_ln,d0
         trap #6
         move.l d0,-(a6)
@@ -1434,12 +1434,12 @@ L56:    dc.w 0
 *************
         move.l (a6)+,d4
         move.l (a6)+,d3
-	move.w #F_getsgn,d0
-	trap #6
-	tst d0
+        move.w #F_getsgn,d0
+        trap #6
+        tst d0
         bmi.s L56a
-	move.l d3,d1
-	move.l d4,d2
+        move.l d3,d1
+        move.l d4,d2
         moveq #F_log,d0
         trap #6
         move.l d0,-(a6)
@@ -1455,12 +1455,12 @@ L57:    dc.w 0
 *************
         move.l (a6)+,d4
         move.l (a6)+,d3
-	move.w #F_getsgn,d0
-	trap #6
-	tst d0
+        move.w #F_getsgn,d0
+        trap #6
+        tst d0
         bmi.s L57a
-	move.l d3,d1
-	move.l d4,d2
+        move.l d3,d1
+        move.l d4,d2
         moveq #F_sqr,d0
         trap #6
         move.l d0,-(a6)
@@ -1597,9 +1597,9 @@ L68:    dc.w 0
 **************
         move.l (a6)+,d4
         move.l (a6)+,d3
-	move.w #F_getsgn,d0
-	trap #6
-	move.l d0,-(a6)
+        move.w #F_getsgn,d0
+        trap #6
+        move.l d0,-(a6)
         rts
 
 ************************************************************************
@@ -2394,20 +2394,20 @@ L111:   dc.w 0
         move.l d1,(a3)
         move.l d1,d2
         move.l d0,d1
-	move.l d1,-(sp)		;Signe de la step
-	move.l d2,-(sp)
-	move.w #F_getsgn,d0
-	trap #6
-	move.l (sp)+,d2
-	move.l (sp)+,d1
-	tst.w d0
+        move.l d1,-(sp)         ;Signe de la step
+        move.l d2,-(sp)
+        move.w #F_getsgn,d0
+        trap #6
+        move.l (sp)+,d2
+        move.l (sp)+,d1
+        tst.w d0
         bpl.s L111a
         moveq #F_lt,d0
         bra.s L111b
 L111a:  moveq #F_gt,d0
 L111b:  move.l d6,d4
-	move.l d5,d3
-	trap #6
+        move.l d5,d3
+        trap #6
         tst.w d0
         bne.s L111c
         move.l a2,(sp)
@@ -2420,7 +2420,7 @@ L112:   dc.w l112a-L112,l112b-L112,0
 **************************
         clr.l printpos(a5)      ;Pas de print
 l112a:  jsr L_restore.l                 ;Restore
-l112b:	jsr L_setdta.l
+l112b:  jsr L_setdta.l
 
         move.w #1,actualise(a5)
         move.w #1,autoback(a5)
@@ -2550,8 +2550,8 @@ L120:   dc.w 0
         add.w d1,d2
         lsl.w #1,d2
         addq.w #4,d2                    ;Saute le BRA
-	lea 4(sp),a0			* Correction du bug!
-	move.l a0,lowpile(a5)
+        lea 4(sp),a0                    * Correction du bug!
+        move.l a0,lowpile(a5)
         move.l (sp),a0
         add.l d2,a0
         jmp (a0)
@@ -2999,7 +2999,7 @@ L145:   dc.w L145a-L145,0
         move.l (a6)+,a2
         moveq #0,d3
         move.w (a2)+,d3
-	beq.s fnup4
+        beq.s fnup4
 L145a:  jsr L_malloc.l
         move.w d3,(a0)+
         subq #1,d3
@@ -3018,8 +3018,8 @@ fnup2:  move.b d0,(a0)+
 fnup3:  move.l a0,hichaine(a5)
         move.l a1,-(a6)
         rts
-fnup4:	move.l chvide(a5),-(a6)
-	rts
+fnup4:  move.l chvide(a5),-(a6)
+        rts
 
 *************************************************************************
 *       LOWER$
@@ -3028,7 +3028,7 @@ L146:   dc.w L146a-L146,0
         move.l (a6)+,a2
         moveq #0,d3
         move.w (a2)+,d3
-	beq.s fnlw4
+        beq.s fnlw4
 L146a:  jsr L_malloc.l
         move.w d3,(a0)+
         subq #1,d3
@@ -3047,8 +3047,8 @@ fnlw2:  move.b d0,(a0)+
 fnlw3:  move.l a0,hichaine(a5)
         move.l a1,-(a6)
         rts
-fnlw4:	move.l chvide(a5),-(a6)
-	rts
+fnlw4:  move.l chvide(a5),-(a6)
+        rts
 
 ***************************************************************************
 *       ROUTINE TIME / pour TIME / DIR FIRST / DIR NEXT
@@ -3104,7 +3104,7 @@ l148b:  jsr L_longdec.l
         moveq #4,d3
         moveq #0,d4
 l148c:  jsr L_longdec.l              ;annee
-	move.l (sp)+,a1
+        move.l (sp)+,a1
         rts
 
 ****************************************************************************
@@ -3133,8 +3133,8 @@ L150:   dc.w l150a-L150,l150b-L150,0
         move.w d0,(sp)
         moveq #10,d3
 l150a:  jsr L_malloc.l
-	lea 10+2(a0),a2
-	move.l a2,hichaine(a5)
+        lea 10+2(a0),a2
+        move.l a2,hichaine(a5)
         move.w #10,(a0)+
         move.w (sp)+,d7
 l150b:  jsr L_datebis.l
@@ -3540,7 +3540,7 @@ val4:
         beq.s val7
         subq.l #1,a0        ;pointe la fin du chiffre
         clr.b (a0)          ;arrete la conversion ICI!
-	move.l a0,a6	    ;Bonne conversion!
+        move.l a0,a6        ;Bonne conversion!
         move.l a2,a0        ;pointe le debut du chiffre
         move #F_atof,d0
         trap #6             ;conversion ASCII--->float
@@ -3563,11 +3563,11 @@ val8:   tst d1
 ; test du signe
         tst d4
         beq.s val8a
-	neg.l d0
+        neg.l d0
 ; si FLOAT present, transforme en FLOAT ---> resultat en D0/D1
 ; sinon ---> D1 = resultat
 val8a:  move.l d0,d1
-	clr.b d2
+        clr.b d2
         tst.w flola(a5)
         beq.s Valf
         moveq #F_ltof,d0
@@ -3857,8 +3857,8 @@ L163e:  tst.b d2
         beq.s L163g
         bmi.s L163h
 ; Raz tableau FLOAT
-	move.l zerofl(a5),d0		;Prend le ZERO!
-	move.l zerofl+4(a5),d1
+        move.l zerofl(a5),d0            ;Prend le ZERO!
+        move.l zerofl+4(a5),d1
 L163f:  move.l d0,(a0)+
         move.l d1,(a0)+
         subq.l #1,d6
@@ -3923,11 +3923,11 @@ L165:   dc.w 0
         movem.l d0-d7/a0-a6,-(sp)
 
         move.l buffer(a5),d5
-	addi.l #512,d5			;debut TI
+        addi.l #512,d5                  ;debut TI
         move.l d5,d6
         addi.l #64*8,d6                  ;Fin TI
         move.l lochaine(a5),d7          ;Ad mini de recopie
-	move.l d7,a1
+        move.l d7,a1
 
 Men0:   move.l adstr(a5),a6             ;Table des ad strings
         moveq #-1,d2                    ;Maxi dans le tableau
@@ -4004,9 +4004,9 @@ Men21:  cmp.l d3,a3                     ;Fini-ni?
         bne.s Men22
 ; Les 2 chaines sont au meme endroit!
         move.l a1,d1
-	moveq #0,d0
+        moveq #0,d0
         move.w (a1)+,d0
-	add.l d0,a1
+        add.l d0,a1
         move.w a1,d0
         btst #0,d0
         beq.s Men21
@@ -4634,7 +4634,7 @@ L191:   dc.w 0
 *       BTST
 L192:   dc.w 0
 ***************
-	move.l (a6)+,d1
+        move.l (a6)+,d1
         move.l (a6),d0
         btst d0,d1
         bne.s L192a
@@ -8679,10 +8679,10 @@ L390:   dc.w l390a-L390,0
         move d0,mode(a5)
         cmp.w #2,d0
         beq.s l390z
-	cmp.w defmod(a5),d0		;MODE par DEFAUT?
+        cmp.w defmod(a5),d0             ;MODE par DEFAUT?
         beq.s l390z
         moveq #0,d3
-	move.w defmod(a5),d0
+        move.w defmod(a5),d0
 l390a:  jsr L_mode.l
 l390z:  rts
 
@@ -8694,27 +8694,27 @@ L391:   dc.w l391a-L391,l391b-L391,l391c-L391,0
         move.w 32(a0),cursflg(a5)       ;Prend le curseur par 299!
         move.w 32+2(a0),foncon(a5)      ;Touches de fonction
         clr mnd+12(a5)
-l391a:  jsr L_menuoff.l				;menuoff
+l391a:  jsr L_menuoff.l                         ;menuoff
 l391b:  jsr L_modebis.l
 
 ; Poke l'ambiance par 299
         move.l amb(a5),a0
-	move.w 40(a0),d2
+        move.w 40(a0),d2
         move.l adlogic(a5),a1
         lea 32000(a1),a1
-	move.l a1,a2
+        move.l a1,a2
         moveq #15,d0
 l391p:  move.w (a0)+,(a1)+
         dbra d0,l391p
-	cmp.w #2,mode(a5)		;Si noir et blanc---> poke inverse
-	bne.s l391c
-	move.w d2,(a2)
+        cmp.w #2,mode(a5)               ;Si noir et blanc---> poke inverse
+        bne.s l391c
+        move.w d2,(a2)
 l391c:  jsr L_palette3.l
 
 ; Termine
-	move.l amb(a5),a0
-	tst.w 42(a0)
-	beq.s PaCho
+        move.l amb(a5),a0
+        tst.w 42(a0)
+        beq.s PaCho
         moveq #S_show,d0
         moveq #0,d1
         trap #5
@@ -11694,8 +11694,8 @@ L536:   dc.w l536a-L536,l536b-L536,l536c-L536,l536d-L536,l536e-L536,0
         moveq #50,d3
 l536a:  jsr L_malloc.l
         move.l a0,-(a6)
-	lea 48(a1),a1
-	move.l a1,hichaine(a5)
+        lea 48(a1),a1
+        move.l a1,hichaine(a5)
         move.w #45,(a0)+    ;taille de la chaine
         move.l a0,-(sp)
         moveq #46-1,d0
@@ -12298,7 +12298,7 @@ L549:   dc.w l549a-L549,l549z-L549,0
         bmi.s print6
         move.w d0,d6
         subq #1,d6
-	move.l a2,-(sp)
+        move.l a2,-(sp)
 print4: move.w d6,-(sp)     ;bcostat
         move.w #8,-(sp)
         trap #13
@@ -12306,16 +12306,16 @@ print4: move.w d6,-(sp)     ;bcostat
 l549a:  jsr L_tester.l          ;attend que le perif soit pres,
         tst d0              ;en gerant quand meme les interruptions! SUPER!
         beq.s print4
-	move.l (sp),a2
+        move.l (sp),a2
         move.b (a2)+,d0     ;c'est pret! envoyez c'est pes‚!
-	move.l a2,(sp)
+        move.l a2,(sp)
         move.w d0,-(sp)
         move.w d6,-(sp)
         move.w #3,-(sp)
         trap #13
         addq.l #6,sp
         dbra d7,print4
-	addq.l #4,sp
+        addq.l #4,sp
         rts
 ; dans un fichier sequentiel: imprime aussi tout!
 print5: tst.w d7            ;chaine vide!
@@ -12494,7 +12494,7 @@ l555a:  jmp L_fileselect.l
 L556:   dc.w l556d-L556,0
 ***********************
         move.w #1,fsd+22(a5)
-	move.w #1,fsd+24(a5)
+        move.w #1,fsd+24(a5)
         move.l (a6)+,a0
         move.l fsbuff(a5),a1
         move.w (a0)+,d0
@@ -12517,7 +12517,7 @@ L557:   dc.w l557d-L557,0
         cmp.l #16,d0
         bcc.s l557z
         move.w d0,fsd+22(a5)
-	move.w #1,fsd+24(a5)
+        move.w #1,fsd+24(a5)
         move.l (a6)+,a0
         move.l fsbuff(a5),a1
         move.w (a0)+,d0
@@ -12745,8 +12745,8 @@ fs19e:  cmp.b #48,d0
         bcs fswait
         cmp.b #58,d0
         bcs.s fs19i
-	cmp.b #"_",d0
-	beq.s fs19i
+        cmp.b #"_",d0
+        beq.s fs19i
         cmp.b #65,d0
         bcs fswait
         cmp.b #91,d0
@@ -12784,8 +12784,8 @@ fs19r:  cmp.b #"*",d0
         beq.s fs19s
         cmp.b #"?",d0
         beq.s fs19s
-	cmp.b #"_",d0
-	beq.s fs19s
+        cmp.b #"_",d0
+        beq.s fs19s
         cmp.b #48,d0
         bcs fswait
         cmp.b #58,d0
@@ -12802,7 +12802,7 @@ fs19s:  cmp #12,d1
         bcc fswait
         move.b d0,0(a1,d1.w)
         addq #1,d1
-	clr.b 0(a1,d1.w)
+        clr.b 0(a1,d1.w)
         move d1,fsd+18(a5)
         moveq #W_chrout,d7
         trap #3
@@ -13683,8 +13683,8 @@ l564fc: moveq #E_illegalfunc,d0
 L565:   dc.w l565a-L565,0
 ***********************
 l565a:  jsr L_menu.l
-	move.l (a6)+,d2
-	move.l (a6)+,d1
+        move.l (a6)+,d2
+        move.l (a6)+,d1
         subq.l #1,d1
         bcs.s l565fc
         cmp.l #10,d1                  ;pas plus de 10!
@@ -13783,8 +13783,8 @@ L569:   dc.w l569a-L569,l569b-L569,l569c-L569,0
         clr mnd+14(a5)
         moveq #15,d3
 l569a:  jsr L_effbank.l             ;va effacer, bouge toutes le variables
-	bne.s mf1
-l569b:	jsr L_resbis.l
+        bne.s mf1
+l569b:  jsr L_resbis.l
 mf1:    tst mnd+12(a5)
         beq.s mf2
         clr mnd+12(a5)
@@ -13821,7 +13821,7 @@ L571:   dc.w l571a-L571,l571b-L571,0
         move mnd+2(a5),d0
         beq.s mo0
         move d0,mnd(a5)
-	addq.l #2,sp
+        addq.l #2,sp
         rts
 mo0:    tst mnd+14(a5)
         beq.s l571nd
@@ -13843,9 +13843,9 @@ l571a:  jsr L_adbank.l
         beq.s mo1
         move.l (a6)+,d0
         bmi.s mo1
-	cmp.l #1,d0
-	beq.s mo1
-	move.w #1,(sp)
+        cmp.l #1,d0
+        beq.s mo1
+        move.w #1,(sp)
 mo1:    move.l (a6)+,d3
         bmi.s mo2
         beq.s l571fc
@@ -14101,17 +14101,17 @@ mt40:   btst #0,7(a6)       ;attend qu'on relache!
         lea mnd+100(a5),a0
         tst.l 0(a0,d0.w)
         beq.s mt41
-	lea cretin(pc),a1
+        lea cretin(pc),a1
         move.l 0(a0,d0.w),(a1)
         bsr effmenus
         bset #7,mnd+98(a5)     ;empeche les appels en boucle
-	movem.l (sp)+,d0-d7/a0-a6
-	move.l cretin(pc),(sp)
-	rts
+        movem.l (sp)+,d0-d7/a0-a6
+        move.l cretin(pc),(sp)
+        rts
 mt41:   bsr effmenus
 finmenu:movem.l (sp)+,d0-d7/a0-a6
         rts
-cretin:	dc.l 0
+cretin: dc.l 0
 
 ; RE-TEST DES MENUS (DESOLE)
 remenu: tst mnd(a5)         ;menu en route?
@@ -14417,7 +14417,7 @@ rn2:    move.w (a0)+,(a2)+
         move.l spile(a5),sp
         jmp (a3)
 ; ROUTINE RUN SOUS GEM
-dro:   	move.w #2,-(sp)
+dro:    move.w #2,-(sp)
         move.l a0,-(sp)
         move.w #$3d,-(sp)
         trap #1

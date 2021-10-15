@@ -1247,8 +1247,8 @@ dirjumps: dc.l listbank
           dc.l pasimp
           dc.l accload
           dc.l accnew
-          dc.l upper
           dc.l lower
+          dc.l upper
           dc.l english
           dc.l francais
           dc.l pasimp
@@ -3433,11 +3433,11 @@ outofmem: move #2,d0          ;out of memory
           bra erreur
 
 ; INSTRUCTION UPPER
-upper:    clr upperflg
+upper:    move #1,upperflg
           rts
 
 ; INSTRUCTION LOWER
-lower:    move #1,upperflg
+lower:    clr upperflg
           rts
 
 ; DETOKENIZATION OF THE TOKENIZATION BUFFER ---> STARTER BUFFER
