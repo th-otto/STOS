@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <getopt.h>
+#include <math.h>
 #include "tokens.h"
 
 #ifndef FALSE
@@ -406,11 +407,6 @@ static struct token const extinstructions[] = {
 };
 
 static struct extension const external_extensions[] = {
-	/*
-    Quartet: 3 commands
-    ' TODO: Add Blitter commands. Difficult due to some 4 word commands and conflicts.
-    ' NOTE: Some extensions have too many conflicting keywords with more popular extensions, e.g. Quick and STE Sound.
-    */
     /* Compact: 2 commands */
     { 'A', 0x80, "unpack" },
     { 'A', 0x81, "pack" },
@@ -944,6 +940,7 @@ static struct extension const external_extensions[] = {
 static int upperflag = FALSE;
 
 #define TOUPPER(c) (upperflag ? ((c) >= 'a' && (c) <= 'z' ? (c) - ('a' - 'A') : (c)) : (c))
+#define TOLOWER(c) (upperflag ? ((c) >= 'A' && (c) <= 'Z' ? (c) + ('a' - 'A') : (c)) : (c))
 
 static const char *const lbktext[MAX_BANKS] = {
 	" work   ",
@@ -976,14 +973,17 @@ static uint16_t readbe16(FILE *fp)
 }
 
 
-static int32_t readbe32(FILE *fp)
+static uint32_t readbe32(FILE *fp)
 {
-	int32_t c1, c2, c3, c4;
-	c1 = fgetc(fp);
-	c2 = fgetc(fp);
-	c3 = fgetc(fp);
-	c4 = fgetc(fp);
-	return (c1 << 24) | (c2 << 16) | (c3 << 8) | c4;
+	uint32_t c;
+	c = fgetc(fp);
+	c <<= 8;
+	c |= fgetc(fp);
+	c <<= 8;
+	c |= fgetc(fp);
+	c <<= 8;
+	c |= fgetc(fp);
+	return c;
 }
 
 
@@ -1044,9 +1044,8 @@ static void print_external_extension(char extension, unsigned char opcode, FILE 
 }
 
 
-static int listfile(FILE *fp)
+static int listfile(FILE *fp, FILE *out)
 {
-	FILE *out = stdout;
 	struct basfile header;
 	uint16_t linelength;
 	uint16_t lineno;
@@ -1055,10 +1054,16 @@ static int listfile(FILE *fp)
 	int remflg;
 	unsigned char opcode;
 	unsigned char opcode2;
+	int badfloat = 0;
 	
 	if (fread(&header, sizeof(header), 1, fp) != 1)
 	{
 		fprintf(stderr, "read error\n");
+		return FALSE;
+	}
+	if (memcmp(header.magic, "Lionpoulos", 10) != 0)
+	{
+		fprintf(stderr, "Not a STOS basic file\n");
 		return FALSE;
 	}
 	prglen = getbe32(&header.databank[0][0]);
@@ -1125,7 +1130,7 @@ static int listfile(FILE *fp)
 				}
 				/* might be padding byte */
 				if (opcode != 0)
-					putc(TOUPPER(opcode), out);
+					putc(TOLOWER(opcode), out);
 				opcode2 = 0;
 				continue;
 			}
@@ -1188,16 +1193,27 @@ static int listfile(FILE *fp)
 						break;
 					case T_constflt:
 						{
-							uint32_t hi;
-							uint32_t lo;
+							uint32_t hi, lo;
 							
 							hi = readbe32(fp);
 							lo = readbe32(fp);
 							linelength -= 8;
 							/* TODO: print float */
-							fputs("0.0", out);
-							(void) lo;
-							(void) hi;
+							if (lo != 0x12345678l)
+							{
+								fputs(" BAD FLOAT TRAP ", out);
+								badfloat = 1;
+							} else
+							{
+								int exp = hi & 0x7f;
+								double mant = ((hi >> 8) & 0xfffffful) / 8388608.0;
+								double x = ldexp(mant, exp - 0x41);
+								if (hi & 0x80)
+									x = -x;
+								if (hi == 0)
+									x = 0;
+								fprintf(out, "%.6g", x);
+							}
 						}
 						break;
 					case T_var:
@@ -1281,6 +1297,11 @@ static int listfile(FILE *fp)
 		}
 	}
 	
+	if (badfloat)
+	{
+		fprintf(stderr, "bad floating point constants detected,\n");
+		fprintf(stderr, "run CONVERT.BAS\n");
+	}
 	return TRUE;
 }
 
@@ -1305,7 +1326,8 @@ int main(int argc, char **argv)
 	int i;
 	FILE *fp;
 	int c;
-	
+	int ret;
+
 	while ((c = getopt_long(argc, argv, "uVh", long_options, NULL)) != EOF)
 	{
 		switch (c)
@@ -1331,11 +1353,15 @@ int main(int argc, char **argv)
 		if (fp == NULL)
 		{
 			fprintf(stderr, "%s: %s\n", filename, strerror(errno));
+			ret = FALSE;
 		} else
 		{
-			listfile(fp);
+			ret = listfile(fp, stdout);
 			fclose(fp);
 		}
+		if (ret == FALSE)
+			return 1;
 	}
+
 	return 0;
 }
