@@ -891,11 +891,11 @@ static struct extension const external_extensions[] = {
 	/* 0xab missing */
 	{ 'F', 0xac, "hard screen offset" },
 
-	/* STORM/GBP blitter extension: 14 commands */
-	{ 'G', 0x80, "blit s inc" },
-	/* 0x81 missing */
-	{ 'G', 0x82, "blit d inc" },
-	/* 0x83 missing */
+	/* blitter extension: 18 commands */
+	{ 'G', 0x80, "blit sinc" },
+	{ 'G', 0x81, "blit clr" },
+	{ 'G', 0x82, "blit dinc" },
+	{ 'G', 0x83, "blit fskopy" },
 	{ 'G', 0x84, "blit address" },
 	/* 0x85 missing */
 	{ 'G', 0x86, "blit mask" },
@@ -919,6 +919,10 @@ static struct extension const external_extensions[] = {
 	{ 'G', 0x98, "blit hog" },
 	/* 0x99 missing */
 	{ 'G', 0x9a, "blit it" },
+	/* 0x9b missing */
+	{ 'G', 0x9c, "fcopy" },
+	/* 0x9c missing */
+	{ 'G', 0x9d, "cls" },
 
     /* Cyber: 2 commands */
 	{ 'Y', 0x80, "cyber" },

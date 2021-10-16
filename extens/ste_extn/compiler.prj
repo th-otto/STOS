@@ -1,7 +1,8 @@
-stos\ste_extn.ecf
+compiler\ste_extn.ecf
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]
 .S[-I..\..\src]
+.S[-I..\..\compiler]
 =
-ste_extn.s
+compiler.s
