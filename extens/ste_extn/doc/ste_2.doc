@@ -1,0 +1,462 @@
+
+#*~a
+
+
+
+
+
+                                   PART TWO
+                                   ~~~~~~~~
+
+     A column dealing with the STE side of STOS Programming.
+        By      J.J.
+
+        THIS MONTH: MORE ABOUT THE BLITTER
+                    THE DAC Sound Interface
+
+
+                For the first part you will require:
+                        An STE or blitter equipped ST
+                The BLITTER.EX*
+        For the Second part you will require
+                An STE or DAC equipped Atari
+                The STE.EX*
+
+
+      Many thanks for the people writing the Extensions, and in this
+      case ASA Burrows.
+        It is a shame that more people are not making use of
+      his extensions. Let's hope that this is changing now that
+      STOSSER is attacking it.
+
+
+
+      Appeal:
+      Yes, I know ! Again, Yawhn !!
+      Any source are not only welcome, but required. Frankly, if you
+      own an STE and are reading this, you know you have
+      a superior beast!
+      So use it!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        By the way, if anyone out there has some good
+                        Alien Attack  wave generators, please send it in!
+
+
+     *** Warning **   ****************************************************
+     *All the stuff I mention is mostly trial and error, so I can't offer*
+     *any guarantees. This tutorial might be harmful to your machine,   *
+     *or peripherals, so be warned!                                      *
+     *ps: I never had any problems, but who knows.                       *
+     *********************************************************************
+
+
+    Hopefully you have enjoyed last months tutorial! Please don't swear
+    if you managed to crash your STE more often than ever before. The
+    Blitter commands are quite powerful, but not fool proof.
+
+    The learning curve is pretty steep, and without a Hard Drive, I never
+    would have been able to bear the constant reboots required to
+    get last months examples together.
+
+    Anyway, this month we will have some fun and get a fast horizontal
+    scrolling background going.
+
+
+    PART 2  of   ******** THE BLITTER EXTENSION  *********
+
+
+    I will go step by step, on the main issues, but included on the disk
+    are a couple of programs doing weird things.
+
+    We will also build a parallax scrolling stars background.
+
+    *****************************************************************
+    A small word about screens:      **** SIZE CONVENTIONS ****
+
+
+        We work in low resolution  320*200 pixels in 16 colours
+        In High res, each pixel is either on or off and represented by
+        a single binary digit called "bit"
+        In low res, each pixel requires 4 binary digits to get the proper
+        address of the colour register to us
+        0000    colour register 0
+                ...
+        1111    colour register 15
+
+        The palette is what we call the 16 colour registers
+
+        8 bit= 1 byte     Why?   Because !
+
+        So in low resolution we have 200 lines of 320 pixels
+        1 pixel->4 bits
+        320    ->1280 bits=160 bytes
+
+        1 word= 2 bytes            Because!
+
+        320    ->80 words
+
+        So, we have 80 words of information per horizontal screen line.
+
+        Why do I bother telling you this? because last month
+        we had to use "words" in our EXPERT blitting routine
+             Flashback: (       BLIT X COUNT count
+                                BLIT Y COUNT count
+        These 2 set the no. of words to be read on a line,
+                and the number of lines.       )
+   If we use
+   ....
+   BLIT X COUNT 80
+   BLIT y COUNT 200
+   ...
+   ...
+   we should copy the entire screen, and this is exactly what happened.
+
+    *****************************************************************
+    Another small word about screens:        * BIT PLANES *
+
+    In low resolution, each 16 pixel group on the screen is represented by
+    four consecutive words in memory. The first word contains all the low
+    -colour bits for the group, the second word contains the next 16 bits
+    and so on...
+
+    so if we have                       w w w w
+                                        o o o o
+                                        r r r r
+                                        d d d d
+                                        1 2 3 4
+
+                        Pixel 1         0 1 0 1
+                        Pixel 2         1 0 0 1
+                        Pixel 3         1 0 0 1
+                        Pixel 4         0 1 1 0
+                        Pixel 5         1 0 0 1
+                        Pixel 6         1 0 0 1
+                        Pixel 7         1 0 0 1
+                        Pixel 8         0 1 1 0
+                        Pixel 9         1 0 0 1
+                        Pixel 10        1 0 0 1
+                        Pixel 11        1 0 0 1
+                        Pixel 12        0 1 1 0
+                        Pixel 13        1 0 0 1
+                        Pixel 14        1 0 0 1
+                        Pixel 15        0 1 1 0
+                        Pixel 16        1 0 0 1
+
+  word 1    0110111011101101        word 2    1001000100010010
+  word 3    0001000100010010        word 4    1110111011101101
+
+
+  The next 16 pixel groups are all encoded in the same way.
+  Guess what, you just learned why there is always a 16 pixel
+  limit to copy commands.
+  And you also just discovered why we talk about 4 bit planes graphics
+  in low resolution.
+
+  The first plane is in word 1,5,9....
+  The 2nd   plane            2,6,10,14,18....
+  The third plane            3,7,11,15...
+  The fourth  ...            4,8,12,16,...,16000.
+                note: 16000 words is 32000 Kbytes, total screen size
+                        MAGIC!
+
+  Remember last months SKEW command?
+  At the time I said that we have to skew and blit one
+  bit plane at a time. It probably didn't make sense at
+  the time, but separating the planes will allow us to
+  avoid messing all the information up.
+  Try last months routine with different skew values
+  and check the mess out. This is what happens if you do
+  all 4 planes at the same time.
+
+  Here is the new code separating the planes
+
+
+   10 mode 0 : flash off : logic=back
+   12 reserve as screen 11
+   15 load "canyon.pi1",11
+   16 get palette (11)
+   17 A=start(11)
+
+   900 for sk=0 to 15                   rem     we will scroll 1 pixel
+                                        at a time to the next
+                                        16 pixel boundary
+
+   950 For pl=0 to 3                    rem     1 Bit-plane at  time
+
+   1000 blit source address A+pl*2      rem     offset between planes
+   1005 blit dest address logic+pl*2
+
+   1010 blit source x inc 8             rem     The blitter always  copies
+                                        1 word  at a time, and
+                                        will now jump to the next
+                                        word containing the same
+                                        plane, 8 bytes further
+                                        (or 4 words)
+   1020 blit source y inc 8
+
+   1030 blit dest x inc 8
+   1040 blit dest y inc 8
+   1050 blit x count 20                 rem     Only 20 words in total
+                                        4 planes*20 =80 words
+
+   1060 blit y count 200
+   1070 blit endmask 1 $FFFF
+   1080 blit endmask 2 $FFFF
+   1090 blit endmask 3 $FFFF
+   1095 blit h line 0
+   1100 blit hop 2
+   1110 blit skew sk                    rem     sk= 0 to 15
+                                        does the scroll
+
+   1115 blit smudge 0
+   1120  blit it
+   1130 if blit busy=1 then 1130
+   1140 next pl
+   1999 screen swap: wait vbl  :next sk         rem   display for 1 vbl
+                                                to stabilise
+   2000 wait 100 : cls physic : default : end
+
+
+  This should work! but as we have  large loops
+  it needs to be optimised. But then it is up to
+  you.
+
+  On disk you will find another program that scrolls over the
+  whole screen.
+
+  Note that there is no automatic clipping with the  blitter.
+  So it looks like the screen is wrapping around.
+  Data that disappears on the right of the screen, reappears
+  on the left, but 1 line lower.     Look at the *.Bas please!
+  Actually, this is down to the way the STs' memory is laid
+  out and isn't a problem.
+
+  Have fun finding your own clipping routines. Contributions
+  are welcome.
+  Also how about a routine that takes the screen
+  size, and plane number in consideration, and feeds the low level
+  routine all the required calculations automatically when copying
+  from sadd,x1,y1,x2,y2 to dest,x,y . This will be very useful
+  when we start using the Hardware scrolling.
+  Hardware Scrolling uses a window onto a large screen, so using
+  normal sprites  is out of the window (ha!):
+
+   Stos sprites get clipped when the coordinates are  out of 0,0,320,199
+   so when scrolling up or down ,the sprite will not been redrawn once we
+   have scrolled the first 200 lines.
+   Horizontal is even worse, as the sprites assume that every line  is 320
+   wide. If we widen the screen, they get distorted. If we double the screen
+   to 640*200, we get 1 line of sprite every 2nd line of screen, and again,
+   the clipping removes it altogether.
+
+   So if somebody can write a BLITTER BOB routine to do sprites, he
+   would be a hero. If it is any good, I am sure he'll get some
+   thing out of it. How about a bribe? Anybody corruptible out there?
+   Get in touch.          Wish list:
+                        BODY= addr      (i.e.:logic) address for
+                                                Botter drawings
+                        BOTTER n,x,y,img        Blitter bob
+                        BOTCLIP x1,y1,x2,y2     Set clipping
+                        x= BOTCLASH (n)         Collision test
+                                                BOB (n), returns
+                                                0 if no collision
+                                                or the number of
+                                                the encountered
+                                                sprite .
+
+   In the STOS_2.STE  folder you will also find  the Hyper magnifier
+   "ZOOMBLIT.BAS". Again it doesn't do much but to show what the chip can
+   do. The same picture is displayed as usual, but only the top part. The
+   Blitter is set up to copy the top half to the logical screen on every
+   second line . It is then run again,to fill in the blanks and this way
+   magnifies by 2 the original image. While this goes on, we also scroll the
+   screen.
+
+   **************************************************************
+
+   PARALLAX STARS
+
+   Lets' get lazy! The source is on the disk so please help yourselves. We
+   are using the fact that the blitter can copy 1 Bit plane at a time to
+   speed up the process.
+
+   The challenge to you is, to send me a modified .BAS file where the Stars
+   do not corrupt the background. There is nothing to be won, but if I get
+   sent something really good, it might find its way on to Stosser, and you
+   will be Famous among us ever after. And, I would be grateful for any
+   trouble you take to send us some feedback.
+
+
+  **************   ADVICE ON USING THE BLITTER  **********
+
+                BEFORE USING THE BLITTER LOW LEVEL COMMANDS
+                IN A PROGRAM, USE A MACRO TO EITHER COPY A
+                SCREEN AROUND OR TO CLEAR A SCREEN
+
+                THIS HELPS TO INITIALISE THE BLITTER CHIP
+                AND AVOID DISTORTIONS ON THE SCREEN
+                AT A LATER TIME.
+
+                SHOULD YOUR PROGRAM NOT WORK FOR AN UNKNOWN
+                REASON, SAVE YOUR PROGRAM, RESET THE MACHINE,
+                AND TRY AGAIN.
+
+   The blitter does sometimes get confused, and a machine reset will
+   initialise it again.
+
+
+
+   THIS IS IT FOR THE <<<<BLITTER>>>> I AM AFRAID.
+   At least for the moment!
+   *******************************************
+   CHECK THE SOURCE FILES IN  "STOS_2.STE"
+
+   *******************************************
+                         Welcome to the:
+
+
+        ***     ***     ****
+        *  *   *   *   *                           ///-\\\
+        *  *   *****   *                         <  0   0  >
+        *  *   *   *   *                              *
+        ***    *   *    ****                         \_/
+
+         ****  *****   *****
+        *        *     *
+        *****    *     *****
+            *    *     *
+        ****     *     *****
+
+        *********************
+        *********************
+
+
+   One of the best bits in the STE is the Microwire interface, and the
+   DMA sound  or Digital to Analogue converter (DAC).
+
+   While the "DAC instruction set" has already been covered in
+   STOSSER,this time around there is a very flexible sample player included
+   for you on the disk.
+   The example will also show you how to fing automatically the length from
+   a sample, rather than reading its size from the desktop.
+   Full documented source is included.
+
+   Again, ASA Burrows has put full control of the DAC in your hands with
+   the STE extension. This doc is very similar to his own, and every thing
+   is so obvious I don't have much to add. But I did include a couple of
+   hints along the way.
+
+   It is all very easy, and the example .BAS file will show you what to do.
+
+   Commands available are:
+
+   DAC SPEED x  set the replay speed
+                0=6
+                1=12.5
+                2=25
+                3=50    Khz
+   If like me you have Master sound, you will notice that you can not sample
+   and then replay the same sample at the same speed using the DAC.
+   Fortunately, there are some sample convert programs in PD that can.
+   Or you could use Videomaster at 12 Khz as the Videomaster program
+   was on a Glossy cover disk and allows all kind of different sampling
+   cartridges to be used.
+
+
+   DAC RAW saddr,eaddr
+        Play the Raw sample from address start to end address
+        Once this command has been used, the sample will play
+        until it is stopped by calling  DAC STOP or until the
+        end of the sample is  reached.
+
+   DAC CONVERT saddr,eaddr
+        Convert Maestro Samples to Raw for use by DAC. Again
+        remember to do your sampling at a rate the DAC can
+        replay(6,12,25 khz).
+        Load your sample as usual, then use this command
+        before your main loop. Once converted, it will replay
+                perfectly.
+
+   DAC MONO
+   DAC STEREO
+        Set replay mode to mono or stereo. Usually mono.
+        If you use the Stereo with mono samples, you will
+        notice a change of replay speed, but no problems.
+        Just amend the replay speed accordingly to what
+        you use, and to what effect you want to achieve.
+
+
+   DAC LOOP ON (/OFF)
+        Set the sample to loop or to end after playing it once
+
+   The Microwire interface gives us more control over sound output:
+
+   DAC M VOLUME v
+   DAC L VOLUME v
+   DAC R VOLUME v
+                        The Master volume can be set from 0 to 40
+                        The Left and Right Channel from 0 to 12
+                        (dac l , dac r refer to left right volume when in
+                        Stereo)
+
+
+   DAC BASS    x
+   DAC TREBLE  x
+                Set the Bass and treble from 0 to 12 for maximum
+                effect.
+
+   DAC MIX ON (/off)    Allows you to mix both the DAC output and the
+                normal ST sound chip output . CAn be useful if
+                using chip music for a game, and playing DAC
+                samples for the effects.
+
+   DAC STOP             Stop the DAC
+
+
+
+   Remember that you can edit most values such as Volume, bass,.... while
+   the sample is playing, so you can fade a sample in by raising the volume
+   in a small loop. Or in stereo, it can be faded from left to right.
+
+   Quite easy don't you agree! SO GET CODING NOW !
+
+   Please send us anything you write, to either STOSSER or me if STE.EXT
+   related.
+
+
+   The STE EXTENSION has also  twin joystick controls, knows how to read the
+   side analogue joystick ports and a light pen. This has all already be
+   explained in Stosser, and I won't cover it because :
+   1 Nobody has the analogue controls for their STEs
+   2 Nobody has a light pen
+   3 There are already more than enough methods to use Twin joysticks
+   4 It doesn't really interest me anyway!
+
+   On the other side, we will cover the Hardware Scrolling routine in the
+   next couple of months, as this seems to have everybody baffled. <MMMM!>
+
+    Take care.
+                              Jens Hucke
+
+
+
+   Remember that I am a beginner, so if you know anything at all
+   on any STE related stuff, please drop me a Jiffy.
+
+   Should there be any mail, please include a stamp for the reply,
+   or a S.A.E.
+            Jens Hucke
+            F8/26 Hyde Park Grds
+            London W2 2LZ
+            UK
+
+ BYE!!!
+
+
+
+
+
+
+
+
+
+

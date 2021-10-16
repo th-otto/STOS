@@ -1,0 +1,114 @@
+
+                            STOS STE EXTENSION 
+                            ~~~~~~~~~~~~~~~~~~~
+
+                          Part 1 -  Sound Commands
+                          ~~~~~~~~~~~~~~~~~~~~~~~~                             
+
+                          By Terence 'TEZ' Pearson
+                          ~~~~~~~~~~~~~~~~~~~~~~~~
+
+Welcome to Part 1 of my STE EXTENSION guide. In this part we are going to 
+look at the commands offered by the extension.
+
+Let's start with the commands that I'm most familiar with, the DMA sound 
+commands. All the sound commands begin with DAC, which stands for Digital 
+to Analogue Converter.
+
+Using these commands you can play samples recorded using MASTERSOUND II, 
+STEREO MASTER and any other sampler that saves samples in signed format, 
+that is provided they were recorded at 6.25kHz, 12.5kHz, 25kHz or 50kHz.
+
+DAC SPEED n
+
+        10 DAC SPEED 1
+
+        This sets the playback speed where n is a value from 0 to 3
+
+        0 -  6.25kHz
+        1 -  12.5kHz
+        2 -  25.0kHz
+        3 -  50.0kHz
+
+DAC MONO
+
+        10 DAC MONO
+
+        This sets up the DMA hardware ready to play a MONO sample.
+
+DAC STEREO
+
+        10 DAC STEREO
+
+        This sets up the DMA hardware ready to play a STEREO sample.
+
+DAC CONVERT start address,end address
+
+        10 DAC CONVERT start(15),start(15)+length(15)
+
+        Using this command you can convert an unsigned sample to signed 
+        format. Start and end are the start and end addresses of the sample
+        that you wish to convert.
+
+DAC LOOP ON
+DAC LOOP OFF
+
+        10 DAC LOOP ON
+
+        When a sample is played it will play continuously.
+
+        10 DAC LOOP OFF
+
+        When the sample is played it will only play through once and then 
+        stop.
+
+DAC RAW sample start address,sample end address
+
+        10 DAC RAW start(15),start(15)+length(15)
+
+        This command plays the sample between the two addresses start and 
+        end.
+
+DAC M VOLUME n
+
+        10 DAC M VOLUME 40
+
+        This command sets the overall volume of the sound output.
+        n is the volume and can be between 0 and 40.
+
+DAC L VOLUME n
+DAC R VOLUME n
+        
+        10 DAC L VOLUME 15
+        20 DAC R VOLUME 18
+
+        These two commands allow independent volume control for the left 
+        and right sound outputs. n is the volume and is a value between 0 
+        and 20.
+
+DAC STOP
+    
+        10 DAC STOP
+
+        This commands stops any sample that is being played.
+
+DAC MIX ON
+DAC MIX OFF
+
+        10 DAC MIX ON
+
+        DAC MIX ON allows samples and sounds from the ST's PSG sound chip
+        all to be played through the DAC together.
+
+
+
+If you want some examples/samples send me a disk(preferably with something
+on it) and I'll send you some samples and demo progs.
+
+Send your disk to : TEZ - STE EXAMPLES/SAMPLES,
+                    LIGHTWOOD FARM,
+                    13 LIGHTWOOD ROAD,
+                    MARSH LANE,
+                    NEAR SHEFFIELD,
+                    S31 9RF.
+

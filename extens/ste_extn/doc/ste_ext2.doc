@@ -1,0 +1,109 @@
+
+                     STOS AND THE STE PART 2
+                     ~~~~~~~~~~~~~~~~~~~~~~~
+
+
+E PALETTE $RGB,$RGB,$RGB,$RGB.......(16 colour values)
+
+        10 E PALETTE $F00,$E00,$D00,$C00,$707,$101,$211,$000,$46A,$5A5,
+           $414,$333,$555,$FFF,$BBB,$999
+
+This is the same as the PALETTE command in STOS, and can be used to
+define the colour palette.
+
+RGB are red, green and blue values in hexadecimal. The values you 
+can use are 0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F
+
+E COLOUR n,$RGB
+
+10 E COLOUR 5,$7A0
+
+This command is used to set one colour, again the RGB values are 
+hexadecimal. This is the same as the COLOUR command in STOS.
+
+x=E COLOR(c)
+
+        10 x=E COLOR(5)
+        20 PRINT HEX$(x,3)
+
+The command x=E COLOR(c) returns the RGB value of colour c into the 
+variable x.
+
+x=STE
+
+        10 x=STE
+        20 IF x=1 THEN PRINT "This is an ATARI STE"
+        30 IF x=0 THEN PRINT "This is not and ATARI STE"
+
+Using this command you can detect if your program is running on an 
+STE or not.
+
+x=LIGHT X
+y=LIGHT Y
+
+        10 REPEAT
+        20 x=LIGHT X
+        30 y=LIGHT Y
+        40 PLOT x,y
+        50 UNTIL FALSE
+
+If you have a light pen or light gun attached to the analogue joystick 
+port of your STE then the x and y co-ordinates on screen can be returned 
+with these commands. LIGHT X and LIGHT Y contain the x and y co-ordinates 
+when the fire button or light pen button is pressed. See x=FSTICK(j)
+
+x=LSTICK(j) : REM Left
+x=RSTICK(j) : REM Right
+x=DSTICK(j) : REM Down
+x=USTICK(j) : REM Up
+x=FSTICK(j) : REM Fire
+
+These commands are used for detecting the joysticks, j which can be from 
+1 to 6.
+
+x=FSTICK(3) can be used to detect the light pen/gun's fire button.
+
+STICKS ON
+STICKS OFF
+
+This switches on interrupts for joystick ports one and two.  STICKS ON 
+also disables the mouse, and so if you need to use the mouse again then 
+you need to use STICKS OFF
+
+x=STICK1 : REM Joystick in mouse port
+x=STICK2 : REM Joystick port
+
+These two commands can be used to return the status of joysticks one and 
+two.
+
+        Value of x returned :-
+
+          1 - Up
+          2 - Down
+          4 - Left
+          8 - Right
+        128 - Fire
+
+For diagonals x will be the sum of the values, for example :-  If up and 
+left are pressed together x will be 5 If fire and right are pressed then 
+x will be 136
+
+There are some hardware scrolling commands, but try as I may I can't 
+get them to work. If YOU know how they work please tell me!
+
+Have fun with these commands, and maybe we'll see some more STOS STE 
+games!.
+
+
+       /ÿÿÿÿÿÿÿÿÿÿÿÿÿÿ|ÿÿÿÿÿÿÿÿÿÿÿÿÿÿ|ÿÿÿÿÿÿÿÿÿÿÿÿÿÿ\    \ÿÿÿ\
+      /               |              |               \    \   \
+     ÿÿÿÿÿÿÿ/   /ÿÿÿÿÿ|   |ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ/   /     \   \
+           /   /      |   |                     /   /       \   \
+          /   /       |   ÿÿÿÿÿÿÿÿÿÿÿ|         /   /         \   \
+         /   /        |              |        /   /           \   \
+        /   /         |   |ÿÿÿÿÿÿÿÿÿÿ        /   /             \   \
+       /   /          |   |                 /    |              ÿÿÿÿ
+      /   /           |   ÿÿÿÿÿÿÿÿÿÿÿ|     |     ÿÿÿÿÿÿÿÿÿÿÿ|   \ÿÿÿÿ\
+     /   /            |              |     |                |    \    \
+     ÿÿÿÿ              ÿÿÿÿÿÿÿÿÿÿÿÿÿÿ       ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ      ÿÿÿÿÿ
+

@@ -1,0 +1,198 @@
+
+#*~e
+
+
+
+
+   Welcome back to the STE !
+
+   This month we will introduce the hardware scrolling routine on your
+   favourite machine, the  :
+
+
+   ******  *******  ******
+   *          *     *
+   ******     *     ****
+        *     *     *                    """""
+   ******           ******              (*)ÿ(*)
+                                           *
+                                          \_/
+
+   It is assumed that you have read the previous two issues dealing with the
+   blitter chip, as this will be used to generate our screen data. If you
+   have not, then get them now from a friend or your friendly PDL.
+
+   You will require :
+        One  STE machine
+        STOS
+        The Blitter extension
+        The STE extension (REGISTERED VERSION!)
+        STOSSER
+   ************************************************************************
+   AS ALWAYS:         !!  WARNING  !!
+
+   STOSSER and Myself can not be held responsible for anything
+   happening to your equipment,hardware or software.
+   All the following information has been tried and tested,
+   but you can't hold us responsible in case anything damaging
+   happens.         Use at your own risk
+   ************************************************************************
+   Frankly, the above disclaimer should not worry you, but
+   I have to cover myself in case somebody in the STATES
+   reads STOSSER and blows their head off in frustration while
+   following the tutorial.
+
+   REGISTRATION:
+   There is a STE extension in the PD, but that one didn't
+   work with the stuff I wrote following the .DOC file.
+   So,I hope that you have the full registered copy, otherwise
+   you are on your own.
+
+   *********************************
+   * Hardware Scrolling explained  *
+   *********************************
+   The standard ST is quite fussy as to where its screen address is.
+   For that reason we normally use a fixed logical and physical address
+   and swap between them. All the background data is moved to do
+   some scrolling
+
+   On the STE, the screen address can be anywhere. This means
+   that we can move the screen address to the background data to
+   display, rather than the other way round.
+
+   Obviously, it is much faster to change a single hardware register
+   than to shift 32000k of image data.
+   -----------> the result is Ultra Fast Scrolling
+
+        Here is the glitch:
+
+   If we are going to change the screen address to a new one, we
+   must make sure that we have data (the picture) there to be
+   displayed
+
+   So we will create picture data larger than 320*200, but only
+   display a small part of it (320*200) at a time.
+                         --*(*)*--
+
+   Large pictures for vertical scrolling are created by adding
+   several pictures together one after another
+        So, if you copy a picture to  start(15), and another
+   to start(15)+32000, we have a screen 2 pictures high
+   in bank 15.
+   320*400
+
+
+   For Horizontal pictures, we must create the data by sticking
+   several pictures together line by line.
+        In order to get a  screen that is 2 screens wide, we
+        must copy the first line of the first picture, followed
+        by the 1st line of the other picture. Then the 2nd line
+        of both pictures,and so on.
+        The example files show how to use the blitter for this!
+
+
+   Once we have created the data, we must tell the STE what the screen
+   size is that we have created, and which part of it to display.
+   This Method is called windowing onto a virtual screen.
+
+   x=HARD PHYSIC(screen address)
+                screen address should be the address of your
+                image data bank.
+                All it does is set the origin of the image
+                data it will window onto
+
+                500 x=hard physic(start(15))
+                                the data is in bank 15
+
+
+   HARD SCREEN SIZE w,h,0
+                Tells the STE the size of the data we are
+                windowing over
+                w and h are width and height in pixels
+                (0 means 0 ? if you know please tell me)
+
+   Hard screen offset x,y
+                Tells the STE where to position the Window
+                over our data
+
+
+   HARD INTER ON (/off)
+                Start or stop the Hardware SCrolling interrupt
+
+   Once you have set everything up. just use HARD SCREEN OFFSET x,y to move
+   around over your screen.
+
+   If you are going to use STOS animation or graphic commands, be warned
+   that STOS clips screen data at 320*200.
+   So once your sprite has reached x or y coordinates superior to 320,200
+   they will be erased even if displayed in the middle of the monitor's
+   picture. If you want to move stuff around, bare this in mind and try to
+   use the Blitter for all your graphic copying.
+
+   Also, we have to manually create a logical screen
+   You will have to make sure that the physical and logical
+   screens are identical, with the same background
+
+   30 reserve as work 14,640000
+   40 reserve as work 15,640000
+...
+   150 physic=start(14)
+   160 logic= start(15)
+...
+        Loop
+        ....
+        600 x=hard physic(logic):screen swap
+        ....
+
+   End loop
+   ...
+   or something like that.
+   Anyway, experiment. And if you want more source code in STOSSER
+   relating to this subject, write to us. I will do my best to comply.
+
+
+   There are not many commands, and to use them for something useful
+   is quite hard, so good luck.
+
+   Please send me anything you might have written with the help
+   of these STE series. Depending on your reaction we will go
+   into more detail with anything you may find difficult or interesting.
+
+   On the Disk you will find examples files:
+        Vertical scrolling              VERTICAL.BAS
+        Horizontal scrolling            HORIZON1.BAS
+        "8 Way"screen scrolling         4SCREENS.BAS
+        1 picture file                  HSHORIZO.NEO
+
+
+   Should there be any mail, please include a stamp for the reply,
+   or a S.A.E.
+            Jens Hucke
+            F8/26 Hyde Park Grds
+            London W2 2LZ
+            UK
+
+   BYE!!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

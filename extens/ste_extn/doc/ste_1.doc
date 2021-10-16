@@ -1,0 +1,396 @@
+
+
+
+                               STOS AND THE STE
+                               ~~~~~~~~~~~~~~~~
+          A new column dealing with the STE side of STOS Programming.
+                                    By J.J.
+
+   BLITTER AND STE COMMAND TUTORIAL BASED ON ASA BURROW's DOC but severely
+   edited to make it more usable. Hope he doesn't mind to much. If you read
+   this Asa, please send any input you might have to me.
+
+   To follow these tutorials, you will need:
+
+   STOS
+        The BLITTER .EX*                Starting this month
+        The STE_EXTN.EX*                Starting soon
+        A Blitter chip, and/or an STE
+
+   Intro:
+   ======
+
+   This new section in Stosser will deal with aspects of the STE such as the
+   Blitter, DAC and Hardware scrolling. Once again, many thanks for the
+   people writing the extensions, and in this case ASA Burrows. Having met
+   him, I can only say he is a very nice chap, and it is a shame that more
+   people are not making use of his extensions.
+
+   Here is the challenge: Can you use these extensions?
+                          Have you a demo screen?
+                          Have you got a clue? (I haven't!)
+                          Can you help!
+
+
+   Appeal:
+   =======
+
+   Yes, I know! I haven't even started and already I am appealing for your
+   source code and routines. But hey! why not. Please, please, please send
+   me stuff STE related with plenty of Docs and Rems so that I know what is
+   going on! How many of you are actually using STEs out there?
+
+
+   *** Warning **********************************************************
+   *All the stuff I mention is mostly trial and error, so I can't offer *
+   *any guarantees. This tutorial might be harmful to your machine,     *
+   *or peripherals, so be warned!                                       *
+   *P.S.: I never had any problems, but who knows.                      *
+   **********************************************************************
+
+   Why bother with the STE and Blitter extensions?
+   ===============================================
+
+   Many of you will be using the Missing Link extension and mighty it is
+   too! But let's face it, the best machine code can not outperform hardware
+   trickery. Imagine a Horizontal 320*200 screen scroll that hardly uses
+   any machine time at all! The possibility to shift large chunks of
+   graphics around without fancy programming and speed penalty. Better
+   sound. All elements that would allow you more freedom to do animation.
+   That is the theory at least, But have you noticed that so far no use has
+   been made by STOS users of these extensions? I could be wrong, in which
+   case please send me your code! I could be right, in which case I hope
+   this column will provoke some kind of reaction and motivation.
+
+   A quick summary follows, describing what can be done. An in depth
+   Tutorial will start afterwards.
+
+   First here is a summary of what is available to you:
+
+   In the Blitter Extension:
+   Macros: set of high level commands doing the equivalent of "screen copy,
+           cls, fill," but faster and easy to use.
+
+   Expert Commands: Access to all the registers of the blitter chip! Very
+                    Very Fast but Difficult to use. Allows Single plane
+                    manipulation! and logical operations.
+                    Frighteningly fast !!!
+
+   The blitter chip can handle most common graphic tasks faster than the
+   68000, and leaves the main processor free to do other things, with a
+   minimum speed penalty. I love it for scrolling routines... that beat
+   anything else I have seen! (I managed to crash my ST over 100 times
+   writing this doc! so be careful and save everything)
+
+   In the STE Extension
+        Twin joystick support
+        Light Gun
+        Extended palette         * so far nothing new or
+                                   important
+        DAC  or DMA sample playing routine
+        Hardware scrolling       * the powerful and painful bit
+
+
+
+   Now let's start some tutorials:
+
+
+   PART 1       ******** THE BLITTER EXTENSION  *********
+
+
+   Here are the macro commands. They are the easiest part to master and the
+   tutorial finishes with an example covering most commands.
+
+   x=BLITTER
+   ---------
+
+   This checks to see if a blitter is fitted. If a 1 is returned, you have
+   one, if 0 is returned you don't. So if you get a "0", enjoy the rest of
+   STOSSER and goodbye!
+
+   BLIT CLS screen
+   ---------------
+
+   Clears the screen. This can be logical, physical, or the address of a
+   screen bank.
+
+        i.e.:
+
+        20 load" picture.neo",physic
+        30 wait key
+        40 BLIT CLS physic
+        *** not very clever !  loads a pic and erases it.
+
+   BLIT COPY source,destination,[op]
+   ---------------------------------
+
+   BLIT COPY source,destination,op
+   BLIT COPY source,x1,y1,x2,y2,destination,x,y
+   BLIT COPY source,x1,y1,x2,y2,destination,x,y,op
+
+   This one is more useful! It's similar to Screen Copy in Stos, or Blit
+   from the Missing Link. So you should know how to use it!
+
+   If you are copying only a small part from the source address, remember
+   that the X coordinates will be rounded to the nearest 16 pixels. The good
+   news is that the destination can be any X,Y coordinates.
+
+   The optional op parameter can range from 1 to 14 and sets the type of
+   copying to do. Don't bother using it for a straight copy, but some nice
+   effects can be had
+
+   1  source AND destination
+   2  source AND NOT destination
+   3  source (a straight copy)
+   4  NOT source AND destination
+   5  destination
+   6  source XOR destination
+   7  source or destination
+   8  NOT source AND NOT destination
+   9  NOT source XOR destination
+   10 NOT destination
+   11 source OR NOT destination
+   12 NOT source
+   13 NOT source OR destination
+   14 NOT source OR NOT destination
+
+   (N.B.   XOR does a transparent copy)
+
+   i.e.:  we have our picture in bank 10 and want to copy the top left 1/4
+          to the centre of our physical screen.
+
+             ...
+             ...
+             50 blit copy 10,0,0,160,100,physic,80,50
+             ...
+
+   Feel free to use different op parameters to see the effects.
+
+   REMEMBER THIS IS WHAT I CALL A MACRO. To squeeze more speed we will use
+   the low level expert (not!) commands at a later date.
+
+
+   X=BLIT BUSY
+   -----------
+
+   Very useful !
+   Remember that once you have instructed the blitter to do something it
+   will carry it out on its own! Normally  we use a "wait vbl" to make sure
+   all graphic operations are completed.
+
+   Using this command we can also check that the blitter has finished its
+   work before doing a screen swap. Omit this at your own risk
+
+   i.e. .......
+            200 wait vbl
+            210 if BLIT BUSY=1 then 210
+            220 screen swap
+            * simple or what!
+
+                ********** WARNING **********
+                IF YOU STOP A PROGRAM BY USING <CONTROL <C>>
+                YOU ARE LIKELY TO CRASH YOUR STE.
+                NEVER STOP OR END A *.BAS WHILE THE BLITTER
+                IS ACTIVE !!
+
+
+   Ok, so far those of you using the Missing link might think that there is
+   no massive speed gain by using the blitter. Those used to standard STOS
+   should already be impressed. But hey, let's go really mad and use the
+   "expert commands." Those of you who know how the ST screen is built will
+   have a serious advantage.
+
+   The real McCoy:
+   ===============
+
+   The following program loads a screen into bank 11, then blits it at a low
+   level to the logical screen, and displays it after a screen swap. It then
+   waits a while, and exits cleanly without a crash. Use this program to
+   mess about with different values, but always save your work first. No
+   automatic clipping is done, and as we are in supervisor mode, you are
+   likely to erase vital memory areas, causing a reset. As it is it doesn't
+   do much, but wait till next month!
+
+   10 mode 0 : flash off : logic=back           rem**************
+   12 reserve as screen 11                      line 10-16 setup
+   15 load "canyon.pi1",11                      for our screen.
+   16 get palette (11)
+
+   17 A=start(11)                                the variable "A"
+                                                 contains the source
+                                                 picture's address
+
+   1000 blit source address A                    We tell the blitter where
+   1005 blit dest address logic                  to copy from, and to.
+
+   1010 blit source x inc 2                     We copy all 4 planes at a
+                                                time,so "x inc 2".
+                                                If we wanted to copy a
+                                                single plane at a time it
+                                                would be "x inc 8". If we
+                                                wanted to copy every other
+                                                word "x inc 4"
+
+   The "inc" commands set the increment to the next word in bytes. I know
+   this will not make any sense to most of you, but I will you a better
+   explanation with precise examples next month!
+
+   1020 blit source y inc 2               the "y inc (n)" sets the
+                                          line increment in the
+                                          same fashion
+
+   1030 blit dest x inc 2                 As before but for the
+                                          destination
+   1040 blit dest y inc 2
+
+   1050 blit x count 80                   Sets how many words to
+                                          read per line.
+
+   1060 blit y count 200                  Sets how many lines
+                                          to blit over.
+   1070 blit endmask 1 $FFFF
+   1080 blit endmask 2 $FFFF              These 3 set the masks for
+   1090 blit endmask 3 $FFFF              the destination data.
+                                          The first mask is for the 1st word
+                                          The 2nd is for all the other words
+                                          The 3rd is for the last word
+                                          $FFFF copies everything
+                                          But you can use binary words:
+                                          %1111111111111111   total copy
+                                          %1010101010101010    stripy
+                                          or
+                                          %0000000000000000   destination
+                                                          stays unchanged
+                                          or ... whatever you want!
+
+   1095 blit h line 0                     We could have defined a
+                                          halftone pattern earlier. If
+                                          we had, we would start using it
+                                          from line 0
+                                          Values for blit h line (n)
+                                          range from 0 to 15
+
+   1100 blit hop 2                        If we were using a halftone
+                                          pattern, we must tell the blitter
+                                          what to do with it. Value for
+                                          blit hop (n) are:
+                                                0 all ones
+                                                1 half tone
+                                                2 source
+                                                3 source and half tone
+
+   1110 blit skew 0                       This is the nice one! using skew
+                                          values from 0 to 15 in a step of
+                                          1, we can shift the destination
+                                          one pixel at a time to the right
+                                          or left by decreasing from 15 to 0
+                                          This only works when using it
+                                          on 1 plane at a time, or there
+                                          is a mess on screen
+
+   We will cover this in detail next month as it allows ultra smooth
+   horizontal scrolling .
+
+   1115 blit smudge 0                     If "blit smudge 1" then the value
+                                          from "skew is also used as the
+                                          "blit h line " number.
+                                          Here, it is set to 0 and ignored
+
+   1120  blit it                          We have set everything up,
+                                          so let's do it !
+
+   1130 if blit busy=1 then 1130          Wait for the blitter to finish
+
+   1999 screen swap:wait vbl              Screen swap to make the finished
+                                          work visible.
+
+   2000 wait 100 : cls physic : default : end
+                                          Waits a bit then exits nicely!
+
+
+
+   There are only a couple more  commands to cover:
+
+   Obviously, if you intend to use them, they must be placed before the
+   "BLIT IT " command, as they won't have an effect otherwise.
+
+   BLIT HOG
+   --------
+   Takes complete control of the STE to get extra speed. Stops most
+   interrupts, and please try to avoid it, unless you want to crash !
+
+   BLIT NFSR n
+   -----------
+   When n=1, the last source read on every line is not done (NO FINAL SOURCE
+   READ). (n=0, means normal)
+
+   BLIT FXSR n
+   -----------
+   If n=1, an extra source read is done on every line (FORCE EXTRA SOURCE
+   READ). (n=0, normal)
+
+   BLIT OP op
+   ----------
+   This sets the logical operation of the data being copied. The operations
+   are the same as for BLIT HOP with two options:
+
+                0 all zeros
+                15 all ones
+
+
+   BLITHALFTONE pat1,pat2,,,,,,,,,,,,,,pat16
+
+   These enable you to set up a 16 x 16 half tone pattern. It's easiest to
+   enter the patterns as binary words,so each digit represents a pixel. As I
+   didn't set it up for my small program, I ignored it! Check lines 1095 and
+   1110 to see what it can be used for. If you find anything out on this
+   one, please send me the code.
+
+
+   THIS IS IT FOR THIS MONTH I AM AFRAID.
+   *********************************************************
+   CHECK THE SOURCE FILES IN THE "STOS_1.STE" folder
+
+   BLITC.BAS uses the Macros for screen copy
+
+   HARDZOOM.BAS also uses macros. Next issue will have a 320*200 magnifying
+                glass in real time using Expert commands.
+
+   FASTBLIT.BAS example of the hell it is to use the expert commands.
+
+
+   **********************************************************
+   NEXT MONTH:
+   -*- Screen structure explained
+   -*- In depth look at the Expert commands
+   -*- How to use the blitter to scroll the screen 320*200 in
+       16 Technicolor (?)
+   -*- Hyper Magnifier
+   -*- 1 bit plane parallax starfields
+   ***********************************************************
+
+
+   Remember that I am a beginner, so if you know anything at all on the
+   halftone related commands, drop me a Jiffy please.
+
+   Should there be any mail, please include a stamp for the reply, or a SAE.
+
+            Jens Hucke
+            F8/26 Hyde Park Grds
+            London W2 2LZ
+            UK
+
+   BYE!!!
+
+
+
+
+
+
+
+
+
+
+
+
+

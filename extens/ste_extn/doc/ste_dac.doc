@@ -1,0 +1,158 @@
+                           STOS AND THE STE
+                           ****************
+
+
+Ok, so your ST has got that  little  'E'  added to your sticker on the
+cover of your machine but what does it mean as a STOS programmer?.
+
+Well if you have got  the  STE  extension  you can access the hardware
+scrolling routines,(If you can get   it  to  work that is!) access the
+extra   joystick/light    gun/pen    ports     on     the    left   of
+yourmachine, unfortunatly they are non  standard   ports joystick ports
+(Nice  one  ATARI   give   us   analogue   ports    and   no  analogue
+joysticks!!).  You can  also  gain  access  to  the   increased   colour
+palette,  from 512 to 4096 colours,(But  you  can still only use 16 on
+screen!!)  and  almost  finally   the   BLITTER,  wow  what  an  amazing
+diffrence  in  speed!! NOT!  Im  pretty  sure  that  most  of the  TOP
+NOTCH  copy routines in MISTY/Missing link  are faster. You can though
+copy Graphics  to anywhere on  screen  not  in  a 16 pixel boundary.It
+does run along side the main processor so takes zero processor time to
+work it  but  it  still  needs  that  bit  extra...  What about it TOP
+NOTCH??? Blitter sprites??
+
+Lastly we come to the best part of the STE hardware......
+
+The     D.A.C.   (Digital to Analogue Converter)
+
+        There are 2 ways to access  this  chip from STOS, the easy way
+is to get hold of the STE EXTENSION as on ST FORMAT cover disk NO.
+or from your P.D. Libary.
+
+        But fear not if you do  not  own  the above extension ( Or you
+want to save a couple of quid) you can do it the long way...
+(BOTH LISTINGS ARE ON THE DISK AS WORKING EXAMPLES)
+
+
+
+1 rem      *****************************************************
+2 rem                          STE DAC ROUTINE
+3 rem      ****** As used in STORM by Fugitive Freelancers *****
+4 rem      *****************************************************
+5 if length(10)=0 then reserve as data 10,23634 : bload "sample.sam",10
+6 rem
+7 rem
+10 DMA=$FF8901 : rem                  Address of DMA chip
+11 rem
+20 SAM=start(10)+90 : L=length(10)-99 : rem Start and finish of sample data
+21 rem
+30 poke DMA,0 : rem                   Reset DMA
+31 rem
+40 poke DMA+32,128 : rem              Set playback speed
+50 rem                                128=6.5  129=12.5  130=25.6  131=51.3
+51 rem
+60 poke DMA+2,SAM/$10000 : rem        Set start and end of sample bank
+70 poke DMA+4,SAM/$100
+80 poke DMA+6,SAM and $FF
+90 poke DMA+8,SAM/$10000
+100 poke DMA+10,SAM/$100
+110 poke DMA+12,SAM and $FF
+120 poke DMA+14,(SAM+L)/$10000
+130 poke DMA+16,(SAM+L)/$100
+140 poke DMA+28,(SAM+L) and $FF
+141 rem
+150 poke DMA,3 : rem                  Play sample: 1-Normal play                                                                   3-Looped sample             
+                                                    0-Stop Sample
+199 rem      *****************************************************
+200 rem                     MICRO WIRE INTERFACE
+201 rem            (ADJUST volume/treble/bass/left/right)
+202 rem      *****************************************************
+203 rem
+210 doke $FF8924,$7FF : rem           Set up mask register.
+211 rem
+219 V=40 : rem                        SET MAIN VOLUME
+220 doke $FF8922,%10011000000+V : rem V=0 to 40 (use 29 or more to hear it!!)
+221 rem
+229 B=6 : rem                         SET BASS
+230 doke $FF8922,%10001000000+B : rem B=0 to 12
+231 rem
+239 T=10 : rem                         SET TREBLE
+240 doke $FF8922,%10010000000+T : rem T=0 to 12
+241 rem
+249 L=20 : rem                        SET LEFT VOLUME
+250 doke $FF8922,%10101000000+L : rem L=0 to 20
+251 rem
+259 R=20 : rem                        SET RIGHT VOLUME
+260 doke $FF8922,%10100000000+R : rem R=0 to 20
+
+
+
+And now for the Extension version...
+
+10 rem      *****************************************************
+20 rem                          STE DAC ROUTINE
+30 rem      ****** As used in STORM by Fugitive Freelancers *****
+40 rem      *****************************************************
+50 if length(10)=0 then reserve as data 10,23634 :bload"sample.sam",10
+60 rem
+70 rem
+80 dac speed 0 : rem                    set replay speed  0=6.25
+                                                          1=12.5
+                                                          2=25.6
+                                                          3=51.3
+81 rem
+90 dac loop on : rem                    loop sample on/off
+91 rem
+100 dac mono : rem                      sample mono or stereo
+101 rem
+110 dac m volume 40 : rem               set main volume 0-40
+111 rem
+120 dac l volume 20 : rem               set left volume 0-20
+121 rem
+130 dac r volume 20 : rem               set right volume 0-20
+131 rem
+140 dac treble 12 : rem                 set treble 0-12
+141 rem
+150 dac bass 8 : rem                    set bass 0-12
+151 rem
+160 dac mix on : rem                    mix with normal ST sound on/off
+161 rem
+169 rem            Set start and end of sample data and play.
+170 dac raw start(10)+90,start(10)+length(10)-99
+180 rem                                 DAC STOP will halt sample
+
+
+A bit shorter and clearer to understand me thinks..
+
+Both of these routines once set up  and running take up zero processor
+speed so all graphics/calculations ect do  not slow down. Just a short
+looped sample like in the  example  can  sound  loads better than some
+bleepy chip music.(In my opinion anyway!!)
+
+Q.  But how do you use  loads  of  different samples in your new game?
+You can't really use all 15 Banks to  hold a sample each so how do you
+do it?
+
+A.  When you are collecting your  samples together hold them one after
+another and make a note  of  the  address  of  each of in your sampler
+package. At the end you'll get a list somthing like this:-
+
+        0-14536                 Bass Hum-Hum
+        14536-19239             Door opening
+        19239-23958             Machine gun
+        23958-26499             Lazer gun
+
+Then when you call the sample you want  (eg Machine Gun) all you do is
+add the start and end  address  to  your  bank .no! Confused?? OK like
+this......
+
+        Dac raw start(10)+19239,start(10)+23958
+
+                                this will play the Machine Gun sample.
+
+Got it?   GOOD.
+
+Now then  can  anyone  out  there  explain  how  to  use  the HARDWARE
+SCROLLING in the STE Extension for me? I can't seem to get anything to
+move,All I get is a complete  mess!  Just  write to STOSSER if you can
+help.  PLEASE!.
+
