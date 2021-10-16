@@ -1,0 +1,7 @@
+stosfix.prg
+.L[-S=2048]
+.S[-S]
+.S[-I..\src]
+=
+stosfix.s
+
