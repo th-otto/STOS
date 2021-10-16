@@ -102,7 +102,7 @@ cold:   lea table(pc),a1
         lea jumps(pc),a3
 warm:   rts                     ;depart a chaud: ne fait rien
 
-; Routine: depile et ramene un entier en D3.L
+; Routine: Routine: pops and brings back an integer in D3.L
 entier: move.l (sp)+,d0
         movem.l (sp)+,d2-d4
         move.l d0,-(sp)

@@ -879,7 +879,7 @@ static struct extension const external_extensions[] = {
 	/* 0x9f missing */
 	{ 'F', 0xa0, "dac loop off" },
 	/* 0xa1 missing */
-	{ 'F', 0xa2, "e palette" },
+	{ 'F', 0xa2, " e palette" },
 	/* 0xa3 missing */
 	{ 'F', 0xa4, "e colour" },
 	/* 0xa5 missing */

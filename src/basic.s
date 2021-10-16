@@ -10247,7 +10247,17 @@ subsout:  moveq #85,d0
           bra erreur
 
 ; TRAITEMENT DES ERREURS: D0=NUMERO DE L'ERREUR
-erreur:   move d0,d4
+*
+* Warning: the ste_extn extension patches
+* the first 10 bytes of the function.
+*
+erreur:   
+          nop                 ;workaround for STE extension
+          nop
+          nop
+          nop
+          nop
+          move d0,d4
           lsl #1,d0           ;write in 2 languages !!!
           lea merreur,a2      ;find the message, in a2
           subq #1,d0
