@@ -639,17 +639,17 @@ merr:   dc.b "in line ",0
 ;   -----------------------------------          |  |  |   |     |
 ;-----------------------------------------    ---       ---   ---    -------
         even
-cjsr:           jsr $fffffe
-cjmp:           jmp $fffffe
-cbra:           bra.w cbra
-cleaa0:         lea $ffffff,a0
-cleaa2:         lea $ffffff,a2
-cmvima6:        move.l #$ffffffff,-(a6)
-cmvqd0:         moveq #0,d0
-cmvqd1:         moveq #0,d1
-cmvqd2:         moveq #0,d2
-cmvd1:          move.w #$ffff,d1
-crts:           rts
+cjsr            = $4eb9 /* jsr $xxxxx */
+cjmp            = $4ef9 /* jmp $fffffe */
+cbra            = $6000 /* bra.w xxxx */
+cleaa0          = $41f9 /* lea $ffffff,a0 */
+cleaa2          = $45f9 /* lea $ffffff,a2 */
+cmvima6         = $2d3c /* move.l #$ffffffff,-(a6) */
+cmvqd0          = $7000 /* moveq #0,d0 */
+cmvqd1          = $7200 /* moveq #0,d1 */
+cmvqd2          = $7400 /* moveq #0,d2 */
+cmvd1           = $323cffff /* move.w #$ffff,d1 */
+crts            = $4e75 /* rts */
 
 ;-----------------------------------------    --- ----- ---   ---    -------
 ;   -----------------------------------      |      |  |   | |
@@ -963,13 +963,13 @@ LdE2:   cmp.b #".",(a0)+
         move.b 2(a0),d6
         cmp.w #'Z'+1,d6
         bcc.s lde7
-        cmp.w 'A',d6
+        cmp.w #'A',d6
         bcs.s lde5
         subi.w #'A',d6
         bra.s lde6
 lde5:   cmp.w #'z'+1,d6
         bcc.s lde7
-        cmp.w 'a',d6
+        cmp.w #'a',d6
         bcs.s lde7
         subi.w #'a',d6
 lde6:   move.w d6,d7
@@ -2098,17 +2098,17 @@ Cextf:  bsr extpar
 Extf1:
 ; Appelle la fonction / instruction
 extcall:movem.w (sp)+,d2/d6/d7
-        move.w cmvqd0,d1
+        move.w #cmvqd0,d1
         move.b d0,d1
         move.w d1,d0
-        bsr outword
-        move.w cmvd1,d0
+        bsr outword           /* number of parameters passed in d0 */
+        move.w #cmvd1>>16,d0
         bsr outword
         move.w d6,d0
         lsl.b #2,d0
-        addi.w #oext,d0
+        addi.w #oext,d0       /* offset to extension data ptr passed in d1 */
         bsr outword
-        move.w cjsr,d0
+        move.w #cjsr,d0
         bsr outword
         bsr reljsr
         moveq #0,d0
@@ -3804,7 +3804,7 @@ VaT0:   move.l a6,a1            ;CHRGET au debut de la ( )
 varad:  btst #5,d2
         bne.s ReT
 ; Variable simple ...
-ReV0:   move.w cleaa0,d0        ;Code: LEA adresse variable,a0
+ReV0:   move.w #cleaa0,d0        ;Code: LEA adresse variable,a0
         bsr outword
 ; Change la table de relocation
         move.l a5,d0
@@ -4115,7 +4115,7 @@ Eqt4:   movem.w (sp)+,d1-d2     ;1= Type mismatch
         rts
 
 ;-----> Prend une constante ENTIERE
-CEnt:   move.w cmvima6,d0
+CEnt:   move.w #cmvima6,d0
         bsr outword
         bsr pair
         bsr GetLong
@@ -4126,11 +4126,11 @@ CEnt:   move.w cmvima6,d0
 ;-----> Prend une constante FLOAT
 CFlo:   move.w #1,floflag
         bsr pair
-        move.w cmvima6,d0
+        move.w #cmvima6,d0
         bsr outword
         bsr GetLong
         bsr outlong
-        move.w cmvima6,d0
+        move.w #cmvima6,d0
         bsr outword
         bsr GetLong
         bsr outlong
@@ -4139,7 +4139,7 @@ CFlo:   move.w #1,floflag
 
 ;-----> Prend une constante CHAINE
 CChai:  bsr pair
-        move.w cmvima6,d0       ;Adresse de la constante ---> -(A6)
+        move.w #cmvima6,d0       ;Adresse de la constante ---> -(A6)
         bsr outword
         bsr reljsr              ;Poke la table de relocation
         move.l AdChai,a0
@@ -4347,7 +4347,7 @@ CDef:   bsr getbyte
         cmp.b #T_exti_scroll,d0
         beq Cdefscroll
         bne csynt
-df0:    move.w cbra,d0
+df0:    move.w #cbra,d0
         bsr outword
         move.l a5,-(sp)
         clr.w d0
@@ -4397,7 +4397,7 @@ Df2:    bsr getbyte
         bsr evalue
         tst.w parenth
         bne csynt
-        move.w crts,d0
+        move.w #crts,d0
         bsr outword
 ; Poke le type de l'expression / remonte botvar
         move.l ADefn,a2
@@ -4433,7 +4433,7 @@ CFn1:   tst.l (a2)              ;Cherche dans la table
 CFn2:   tst.w (a2)+
         bne.s CFn2
         bra.s CFn1
-CFn3:   move.w cleaa2,d0        ;LEA adresse,a2
+CFn3:   move.w #cleaa2,d0       ;LEA adresse,a2
         bsr outword             ;MOVE.L A2,-(SP)
         bsr reljsr
         move.l (a2)+,d0
@@ -4568,7 +4568,7 @@ CSort:  bsr test0
         beq ctype
         bsr varad               ;Ne met QUE LE POINTEUR!
         andi.b #$c0,d2
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.b d2,d0
         bsr outword
         move.w #L_sort,d0
@@ -4600,7 +4600,7 @@ CMach:  bsr getbyte
         move.w (sp)+,d2
         move.l (sp)+,a0
         bsr varad
-        move.w cmvqd0,d0                ;Moveq #type,d0
+        move.w #cmvqd0,d0                ;Moveq #type,d0
         andi.b #$c0,d2
         move.b d2,d0
         bsr outword
@@ -4914,7 +4914,7 @@ Cgoto:  bsr Test1
         bsr Constant
         beq.s Gt1
 ; GOTO #LIGNE
-Gto:    move.w cjmp,d0
+Gto:    move.w #cjmp,d0
         bsr outword
         bsr reljsr
         move.l d1,d0            ;Loke le # de ligne
@@ -4935,7 +4935,7 @@ Cgosub:  bsr Test1
 ; GOSUB #LIGNE
         lea cdgs,a0             ;MOVE.L SP,LOWPILE(A5)
         bsr code0
-        move.w cjsr,d0
+        move.w #cjsr,d0
         bsr outword
         bsr reljsr
         bsr pair
@@ -4987,13 +4987,13 @@ On0:    cmp.b #$99,d0
 *        bsr code0
         moveq #L_ongosub,d0
 On1:    bsr crefonc
-        move.w cbra,d0
+        move.w #cbra,d0
         bsr outword
         move.l a5,-(sp)         ;Adresse du BRA
         bsr outword
 ; Compte et poke les numeros de ligne
         clr.w -(sp)
-On2:    move.w cjmp,d0
+On2:    move.w #cjmp,d0
         bsr outword
         bsr reljsr
         bsr Constant
@@ -5015,7 +5015,7 @@ On2:    move.w cjmp,d0
         move.l a5,d7
         move.l (sp)+,a5
         bsr outword
-        move.w cmvqd0,d0                ;Doke le MOVEQ
+        move.w #cmvqd0,d0                ;Doke le MOVEQ
         move.b d1,d0
         move.l (sp)+,a5
         bsr outword
@@ -5074,7 +5074,7 @@ cthen:  tst.l (a6)+
 ;-----> ELSE
 Celse:
 ; Do a GOTO next line
-        move.w cbra,d0                  ;Poke le BRA
+        move.w #cbra,d0                 ;Poke le BRA
         bsr outword
         clr.w d0
         bsr outword
@@ -5224,7 +5224,7 @@ for12:  move.w 8(sp),d1
         move.w d7,12(a0)        ;Type de la boucle: INT ou FLOAT
 
 ;-----> Poke dans le source
-        move.w cleaa2,d0        ;Adresse ou poker
+        move.w #cleaa2,d0       ;Adresse ou poker
         bsr outword
         bsr reljsr
         addq.l #4,a5
@@ -5333,7 +5333,7 @@ wh3:    subq.w #1,ccptnext
         move.l a5,8(a0)         ;Adresse de l'adresse NEXT (objet)
         move.l (sp)+,12(a0)     ;Adresse de la boucle (objet)
 ; Termine...
-        move.w cleaa2,d0        ;Adresse du WEND
+        move.w #cleaa2,d0        ;Adresse du WEND
         bsr outword
         bsr reljsr
         addq.l #4,a5
@@ -5369,7 +5369,7 @@ Cwend:  move.w ctstnbcle,d0
         bsr outlong
         move.l (sp)+,a5
 ; JMP boucle
-        move.w cjmp,d0
+        move.w #cjmp,d0
         bsr outword
         bsr reljsr
         move.l 12(a2),d0
@@ -5422,7 +5422,7 @@ Cuntil:  move.w ctstnbcle,d0
         bsr expentier
         move.l (sp)+,a2
 ; Charge l'adresse de la boucle
-        move.w cleaa2,d0
+        move.w #cleaa2,d0
         bsr outword
         bsr reljsr
         move.l 8(a2),d0
@@ -5872,7 +5872,7 @@ res4:   move.w d1,-(sp)
         cmp.b #",",d0
         bne csynt
         bsr expentier                   ;Taille
-res5:   move.w cmvqd0,d0
+res5:   move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -6259,7 +6259,7 @@ Cda1:   move.l a5,-(sp)
         move.l (sp)+,a5
 ; Fait un BRA a la ligne suivante
 Cda2:   subq.l #4,a5                    ;Pas de LEA
-        move.w cbra,d0
+        move.w #cbra,d0
         bsr outword
         clr.w d0
         bsr outword
@@ -6278,29 +6278,29 @@ Cda3:   bsr getbyte
 ; Une expression
 Cda4:   bsr evalue                      ;evalue l'expression
         andi.b #$c0,d2
-Cda5:   move.w cmvqd0,d0
+Cda5:   move.w #cmvqd0,d0
         move.b d2,d0                    ;Type de l'expression
         bsr outword
         move.l #$45fa0004,d0            ;LEA expression suivante,a2
         bsr outlong
-        move.w crts,d0                  ;Met un RTS
+        move.w #crts,d0                 ;Met un RTS
         bsr outword
         bsr getbyte
         cmp.b #",",d0
         beq.s Cda3
         subq.l #1,a6
 ; Pointe la ligne suivante de datas
-        move.w cleaa2,d0                ;Retour: D0= 2
+        move.w #cleaa2,d0                ;Retour: D0= 2
         bsr outword                     ;A2= adresse prochaine ligne
         bsr reljsr
         move.l a5,OlData
         moveq #0,d0
         bset #30,d0
         bsr outlong
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.b #2,d0
         bsr outword
-        move.w crts,d0
+        move.w #crts,d0
         bsr outword
 ; Fini!
         rts
@@ -6318,7 +6318,7 @@ Crestore:  bsr test0
 CRe1:   bsr Constant
         beq.s CRe2
 ; Restore CONSTANTE
-        move.w cleaa2,d0
+        move.w #cleaa2,d0
         bsr outword
         bsr reljsr
         move.l d1,d0            ;Loke le # de ligne
@@ -6340,7 +6340,7 @@ CRi1:   bsr getbyte
         bsr vari
         bsr varad
         andi.b #$c0,d2
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.b d2,d0
         bsr outword
         move.w #L_read,d0
@@ -6379,7 +6379,7 @@ CIn1:   bsr code0
         bsr getbyte
         cmp.b #",",d0
         bne csynt
-CIn2:   move.w cmvqd0,d0
+CIn2:   move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -6429,7 +6429,7 @@ CIn8:   bsr vari                        ;cherche la variable
         beq.s CIn8
         bra csynt
 CIn9:   subq.l #1,a6
-        move.w cmvqd0,d0                ;Doke le MOVEQ
+        move.w #cmvqd0,d0               ;Doke le MOVEQ
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -6657,7 +6657,7 @@ Cwindopen:  bsr test0
 CWdo:   bsr test0
         lea parent(pc),a2
         bsr parinst
-        move.w cmvqd0,d1
+        move.w #cmvqd0,d1
         move.b d0,d1
         move.w d1,d0
         bsr outword
@@ -6917,7 +6917,7 @@ cmn4:   bsr getbyte
         bne csynt
         lea parmen(pc),a2
         bsr parinst
-cmn5:   move.w cmvqd0,d1
+cmn5:   move.w #cmvqd0,d1
         move.b d0,d1
         move.w d1,d0
         bsr outword
@@ -6947,7 +6947,7 @@ cmno:   clr.w -(sp)
         bhi csynt
         move.w d0,(sp)
 cmno1:  move.w (sp)+,d1
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.b d1,d0
         bsr outword
         move.w #L_menuon,d0
@@ -6981,7 +6981,7 @@ onmn3:  bsr Constant
         beq csynt
         cmp.l #65535,d1
         bcc csynt
-        move.w cmvima6,d0
+        move.w #cmvima6,d0
         bsr outword
         move.l d1,d0
         bsr outlong
@@ -6990,7 +6990,7 @@ onmn3:  bsr Constant
         cmp.b #",",d0
         beq.s onmn3
         subq.l #1,a6
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -7235,11 +7235,11 @@ cpp1:   bsr expentier
         cmp.b #$80,d0
         beq.s cpp1
         subq.l #1,a6
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.w (sp),d1
         move.b d1,d0
         bsr outword
-        move.w cmvqd1,d0
+        move.w #cmvqd1,d0
         move.w 2(sp),d1
         move.b d1,d0
         bsr outword
@@ -7281,7 +7281,7 @@ pm1:    bsr expentier
         cmp.b #";",d0
         beq.s pm1
         subq.l #1,a6
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -7401,13 +7401,13 @@ gp2:    addq.w #1,d1
         cmp.b #",",d0
         beq.s gp1
         bne csynt
-gp3:    move.w cmvqd0,d0
+gp3:    move.w #cmvqd0,d0
         move.b d1,d0
         bsr outword
-        move.l cmvd1,d0
+        move.l #cmvd1,d0
         move.w d2,d0
         bsr outlong
-        move.w cmvqd2,d0
+        move.w #cmvqd2,d0
         move.b d3,d0
         bsr outword
         rts
@@ -7953,7 +7953,7 @@ CNaut:  bsr test0
         cmp.w #2,d0
         bne csynt
 cn2:    move.w d0,d1
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.b d1,d0
         bsr outword
         move.w #L_note,d0
@@ -8004,7 +8004,7 @@ CSave:  move.w #L_save,-(sp)
 Clo:    bsr test0
         lea parld(pc),a2
         bsr parinst
-        move.w cmvqd0(pc),d1
+        move.w #cmvqd0,d1
         move.b d0,d1
         move.w d1,d0
         bsr outword
@@ -8080,7 +8080,7 @@ COpou:  bsr test0
         bne csynt
         bsr expentier
         move.w #1,(sp)
-Cop1:   move.w cmvqd0,d0
+Cop1:   move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -8102,7 +8102,7 @@ COpen:  bsr test0
         bne csynt
         bsr expalpha
         move.w #1,(sp)
-Cop2:   move.w cmvqd0,d0
+Cop2:   move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -8178,7 +8178,7 @@ CFld:   bsr expentier
         cmp.b #",",d0
         beq.s CFld
         subq.l #1,a6
-        move.w cmvqd0,d0
+        move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -8302,7 +8302,7 @@ dir:    clr.w -(sp)
         beq.s Dir1
         bsr expalpha
         move.w #1,(sp)
-Dir1:   move.w cmvqd0,d0
+Dir1:   move.w #cmvqd0,d0
         move.w (sp)+,d1
         move.b d1,d0
         bsr outword
@@ -8425,13 +8425,13 @@ SoDi2:  bsr load
 ;-----> Create a jmp to routine # D0
 crejmp: sub.l a0,a0
         move.w d0,a0
-        move.w cjmp,d0
+        move.w #cjmp,d0
         bra.s CreF
 
 ;-----> Create a call to a subroutine # D0
 crefonc:sub.l a0,a0
         move.w d0,a0
-        move.w cjsr,d0          ;Dans le source: JSR
+        move.w #cjsr,d0         ;Dans le source: JSR
 CreF:   bsr outword
         bsr reljsr              ;Pointe la table de relocation ici
         move.l a0,d0
