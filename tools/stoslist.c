@@ -891,7 +891,8 @@ static struct extension const external_extensions[] = {
 	/* 0xab missing */
 	{ 'F', 0xac, "hard screen offset" },
 
-	/* blitter extension: 18 commands */
+#if 0
+	/* STORM/GBP blitter extension: 18 commands */
 	{ 'G', 0x80, "blit sinc" },
 	{ 'G', 0x81, "blit clr" },
 	{ 'G', 0x82, "blit dinc" },
@@ -923,6 +924,56 @@ static struct extension const external_extensions[] = {
 	{ 'G', 0x9c, "fcopy" },
 	/* 0x9c missing */
 	{ 'G', 0x9d, "cls" },
+#else
+	/* Blitter Extension. v 1.1 by Ambrah */
+	{ 'G', 0x80, "blit halftone" },
+	{ 'G', 0x81, "blit busy" },
+	{ 'G', 0x82, "blit source x inc" },
+	{ 'G', 0x83, "blitter" },
+	{ 'G', 0x84, "blit source y inc" },
+	{ 'G', 0x85, "blit remain" },
+	{ 'G', 0x86, "blit source address" },
+	/* $87 missing */
+	{ 'G', 0x88, "blit dest x inc" },
+	/* $89 missing */
+	{ 'G', 0x8a, "blit dest y inc" },
+	/* $8b missing */
+	{ 'G', 0x8c, "blit dest address" },
+	/* $8d missing */
+	{ 'G', 0x8e, "blit endmask 1" },
+	/* $8f missing */
+	{ 'G', 0x90, "blit endmask 2" },
+	/* $91 missing */
+	{ 'G', 0x92, "blit endmask 3" },
+	/* $93 missing */
+	{ 'G', 0x94, "blit x count" },
+	/* $95 missing */
+	{ 'G', 0x96, "blit y count" },
+	/* $97 missing */
+	{ 'G', 0x98, "blit hop" },
+	/* $99 missing */
+	{ 'G', 0x9a, "blit op" },
+	/* $9b missing */
+	{ 'G', 0x9c, "blit h line" },
+	/* $9d missing */
+	{ 'G', 0x9e, "blit smudge" },
+	/* $9f missing */
+	{ 'G', 0xa0, "blit hog" },
+	/* $a1 missing */
+	{ 'G', 0xa2, " blit it" },
+	/* $a3 missing */
+	{ 'G', 0xa4, "blit skew" },
+	/* $a5 missing */
+	{ 'G', 0xa6, "blit nfsr" },
+	/* $a7 missing */
+	{ 'G', 0xa8, "blit fxsr" },
+	/* $a9 missing */
+	{ 'G', 0xaa, "blit cls" },
+	/* $ab missing */
+	{ 'G', 0xac, "blit copy" },
+	/* $ad missing */
+	{ 'G', 0xae, "about blitter" },
+#endif
 
     /* Cyber: 2 commands */
 	{ 'Y', 0x80, "cyber" },
