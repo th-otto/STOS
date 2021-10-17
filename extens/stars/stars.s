@@ -171,7 +171,7 @@ setpix:
 	moveq.l    #3,d0
 setpix1:
 	lsr.w      #1,d2
-	bcc.w      setpix2
+	bcc.w      setpix2 /* XXX */
 	or.w       d1,(a0)+
 	dbf        d0,setpix1
 	rts
@@ -291,7 +291,7 @@ setstars:
 	bsr        getparam
 	move.w     d3,startcolor
 	bsr        getparam
-	addq.w     #1,end_y
+	addq.w     #1,end_y /* FIXME: useless */
 	move.w     d3,end_y
 	bsr        getparam
 	move.w     d3,end_x
@@ -327,11 +327,11 @@ setstars2:
 	bsr        nextstar
 	cmpi.w     #2,stars_type
 	bhi        illmsg /* BUG: should be prillmsg */
-	beq.w      setstars5
+	beq.w      setstars5 /* XXX */
 	cmpi.w     #STARS_PARALLAX-1,stars_type
-	beq.w      setstars3
+	beq.w      setstars3 /* XXX */
 	move.w     #1,d3
-	bra.w      setstars4
+	bra.w      setstars4 /* XXX */
 setstars3:
 	move.w     curr_color,d3
 	move.w     startcolor,d1
@@ -351,9 +351,9 @@ setstars5:
 	lsr.w      #1,d1
 	lsr.w      #1,d3
 	cmp.w      d1,d3
-	bhi.w      setstars6
+	bhi.w      setstars6 /* XXX */
 	move.w     d1,x106c0
-	bra.w      setstars7
+	bra.w      setstars7 /* XXX */
 setstars6:
 	move.w     d3,x106c0
 setstars7:
@@ -407,11 +407,11 @@ gostars:
 	move.w     d3,movey
 	bsr        getparam
 	move.w     d3,movex
-	/* tst.w     #0,stars_type */
+	/* tst.w     stars_type */
 	dc.l 0x0c790000,stars_type /* XXX */
 	beq        undefinedmsg /* BUG: should be prundefined */
 	tst.w      wipe_on
-	beq.w      gostars1
+	beq.w      gostars1 /* XXX */
 	bra        fastcls
 gostars1:
 	lea.l      starfield,a2
@@ -423,22 +423,22 @@ gostars2:
 	movem.w    (a2),d0-d3
 	move.w     d3,d4
 	tst.w      d5
-	beq.w      gostars3
+	beq.w      gostars3 /* XXX */
 	muls.w     d5,d3
 	add.w      d3,d0
 	cmp.w      curr_start_x,d0
-	ble.w      gostars6
+	ble.w      gostars6 /* XXX */
 	cmp.w      curr_end_x,d0
-	bhi.w      gostars5
+	bhi.w      gostars5 /* XXX */
 gostars3:
 	tst.w      d6
-	beq.w      gostars4
+	beq.w      gostars4 /* XXX */
 	muls.w     d6,d4
 	add.w      d4,d1
 	cmp.w      curr_start_y,d1
-	blt.w      gostars8
+	blt.w      gostars8 /* XXX */
 	cmp.w      curr_end_y,d1
-	bhi.w      gostars7
+	bhi.w      gostars7 /* XXX */
 gostars4:
 	movem.w    d0-d1,(a2)
 	addq.w     #8,a2
@@ -448,16 +448,16 @@ gostars4:
 	jmp        (a0)
 gostars5:
 	move.w     curr_start_x,d0
-	bra.w      gostars3
+	bra.w      gostars3 /* XXX */
 gostars6:
 	move.w     curr_end_x,d0
-	bra.w      gostars3
+	bra.w      gostars3 /* XXX */
 gostars7:
 	move.w     curr_start_y,d1
-	bra.w      gostars4
+	bra.w      gostars4 /* XXX */
 gostars8:
 	move.w     curr_end_y,d1
-	bra.w      gostars4
+	bra.w      gostars4 /* XXX */
 gostars9:
 	movem.w    (a2),d0-d4
 	movem.w    movex,d5-d6
@@ -466,7 +466,7 @@ gostars9:
 	swap       d0
 	add.w      zoomx,d0
 	tst.w      d5
-	beq.w      gostars10
+	beq.w      gostars10 /* XXX */
 	muls.w     d3,d5
 	asr.w      #1,d5
 	add.w      d5,d0
@@ -476,7 +476,7 @@ gostars10:
 	swap       d1
 	add.w      zoomy,d1
 	tst.w      d6
-	beq.w      gostars11
+	beq.w      gostars11 /* XXX */
 	muls.w     d3,d6
 	asr.w      #1,d6
 	add.w      d6,d1
@@ -490,15 +490,15 @@ gostars11:
 	movem.w    d2-d4,(a2)
 	lsr.w      #6,d2
 	cmp.w      curr_start_x,d0
-	ble.w      gostars13
+	ble.w      gostars13 /* XXX */
 	cmp.w      curr_end_x,d0
-	bhi.w      gostars13
+	bhi.w      gostars13 /* XXX */
 	cmp.w      curr_start_y,d1
-	ble.w      gostars13
+	ble.w      gostars13 /* XXX */
 	cmp.w      curr_end_y,d1
-	bhi.w      gostars13
+	bhi.w      gostars13 /* XXX */
 	cmp.w      curr_end_color,d2
-	bhi.w      gostars13
+	bhi.w      gostars13 /* XXX */
 	bsr        setpix
 gostars12:
 	addq.w     #6,a2
@@ -515,7 +515,7 @@ gostars13:
 	divu.w     x106c0,d4
 	swap       d4
 	move.w     d4,4(a2)
-	bra.w      gostars12
+	bra.w      gostars12 /* XXX */
 
 	dc.l 0
 
