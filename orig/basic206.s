@@ -80,7 +80,7 @@ dta:    DS.W    13              ;Buffer DTA
 size:   DC.L    0               ;Taille du fichier
 name:   DC.W    0               ;Son nom
         DS.W    9               ;Buffer Dta (Suite)
-adfin:    dc.l 0              ;adresse de chargement du prochain fichier
+end_adr:    dc.l 0              ;adresse de chargement du prochain fichier
 image:    dc.l 0
 mode:     dc.w 0
 handle:   dc.w 0
@@ -143,11 +143,10 @@ sv1:      move.w (a0)+,(a6)+            ;recopie...
           moveq #$18/2-1,d0
 sv2:      move.w (a0)+,(a6)+            ;recopie...
           dbra d0,sv2
-          /* move.l 0(a5),a0               ;coordonnees de la souris */
-          dc.w 0x206d,0 /* XXX */
+          move.l 0(a5),a0               ;coordonnees de la souris
           move.l (a0),(a6)+
 ; installe le dta
-          move.l #finprg,adfin
+          move.l #finprg,end_adr
           bsr setdta
 ; ouvre le folder
           clr.w -(sp)
@@ -193,16 +192,15 @@ load4:    bsr sfirst
 		  move.w #-1,(a7)
           dc.w $a00a                    ;enleve la souris
           tst mode
-          beq.w sv3 /* XXX */
+          beq sv3
           cmp #2,mode
-          beq.w sv3 /* XXX */
+          beq sv3
           move.w #0,-(sp)               ;passe en basse res s'il le faut!
           move.l #-1,-(sp)
           move.l #-1,-(sp)
           move.w #5,-(sp)
           trap #14
-          /* add.l #12,sp */ /* XXX */
-          dc.w 0xdffc,0,12
+          add.l #12,sp
 sv3:      lea curseur(pc),a0                ;arrete le curseur
           bsr print
 
@@ -216,20 +214,16 @@ sv3:      lea curseur(pc),a0                ;arrete le curseur
           moveq #1,d6
 Ouvre1:   move.l image(pc),a2
           move.l a2,a3
-          /* add.l #15840,a2 */
-          dc.w 0xd5fc,0,15840 /* XXX */
-          /* add.l #16000,a3 */
-          dc.w 0xd7fc,0,16000 /* XXX */
+          add.l #15840,a2
+          add.l #16000,a3
           move.l a2,a0
           move.l a3,a1
-          /* sub.l #32768-34,a0 */
-          dc.w 0x91fc,0,32768-34 /* XXX */
-          /* sub.l #32768-34,a1 */
-          dc.w 0x93fc,0,32768-34 /* XXX */
+          sub.l #32768-34,a0
+          sub.l #32768-34,a1
           moveq #99,d7
           addq #1,d6
           cmp #100,d6
-          bhi.w TrpLoad /* XXX */
+          bhi TrpLoad
           moveq #50,d5
 Ouvre2:   add.w d6,d5
           cmp.w #100,d5
@@ -247,16 +241,12 @@ Ouvre3:   move.l (a0)+,(a2)+
           move.l (a1)+,(a3)+
           dbra d0,Ouvre3
           movem.l (sp)+,a0-a3
-          /* sub.l #160,a2 */
-          dc.w 0x95fc,0,160 /* XXX */
-          /* add.l #160,a3 */
-          dc.w 0xd7fc,0,160 /* XXX */
-Ouvre4:   /* sub.l #160,a0 */
-          dc.w 0x91fc,0,160 /* XXX */
-          /* add.l #160,a1 */
-          dc.w 0xd3fc,0,160 /* XXX */
+          sub.l #160,a2
+          add.l #160,a3
+Ouvre4:   sub.l #160,a0
+          add.l #160,a1
           dbra d7,Ouvre2
-          bra.w Ouvre1 /* XXX */
+          bra Ouvre1
 
 ; Pas d'image sur la disquette: enleve la souris
 PasPic:   dc.w $a00a
@@ -268,28 +258,28 @@ TrpLoad:  lea name1(pc),a0        ;sprites
           bsr exec
           lea adapt+2(pc),a3
           jsr (a0)            ;installe les trappes
-          move.l a0,adfin     ;poke l'adresse REELE de fin
+          move.l a0,end_adr     ;poke l'adresse REELE de fin
           lea name2(pc),a0        ;windows
           bsr exec
           lea adapt+2(pc),a3
           jsr (a0)
-          move.l a0,adfin
+          move.l a0,end_adr
 ; Charge le float s'il est la!
           lea name3(pc),a0
           bsr execla
-          bne.w FlPaLa /* XXX */
+          bne FlPaLa
           lea adapt+2(pc),a3
           jsr (a0)            ;ne ramene pas d'adresse!
 FlPaLa:   lea name4(pc),a0        ;music
           bsr exec
           lea adapt+2(pc),a3
           jsr (a0)
-          move.l a0,adfin
+          move.l a0,end_adr
 ; charge et appelle les extensions, poke les adresses
           clr d7
           lea extend(pc),a6
 load5:    move.b d7,numbext
-          add.b #65,numbext
+          add.b #'A',numbext
           lea namext(pc),a0
           bsr sfirst
           bne.s load6
@@ -298,7 +288,7 @@ load5:    move.b d7,numbext
           movem.l a6/d6/d7,-(sp)
           lea adapt+2(pc),a3
           jsr (a0)
-          move.l a0,adfin
+          move.l a0,end_adr
           movem.l (sp)+,a6/d6/d7
           move d7,d6
           lsl #2,d6
@@ -315,7 +305,7 @@ load6:    addq #1,d7
 doprint:
 		  bsr print
 noprint:
-		  
+
 ; charge le basic
           lea name5(pc),a0
           bsr exec
@@ -345,9 +335,9 @@ load7:    clr.l (a0)+
 load8:    lea extend(pc),a0                 ;adresse de la table extention
           lea adapt+2(pc),a3                ;adresse des adresses
           move.l comline(pc),a4
-          clr.l d0                   ;RUN ONLY!
+          clr.l d0                   ;INTERPRETER!
           jsr (a6)                      ;branche au basic!
-          bra.w erreur2 /* XXX */
+          bra erreur2
 
 ; erreur dans le chargement---> retour au GEM
 erreur:   bsr close
@@ -371,8 +361,7 @@ lv1:      move.w (a6)+,(a0)+
           moveq #$18/2-1,d0
 lv2:      move.w (a6)+,(a0)+
           dbra d0,lv2
-          /* move.l 0(a5),a0       ;adresse souris */
-          dc.w 0x206d,0 /* XXX */
+          move.l 0(a5),a0       ;adresse souris
           move.l (a6)+,(a5)     ;coords de la souris
           pea datas(pc)
           move #6,-(sp)
@@ -387,18 +376,18 @@ lv2:      move.w (a6)+,(a0)+
 
 ; -superviseur- SAUVE LA PALETTE et ADAPTE A L'ORDINATEUR
 ; installe aussi la fausse trappe FLOAT!
-getpal:   lea $ff8240,a0
+getpal:   lea $ffff8240,a0
           lea datas(pc),a1
           moveq #15,d0
 gp1:      move.w (a0)+,(a1)+
           dbra d0,gp1
 ; Adapte ST/STE
-	  move.l $8.l,d1 /* XXX */
-	  move.l #Ste,$8.l /* XXX */
+	  move.l $8,d1
+	  move.l #Ste,$8
 	  move.l sp,d2
 	  move.w $FC0002,d0
 FinSte:	  move.l d2,sp
-	  move.l d1,$8.l /* XXX */
+	  move.l d1,$8
           lea adapt(pc),a0
           moveq #NbAdapt-1,d1
 adapt1:   cmp.w (a0)+,d0
@@ -411,8 +400,8 @@ adapt2:   lea adapt+2(pc),a2
 adapt3:   move.l (a0)+,(a2)+    ;recopie en ADAPT+2
           dbra d0,adapt3
 ; Fausse trappe FLOAT en trappe 6
-          move.l #FauxFloat,d0
-          move.l d0,$98.l /* XXX */
+          lea FauxFloat(pc),a0
+          move.l a0,$98
           rts
 ; Erreur de bus si sur STE
 Ste:	  move.w $E00002,d0
@@ -476,8 +465,7 @@ readbis:  move.l a0,-(sp)
           move.w handle(pc),-(sp)
           move.w #$3f,-(sp)
           trap #1
-          /* add.l #12,sp */
-          dc.w 0xdffc,0,12 /* XXX */
+          add.l #12,sp
           tst.l d0
           bmi erreur
           rts
@@ -505,17 +493,17 @@ execla:   movem.l d1-d3/a1-a3,-(sp)
           bsr setdta
           bsr sfirst
           bne exepala
-          move.l adfin(pc),d3     ;verifie la taille memoire!
+          move.l end_adr(pc),d3     ;verifie la taille memoire!
           add.l dta+26(pc),d3
           addi.l #60000,d3
           cmp.l image(pc),d3
           bcc erreur
           bsr open
-          move.l adfin(pc),a0
+          move.l end_adr(pc),a0
           bsr read
           bsr close
 ; reloge le programme!
-          move.l adfin(pc),a1
+          move.l end_adr(pc),a1
           move.l 2(a1),d0     ;distance a la table
           add.l 6(a1),d0
           andi.l #$ffffff,d0
@@ -537,14 +525,14 @@ exec1:    add.l d2,(a2)       ;change dans le programme
           bra.s exec0
 exec2:    add.w #254,a2       ;si 1 saute 254 octets
           bra.s exec0
-; remonte adfin avec la longeur du programme
-exec3:    move.l adfin(pc),a0
+; go back end_adr with the length of the program
+exec3:    move.l end_adr(pc),a0
           move.l a0,d0
           add.l dta+26(pc),d0
           btst #0,d0            ;Rend pair
           beq.s Pair
           addq.l #1,d0
-Pair:     move.l d0,adfin
+Pair:     move.l d0,end_adr
           movem.l (sp)+,d1-d3/a1-a3
           moveq #0,d0
           rts

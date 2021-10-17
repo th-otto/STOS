@@ -1,6 +1,6 @@
-compiler\basic.lib
+compiler\basic209.lib
 .L[-S=0]
 .S[-S]
 .S[-I..\src]
 =
-lib.s
+orig\lib.s
