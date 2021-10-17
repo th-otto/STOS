@@ -6096,15 +6096,25 @@ isc:    clr.w (a0)+
         movem.l (sp)+,d0-d7/a0-a6
         rts
 ; fausse trappe 1
-trp1:   cmp #$48,6(sp) /* BUG: does not work with longframe */
-        beq.s trp2
-        cmp #$49,6(sp)
-        beq.s trp3
+trp1:   btst.b  #5,(sp)     /* are we in supervisor mode? */
+        bne trp2
+        move.l  usp,a0      /* no, check user stack */
+        move.w (a0),d0
+        bra trp4
+trp2:   tst.w   $59e
+        beq     trp3
+        move.w  8(sp),d0
+        bra     trp4
+trp3:   move.w  6(sp),d0
+trp4:   cmp #$48,d0
+        beq.s trp5
+        cmp #$49,d0
+        beq.s trp6
         move.l adtr(pc),-(sp)
         rts
-trp2:   move.l vdihackwork(pc),d0          ;"MALLOC" ! /* WTF? */
+trp5:   move.l vdihackwork(pc),d0          ;"MALLOC" ! /* WTF? */
         rte
-trp3:   clr.l d0                      ;"MFREE" !
+trp6:   clr.l d0                      ;"MFREE" !
         rte
 adtr:   dc.l 0
 vdihackwork: dc.l 0
