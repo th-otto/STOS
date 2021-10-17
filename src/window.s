@@ -190,14 +190,14 @@ upd:      dc.w 0
 
 ; current window
 curwindow: dc.w 0
-adcurwindow:  dc.l 0
-freelle:   dc.w 0                  ;fenetre avec les bords? (8)
-tempinit:  dc.w 0
-tempeff1:  dc.w 0
-tempeff2:  dc.w 0
-tempeff3:  dc.w 0
-tempeff4:  dc.w 0
-rapeflag:  dc.w 0
+adcurwindow: dc.l 0
+freelle:  dc.w 0                  ;fenetre avec les bords? (8)
+tempinit: dc.w 0
+tempeff1: dc.w 0
+tempeff2: dc.w 0
+tempeff3: dc.w 0
+tempeff4: dc.w 0
+rapeflag: dc.w 0
 
 ; flag routine curseur en marche
 inhibc:   dc.w 0    ;0 si autorsation aff curseur
@@ -274,9 +274,12 @@ souligne: dc.w $ffff,$ffff,$ffff,$ffff
 
 ; ancien vecteur contenu en 4($456)
 anc456:   dc.l 0
+FlgDep:	  dc.w 0
 
+          .IFEQ COMPILER
 ; DTA
 dta:      ds.b 48
+          .ENDC
 
 ;-------------------------------> icones
 adicon:   dc.l 0              ;adresse de la banque d'icones
@@ -420,14 +423,16 @@ startinter:move #-1,offcur               ;empeche l'affichage du curseur
           move.l $456,a0
           move.l 4(a0),anc456
           move.l #gcurseur,4(a0)        ;en deuxieme position
+          move.w #1,FlgDep
           rts
 
 ; TRAP #3,7
 ; STOP INTERRUPTS
-stopinter: move.l anc456(pc),d0
-          beq.s  PaArr
+stopinter:
+          tst.w FlgDep
+	      beq.s PaArr
           move.l $456,a0
-          move.l d0,4(a0)
+          move.l anc456(pc),4(a0)
 PaArr:    rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1192,7 +1197,7 @@ autobackoff: move autoback,oldauto
 ancauto:  move oldauto,autoback
           rts
 
-; GESTION DU CURSEUR: AFFICHE LA COULEUR SUIVANTE
+; CURSOR MANAGEMENT: SHOWS THE FOLLOWING COLOR
 gcurseur: cmp #2,mode         ;pas de flash en COULEURS!
           bne fincurs1
           tst offcur          ;CUROFF!
