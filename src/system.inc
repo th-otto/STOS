@@ -1,5 +1,6 @@
 MAX_BANKS    = 16
 MAX_PROGRAMS = 16
+MAX_EXTENSIONS = 26
 
 *
 * internal vectors.

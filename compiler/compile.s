@@ -53,7 +53,7 @@ otrap5         = DebD+$34
 otrap6         = DebD+$38
 otrap7         = DebD+$3C
 oext           = DebD+$40            ;Offset (debut/fin) des 26 extensions
-ocr0           = 26*8+oext
+ocr0           = MAX_EXTENSIONS*8+oext
 ocr1           = ocr0+4
 ocr2           = ocr1+4
 omou           = ocr2+4
@@ -945,13 +945,13 @@ Rab2:
 *************************************************************************
         move.l a6,AdExtAd            ;Adresse table adresse CATALOGUE
         move.l a6,a5
-        lea 26*4(a6),a6
-        move.l a6,AdExtPa               ;Adresse table EXTENSIONS PARAMS
+        lea MAX_EXTENSIONS*4(a6),a6
+        move.l a6,AdExtPa            ;Adresse table EXTENSIONS PARAMS
         move.l a6,a4
-        lea 26*4(a6),a6
+        lea MAX_EXTENSIONS*4(a6),a6
         move.l a6,AdExtAp            ;Adresse table EXTENSION APPELLEE
         move.l a6,a3
-        lea 26*4(a6),a6
+        lea MAX_EXTENSIONS*4(a6),a6
 
         lea nomext(pc),a0
         bsr fsfirst
@@ -961,8 +961,18 @@ LdE2:   cmp.b #".",(a0)+
         bne.s LdE2
         clr d6
         move.b 2(a0),d6
-        subi.w #"A",d6
-        move.w d6,d7
+        cmp.w #'Z'+1,d6
+        bcc.s lde7
+        cmp.w 'A',d6
+        bcs.s lde5
+        subi.w #'A',d6
+        bra.s lde6
+lde5:   cmp.w #'z'+1,d6
+        bcc.s lde7
+        cmp.w 'a',d6
+        bcs.s lde7
+        subi.w #'a',d6
+lde6:   move.w d6,d7
         addq.w #1,d7
         lsl.w #2,d6
         bsr Open
@@ -984,6 +994,7 @@ LdE2:   cmp.b #".",(a0)+
         lsl.w #2,d5                     ;Reserve la JUSTE place pour
         addq.w #8,d5                    ;les appels!
         add.w d5,a6
+lde7:
         bsr fsnext
         beq.s LdE1
 LdE3:
@@ -1409,7 +1420,7 @@ Pap:
         clr.l extflag
         move.l AdExtAp(pc),a0
         move.l AdExtPa(pc),a1
-        moveq #26-1,d0
+        moveq #MAX_EXTENSIONS-1,d0
 InEx1:  tst.l (a0)
         beq.s InEx3
         move.l (a1),a2
@@ -1539,7 +1550,7 @@ Ent1:   bsr crefonc                     ;Retour STOS / GEM
         lea debprg(pc),a0
         lea oext(a0),a0
         move.l a0,a2
-        moveq #26-1,d0                  ;Nettoie la table
+        moveq #MAX_EXTENSIONS-1,d0                  ;Nettoie la table
 CIni1:  clr.l (a0)+
         dbra d0,CIni1
         moveq #1,d7                     ;Numero extension / fyche
@@ -2613,7 +2624,7 @@ Ina10:
         clr.w flaggem(a5)
         move.l debut(a5),a3
         lea oext(a3),a2
-        moveq #26-1,d2
+        moveq #MAX_EXTENSIONS-1,d2
         move.l lochaine(a5),a0
         move.l lowvar(a5),a1
 Ina20:  cmp.l (a2),a3
@@ -2626,7 +2637,7 @@ Ina20:  cmp.l (a2),a3
         movem.l (sp)+,d2/a2/a3/a4/a5/a6
         tst.w d0
         bne.s InaErr
-        move.l d1,26*4(a2)                      ;Adresse de fin
+        move.l d1,MAX_EXTENSIONS*4(a2)                      ;Adresse de fin
 Ina21:  lea 4(a2),a2
         dbra d2,Ina20
         move.l a0,lochaine(a5)
@@ -3031,7 +3042,7 @@ InbPaf: move.l otrap7(a6),a2
         move.w #1,flaggem(a5)
         move.l debut(a5),a3
         lea oext(a3),a2
-        moveq #26-1,d2
+        moveq #MAX_EXTENSIONS-1,d2
         move.l lochaine(a5),a0
         move.l lowvar(a5),a1
 inb20:  cmp.l (a2),a3
@@ -3044,7 +3055,7 @@ inb20:  cmp.l (a2),a3
         movem.l (sp)+,d2/a2/a3/a4/a5/a6
         tst.w d0
         bne boutmem
-        move.l d1,26*4(a2)
+        move.l d1,MAX_EXTENSIONS*4(a2)
 inb21:  lea 4(a2),a2
         dbra d2,inb20
         move.l a0,lochaine(a5)
@@ -3462,7 +3473,7 @@ Open2:  clr.w -(sp)
         trap #1                         ;OPEN
         addq.l #8,sp
         tst.w d0
-        bmi DErr
+        bmi diskerr
         move.l a3,-(sp)
         bsr GetFich
         move.w d0,Poignee(a3)           ;Ouvre la fyche
@@ -3480,7 +3491,7 @@ Create2:clr.w -(sp)
         trap #1                    ;OPEN
         addq.l #8,sp
         tst.w d0
-        bmi DErr
+        bmi diskerr
         move.l a3,-(sp)
         bsr GetFich
         move.w d0,Poignee(a3)
@@ -3495,13 +3506,13 @@ LSeek:  move.l a3,-(sp)
         sub.l Longfyche(a3),d0
         move.w #2,-(sp)
         move.w (a3),-(sp)
-        beq DErr
+        beq diskerr
         move.l d0,-(sp)
         move.w #$42,-(sp)
         trap #1
         lea 10(sp),sp
         tst.l d0
-        bmi DErr
+        bmi diskerr
         move.l d0,Posfyche(a3)
         move.l (sp)+,a3
         rts
@@ -3512,12 +3523,12 @@ load:   move.l a3,-(sp)
         move.l a0,-(sp)                 ;adresse de chargement
         move.l d0,-(sp)                 ;taille du fichier!
         move.w (a3),-(sp)
-        beq DErr
+        beq diskerr
         move.w #$3f,-(sp)
         trap #1
         lea 4(sp),sp
         cmp.l (sp)+,d0
-        bne DErr
+        bne diskerr
         add.l d0,Posfyche(a3)           ;Change la position du pointeur
         move.l (sp)+,a0
         add.l d0,a0
@@ -3530,12 +3541,12 @@ Write:  move.l a3,-(sp)
         move.l a0,-(sp)                 ;adresse de sauvegarde
         move.l d0,-(sp)                 ;taille du fichier!
         move.w (a3),-(sp)
-        beq DErr
+        beq diskerr
         move.w #$40,-(sp)
         trap #1
         lea 4(sp),sp
         cmp.l (sp)+,d0
-        bne DErr
+        bne diskerr
         add.l d0,Posfyche(a3)           ;Position du pointeur
         move.l Posfyche(a3),d0
         cmp.l Longfyche(a3),d0          ;Augmente la taille de la fyche
@@ -3569,8 +3580,6 @@ Clo2:   addq.w #1,d7
         cmp.w #Nfyche,d7
         bcs.s Clo1
         rts
-
-DErr:   bra diskerr
 
 ****************************************************************************
 *
