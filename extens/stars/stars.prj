@@ -1,0 +1,7 @@
+stos\stars.exh
+.L[-S=0]
+.S[-S]
+.S[-DCOMPILER=0]
+.S[-I..\..\src]
+=
+stars.s
