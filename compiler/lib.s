@@ -5630,11 +5630,11 @@ ade:    tst.b d3                ;cette adresse DOIT etre un multiple de 256
         cmp.l deflog(a5),d3     ;et pas superieure a l'ecran par defaut!
         bhi.s l234x
         rts
-l234w:  moveq #44,d0
+l234w:  moveq #E_not_reserved,d0
         bra.s l234e
-l234x:  moveq #13,d0
+l234x:  moveq #E_illegalfunc,d0
         bra.s l234e
-l234y:  moveq #42,d0
+l234y:  moveq #E_bank_not_screen,d0
         bra.s l234e
 l234z:  moveq #E_bad_screen,d0
 l234e:  move.l error(a5),a0
@@ -6033,9 +6033,8 @@ md13:   move.w (a0)+,(a1)+
         dbra d0,md13
 ; initialisation d'une workstation
         move.l work(a5),d0
-        lea trp2(pc),a0
-        move.l d0,2(a0)
         lea adtr(pc),a0
+        move.l d0,vdihackwork-adtr(a0)
         move.l $84,(a0)
         lea trp1(pc),a0
         move.l a0,$84                   ;init fausse trappe #1
@@ -6103,11 +6102,12 @@ trp1:   cmp #$48,6(sp) /* BUG: does not work with longframe */
         beq.s trp3
         move.l adtr(pc),-(sp)
         rts
-trp2:   moveq.l #-1,d0          ;"MALLOC" ! /* WTF? */
+trp2:   move.l vdihackwork(pc),d0          ;"MALLOC" ! /* WTF? */
         rte
 trp3:   clr.l d0                      ;"MFREE" !
         rte
 adtr:   dc.l 0
+vdihackwork: dc.l 0
 
 ;RESOLUTION--> coordonnees/couleur maxi
 maxmode:  dc.w 320,200,16,0,640,200,4,0,640,400,2,0
@@ -7173,7 +7173,7 @@ L302:   dc.w l302a-L302,l302b-L302,0
         beq.s l302y
 l302a:  jsr L_mode.l
 l302b:  jmp L_modebis.l
-l302x:  moveq #13,d0
+l302x:  moveq #E_illegalfunc,d0
         bra.s l302z
 l302y:  moveq #E_resolution,d0
 l302z:  move.l error(a5),a0
@@ -8694,7 +8694,7 @@ L391:   dc.w l391a-L391,l391b-L391,l391c-L391,0
         move.w 32(a0),cursflg(a5)       ;Prend le curseur par 299!
         move.w 32+2(a0),foncon(a5)      ;Touches de fonction
         clr mnd+12(a5)
-l391a:  jsr L_menuoff.l                         ;menuoff
+l391a:  jsr L_menuoff.l                 ;menuoff
 l391b:  jsr L_modebis.l
 
 ; Poke l'ambiance par 299

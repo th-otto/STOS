@@ -3,4 +3,4 @@ compiler\basic209.lib
 .S[-S]
 .S[-I..\src]
 =
-orig\lib.s
+lib.s
