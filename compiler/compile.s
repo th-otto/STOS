@@ -15,6 +15,8 @@
         .include "float.inc"
         .include "errors.inc"
 
+ikbdacia    = $fffffc00
+
         .text
 
 *************************************************************************
@@ -3241,11 +3243,17 @@ fingem: move.l anc400(a5),$400
         move.b #7,$484
 ; Restore la routine d'entree du joystick
         move.l  Joy_Ad(pc),d0
-        beq.s   .Skip
+        beq.s   Skip
         move.l  d0,a0
         move.l  Joy_Sav(pc),(a0)
+		lea.l   ikbdacia,a0
+ikbdwait:
+		move.b     (a0),d0
+		btst       #1,d0      /* tx data empty? */
+		beq.s      ikbdwait   /* no, wait */
+		move.b     #8,2(a0)   /* turn ikbd mouse on */
 ; RETOUR au gem
-.Skip:   lea dataec+32(pc),a4
+Skip:   lea dataec+32(pc),a4
         lea adapt(pc),a3
         move.l adapt_devtab(a3),a0      ;table VDI 1
         moveq #45-1,d0
