@@ -1,7 +1,7 @@
 fast_cls:
 
 	movem.l	d0-d7/a0-a6,-(sp)
-	add.l	#$7d00,a0
+	lea 32000(a0),a0
 	moveq.l	#0,d0
 	moveq.l	#0,d1
 	moveq.l	#0,d2

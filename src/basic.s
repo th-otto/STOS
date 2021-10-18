@@ -1046,7 +1046,7 @@ jumps:    dc.l syntax           ;$80
 
 ; ADRESSE DES FONCTIONS
           dc.b "Jfonct"                 ;repere JUMPS FONCTIONS
-opejumps: dc.l fetendu
+opejumps: dc.l fetendu          ;$b8
           dc.l psgfonc
           dc.l screen
           dc.l dreg
@@ -1054,7 +1054,7 @@ opejumps: dc.l fetendu
           dc.l point
           dc.l fndrived
           dc.l fndir
-          dc.l extfunc
+          dc.l extfunc          ;$c0
           dc.l abs
           dc.l colorf
           dc.l fonkey
@@ -1062,7 +1062,7 @@ opejumps: dc.l fetendu
           dc.l cos
           dc.l fndrive
           dc.l getimer
-          dc.l logical
+          dc.l logical          ;$c8
           dc.l fn
           dc.l naut
           dc.l rnd
@@ -1070,7 +1070,7 @@ opejumps: dc.l fetendu
           dc.l asc
           dc.l chr
           dc.l inkey
-          dc.l scancode
+          dc.l scancode         ;$d0
           dc.l mid
           dc.l right
           dc.l left
@@ -1078,7 +1078,7 @@ opejumps: dc.l fetendu
           dc.l start
           dc.l len
           dc.l pi
-          dc.l peek
+          dc.l peek             ;$d8
           dc.l deek
           dc.l leek
           dc.l zone
@@ -1086,7 +1086,7 @@ opejumps: dc.l fetendu
           dc.l ysprite
           dc.l xmouse
           dc.l ymouse
-          dc.l mousekey
+          dc.l mousekey         ;$e0
           dc.l physical
           dc.l backgrnd
           dc.l log10
@@ -1094,10 +1094,16 @@ opejumps: dc.l fetendu
           dc.l fnmode
           dc.l time
           dc.l date
-          dc.l scrfonc
+          dc.l scrfonc          ;$e8
           dc.l default
 ; operateurs: ne peuvent etre appeles que par EVALUE
-          dc.l syntax  ;start of operators
+          dc.l syntax           ;$ea
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax
+          dc.l syntax           ;$f0
           dc.l syntax
           dc.l syntax
           dc.l syntax
@@ -1105,20 +1111,14 @@ opejumps: dc.l fetendu
           dc.l syntax
           dc.l syntax
           dc.l syntax
+          dc.l syntax           ;$f8
           dc.l syntax
-          dc.l syntax
-          dc.l syntax
-          dc.l syntax
-          dc.l syntax
-          dc.l syntax
-          dc.l syntax
-          dc.l syntax
-          dc.l findvar
-          dc.l entier
-          dc.l alpha
-          dc.l entier
-          dc.l entier
-          dc.l float
+          dc.l findvar          ;T_var
+          dc.l entier           ;T_constbin
+          dc.l alpha            ;T_conststr
+          dc.l entier           ;T_consthex
+          dc.l entier           ;T_constint
+          dc.l float            ;T_constflt
 
 ; ADRESSE DES OPERATEURS
 evajumps: dc.l syntax
@@ -6663,22 +6663,22 @@ adbufile: mulu #20,d0
 norminv:  tst d1
           bne.s fsinv
 fsnorm:   movem.l d0/d7/a0,-(sp)
-          moveq #0,d7
-          moveq #W_centre,d0
+          moveq #W_chrout,d7
+          moveq #18,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
 fsinv:    movem.l d0/d7/a0,-(sp)
-          moveq #0,d7
-          moveq #W_join,d0
+          moveq #W_chrout,d7
+          moveq #21,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
 
 ; memorise le curseur
 memocurs: movem.l d0/d7/a0,-(sp)
-          moveq #0,d7
-          moveq #W_autoins,d0
+          moveq #W_chrout,d7
+          moveq #20,d0
           trap #3
           moveq #W_coordcurs,d7
           trap #3
@@ -7000,10 +7000,10 @@ fs3c:     clr.l (a0)+
           tst d0
           beq.s fs4
           jmp winderr
-fs4:      moveq #0,d7
-          moveq #W_autoins,d0        ;arret curs
+fs4:      moveq #W_chrout,d7
+          moveq #20,d0        ;arret curs
           trap #3
-          moveq #W_currwindow,d0        ;scroll off
+          moveq #25,d0        ;scroll off
           trap #3
           tst fsd+24           ;imprime le titre
           bne.s fs4a
@@ -14237,7 +14237,7 @@ md05:     tst foncon          ;pas de touche de fonction: on reste comme ca!
           move #20,d0
           move.w #W_chrout,d7
           trap #3             ;arret du curseur
-          moveq #W_currwindow,d0
+          moveq #25,d0
           trap #3             ;scrolloff
           clr.w d0
           jsr affonc
@@ -17330,8 +17330,8 @@ mi2:      clr d0
           beq.s mi3
           moveq #21,d0        ;inverse on
           bra.s mi4
-mi3:      moveq #W_centre,d0        ;inverse off
-mi4:      clr d7
+mi3:      moveq #18,d0        ;inverse off
+mi4:      moveq #W_chrout,d7
           trap #3
           rts
 

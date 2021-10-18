@@ -5,6 +5,8 @@
 *
 * FULL VERSION!
 
+	.include "system.inc"
+
 *
 * USAGE:
 *
@@ -40,7 +42,9 @@
 * Xpen		: Return x position of the light pen/gun
 * Ypen		: Return y position of the light pen/gun
 
-	bra	init
+	.text
+
+	bra.w	init
 	dc.b	128
 
 tokens:
@@ -95,7 +99,7 @@ jump:
 	dc.l	d_crunch
 	dc.l	eplace
 	dc.l	elite_unpak
-	dc.l	offset
+	dc.l	foffset
 	dc.l	estop
 	dc.l	jar
 	dc.l	mirror
@@ -125,60 +129,49 @@ message:
 
 system:	dc.l	0
 
-return:	dc.l	0
-
 init:
-	lea	exit,a0
-	lea	coldst,a1
+	lea	exit(pc),a0
+	lea	coldst(pc),a1
 	rts
 
 coldst:
-	move.l	a0,system
-	lea 	message,a0
-	lea	warm,a1
-	lea	tokens,a2
-	lea	jump,a3
+    lea system(pc),a1
+	move.l a0,(a1)
+	lea message(pc),a0
+	lea	warm(pc),a1
+	lea	tokens(pc),a2
+	lea	jump(pc),a3
 
 warm:	rts
 
 dummy:	rts
 
+* Syntax          : LIGHTS ON 
 lightson:
+	move.b	#14,$ffff8800		; Send info to sound chip
+	move.b	#0,$ffff8802		; Send info to sound chip
+	rts
 
-	move.l	(a7)+,return		; Save return
-	movem.l	a0-a6,-(a7)		; Save registers
-	move.b	#14,$ff8800		; Send info to sound chip
-	move.b	$40.l,$ff8802		; Send info to sound chip XXX BUG missing #
-	movem.l	(a7)+,a0-a6		; Restore registers
-	move.l	return,a0		; Restore return
-	jmp	(a0)			; jump to it
-
+* Syntax          : X=PREADY
 pready:
-	move.l	(a7)+,return		; save return
 	moveq	#0,d3			; Zero d3
 	move.w	#0,-(sp)		; Printer ready?
 	move.w	#8,-(sp)		; Bcostat
 	trap	#13			; Call Bios
 	addq.l	#4,sp			; Restore stack
-	/* clr.w	d2			; Tell stos to expect integer */
-	dc.w 0x343c,0 /* XXX */
+	clr.w	d2			; Tell stos to expect integer
 	move.l	d0,d3			; Save result in d3 ready for STOS
-	move.l	return,a0		; Load return
-	jmp	(a0)			; jump to it
+	rts
 
+* Syntax          : LIGHTS OFF
 lightsoff:
+	move.b	#14,$ffff8800		; Send info to sound chip
+	move.b	#6,$ffff8802		; Send info to sound chip
+	rts
 
-	move.l	(a7)+,return		; Save return
-	movem.l	a0-a6,-(a7)		; Save registers
-	move.b	#14,$ff8800		; Send info to sound chip
-	move.b	#6,$ff8802		; Send info to sound chip
-	movem.l	(a7)+,a0-a6		; Restore registers
-	move.l	return,a0		; Restore return
-	jmp	(a0)			; jump to it
-
+* Syntax          : FASTWIPE ADDR
 fastwipe:
-
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmpi.w	#1,d0			; One paramter?
 	bne	syntax			; No, syntax error!
 	bsr	getint			; Get integer
@@ -186,49 +179,51 @@ fastwipe:
 
 	include	"fast_cls.s"
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	jmp	(a1)			; Back to STOS
 
 
+* Syntax          : DAC VOLUME VOL
 ** Dac volume
-
 dacvolume:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 3 parameters?
 	bne	syntax			; No, syntax error
 
 	bsr	getint			; Volume
 	move.w	d3,d1
 
-	move.w	#%11111111111,$ff8924	; Set mask
+	move.w	#%11111111111,$ffff8924	; Set mask
 	move.w	#%10011000000,d2
 	add.w	d1,d2			; Add m volume data
-	move.w	d2,$ff8922		; Set m volume data
+	move.w	d2,$ffff8922		; Set m volume data
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	jmp	(a1)			; Back to STOS
 
+* Syntax          : SETPAL ADDR
 setpal:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; Set palette
 	bne	syntax			; No, syntax error
 	bsr	getint			; Get integer
-	move.l	d3,a0			; Store as address
+	move.l  a1,-(a7)        ; push back return pc 
+	
+	move.l	d3,-(a7)		; palette pointer
+	move.w	#6,-(a7)		; setpalette
+	trap	#14			; call xbios
+	addq.l	#6,a7			; restore stack
+	rts
 
-	move.l  a0,$45A.l /* XXX */
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
-
+* Syntax          : D CRUNCH ADDR
 d_crunch:
-
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 1 parameter?
 	bsr	getint			; Get integer
 	move.l	d3,a0			; Store source address
+	move.l  a1,-(a7)        ; push back return pc 
 
 	cmp.l	#'SP20',(a0)		; Speed header
-	beq.w	speed			; Call routine /* XXX */
+	beq.s	speed			; Call routine
 
 	cmp.l	#'ATM5',(a0)		; Atomik header
 	beq	atomik			; Call routine
@@ -246,26 +241,26 @@ d_crunch:
 	beq	fire_decrunch_2
 
 	cmp.l	#'SPv3',(a0)		; Speed V3
-	beq.w	spe3			 /* XXX */
+	beq.s	spe3
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts 			; Back to STOS
 
 spe3:
 	move.l	a0,a1			; Transfer addresses
 	bra	speed3
-	rts
 
 	include	'd_crunch.s'
 
+* Syntax          : ELITE UNPACK ADDR1,ADDR2
 elite_unpak:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,d7		; Save return
 	cmp	#2,d0			; 2 parameters
 	bne	syntax			; No, syntax error
 	bsr	getint			; Get integer
 	move.l	d3,a1			; Save dest address
 	bsr	getint			; Get integer
 	move.l	d3,a0			; Save source address
+	move.l  d7,-(a7)        ; push back return pc
 
 	cmpi.b	#$80,(a0)		; check type flag
 	bne	notdone			; not compressed
@@ -337,123 +332,112 @@ palloop:
 	move.w	(a0)+,(a1)+
 	dbra	d0,palloop
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts			; Back to STOS
 
+* Syntax          : X=XPEN
 ** Xpen, get the x position of the light pen input
-
 xpen:
-	move.l	(a7)+,return		; Save return
 	clr.l	d1
-	move.w	$ff9220,d1		; Get x position
+	move.w	$ffff9220,d1		; Get x position
 	andi.w	#1023,d1		; Mask data
 	move.l	d1,d3
-	/* clr.w	d2			; Tell stos to expect integer */
-	dc.w 0x343c,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	clr.w	d2			; Tell stos to expect integer
+	rts
 
+* Syntax          : X=PAKTYPE(ADDR)
 * Get type of packer used
-
 paktype:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,d7		; Save return
 	cmp	#1,d0			; 1 parameter?
 	bne	syntax			; No, syntax error
 	bsr	getint			; Get integer
+	move.l  d7,-(a7)        ; push back return pc 
+
 	move.l	d3,a0			; Store address of file
 
 	cmp.l	#'SP20',(a0)		; Speed header
-	beq.w	spd			; Call routine /* XXX */
+	beq.s	spd			; Call routine
 
 	cmp.l	#'ATM5',(a0)		; Atomik header
-	beq.w	atmk			; Call routine /* XXX */
+	beq.s	atmk			; Call routine
 
 	cmp.l	#'Ice!',(a0)		; Ice header
-	beq.w	ic			; Call routine /* XXX */
+	beq.s	ic			; Call routine
 
 	cmp.l	#'AU5!',(a0)		; Automation header
-	beq.w	aut			; Call routine /* XXX */
+	beq.s	aut			; Call routine
 
 	cmp.l	#'ICE!',(a0)		; Ice V2.40 header
-	beq.w	ic2 /* XXX */
+	beq.s	ic2
 
 	cmp.l	#'FIRE',(a0)		; Fire V2.0
-	beq.w	fire /* XXX */
+	beq.s	fire
 
 	cmp.l	#'SPv3',(a0)		; Speed V3
-	beq.w	sped3 /* XXX */
+	beq.s	sped3
 
-	/* moveq.l	#0,d3			; Return value  */
-	dc.w 0x263c,0,0 /* XXX */
+	moveq.l	#0,d3			; Return value
 	bra.s	ret			; Return
 
 spd:
-		/* moveq.l	#1,d3			; Speed found */
-	dc.w 0x263c,0,1 /* XXX */
+	moveq.l	#1,d3			; Speed found
 	bra.s	ret			; Return
 
 atmk:
-	/* moveq.l	#2,d3			; Atomik found */
-	dc.w 0x263c,0,2 /* XXX */
+	moveq.l	#2,d3			; Atomik found
 	bra.s	ret			; Return
 
-ic:	/* moveq.l	#3,d3			; Ice found */
-	dc.w 0x263c,0,3 /* XXX */
+ic:	moveq.l	#3,d3			; Ice found
 	bra.s	ret			; Return
 
-aut:	/* moveq.l	#4,d3			; Automation found */
-	dc.w 0x263c,0,4 /* XXX */
+aut:	moveq.l	#4,d3			; Automation found
 	bra.s	ret			; Return
 
-ic2:	/* moveq.l	#5,d3			; Ice V2.40 found */
-	dc.w 0x263c,0,5 /* XXX */
+ic2:	moveq.l	#5,d3			; Ice V2.40 found
 	bra.s	ret			; Return
 
-fire:	/* moveq.l	#6,d3			; Fire V2.0 found */
-	dc.w 0x263c,0,6 /* XXX */
+fire:	moveq.l	#6,d3			; Fire V2.0 found
 	bra.s	ret			; Return
 
-sped3:	/* moveq.l	#7,d3			; Speed V3 found */
-	dc.w 0x263c,0,7 /* XXX */
+sped3:	moveq.l	#7,d3			; Speed V3 found
 
-ret:	/* clr.w	d2			; Expect integer */
-	dc.w 0x343c,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)
+ret:	clr.w	d2			; Expect integer
+	rts 			; Back to STOS
 
+
+* Syntax          : X=PAKSIZE(ADDR)
 * Get upacked size of unpacked file
-
 paksize:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 1 parameters?
 	bne	syntax			; No, syntax error
 
 	bsr	getint			; Get integer
 	move.l	d3,a0			; Store address of file
+	move.l  a1,-(a7)        ; push back return pc 
 
 	cmp.l	#'SP20',(a0)		; Speed header
-	beq.w	spd2			; Call routine /* XXX */
+	beq.s	spd2			; Call routine
 
 	cmp.l	#'ATM5',(a0)		; Atomik header
-	beq.w	atmk2			; Call routine /* XXX */
+	beq.s	atmk2			; Call routine
 
 	cmp.l	#'Ice!',(a0)		; Ice header
-	beq.w	ic_2			; Call routine /* XXX */
+	beq.s	ic_2			; Call routine
 
 	cmp.l	#'AU5!',(a0)		; Automation header
-	beq.w	aut2			; Call routine /* XXX */
+	beq.s	aut2			; Call routine
 
 	cmp.l	#'ICE!',(a0)		; Ice V2.40 header
-	beq.w	ic22 /* XXX */
+	beq.s	ic22
 
 	cmp.l	#'FIRE',(a0)		; Fire V2.0
-	beq.w	fire2 /* XXX */
+	beq.s	fire2
 
 	cmp.l   #'SPv3',(a0)		; Speed V3
-	beq.w	spd3 /* XXX */
+	beq.s	spd3
 
-	/* moveq.l	#0,d3			; Return value */
-	dc.w 0x263c,0,0 /* XXX */
+	moveq.l	#0,d3			; Return value
 	bra.s	ret2			; Return
 
 spd2:
@@ -484,16 +468,15 @@ spd3:
     move.l  12(a0),d3		; Store file length
 
 ret2:
-	/* clr.w	d2			; Expect integer */
-	dc.w 0x343c,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)
+	clr.w	d2			; Expect integer
+	rts 			; Back to STOS
 
+* Syntax          : X=EVEN(NUM)
 * Improved EVEN command, allows control over positive and negative
 * numbers, improved by Neil 28/01/1993 now uses bittest
 
 teven:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 1 parameter?
 	bne	syntax			; No, syntax error
 	bsr	getint			; Get integer
@@ -502,53 +485,49 @@ teven:
 * Check number
 
 	btst	#0,d0			; Test bit 0 of d0
-	beq.w	yesev			; Number is even /* XXX */
+	beq.s	yesev			; Number is even
 
-	/* moveq.l	#0,d3			; Store false  */
-	dc.w 0x263c,0,0 /* XXX */
-	bra.w	leav			; Branch to leave /* XXX */
+	moveq.l	#0,d3			; Store false
+	bra.s	leav			; Branch to leave
 
 yesev:
-	/* moveq.l	#-1,d3			; Store true */
-	dc.w 0x263c,-1,-1 /* XXX */
+	moveq.l	#-1,d3			; Store true
 
 leav:
-	/* clr.l	d2			; Expect integer */
-	dc.w 0x243c,0,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	clr.l	d2			; Expect integer
+	jmp	(a1)			; Back to STOS
 
 
+* Syntax          : ESTOP
 ** Estop
-
 estop:
-	move.l	(a7)+,return		; Save return
-	move.w	#0,$ff8900		; Start/stop sample
-	move.l	return,a0
-	jmp	(a0)			; Jump to it
+	move.w	#0,$ffff8900		; Start/stop sample
+	rts
 
 
+* Syntax          : X=SETPRT(VAR)
 ** Set printer
-
 setprt:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 1 parameter?
 	bne	syntax			; No, syntax error
 	bsr	getint			; get integer
 	move.w	d3,d0			; Store in d0
+	move.l  a1,-(a7)        ; push back return pc 
 
 	move.w	d3,-(a7)		; Config
 	move.w	#33,-(a7)		; Setprt
 	trap	#14			; Call Xbios
 	addq.l	#4,a7			; Restore stack
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	moveq.l	#0,d2			; Expect integer
+	rts			; Back to STOS
 
 
 
-offset:
-	move.l	(a7)+,return		; Save return
+* Syntax          : X=FOFFSET(N,ADDR)
+foffset:
+	move.l	(a7)+,d1		; Save return
 	cmp	#2,d0			; 2 parameters?
 	bne	syntax			; No, syntax error
 
@@ -556,39 +535,21 @@ offset:
 	move.l	d3,a1			; Store bank address
 
 	bsr	getint			; Get integer
-	move.w	d3,d1			; Store file number
+	move.l  d1,-(a7)        ; push back return pc 
 
-	/* addq.l	#2,a1			; Increase a1 */
-	dc.w 0xd3fc,0,2 /* XXX */
+	addq.l	#2,a1			; Increase a1
 
-	/* tst.w d1			; File 0? */
-	dc.w 0xb27c,0 /* XXX */
-
-	beq.w	.no			; Yes	 /* XXX */
-
-	/* subq.l	#1,d1			; Dec d1 */
-	dc.w 0x0481,0,1 /* XXX */
-
-.floop:
-	/* addq.l	#8,a1			; Add 8 to address */
-	dc.w 0xd3fc,0,8 /* XXX */
-	dbf	d1,.floop		; Loop number of times
-
-.no:
-	/* addq.l	#4,a1			; Increase for offset */
-	dc.w 0xd3fc,0,4 /* XXX */
-
-	move.l	(a1),d3			; Move value
+	lsl #3,d3
+	move.l	4(a1,d3.w),d3			; Move value
 
 endoff:
-	/* moveq.l	#0,d2			; Expect integer */
-	dc.w 0x243c,0,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	moveq.l	#0,d2			; Expect integer
+	rts			; Back to STOS
 
 
+* Syntax          : X=FSTART(N,ADDR)
 fstart:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,d1		; Save return
 	cmp	#2,d0			; 2 parameters?
 	bne	syntax			; No, syntax error
 
@@ -596,41 +557,23 @@ fstart:
 	move.l	d3,a1			; Store bank address
 
 	bsr	getint			; Get integer
-	move.w	d3,d1			; Store file number
+	move.l  d1,-(a7)        ; push back return pc 
 
 	move.l	a1,a2			; Copy address
-	/* addq.l	#2,a1			; Increase a1 */
-	dc.w 0xd3fc,0,2 /* XXX */
+	addq.l	#2,a1			; Increase a1
 
-	/* tst.w d1			; File 0? */
-	dc.w 0xb27c,0 /* XXX */
-	beq.w	.no2			; Yes	 /* XXX */
-
-	/* subq.l	#1,d1			; Dec d1 */
-	dc.w 0x0481,0,1 /* XXX */
-
-.floop2:
-	/* addq.l	#8,a1			; Add 8 to address */
-	dc.w 0xd3fc,0,8 /* XXX */
-
-	dbf	d1,.floop2		; Loop number of times
-
-.no2:
-	/* addq.l	#4,a1			; Increase for offset */
-	dc.w 0xd3fc,0,4 /* XXX */
-
-	move.l	(a1),d3			; Move value
+	lsl #3,d3
+	move.l	4(a1,d3.w),d3			; Move value
 	add.l	a2,d3			; Add address
 
-	/* moveq.l	#0,d2			; Expect integer */
-	dc.w 0x243c,0,0 /* XXX */
+	moveq.l	#0,d2			; Expect integer
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts			; Back to STOS
 
 
+* Syntax          : X=FLENGTH(N,ADDR)
 flength:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,d1		; Save return
 	cmp	#2,d0			; 2 parameters?
 	bne	syntax			; No, syntax error
 
@@ -638,34 +581,20 @@ flength:
 	move.l	d3,a1			; Store bank address
 
 	bsr	getint			; Get integer
-	move.w	d3,d1			; Store file number
+	move.l  d1,-(a7)        ; push back return pc 
 
-	/* addq.l	#2,a1			; Increase a1 */
-	dc.w 0xd3fc,0,2 /* XXX */
+	addq.l	#2,a1			; Increase a1
 
-	/* cmp	#0,d1			; File 0? */
-	dc.w 0xb27c,0 /* XXX */
-
-	beq.w	.no3			; Yes	 /* XXX */
-
-	/* subq.l	#1,d1			; Dec d1 */
-	dc.w 0x0481,0,1 /* XXX */
-
-.floop3:
-	/* addq.l	#8,a1			; Add 8 to address*/
-	dc.w 0xd3fc,0,8 /* XXX */
-	dbf	d1,.floop3		; Loop number of times
-
-.no3:	move.l	(a1),d3			; Move value
-
+	lsl #3,d3
+	move.l	0(a1,d3.w),d3			; Move value
+	
 endoff3:
-	/* moveq.l	#0,d2			; Expect integer */
-	dc.w 0x243c,0,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	moveq.l	#0,d2			; Expect integer
+	rts			; Back to STOS
 
+* Syntax          : MIRROR OPT,ADDR,SYPOS,ADDR2,DYPOS,NUM
 mirror:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,d7		; Save return
 	cmp	#6,d0
 	bne	syntax
 	bsr	getint
@@ -680,18 +609,19 @@ mirror:
 	move.l	d3,a2			; Get Source Address
 	bsr	getint
 	move.w	d3,d6			; Get Option
+	move.l  d7,-(a7)        ; push back return pc 
 
-	muls.w	#160,d5			; Convert Y pos to Scan Line pos
+	mulu.w	#160,d5			; Convert Y pos to Scan Line pos
 	add.l	d5,a2			; Add to start address
 
 	cmp	#1,d6			; Function 1?
 	beq	normal			; Calculate Normal end Y
 
 	cmp 	#2,d6			; Function 2?
-	beq.w	half			; Calculate Half end Y /* XXX */
+	beq		half			; Calculate Half end Y
 
 	cmp	#3,d6			; Function 3?
-	beq.w	double			; Calculate Double end Y  /* XXX */
+	beq	double			; Calculate Double end Y
 
 main:
 	mulu.w	#160,d1			; y position
@@ -700,10 +630,10 @@ main:
 	movem.l a1-a6/d1-d7,-(a7)
 
 	cmp	#2,d6			; Function 2?
-	beq.w	strtb			; Half Size mirror /* XXX */
+	beq.s	strtb			; Half Size mirror
 
 	cmp	#3,d6			; Function 3?
-	beq.w	strtc			; Double Size mirror /* XXX */
+	beq.s	strtc			; Double Size mirror
 
 strta:					; Normal Size mirror
 	movem.l (a2),a3-a6/d1-d7
@@ -717,7 +647,7 @@ strta:					; Normal Size mirror
 
 	lea     -160(a1),a1
 	lea	160(a2),a2
-	dbf     D0,strta
+	dbf     d0,strta
 
 	bra	end_ref
 
@@ -735,7 +665,7 @@ strtb:						; Half size mirror
 	lea.l	 320(a2),a2			; Move to source down a scan line
 	dbf	d0,strtb
 
-	bra.w 	end_ref /* XXX */
+	bra.s 	end_ref
 
 strtc:						; Double Size mirror
 	movem.l (a2),a3-a6/d1-d7
@@ -764,10 +694,8 @@ strtc:						; Double Size mirror
 
 end_ref:
 	movem.l (a7)+,a1-a6/d1-d7
-	/* moveq.l  #0,d3	*/
-	dc.w 0x263c,0,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	moveq.l  #0,d3
+	rts			; Back to STOS
 
 * For mirror
 
@@ -786,22 +714,25 @@ double:
 	add.w	d2,d1
 	bra 	main
 
+* Syntax          : TINY UNPACK ADDR,ADDR2
 tiny_unpak:
 
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,d1		; Save return
 	cmp	#2,d0			; 2 parameters?
 	bne	syntax
 
 	bsr	getint			; Get integer
 	move.l	d3,a1			; Save destination
-	move.l	a1,(addr)
 	bsr	getint			; Get integer
+	move.l  d1,-(a7)        ; push back return pc
+
+	move.l  a6,-(a7)
 	move.l	d3,a0			; Save source
-
+	move.l  a1,a6
 	bsr	tiny			; de-pack
+	move.l  (a7)+,a6
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts			; Back to STOS
 
 * The tiny picture file de-packing code - by axe of delight
 
@@ -841,10 +772,10 @@ t179ee:	move.b	(a4)+,(a1)+
 	lea	$9e(a1),a1
 	cmpa.l	d6,a1
 	blt.s	t17a06
-	lea	$ffff8308(a1),a1
+	lea	-31992(a1),a1
 	cmp.l	d4,a1
 	blt.s	t17a06
-	lea	$ffffff62(a1),a1
+	lea	-158(a1),a1
 t17a06:	dbra	d0,t179ee
 t17a0a:	cmp.l	d5,a5
 	blt.s	t179be
@@ -855,10 +786,10 @@ t17a18:	move.w	d3,(a1)+
 	lea	$9e(a1),a1
 	cmp.l	d6,a1
 	blt.s	t17a2e
-	lea	$ffff8308(a1),a1
+	lea	-31992(a1),a1
 	cmp.l	d4,a1
 	blt.s	t17a2e
-	lea	$ffffff62(a1),a1
+	lea	-158(a1),a1
 t17a2e:	dbra	d0,t17a18
 	cmpa.l	d5,a5
 	blt.s	t179be
@@ -869,18 +800,15 @@ t17a2e:	dbra	d0,t17a18
 * Find out resolution and palette
 
 t_getpal:
-
 	cmpi.b	#2,(a0)+		; Color mode?
 	ble.s	t_color
 	addq.l	#4,a0
 t_color:
-
 	moveq	#31,d0			; install palette
-	move.l	(addr),a2		; Memory bank
+	move.l	a6,a2		; Memory bank
 	lea	32000(a2),a2		; Increase for palette
 
 t_copypal:
-
 	move.b	(a0)+,(a2)+
 	dbra	d0,t_copypal
 	move.b	(a0)+,d1
@@ -894,11 +822,9 @@ t_copypal:
 	moveq	#1,d0
 	rts
 
-addr:
-	ds.l	1
-
+* Syntax          : X=PERCENT(X,Y)
 percent:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#2,d0			; 2 params?
 	bne	syntax			; No, syntax error
 
@@ -907,121 +833,114 @@ percent:
 
 	bsr	getint			; Get val1
 	move.l	d3,d0			; Store
+	move.l  a1,-(a7)        ; push back return pc
 
-	/* moveq.l	#0,d4			; Zero d4 */
-	dc.w 0x283c,0,0 /* XXX */
-	/* moveq.l	#99,d3			; Loop value */
-	dc.w 0x263c,0,99 /* XXX */
+	moveq.l	#0,d4			; Zero d4
+	moveq.l	#99,d3			; Loop value
 
 addlp:	add.l	d0,d4			; Add val1 to d4
 	dbra	d3,addlp		; loop
 
-	/* moveq.l	#1,d6			; One in d6 */
-	dc.w 0x2c3c,0,1 /* XXX */
-	/* moveq.l	#0,d5			; Zero d5 */
-	dc.w 0x2a3c,0,0 /* XXX */
-	bra.w	divlp /* XXX */
+	moveq.l	#1,d6			; One in d6
+	moveq.l	#0,d5			; Zero d5
+	bra.s	divlp
 
-divlp2:	/* addq.l	#1,d6			; Increase Counter */
-	dc.w 0x0686,0,1 /* XXX */
+divlp2:	addq.l	#1,d6			; Increase Counter
 
 divlp:	add.l	d1,d5			; Add val 1
 	cmp	d4,d5
-	blo.w	divlp2			; Loop /* XXX */
+	blo.s	divlp2			; Loop
 
 	move.l	d6,d3			; Store in return value pos
-	/* moveq.l	#0,d2			; Expect integer */
-	dc.w 0x243c,0,0 /* XXX */
+	moveq.l	#0,d2			; Expect integer
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts           ; Back to STOS
 
 
+* Syntax          : TREBLE TREB
 ** Treble
-
 treble:
 
-	move.l	(a7)+,return		; Save return value
+	move.l	(a7)+,a1		; Save return value
 	cmp	#1,d0			; 4 parameters passed?
 	bne	syntax			; No, create syntax error
 
 	bsr	getint			; Buffer
 	move.w	d3,d1			; Save
 
-	move.w	#%11111111111,$ff8924	; Set mask
+	move.w	#%11111111111,$ffff8924	; Set mask
 	move.w	#%10010000000,d2
 	add.w	d1,d2			; Add treble data
-	move.w	d2,$ff8922		; Set treble data
+	move.w	d2,$ffff8922		; Set treble data
 
-	move.l	return,a0		; Load return address
-	jmp	(a0)			; Jump to it
+	jmp	(a1)			; Back to STOS
 
 
+* Syntax          : X=SPECIAL KEY(I)
 special:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp     #1,d0
 	bne     syntax
 
 	bsr     getint
+	move.l  a1,-(a7)        ; push back return pc
+
 	move.w	d3,-(sp)		; Shift status
 	move.w	#11,-(sp)		; Function KBSHIFT
 	trap	#13			; Call BIOS
 	lea	4(sp),sp		; Restore Stack
 
 	move.l	d0,d3			; Load to return
-	/* clr.w	d2			; Expect integer */
-	dc.w 0x343c,0
+	clr.w	d2			; Expect integer
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts			; Back to STOS
 
+* Syntax          : BASS BAS
 ** Bass, set STE bass
-
-bass:	move.l	(a7)+,return		; Save return
+bass:
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0
 	bne	syntax
 
 	bsr	getint			; Buffer
 	move.w	d3,d1			; Save
 
-	move.w	#%11111111111,$ff8924	; Set mask
+	move.w	#%11111111111,$ffff8924	; Set mask
 	move.w	#%10001000000,d2
 	add.w	d1,d2			; Add bass data
-	move.w	d2,$ff8922		; Set bass data
+	move.w	d2,$ffff8922		; Set bass data
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump
+	jmp	(a1)			; Back to STOS
 
 
+* Syntax          : HCOPY X
 ** Hardcopy, set system hardcopy on/off
-
 hardcopy:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 1 param??
 	bne	syntax
 	bsr	getint
+	move.l a1,-(a7)        ; push back return pc
 
 	cmp	#1,d3
-	beq.w	turnon /* XXX */
+	beq.s	turnon
 
-	/* tst.w d3 */
-	dc.w 0xb67c,0 /* XXX */
-	beq.w	turnoff /* XXX */
-
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	tst.w d3
+	bne.s	hardcopyret
 
 turnoff:
-	move.w	#2,$4ee.l			; Turn off /* XXX */
+	move.w	#2,$4ee			; Turn off
 	rts
 
 turnon:
-	move.w	#$FFFF,$4ee.l		; Turn on /* XXX */
+	move.w	#-1,$4ee		; Turn on
+hardcopyret:
 	rts
 
 
+* Syntax          : CA UNPACK ADDR,ADDR2
 ca_unpack:
-        move.l	(a7)+,return		; Save return
+        move.l	(a7)+,d1		; Save return
 	cmp     #2,d0
 	bne     syntax
 
@@ -1029,6 +948,7 @@ ca_unpack:
 	move.l	d3,a1			; Destination address
 	bsr     getint
 	move.l	d3,a0			; Source address
+	move.l  d1,-(a7)        ; push back return pc
 
 	movem.l	a0-a1,-(sp)		; Store addresses
 
@@ -1048,32 +968,29 @@ ca_pal:
 	move.w	(a0)+,(a1)+		; Copy palette over
 	dbra	d1,ca_pal
 
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	rts			; Back to STOS
 
 get_ca_res:
         cmp.w 	#$102,(a0)
-        beq.w 	high_rz			; High rez /* XXX */
+        beq.s 	high_rz			; High rez
 
         cmp.w 	#$101,(a0)
-        beq.w 	medium_rz		; Medium rez /* XXX */
+        beq.s 	medium_rz		; Medium rez
 
 low_rez:
 	lea.l	34(a0),a0		; Low rez offset
 	move.w	#15,d1			; No. cols for low res
-	bra.w 	ca_return /* XXX */
+	rts
 
 medium_rz:
 	lea.l 	10(a0),a0		; Medium rez offset
 	move.w	#3,d1			; No. cols for medium res
-	bra.w 	ca_return /* XXX */
+	rts
 
 high_rz:
 	lea.l	2(a0),a0		; High rez offset
 	move.w	#1,d1			; No. cols for high res
-
-ca_return:
-	rts				; return from from subroutine
+	rts				; return from subroutine
 
 ca_start:
 	movem.l	d1-a6,-(sp)		; Store the registers
@@ -1203,8 +1120,9 @@ loop3:  move.b    d2,(a2)
 drin3:  dbra      d1,loop3
         bra       main1
 
+* Syntax          : X=CA PACK ADDR,ADDR2,PAL,MODE
 ca_pack:
-        move.l	(a7)+,return		; Save return
+        move.l	(a7)+,d1		; Save return
 	cmp	#4,d0
 	bne     syntax
 
@@ -1216,6 +1134,7 @@ ca_pack:
 	move.l	d3,a1			; Destination address
 	bsr     getint
 	move.l	d3,a0			; Source address
+	move.l  d1,-(a7)        ; push back return pc 
 
 	bsr	ca_header		; Set up header information
 
@@ -1283,12 +1202,10 @@ nextmax:
         lea     offset2(pc),a6  ; Offsetliste
 
 while:  movea.l (a6)+,a5        ; Offset holen
-        /* cmpa.l  #0,a5 */
-        dc.w 0xbbfc,0,0  /* XXX */
+        cmpa.l  #0,a5
 
         beq.s   endwhile        ; Offset=0 ist Abbruchkriterium
-        /* cmpa.l  #-1,a5 */
-        dc.w 0xbbfc,-1,-1 /* XXX */
+        cmpa.l  #-1,a5
         beq.s   endprg          ; -1 ist Programmende
 
         movem.l (sp),a0/a3    	; Quelle/Ziel
@@ -1354,10 +1271,8 @@ endprg: moveq   #0,d0
         movem.l (sp)+,d1-a6
 	move.l	d0,d3
 	add.w	d1,d3
-	/* clr.w	d2 */
-	dc.w 0x343c,0 /* XXX */
-	move.l	return,a0
-	jmp	(a0)
+	clr.w	d2
+	rts
 
 ; ========================================================= compress
 ; In d1.b ist das Byte, in d2.w die Anzahl
@@ -1470,21 +1385,21 @@ ca_header:
 	move.w	#$4341,(a1)+		; CA header
 
 	cmp.w	#2,d0
-	beq.w	ca_high /* XXX */
+	beq.s	ca_high
 
 	cmp.w	#1,d0
-	beq.w	ca_medium /* XXX */
+	beq.s	ca_medium
 
 	move.w  #$100,(a1)+		; Low res (for now!)
 	move.w 	#15,d0			; 16 colours
 	move.w	#36,d1
-	jmp	ca_pal_lop
+	bra	ca_pal_lop
 
 ca_medium:
 	move.w	#$101,(a1)+		; medium res
 	move.w	#3,d0			; 4 colours
 	move.w	#12,d1
-	jmp	ca_pal_lop
+	bra	ca_pal_lop
 
 ca_high:
 	move.w	#$102,(a1)+		; high res
@@ -1500,7 +1415,8 @@ offset2: dc.l 160,8,80,1,2,4,320,640,480,0
 
 shortest: dc.l 0,-1
 
-bcls:	move.l	(a7)+,return		; Save return
+* Syntax          : BCLS ADDR,SCAN
+bcls:	move.l	(a7)+,a1		; Save return
 	cmp	#2,d0			; Only 1 param
 	bne	syntax			; Not even 1?
 
@@ -1534,118 +1450,93 @@ bcls:	move.l	(a7)+,return		; Save return
 	lea	160(a0),a0
 	dbf	d0,.loop
 
-	move.l	return,a0		; Return to stos
-	jmp	(a0)
+	jmp	(a1)            ; Back to STOS
 
 ** STE play
 
+* Syntax          : EPLAY STRT,LENGTH,SPEED,MODE,PLAYMODE
 steplay:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#5,d0			; 5 Params?
 	bne	syntax
 
 	bsr	getint			; Get playmode 0=stop,1=playone
-	move.w	d3,playmode		; 3=loop
+	move.w	d3,d7		; 3=loop
 
 	bsr	getint			; Get stereo/mono 1=mono 0=stereo
-	move.w	d3,stereo
+	move.w	d3,d1
 
 	bsr	getint			; Get speed 0,1,2,3
-	move.b	d3,espeed
+	clr.w   d0
+	move.b	d3,d0		; Save frequency
 
 	bsr	getint			; Get length of sample
-	move.l	d3,samlength
+	move.l	d3,a2
 
 	bsr	getint			; Get start address
-	move.l	d3,samstart
+	move.l	d3,a0
 
 
-	move.w	stereo,d0
-	mulu	#$80,d0			; Normalize stereo/mono mode
-	move.w	d0,stereo
+	mulu	#$80,d1			; Normalize stereo/mono mode
 
-	/* clr.w	d0			; Combine frequency and mode */
-	dc.w 0x303c,0 /* XXX */
-	move.b	espeed,d0		; Save frequency
-	move.w	stereo,d1		; Save mono/stereo $80 = mono
-	or.w	d1,d0			; Combine data
-	move.w	d0,$ff8920		; Store in DAC MODE address
+	or.w	d1,d0			; Combine frequency and mode
+	move.w	d0,$ffff8920		; Store in DAC MODE address
 
-	move.l	samstart,d0		; Store start address
-	move.l	samstart,d1
-	add.l	samlength,d1		; Create end address
+	move.l	a0,d0		; Store start address
+	move.l	a0,d1
+	add.l	a2,d1		; Create end address
 
-	move.l	#$ff8902,a2		; Get frame start HIGH byte
+	move.l	#$ffff8902,a2		; Get frame start HIGH byte
 	movep.w	d0,3(a2)		; Store mid & low bytes
 	swap	d0			; Reverse data
 	move.b	d0,1(a2)		; Store high byte
 
-	move.l	#$ff890e,a2		; Get frame end HIGH byte
+	move.l	#$ffff890e,a2		; Get frame end HIGH byte
 	movep.w	d1,3(a2)		; Store mid & low bytes
 	swap	d1			; Reverse data
 	move.b	d1,1(a2)		; Store high byte
 
-	move.w	playmode,$ff8900	; Start/stop sample
+	move.w	d7,$ffff8900	; Start/stop sample
 
-	move.l	return,a0		; Return to STOS
-	jmp	(a0)
+	jmp	(a1)           ; Back to STOS
 
-samlength:	ds.l	1
-samstart:	ds.l	1
-stereo:		ds.w	1
-playmode:	ds.w	1
-espeed:		ds.b	1			; Space for 1 speed byte
-
+* Syntax          : X=EPLACE
 ** Eplace
 
 	.even
 eplace:
-	move.l	(a7)+,return		; Save return
+	move.l	#$ffff8908,a0		; Get mixed address value
+	clr.l   -(a7)
+	lea     1(sp),a1
+	move.b	1(a0),(a1)+		; Get high byte
+	move.b	3(a0),(a1)+		; Get mid byte
+	move.b	5(a0),(a1)+		; Get low byte
 
-	move.l	#$ff8908,a0		; Get mixed address value
-	move.b	1(a0),d0		; Get high byte
-	move.b	3(a0),d1		; Get mid byte
-	move.b	5(a0),d2		; Get low byte
+	move.l	(a7)+,d3			; Store
+	clr.w	d2			; Tell STOS to expect number
 
-	lea	.place,a0
+	rts			; Back to STOS
 
-	move.b	d0,1(a0)
-	move.b	d1,2(a0)
-	move.b	d2,3(a0)
-
-	move.l	(a0),d3			; Store
-	/* clr.w	d2			; Tell STOS to expect number*/
-	dc.w 0x343c,0 /* XXX */
-
-	move.l	return,a0
-	jmp	(a0)			; Back to STOS
-
-.place:	ds.l	1
-
+* Syntax          : X=JAR
 ** Jar
+jar:
+	move.l	$5a0,a0			; Does cookie exists
+	beq.s	.no_cookie		; no
 
-jar:	move.l	(a7)+,return		; Save return
+	moveq.l	#-1,d3			; True, does exist
+	bra.s	.end
 
-	move.l	$5a0.l,a0			; Does cookie exists /* XXX */
-	beq.w	.no_cookie		; no /* XXX */
-
-	/* moveq.l	#-1,d3			; True, does exist */
-	dc.w 0x263c,-1,-1 /* XXX */
-	bra.w	.end /* XXX */
-
-.no_cookie:	/* moveq.l	#0,d3		; False cookie not available */
-	dc.w 0x263c,0,0 /* XXX */
+.no_cookie:	moveq.l	#0,d3		; False cookie not available
 
 .end:
-	/* clr.w	d2			; Tell STOS to expect variable */
-	dc.w 0x343c,0 /* XXX */
-	move.l	return,a0
-	jmp	(a0)			; Back to STOS
+	clr.w	d2			; Tell STOS to expect variable
+	rts			; Back to STOS
 
 ** Cookie
 
+* Syntax          : X=COOKIE(STR$)
 cookie:
-	move.l	(a7)+,return		; Save return
+	move.l	(a7)+,a1		; Save return
 	cmp	#1,d0			; 1 parameter?
 	bne	syntax			; No, syntax error
 
@@ -1653,61 +1544,40 @@ cookie:
 	move.l	d3,a0			; Save address of string
 	move.w	(a0)+,d3		; Get length of string
 	cmp	#4,d3			; String 4 bytes long?
-	bne.w	.out			; No, out of routine, signal error  /* XXX */
+	bne.s	.out			; No, out of routine, signal error
+	move.l  (a0),d2
 
-	cmpi.l	#"_CPU",(a0)		; Processor type
-	beq.w	.correct		; Valid /* XXX */
-
-	cmpi.l	#"_VDO",(a0)		; Video shifter type
-	beq.w	.correct		; Valid /* XXX */
-
-	cmpi.l	#"_SND",(a0)		; Sound chips present
-	beq.w	.correct		; Valid /* XXX */
-
-	cmpi.l	#"_MCH",(a0)		; Machine type
-	beq.w	.correct		; Valid /* XXX */
-
-	cmpi.l	#"_SWI",(a0)		; Config switches
-	beq.w	.correct		; Valid /* XXX */
-
-	cmpi.l	#"_FRB",(a0)		; Fast ram Buffer
-	beq.w	.correct		; Valid /* XXX */
-
-.out:	/* moveq.l	#-1,d3			; Invalid operation */
-	dc.w 0x263c,-1,-1 /* XXX */
-	bra.w	.fin			; Branch to end of routine /* XXX */
-
-.correct:
-	move.l	$5a0.l,a1			; Get address of cookie jar /* XXX */
+	move.l	$5a0.l,a0			; Get address of cookie jar
+	move.l	a0,d3
+	beq.s	.out
 
 .loop:
-	move.l	(a1)+,d0		; Identifier
-	move.l	(a1)+,d1		; Cookie value
+	move.l	(a0)+,d0		; Identifier
+	move.l	(a0)+,d3		; Cookie value
 
-	cmp.l	(a0),d0			; Found data yet?
-	bne.w	.loop /* XXX */
+	cmp.l	d2,d0			; Found data yet?
+	beq.s	.fin
+	tst.l	d0
+	bne.s	.loop
 
-	move.l	d1,d3
+.out:
+	moveq	#0,d3
 
 .fin:
-	/* moveq.l	#0,d2			; Expect an integer */
-	dc.w 0x243c,0,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Back to STOS
+	moveq.l	#0,d2			; Expect an integer
+	jmp	(a1)			; Back to STOS
 
 
+* Syntax          : Y=YPEN
 ** Ypen, get the y position of the light pen input
 
 ypen:
-	move.l	(a7)+,return		; Save return
 	clr.l	d1
-	move.w	$ff9222,d1		; Get y position
+	move.w	$ffff9222,d1		; Get y position
 	andi.w	#1023,d1		; Mask data
 	move.l	d1,d3
-	/* clr.w	d2			; Tell stos to expect integer */
-	dc.w 0x343c,0 /* XXX */
-	move.l	return,a0		; Load return
-	jmp	(a0)			; Jump to it
+	clr.w	d2			; Tell stos to expect integer
+	rts           ; Back to STOS
 
 
 conv2tos:
@@ -1728,7 +1598,7 @@ getstring:
 	move.l	(a7)+,a0		; Save return
 	movem.l	(a7)+,d2-d4		; Get parameter
 	tst.b	d2			; Is the argument a string?
-	bpl.w	illegal			; No! /* XXX */
+	bpl.s	illegal			; No!
 	jmp	(a0)			; Return from routine
 
 getint:
@@ -1736,7 +1606,7 @@ getint:
 	move.l	(a7)+,a0		; Save return
 	movem.l	(a7)+,d2-d4		; Get parameter
 	tst.b	d2			; Is it an integer?
-	bne.w	typemis			; No, type mismatch /* XXX */
+	bne.s	typemis			; No, type mismatch
 	jmp	(a0)			; Return
 
 * Errors
@@ -1791,7 +1661,7 @@ illegal:
 error:
 
 	move.l	system(pc),a0
-	move.l	$14(a0),a0
+	move.l	sys_error(a0),a0
 	jmp	(a0)
 
 exit:

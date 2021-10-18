@@ -841,10 +841,10 @@ t179ee:	move.b	(a4)+,(a1)+
 	lea	$9e(a1),a1
 	cmpa.l	d6,a1
 	blt.s	t17a06
-	lea	$ffff8308(a1),a1
+	lea	-31992(a1),a1
 	cmp.l	d4,a1
 	blt.s	t17a06
-	lea	$ffffff62(a1),a1
+	lea	-158(a1),a1
 t17a06:	dbra	d0,t179ee
 t17a0a:	cmp.l	d5,a5
 	blt.s	t179be
@@ -855,10 +855,10 @@ t17a18:	move.w	d3,(a1)+
 	lea	$9e(a1),a1
 	cmp.l	d6,a1
 	blt.s	t17a2e
-	lea	$ffff8308(a1),a1
+	lea	-31992(a1),a1
 	cmp.l	d4,a1
 	blt.s	t17a2e
-	lea	$ffffff62(a1),a1
+	lea	-158(a1),a1
 t17a2e:	dbra	d0,t17a18
 	cmpa.l	d5,a5
 	blt.s	t179be
@@ -1016,7 +1016,7 @@ turnoff:
 	rts
 
 turnon:
-	move.w	#$FFFF,$4ee.l		; Turn on /* XXX */
+	move.w	#-1,$4ee.l		; Turn on /* XXX */
 	rts
 
 

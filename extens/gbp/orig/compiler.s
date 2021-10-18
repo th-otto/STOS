@@ -153,24 +153,22 @@ init:
 end:
 	rts
 
-* Syntax          : LIGHTS ON 
 * Extension library
 
 * Lights on, Turn lights on
 
 lib1:
 	dc.w	0			; no library calls
-lightson:
-	move.b	#14,$ffff8800		; send info to sound chip
-	move.b	#0,$ffff8802		; send info to sound chip
+	movem.l	a0-a6,-(a7)		; save registers
+	move.b	#14,$ff8800		; send info to sound chip
+	move.b	$40,$ff8802		; send info to sound chip
+	movem.l	(a7)+,a0-a6		; restore registers
 	rts
 
-* Syntax          : X=PREADY
 * Pready
 
 lib2:
 	dc.w	0			; no library calls
-pready:
 	moveq	#0,d1			; zero d1
 	move.w	#0,-(a7)		; printer ready?
 	move.w	#8,-(a7)		; bcostat
@@ -180,32 +178,30 @@ pready:
 	move.l	d1,-(a6)		; return an integer
 	rts
 
-* Syntax          : LIGHTS OFF
 * Lights off
 
 lib3:
 	dc.w	0			; no library calls
-lightsoff:
-	move.b	#14,$ffff8800		; send info to sound chip
-	move.b	#6,$ffff8802		; send info to sound chip
+	movem.l	a0-a6,-(a7)		; save registers
+	move.b	#14,$ff8800		; send info to sound chip
+	move.b	#06,$ff8802		; send info to sound chip
+	movem.l	(a7)+,a0-a6		; restore registers
 	rts
 
-* Syntax          : X=XPEN
-** Xpen, get the x position of the light pen input
+* Xpen
+
 lib4:
 	dc.w	0			; no library calls
-*xpen:
 	clr.l	d1			; Clear d1
-	move.w	$ffff9220,d1		; Get value
+	move.w	$ff9220,d1		; Get value
 	andi.w	#1023,d1		; Mask unwanted data
 	move.l	d1,-(a6)		; Send to STOS
 	rts
 
-* Syntax          : FASTWIPE ADDR
 * Fastwipe
+
 lib5:
 	dc.w	0			; no library calls
-fastwipe:
 	move.l	(a6)+,d1		; get integer
 	move.l	d1,a0			; save screen address
 
@@ -213,114 +209,110 @@ fastwipe:
 
 	rts
 
-* Syntax          : X=PAKTYPE(ADDR)
 * Paktype
+
 lib6:
 	dc.w	0			; No library calls
-paktype:
 	move.l	(a6)+,d0		; Get integer
 	move.l	d0,a0			; Store address of file
 
 	cmp.l	#'SP20',(a0)		; Speed header
-	beq.s	spd			; Call routine
+	beq	spd			; Call routine
 
 	cmp.l	#'ATM5',(a0)		; Atomik header
-	beq.s	atmk			; Call routine
+	beq	atmk			; Call routine
 
 	cmp.l	#'Ice!',(a0)		; Ice header
-	beq.s	ic			; Call routine
+	beq	ic			; Call routine
 
 	cmp.l	#'AU5!',(a0)		; Automation header
-	beq.s	aut			; Call routine
+	beq	aut			; Call routine
 
 	cmp.l	#'ICE!',(a0)		; Ice V2.40 header
-	beq.s	ic2
+	beq	ic2
 
 	cmp.l	#'FIRE',(a0)		; Fire V2.0
-	beq.s	fire
+	beq	fire
 
 	cmp.l   #'SPv3',(a0)		; Speed V3.0
-	beq.s	spd3
+	beq	spd3
 
-	moveq.l	#0,d3			; Return value
+	move.l	#0,d3			; Return value
 	bra.s	ret			; Return
 
-spd:	moveq.l	#1,d3			; Speed found
+spd:	move.l	#1,d3			; Speed found
 	bra.s	ret			; Return
 
-atmk:	moveq.l	#2,d3			; Atomik found
+atmk:	move.l	#2,d3			; Atomik found
 	bra.s	ret			; Return
 
-ic:	moveq.l	#3,d3			; Ice found
+ic:	move.l	#3,d3			; Ice found
 	bra.s	ret			; Return
 
-aut:	moveq.l	#4,d3			; Automation found
+aut:	move.l	#4,d3			; Automation found
 	bra.s	ret			; Return
 
-ic2:	moveq.l	#5,d3			; Ice V2.40 found
+ic2:	move.l	#5,d3			; Ice V2.40 found
 	bra.s	ret			; Return
 
-fire:	moveq.l	#6,d3			; Fire V2.0 found
+fire:	move.l	#6,d3			; Fire V2.0 found
 	bra.s	ret
 
-spd3:	moveq.l	#7,d3			; Speed v3
+spd3:	move.l	#7,d3			; Speed v3
 
 ret:
 	move.l	d3,d1			; store in d1
 	move.l	d1,-(a6)		; d1 on stack
 	rts
 
-* Syntax          : DAC VOLUME VOL
 * Dac Volume
+
 lib7:
 	dc.w	0			; no library calls
-dacvolume:
 	move.l	(a6)+,d0		; Volume value
-	move.w	#%11111111111,$ffff8924	; Set mask value
+	move.w	#%11111111111,$ff8924	; Set mask value
 	move.w	#%10011000000,d1	; Set volume data
 	add.w	d0,d1			; Add data
-	move.w	d1,$ffff8922		; Set volume
+	move.w	d1,$ff8922		; Set volume
 	rts
 
-* Syntax          : X=EVEN(NUM)
 * Even
+
 lib8:
 	dc.w	0			; No library calls
-teven:
 	move.l	(a6)+,d0		; Get integer
 
 * Check number
 
 	btst	#0,d0			; Test bit 0 of d0
-	beq.s	yesev			; Number is even
+	beq	yesev			; Number is even
 
-	moveq.l	#0,d1			; Store false
-	bra.s	leav			; Branch to leave
+	move.l	#0,d1			; Store false
+	bra	leav			; Branch to leave
 
-yesev:	moveq.l	#-1,d1			; Store true
+yesev:	move.l	#-1,d1			; Store true
 
 leav:	move.l	d1,-(a6)		; expect integer
 	rts
 
-* Syntax          : SETPAL ADDR
 * Setpal
+
 lib9:
 	dc.w	0			; no library calls
-setpal:
 	move.l	(a6)+,d3		; get palette address
+	move.l	d3,a0			; store as address
 
-	move.l	d3,-(a7)		; palette pointer
+	move.l	a0,-(a7)		; palette pointer
 	move.w	#6,-(a7)		; setpalette
 	trap	#14			; call xbios
 	addq.l	#6,a7			; restore stack
 	move.l  #0,-(a6)
 	rts
 
-* Syntax          : X=SETPRT(VAR)
 * Setprt
+
 lib10:
 	dc.w	0			; no library calls
-setprt:
 	move.l	(a6)+,d1		; config
 	move.w	d1,-(a7)		; config on stack
 	move.w	#33,-(a7)		; setprt
@@ -328,15 +320,14 @@ setprt:
 	addq.l	#4,a7			; reset stack
 	rts
 
-* Syntax          : D CRUNCH ADDR
 * D crunch
+
 lib11:
 	dc.w	0			; no library calls
-d_crunch:
 	move.l	(a6)+,a0		; address
 
 	cmp.l	#'SP20',(a0)		; Speed header
-	beq.s	speed			; Call routine
+	beq	speed			; Call routine
 
 	cmp.l	#'ATM5',(a0)		; Atomik header
 	beq	atomik			; Call routine
@@ -354,7 +345,7 @@ d_crunch:
 	beq	fire_decrunch_2
 
 	cmp.l	#'SPv3',(a0)
-	beq.s	sped3
+	beq	sped3
 
 	rts
 
@@ -364,30 +355,35 @@ sped3:	movea.l	a0,a1
 
 	include	'd_crunch.s'
 
-* Syntax          : X=EPLACE
 * Eplace
+
 lib12:
 	dc.w	0			; no library calls
-eplace:
-	move.l	#$ffff8908,a0		; Get mixed address value
-	clr.l   -(a7)
-	lea     1(sp),a1
-	move.b	1(a0),(a1)+		; Get high byte
-	move.b	3(a0),(a1)+		; Get mid byte
-	move.b	5(a0),(a1)+		; Get low byte
 
-	move.l	(a7)+,-(a6)		; Store
+	move.l	#$ff8908,a0		; Get mixed address value
+	move.b	1(a0),d0		; Get high byte
+	move.b	3(a0),d1		; Get mid byte
+	move.b	5(a0),d2		; Get low byte
+
+	lea	.place(pc),a0
+
+	move.b	d0,1(a0)
+	move.b	d1,2(a0)
+	move.b	d2,3(a0)
+
+	move.l	(a0),-(a6)		; Store
 	rts
 
 .place:	ds.l	1
 
-* Syntax          : ELITE UNPACK ADDR1,ADDR2
 * Un pak
+
 lib13:
 	dc.w	0			; no library calls
-elite_unpak:
-	move.l	(a6)+,a1		; destination address
-	move.l	(a6)+,a0		; source address
+	move.l	(a6)+,d1		; destination address
+	move.l	d1,a1
+	move.l	(a6)+,d1		; source address
+	move.l	d1,a0
 
 	cmpi.b	#$80,(a0)		; check type flag
 	bne	stop			; not compressed
@@ -456,52 +452,60 @@ elite_unpak:
 stop:
 	rts
 
-* Syntax          : X=FOFFSET(N,ADDR)
 * Offset
+
 lib14:
 	dc.w	0			; no library calls
-foffset:
-	move.l	(a6)+,a1		; get address
-	move.l	(a6)+,d3		; get filenumber
+	move.l	(a6)+,d1		; get address
+	move.l	d1,a1			; store as address
+	move.l	(a6)+,d1		; get filenumber
 
-	addq.l	#2,a1			; bypass header
+	add.l	#2,a1			; bypass header
 
-	lsl #3,d3
-	move.l	4(a1,d3.w),d3			; Move offset value
+	cmp	#0,d1			; file zero?
+	beq	.no			; yes
 
+	sub.l	#1,d1			; rectify value
+
+.floop:
+	add.l	#8,a1			; add 8 to address
+	dbf	d1,.floop		; for d1 times
+
+.no:
+	add.l	#4,a1			; increase for file offset
+
+	move.l	(a1),d3			; Move offset value
 	move.l	d3,-(a6)		; Into return place
 	rts
 
-* Syntax          : ESTOP
 * Estop
+
 lib15:
 	dc.w	0			; no library calls
-estop:
-	move.w	#0,$ffff8900		; Start/stop sample
+	move.w	#0,$ff8900		; Start/stop sample
 	rts
 
-* Syntax          : X=JAR
 * Jar
+
 lib16:
 	dc.w	0			; no library calls
-jar:
+
 	move.l	$5a0,a0			; Does cookie exists
-	beq.s	.no_cookie		; no
+	beq	.no_cookie		; no
 
 	move.l	#-1,-(a6)		; True, does exist
-	bra.s	.end
+	bra	.end
 
 .no_cookie:
-	clr.l	-(a6)	; False cookie not available
+	move.l	#0,-(a6)	; False cookie not available
 
 .end:
 	rts
 
-* Syntax          : MIRROR OPT,ADDR,SYPOS,ADDR2,DYPOS,NUM
 * mirror
+
 lib17:
 	dc.w	0			; no library calls
-mirror:
 	move.l	(a6)+,d0		; Get Number Of Lines
 	move.l	(a6)+,d1		; Get Destination Y
 	move.l	(a6)+,a1		; Get Destination Address
@@ -509,82 +513,82 @@ mirror:
 	move.l	(a6)+,a2		; Get Source Address
 	move.l	(a6)+,d6		; Get Option
 
-	mulu.w	#160,d5			; Convert Y pos to Scan Line pos
+	muls.w	#160,d5			; Convert Y pos to Scan Line pos
 	add.l	d5,a2			; Add to start address
 
 	cmp	#1,d6			; Function 1?
 	beq	normal			; Calculate Normal end Y
 
 	cmp 	#2,d6			; Function 2?
-	beq		half			; Calculate Half end Y
+	beq	half			; Calculate Half end Y
 
 	cmp	#3,d6			; Function 3?
-	beq		double			; Calculate Double end Y
+	beq	double			; Calculate Double end Y
 
 main:
-	mulu.w	#160,d1			; y position
+	muls.w	#160,d1			; y position
 	add.l	d1,a1			; Add to Dest Address
 
 	movem.l a1-a6/d1-d7,-(a7)
 
 	cmp	#2,d6			; Function 2?
-	beq.s	strtb			; Half Size mirror
+	beq	strtb			; Half Size mirror
 
 	cmp	#3,d6			; Function 3?
-	beq.s	strtc			; Double Size mirror
+	beq	strtc			; Double Size mirror
 
 strta:					; Normal Size mirror
-	movem.l (a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,(a1)
-	movem.l 44(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,44(a1)
-	movem.l 88(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,88(a1)
-	movem.l 132(a2),d1-d7
-	movem.l d1-d7,132(a1)
+	MOVEM.L (A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,(A1)
+	MOVEM.L 44(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,44(A1)
+	MOVEM.L 88(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,88(A1)
+	MOVEM.L 132(A2),D1-D7
+	MOVEM.L D1-D7,132(A1)
 
-	lea     -160(a1),a1
-	lea	160(a2),a2
-	dbf     d0,strta
+	LEA     -160(A1),A1
+	LEA	160(A2),A2
+	DBF     D0,strta
 
 	bra	end_ref
 
 strtb:						; Half size mirror
-	movem.l (a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,(a1)
-	movem.l 44(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,44(a1)
-	movem.l 88(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,88(a1)
-	movem.l 132(a2),d1-d7
-	movem.l d1-d7,132(a1)
+	MOVEM.L (A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,(A1)
+	MOVEM.L 44(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,44(A1)
+	MOVEM.L 88(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,88(A1)
+	MOVEM.L 132(A2),D1-D7
+	MOVEM.L D1-D7,132(A1)
 
 	lea.l	-160(a1),a1			; Move dest up Two Scanline
 	lea.l	 320(a2),a2			; Move to source down a scan line
 	dbf	d0,strtb
 
-	bra.s 	end_ref
+	bra 	end_ref
 
 strtc:						; Double Size mirror
-	movem.l (a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,(a1)
-	movem.l 44(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,44(a1)
-	movem.l 88(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,88(a1)
-	movem.l 132(a2),d1-d7
-	movem.l d1-d7,132(a1)
+	MOVEM.L (A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,(A1)
+	MOVEM.L 44(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,44(A1)
+	MOVEM.L 88(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,88(A1)
+	MOVEM.L 132(A2),D1-D7
+	MOVEM.L D1-D7,132(A1)
 
 	lea.l	-160(a1),a1			; Move dest up two Scan lines
 
-	movem.l (a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,(a1)
-	movem.l 44(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,44(a1)
-	movem.l 88(a2),a3-a6/d1-d7
-	movem.l a3-a6/d1-d7,88(a1)
-	movem.l 132(a2),d1-d7
-	movem.l d1-d7,132(a1)
+	MOVEM.L (A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,(A1)
+	MOVEM.L 44(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,44(A1)
+	MOVEM.L 88(A2),A3-A6/D1-D7
+	MOVEM.L A3-A6/D1-D7,88(A1)
+	MOVEM.L 132(A2),D1-D7
+	MOVEM.L D1-D7,132(A1)
 
 	lea.l	-160(a1),a1
 	lea.l    160(a2),a2
@@ -611,42 +615,44 @@ double:
 	add.w	d2,d1
 	bra 	main
 
-* Syntax          : X=PERCENT(X,Y)
 * Percentage
+
 lib18:
 	dc.w	0			; no library calls
-percent:
 	move.l	(a6)+,d1
 	move.l	(a6)+,d0
 
-	moveq.l	#0,d4			; Zero d4
-	moveq.l	#99,d3			; Loop value
+	move.l	#0,d4			; Zero d4
+	move.l	#99,d3			; Loop value
 
 addlp:	add.l	d0,d4			; Add val1 to d4
 	dbra	d3,addlp		; loop
 
-	moveq.l	#1,d6			; One in d6
-	moveq.l	#0,d5			; Zero d5
-	bra.s	divlp
+	move.l	#1,d6			; One in d6
+	move.l	#0,d5			; Zero d5
+	bra	divlp
 
-divlp2:	addq.l	#1,d6			; Increase Counter
+divlp2:	add.l	#1,d6			; Increase Counter
 
 divlp:	add.l	d1,d5			; add val 1
 	cmp	d4,d5
-	blo.s	divlp2			; Loop
+	blo	divlp2			; Loop
 
 	move.l	d6,-(a6)		; Store in return value pos
 	rts
 
-* Syntax          : TINY UNPACK ADDR,ADDR2
-* Unpak tiny
+* Unpak tny
+
 lib19:
 	dc.w	0			; no library calls
-tiny_unpak:
-	move.l	(a6)+,a1		; store dest address
-	move.l	(a6)+,a0		; store source address
+
+	move.l	(a6)+,d1		; get integer
+	move.l	d1,a1			; store dest address
+	move.l	(a6)+,d1		; get integer
 	move.l  a6,-(a7)
-	move.l	a1,a6		; save dest addr
+	lea     addr(pc),a6
+	move.l	a1,(a6)		; save dest addr
+	move.l	d1,a0			; store source address
 	bsr	tiny			; de-pack
 	move.l (a7)+,a6
 	rts
@@ -689,10 +695,10 @@ t179ee:	move.b	(a4)+,(a1)+
 	lea	$9e(a1),a1
 	cmpa.l	d6,a1
 	blt.s	t17a06
-	lea	-31992(a1),a1
+	lea	$ffff8308(a1),a1
 	cmp.l	d4,a1
 	blt.s	t17a06
-	lea	-158(a1),a1
+	lea	$ffffff62(a1),a1
 t17a06:	dbra	d0,t179ee
 t17a0a:	cmp.l	d5,a5
 	blt.s	t179be
@@ -703,10 +709,10 @@ t17a18:	move.w	d3,(a1)+
 	lea	$9e(a1),a1
 	cmp.l	d6,a1
 	blt.s	t17a2e
-	lea	-31992(a1),a1
+	lea	$ffff8308(a1),a1
 	cmp.l	d4,a1
 	blt.s	t17a2e
-	lea	-158(a1),a1
+	lea	$ffffff62(a1),a1
 t17a2e:	dbra	d0,t17a18
 	cmpa.l	d5,a5
 	blt.s	t179be
@@ -715,13 +721,15 @@ t17a2e:	dbra	d0,t17a18
 	rts
 
 * find out resolution and palette
+
 t_getpal:
 	cmpi.b	#2,(a0)+		; Color mode?
 	ble.s	t_color
 	addq.l	#4,a0
 t_color:
 	moveq	#31,d0			; install palette
-	lea	32000(a6),a2
+	move.l	(a6),a2
+	lea	32000(a2),a2
 t_copypal:
 	move.b	(a0)+,(a2)+
 	dbra	d0,t_copypal
@@ -729,42 +737,44 @@ t_copypal:
 	lsl.w	#8,d1
 	move.b	(a0)+,d1
 	addq.l	#2,a0
-	movea.l	a0,a5			; beginning of Data
+	movea.l	a0,a5		; beginning of Data
 	ext.l	d1
 	adda.l	d1,a0
-	movea.l	a0,a4			; end of Data
+	movea.l	a0,a4		; end of Data
 	moveq	#1,d0
 	rts
 
-* Syntax          : X=PAKSIZE(ADDR)
+addr:
+	ds.l	1
+
 * Paksize
+
 lib20:
 	dc.w	0			; no library calls
-paksize:
 	move.l	(a6)+,a0		; get address
 
 	cmp.l	#'SP20',(a0)		; Speed header
-	beq.s	spd2			; Call routine
+	beq	spd2			; Call routine
 
 	cmp.l	#'ATM5',(a0)		; Atomik header
-	beq.s	atmk2			; Call routine
+	beq	atmk2			; Call routine
 
 	cmp.l	#'Ice!',(a0)		; Ice header
-	beq.s	ic_2			; Call routine
+	beq	ic_2			; Call routine
 
 	cmp.l	#'AU5!',(a0)		; Automation header
-	beq.s	aut2			; Call routine
+	beq	aut2			; Call routine
 
 	cmp.l	#'ICE!',(a0)		; Ice V2.40 header
-	beq.s	ic22
+	beq	ic22
 
 	cmp.l	#'FIRE',(a0)		; Fire V2.0
-	beq.s	fire2
+	beq	fire2
 
 	cmp.l	#'SPv3',(a0)
-	beq.s	spd2
+	beq	spd2
 
-	moveq.l	#0,d3			; Return value
+	move.l	#0,d3			; Return value
 	bra.s	ret2			; Return
 
 spd2:
@@ -794,23 +804,21 @@ ret2:
 	move.l	d3,-(a6)		; Store num
 	rts
 
-* Syntax          : TREBLE TREB
 * Treble
+
 lib21:
 	dc.w	0			; No library calls
-treble:
 	move.l	(a6)+,d0		; Treble value
-	move.w	#%11111111111,$ffff8924	; Set mask value
+	move.w	#%11111111111,$ff8924	; Set mask value
 	move.w	#%10010000000,d1	; Set treble data
 	add.w	d0,d1			; Add data
-	move.w	d1,$ffff8922		; Set treble
+	move.w	d1,$ff8922		; Set treble
 	rts
 
-* Syntax          : X=SPECIAL KEY(I)
 * Special key
+
 lib22:
 	dc.w	0			; No library calls
-special:
 	move.l	(a6)+,d3		; Save return
 
 	move.w	d3,-(sp)		; Shift status
@@ -821,84 +829,103 @@ special:
 	move.l	d0,-(a6)		; Return value
 	rts
 
-* Syntax          : BASS BAS
 * Bass
+
 lib23:
 	dc.w	0			; No library calls
-*bass:
 	move.l	(a6)+,d0		; Bass value
-	move.w	#%11111111111,$ffff8924	; Set mask value
+	move.w	#%11111111111,$ff8924	; Set mask value
 	move.w	#%10001000000,d1	; Set bass data
 	add.w	d0,d1			; Add data
-	move.w	d1,$ffff8922		; Set bass
+	move.w	d1,$ff8922		; Set bass
 	rts
 
-* Syntax          : X=FSTART(N,ADDR)
 * Fstart
+
 lib24:
 	dc.w	0			; No library calls
-fstart:
-	move.l	(a6)+,a1		; get address
-	move.l	(a6)+,d3		; get filenumber
+	move.l	(a6)+,d1		; get address
+	move.l	d1,a1			; store as address
+	move.l	(a6)+,d1		; get filenumber
 
 	move.l	a1,a2			; copy address
-	addq.l	#2,a1			; bypass header
+	add.l	#2,a1			; bypass header
 
-	lsl #3,d3
-	move.l	4(a1,d3.w),d3			; Move value
+	cmp	#0,d1			; file zero?
+	beq	.no2			; yes
+
+	sub.l	#1,d1			; rectify value
+
+.floop2:
+	add.l	#8,a1			; add 8 to address
+	dbf	d1,.floop2		; for d1 times
+
+.no2:
+	add.l	#4,a1			; increase for file offset
+
+	move.l	(a1),d3			; Move offset value
 	add.l	a2,d3			; Add address to find start
 
 	move.l	d3,-(a6)		; Into return place
 	rts
 
-* Syntax          : HCOPY X
 * hardcopy off
-lib25:			; No library calls
+
+lib25:
 	dc.w	0
-hardcopy:
 	move.l	(a6)+,d1
 
 	cmp	#1,d1
-	beq.s	turnon
+	beq	turnon
 
-	tst.w d1
-	bne.s	hardcopyret
+	cmp	#0,d1
+	beq	turnoff
+
+	rts
+
+turnon:
+	move.w	#$FFFF,$4ee
+	rts
+
 turnoff:
 	move.w	#2,$4ee
-turnon:
-	move.w	#-1,$4ee
-	rts
-hardcopyret:
 	rts
 
-* Syntax          : X=FLENGTH(N,ADDR)
 * Flength
+
 lib26:
 	dc.w	0			; no library calls
-flength:
-	move.l	(a6)+,a1		; get address
-	move.l	(a6)+,d3		; get filenumber
+	move.l	(a6)+,d1		; get address
+	move.l	d1,a1			; store as address
+	move.l	(a6)+,d1		; get filenumber
 
-	addq.l	#2,a1			; bypass header
+	add.l	#2,a1			; bypass header
 
-	lsl #3,d3
-	move.l	0(a1,d3.w),d3			; Move value
-	
+	cmp	#0,d1			; file zero?
+	beq	.no3			; yes
+
+	sub.l	#1,d1			; rectify value
+
+.floop3:
+	add.l	#8,a1			; add 8 to address
+	dbf	d1,.floop3		; for d1 times
+
+.no3:
+	move.l	(a1),d3			; Move offset value
 	move.l	d3,-(a6)		; Into return place
 	rts
 
-* Syntax          : CA UNPACK ADDR,ADDR2
 * ca_unpack
+
 lib27:
 	dc.w	0			; No library calls
-ca_unpack:
 	move.l	(a6)+,a1		; Destination address
 	move.l	(a6)+,a0		; Source address
 
 	movem.l	a0-a1,-(sp)		; Store addresses
 	lea	2(a0),a0
 
-	bra.s	get_ca_res		; Picture rez + offset
+	bra	get_ca_res		; Picture rez + offset
 
 ca_end:
 	movem.l	(sp)+,a0-a1		; get source & destination address
@@ -915,20 +942,20 @@ ca_pal:
 
 get_ca_res:
         cmp.w 	#$102,(a0)
-        beq.s 	high_rz			; High rez
+        beq 	high_rz			; High rez
 
         cmp.w 	#$101,(a0)
-        beq.s 	medium_rz		; Medium rez
+        beq 	medium_rz		; Medium rez
 
 low_rez:
 	lea.l	34(a0),a0		; Low rez offset
 	move.w	#15,d1			; No. cols for low res
-	bra.s 	ca_start
+	bra 	ca_start
 
 medium_rz:
 	lea.l 	10(a0),a0		; Medium rez offset
 	move.w	#3,d1			; No. cols for medium res
-	bra.s 	ca_start
+	bra 	ca_start
 
 high_rz:
 	lea.l	2(a0),a0		; High rez offset
@@ -1062,11 +1089,10 @@ loop3:  move.b    d2,(a2)
 drin3:  dbra      d1,loop3
         bra       main1
 
-* Syntax          : X=CA PACK ADDR,ADDR2,PAL,MODE
 * Crack art picture compacter
+
 lib28:
-	dc.w	0			; no library calls
-ca_pack:
+	dc.w	0
 	move.l	(a6)+,d0		; Resolution
 	move.l	(a6)+,a2		; Palette address
 	move.l	(a6)+,a1		; Destination address
@@ -1075,10 +1101,10 @@ ca_pack:
 	move.w	#$4341,(a1)+		; CA header
 
 	cmp.w	#2,d0
-	beq.s	ca_high
+	beq	ca_high
 
 	cmp.w	#1,d0
-	beq.s	ca_medium
+	beq	ca_medium
 
 	move.w  #$100,(a1)+		; Low res
 	move.w 	#15,d0			; 16 colours
@@ -1228,11 +1254,11 @@ endwhile:
 endprg: moveq   #0,d0
         move.w  d4,d0           ; L„nge des komprimierten Bildes
 
-        movem.l (sp)+,a0-a1
+	movem.l (sp)+,a0-a1
         movem.l (sp)+,d1-a6
-        add.w	d1,d0
-        move.l	d0,-(a6)
-        rts
+	add.w	d1,d0
+	move.l	d0,-(a6)
+	rts
 
 ; ========================================================= compress
 ; In d1.b ist das Byte, in d2.w die Anzahl
@@ -1344,10 +1370,8 @@ moredelta:
 offset2: dc.l 160,8,80,1,2,4,320,640,480,0
 shortest: dc.l 0,-1
 
-* Syntax          : BCLS ADDR,SCAN
 lib29:
 	dc.w	0		; no library calls
-*bcls:
 	move.l	(a6)+,d0	; number of lines
 	move.l	(a6)+,a0	; get address
 
@@ -1376,40 +1400,53 @@ lib29:
 	dbf	d0,.loop
 	rts
 
-* Syntax          : X=COOKIE(STR$)
 * Cookie
+
 lib30:
-	dc.w	0			; no library calls
-cookie:
+	dc.w	0
 	move.l	(a6)+,a0
 	move.w	(a0)+,d3		; Get length of string
 	cmp	#4,d3			; String 4 bytes long?
-	bne.s	.out			; No, out of routine, signal error
-	move.l  (a0),d2
+	bne	.out			; No, out of routine, signal error
 
-	move.l	$5a0,a0			; Get address of cookie jar
-	move.l	a0,d3
-	beq.s	.out
+	cmpi.l	#"_CPU",(a0)		; Processor type
+	beq	.correct		; Valid
 
-.loop:	move.l	(a0)+,d0		; Identifier
-	move.l	(a0)+,d3		; Cookie value
+	cmpi.l	#"_VDO",(a0)		; Video shifter type
+	beq	.correct		; Valid
 
-	cmp.l	d2,d0			; Found data yet?
-	beq.s	.fin
-	tst.l	d0
-	bne.s	.loop
+	cmpi.l	#"_SND",(a0)		; Sound chips present
+	beq	.correct		; Valid
 
-.out:
-	moveq	#0,d3
-.fin:
-	move.l	d3,-(a6)
-	rts
+	cmpi.l	#"_MCH",(a0)		; Machine type
+	beq	.correct		; Valid
 
-* Syntax          : EPLAY STRT,LENGTH,SPEED,MODE,PLAYMODE
+	cmpi.l	#"_SWI",(a0)		; Config switches
+	beq	.correct		; Valid
+
+	cmpi.l	#"_FRB",(a0)		; Fast ram Buffer
+	beq	.correct		; Valid
+
+.out:	move.l	#-1,-(a6)		; Invalid operation
+	bra	.fin			; Branch to end of routine
+
+.correct:
+	move.l	$5a0,a1			; Get address of cookie jar
+
+.loop:	move.l	(a1)+,d0		; Identifier
+	move.l	(a1)+,d1		; Cookie value
+
+	cmp.l	(a0),d0			; Found data yet?
+	bne	.loop
+
+	move.l	d1,-(a6)
+
+.fin:	rts
+
 ** STE play
+
 lib31:
-	dc.w	0			; no library calls
-steplay:
+	dc.w	0
 	move.l	(a6)+,d0		; Get playvar 0=stop etc..
 	move.l	(a6)+,d1		; Get stereo/mono 1=mono 0=stereo
 	move.l	(a6)+,d2		; Get speed 0,1,2,3
@@ -1420,37 +1457,36 @@ steplay:
 
 	mulu	#$80,d1			; Normalize stereo/mono mode
 
-	clr.w	d0			; Combine frequency and mode
+	move.w	#0,d0			; Combine frequency and mode
 	move.b	d2,d0		; Save frequency
 	or.w	d1,d0			; Combine data
-	move.w	d0,$ffff8920		; Store in DAC MODE address
+	move.w	d0,$ff8920		; Store in DAC MODE address
 
 	move.l	a1,d0		; Store start address
 	move.l	d0,d1
 	add.l	a0,d1		; Create end address
 
-	move.l	#$ffff8902,a2		; Get frame start HIGH byte
+	move.l	#$ff8902,a2		; Get frame start HIGH byte
 	movep.w	d0,3(a2)		; Store mid & low bytes
 	swap	d0			; Reverse data
 	move.b	d0,1(a2)		; Store high byte
 
-	move.l	#$ffff890e,a2		; Get frame end HIGH byte
+	move.l	#$ff890e,a2		; Get frame end HIGH byte
 	movep.w	d1,3(a2)		; Store mid & low bytes
 	swap	d1			; Reverse data
 	move.b	d1,1(a2)		; Store high byte
 
 	move.w (a7)+,d0
-	move.w	d0,$ffff8900	; Start/stop sample
+	move.w	d0,$ff8900	; Start/stop sample
 	rts
 	.even
 
-* Syntax          : Y=YPEN
 * Ypen
+
 lib32:
 	dc.w	0			; no library calls
-*ypen:
 	clr.l	d1			; Clear d1
-	move.w	$ffff9222,d1		; Get value
+	move.w	$ff9222,d1		; Get value
 	andi.w	#1023,d1		; Mask unwanted data
 	move.l	d1,-(a6)		; Send to STOS
 	rts
