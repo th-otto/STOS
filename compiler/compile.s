@@ -3032,8 +3032,8 @@ InbPaf: move.l otrap7(a6),a2
         move.l adk(a5),a0
         move.w 8(a0),ancdb8(a5)
         move.l $400,anc400(a5)
-        lea inter50(pc),a0 /* FIXME: self-modifying */
-        move.l a5,2(a0)                 ;LOKE l'adresse de la table
+        lea inter50(pc),a0
+        move.l a5,inter50_table-inter50(a0)                 ;LOKE l'adresse de la table
         move.l a0,$400
 
 ; Initialise les extensions
@@ -3109,7 +3109,8 @@ FxFl1:  move.b #"0",(a0)      ;Ramene toujours la chaine nulle
         rte
 **********************************************
 ; ENTREE DES INTERRUPTIONS 50 HERZ
-inter50:lea $ffffff,a2
+inter50_table: dc.l 0
+inter50:move.l inter50_table(pc),a2
         addq.l #1,timer(a2)                ;timer!
         tst.l waitcpt(a2)
         beq.s i5
@@ -3226,10 +3227,9 @@ fingem: move.l anc400(a5),$400
 ; Enleve la workstation
         lea otrp1(pc),a0
         move.l $84,(a0)
+        move.l work(a5),vdihackwork-otrp1(a0)
         lea trp1(pc),a0
         move.l a0,$84
-        lea trp2(pc),a0
-        move.l work(a5),2(a0)
         move.l contrl(a5),a0
         move.w #101,(a0)
         clr 2(a0)
@@ -3285,17 +3285,29 @@ ErrM1:  move.l spile(a5),sp
         trap #1
 PaRt:   rts
 ; Fausse trappe 1
-trp1:   cmp.b #$48,6(sp)
-        beq.s trp2
-        cmp.b #$49,6(sp)
-        beq.s trp3
+trp1:   btst.b  #5,(sp)     /* are we in supervisor mode? */
+        bne trp2
+        move.l  usp,a0      /* no, check user stack */
+        move.w (a0),d0
+        bra trp4
+trp2:   tst.w   $59e
+        beq     trp3
+        move.w  8(sp),d0
+        bra     trp4
+trp3:   move.w  6(sp),d0
+trp4:   cmp.w #$48,d0
+        beq.s trp5
+        cmp.w #$49,d0
+        beq.s trp6
         move.l otrp1(pc),-(sp)
         rts
-trp2:   moveq.l #-1,d0
+trp5:   move.l vdihackwork(pc),d0          ;"MALLOC" ! /* WTF? */
         rte
-trp3:   clr.l d0
+trp6:   clr.l d0
         rte
 otrp1:  dc.l 0
+vdihackwork: dc.l 0
+
 **********************************************
 cvdipb: dc.l 0,0,0,0,0
 **********************************************

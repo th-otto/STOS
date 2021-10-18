@@ -6106,9 +6106,9 @@ trp2:   tst.w   $59e
         move.w  8(sp),d0
         bra     trp4
 trp3:   move.w  6(sp),d0
-trp4:   cmp #$48,d0
+trp4:   cmp.w #$48,d0
         beq.s trp5
-        cmp #$49,d0
+        cmp.w #$49,d0
         beq.s trp6
         move.l adtr(pc),-(sp)
         rts

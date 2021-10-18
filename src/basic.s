@@ -2306,14 +2306,14 @@ loadvect: move.l anc400,$400
           moveq #31,d0        ;arret interruptions de la trappe #5
           trap #5
 ; enleve la workstation
-          move.l $84,buffer   ;met la fausse trappe
+          move.l $84,otrp1   ;met la fausse trappe
           move.l #trp1,$84
           move #101,contrl
           clr contrl+2
           clr contrl+6
           move grh,contrl+12
           jsr vdi
-          move.l buffer,$84   ;remet la vraie trappe
+          move.l otrp1,$84   ;remet la vraie trappe
 ; remet tout le reste
           lea vectors+4,a6
           move.l (a6)+,$8     ;remet BUS ERROR
@@ -14281,7 +14281,7 @@ md12:     move.w (a0)+,(a1)+            ;poke dans la table
 md13:     move.w (a0)+,(a1)+
           dbra d0,md13
 ; initialisation d'une workstation
-          move.l $84,buffer
+          move.l $84,otrp1
           move.l #trp1,$84    ;init fausse trappe #1
           move #100,contrl
           move #0,contrl+2
@@ -14301,7 +14301,7 @@ md13:     move.w (a0)+,(a1)+
           bsr vdi
           move.w contrl+12,d0
           move d0,grh         ;graphic handle
-          move.l buffer,$84   ;remet la trappe1
+          move.l otrp1,$84   ;remet la trappe1
 
 ;pas de CLIP
           bsr clipoff
@@ -14337,16 +14337,27 @@ isc:      clr.w (a0)+
           rts
 
 ; fausse trappe 1
-trp1:     cmpi.w #$48,6(sp)
-          beq.s trp2
-          cmpi.w #$49,6(sp)
-          beq.s trp3
-          move.l buffer,-(sp)
-          rts
-trp2:     move.l #work,d0               ;"MALLOC" !
-          rte
-trp3:     clr.l d0                      ;"MFREE" !
-          rte
+trp1:   btst.b  #5,(sp)     /* are we in supervisor mode? */
+        bne trp2
+        move.l  usp,a0      /* no, check user stack */
+        move.w (a0),d0
+        bra trp4
+trp2:   tst.w   $59e
+        beq     trp3
+        move.w  8(sp),d0
+        bra     trp4
+trp3:   move.w  6(sp),d0
+trp4:   cmp.w #$48,d0
+        beq.s trp5
+        cmp.w #$49,d0
+        beq.s trp6
+        move.l otrp1(pc),-(sp)
+        rts
+trp5:   move.l #work,d0          ;"MALLOC" ! /* WTF? */
+        rte
+trp6:   clr.l d0
+        rte
+otrp1:  dc.l 0
 
 ; Initialisation des zones des touches de fonction
 zofonc:	clr.w mousflg
