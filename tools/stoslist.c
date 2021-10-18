@@ -762,7 +762,7 @@ static struct extension const external_extensions[] = {
 	{ 'Q', 0x88, "track unpack" },
 	{ 'Q', 0x89, "track name" },
 
-    /* GPB: 32 commands */
+    /* GBP: 32 commands */
 	{ 'P', 128, "lights on" },
 	{ 'P', 129, "pready" },
 	{ 'P', 130, "lights off" },
