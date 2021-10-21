@@ -1,0 +1,8 @@
+compiler\musfalc.lib
+.L[-S=0]
+.S[-S]
+.S[-DCOMPILER=1]
+.S[-DFALCON=1]
+.S[-I..\src]
+=
+musfalc.s

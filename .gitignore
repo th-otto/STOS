@@ -19,3 +19,4 @@ a.out
 *.ec?
 *.lib
 stoslist
+bin2c

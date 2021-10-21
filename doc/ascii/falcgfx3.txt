@@ -1,0 +1,804 @@
+**************************************************************************
+*                                                                        *
+*                                                                        *
+*          T h e   G R A F I X  ( I I I )   E x t e n s i o n.           *
+*                                                                        *
+*        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         *
+*                                                                        *
+*           F o r  t h e  S T ( e ) / T T / F a l c o n  0 3 0           *
+*                                                                        *
+*      (c) 1995, 1996, 1997 & 1998 Anthony Hoskin.                       *
+*                                  45 Wythburn Road,                     *
+*                                  Newbold,                              *
+*                                  Chesterfield,                         *
+*                                  Derbyshire,                           *
+*                                  S41 8DP. (U.K.)                       *
+*                                                                        *
+*                                                                        *
+*                Current version: v0.2 (25th March 1998)                 *
+*                                                                        *
+*                                                                        *
+*                       Conditions Of Registration                       *
+*                                                                        *
+*    You  may  NOT  distribute  this  software  or  its   associated     *
+*    program/document  files (either in whole or in part) in  anyway     *
+*    shape or form.   (Any translation of this document  file   into     *
+*    another language is  permitted and  will  be restricted to  the     *
+*    same  conditions  as  this   English   language   version  with     *
+*    respect  to  any other changes.)  You  are authorised  to  make     *
+*    personal  back-ups of the software provided they  are  complete     *
+*    and unchanged in any way.                                           *
+*                                                                        *
+*                                                                        *
+*                               Disclaimer                               *
+*                                                                        *
+*    This  software is for the Atari ST(e)/TT/Falcon  030  computers     *
+*    only.  I take no responsibility whatsoever in the use/misuse of     *
+*    this software.                                                      *
+*                                                                        *
+*                                                                        *
+*                          System Requirements                           *
+*                                                                        *
+*              Machine   :    Any Atari ST(e)/TT/Falcon 030              *
+*              RAM       :    Runs on machines with 512kb - 14mb         *
+*              Monitor   :    TV, Mono/Colour monitor [RGB & VGA]        *
+*              Software  :    STOS Basic v2.6 upwards                    *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+*                                Contents                                *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+* Introduction To The Falcon 030 GRAFIX (III) Extension v0.2 ... Page  1 *
+* Falcon 030 GRAFIX (III) Extension v0.2 command reference   ... Page  2 *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+**************************************************************************
+**************************************************************************
+*       Introduction To The Falcon 030 GRAFIX (III) Extension v0.2       *
+**************************************************************************
+
+
+                    IMPORTANT NOTICE FOR ST/STe USERS
+
+
+The GRAFIX (III) extension - although originally written specifically  for 
+the  Falcon  030 is more compatible with  ST/STe  machines.  The  commands 
+listed  below  which  are preceded by the asterisk  -  '*'  character  are 
+available to ST(e) users and I've provided this compatibility version just 
+for you STer's out there to prove that you needn't have a Falcon to  enjoy 
+splashings  of colour - but a Falcon does increase the number  of  colours 
+somewhat. However, all the other commands are not available to ST(e) users 
+- unless their machines are fitted with 68030 CPU's [the 68030 CPU has  an 
+enhanced instruction set which the graphics commands take advantage of].
+
+   This extension requires the following patched STOS library files :-
+
+   Interpreter :    'SPRIT101.BIN' ->   Main STOS folder.
+   Compiler    :    'SPRIT101.LIB' ->   Compiler folder (available only to 
+                                        registered users).
+
+And  performs  the functions of the printing of STOS  characters  and  the 
+drawing of graphics on the Falcon's 16/256 colour and TRUE-COLOUR screen.
+
+
+             A quick summary of the commands is listed below:
+
+                            Printing commands
+                            =================
+
+                 *  _falc pen                * _falc print
+                 *  _falc paper              * _falc locate
+                 *  _falc xcurs              * _stosfont
+                 *  _falc ycurs              * _charset addr
+                 *  _falc multipen status    * _stos charwidth
+                 *  _falc multipen on        * _stos charheight
+                 *  _falc multipen off
+
+                             Drawing commands
+                             ================
+
+This   is  where  this  extension  really  becomes  useful.    Using these 
+commands  we can now draw real graphics in the Falcon's 16/256 colour  and 
+TRUE-COLOUR video modes. Unless specifically stated otherwise, all of this 
+extensions commands are compatible with the ST compatibility resolutions.
+
+                    _falc ink                _falc plot
+                    _falc draw mode          _falc line
+                    _def linepattern         _falc box
+                    _def stipple             _falc bar
+                    _get pixel               _falc polyfill
+                    _falc polyline           _falc contourfill
+                    _falc circle             _falc ellipse
+                    _falc earc               _falc arc
+
+
+
+       ************************************************************
+       * Falcon 030 GRAFIX (III) Extension v0.2 Command Reference *
+       ************************************************************
+
+   This command reference details the command in the following manner:-
+
+Command   :-   The command name.
+Machine   :-   Compatibility with specific machines.
+Version   :-   The GRAFIX (III) extension version(s) in which the  command 
+               is available.
+
+Syntax    :-   The syntax used for the command.
+Action    :-   A description of the action(s) taken by the command.
+
+Important :-   All  of  the  following commands  operate  on  the  current 
+               LOGICal  screen  so if you can't see anything  being  drawn 
+               ensure that the PHYSICal screen is the same as the  LOGICal 
+               screen :-
+
+               _falc plot, _falc line, _falc box and _falc bar
+               _falc print and _falc centre
+
+--------------------------------------------------------------------------
+
+Command   :-   _stosfont
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _stosfont FNT_NUM
+Action    :-   This command selects the STOS character set (1 - 3) for all 
+               subsequent _falc print operations.
+
+               N.B. FNT_NUM = 1    :STOS Low-rez  8x8  character set.
+                            = 2    :STOS Med-rez  8x8  character set.
+                            = 3    :STOS High-rez 8x16 character set.
+
+--------------------------------------------------------------------------
+
+Command   :-   _stos charwidth
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   CHAR_WIDTH=_stos charwidth
+Action    :-   Returns the width (in pixels) of the character cell for the 
+               current STOS font (set via _stosfont N).  For all  versions 
+               of  this  extension where you may as yet only  specify  the 
+               standard STOS fonts via _stosfont N where N=1=LOW-REZ  8*8, 
+               N=2=MED-REZ  8*8 and N=3=HIGH-REZ 8*16 the  value  returned 
+               will always be 8.
+
+--------------------------------------------------------------------------
+
+Command   :-   _stos charheight
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   CHAR_HEIGHT=_stos charheight
+Action    :-   Returns  the height (in pixels) of the character  cell  for 
+               the current STOS font (set via _stosfont N).  Return values 
+               are LOW-REZ = 8, MED-REZ = 8 and HIGH-REZ = 16.
+
+--------------------------------------------------------------------------
+
+Command   :-   _charset addr
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   ADDR=_charset addr(CHAR_SET)
+Action    :-   Returns the address of the STOS character set specified  by 
+               CHAR_SET (1 to 3).
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc locate
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc locate X,Y
+Action    :-   This is equivalent to the standard STOS locate X,Y but this 
+               version is used for the _falc print/centre operations.
+
+               N.B. X,Y = 0,0 sets the cursor to the left uppermost screen 
+                    position as does the STOS locate command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc print
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc print A$
+Action    :-   This  is  equivalent to the standard STOS  print  but  this 
+               version  is  used  for the _falc print  operations  in  the 
+               Falcon's 16/256 colour video modes.
+
+               N.B. This  command  does NOT issue  an  automatic  carriage 
+                    return  plus linefeed.  If this is required  then  you 
+                    must use the command as suggested in this example:-
+
+               10 A$="Print something"+chr$(13)+chr$(10)
+               20 _falc print A$
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc centre
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc centre A$
+Action    :-   This  is equivalent to the standard STOS centre string  but 
+               this  version is used for the centred print  operations  in 
+               the Falcon's 16/256 colour video modes.
+
+               N.B. This  command  does NOT issue  an  automatic  carriage 
+                    return  plus linefeed.  If this is required  then  you 
+                    must use the command as suggested in this example:-
+
+               10 A$="Print something"+chr$(13)+chr$(10)
+               20 _falc locate 1,5
+               30 _falc centre A$
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc pen
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc pen COL_REG             (For 2/4/16/256 colour modes)
+               _falc pen RED,GREEN,BLUE      (For TRUE-Colour modes)
+
+Action    :-   This  command  sets  the  pen  colour  for  all  subsequent 
+               _falc print operations. In the Falcon's 16 colour modes the 
+               value of COL_REG ranges between 0 to 15.  (256 colour modes 
+               the value of COL_REG ranges between 0 to 255).
+
+               In the Falcon's TRUE-COLOUR mode a palette is not available 
+               so  the  pen colour is set by selecting the  required  RED, 
+               GREEN and BLUE components, where:-
+
+               RED       =    0 - 31    \    These RED, GREEN, BLUE
+               GREEN     =    0 - 31     >   component values allow any
+               BLUE      =    0 - 31    /    choice from 32768 colours.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc paper
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc paper COL_REG           (For 2/4/16/256 colour modes)
+               _falc paper RED,GREEN,BLUE    (For TRUE-Colour modes)
+               _falc paper -1                (Transparent paper)
+
+Action    :-   This command sets the paper colour for all subsequent _falc 
+               print operations. In the Falcon's 16 colour modes the value 
+               of  COL_REG ranges between 0 to 15.  (256 colour modes  the 
+               value of COL_REG ranges between 0 to 255).
+
+               _falc  paper  -1 causes a TRANSPARENT  paper  colour,  i.e. 
+               whatever  is underneath the character will be seen  through 
+               the   paper   colour.   (16/256  colour   and   TRUE-COLOUR 
+               compatible).
+
+               In the Falcon's TRUE-COLOUR mode a palette is not available 
+               so  the paper colour is set by selecting the required  RED, 
+               GREEN and BLUE components, where:-
+
+               RED       =    0 - 31    \    These RED, GREEN, BLUE
+               GREEN     =    0 - 31     >   component values allow any
+               BLUE      =    0 - 31    /    choice from 32768 colours.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc multipen off
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc multipen off
+Action    :-   Turns  off the multipen option.  All  subsequent  character 
+               output will use the colour index last set by _falc pen.
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc multipen on
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc multipen on STEP                (16/256 colour modes)
+               _falc multipen on R_INC,GR_INC,BL_INC (True-colour modes)
+
+Action    :-   When  this  command is issued all  subsequent  _falc  print 
+               operations will output characters in multicolour.  This  is 
+               done as follows (for 16/256 colour video modes) :-
+
+               100 _falc pen 5 : _falc paper 0
+               110 COLR_STEP=1
+               120 _falc multipen on COLR_STEP
+               130 _falc print "A"
+               140 _falc multipen off
+
+               In the above example the string "A" is output to the screen 
+               with each of the characters scanlines in the colours:-
+
+               Character Scanline       Colour index
+
+                     *****         Colour #5 (initially set by _falc pen).
+                    **   **        Colour #6 (_falc pen colour+COLR_STEP)
+                    **   **        Colour #7
+                    **   **        Colour #8      and so on .....
+                    *******        Colour #10
+                    **   **        Colour #11
+                    **   **        Colour #12
+
+               In  simple terms the pen colour index is incremented  after 
+               the output of each scanline of the character.
+
+Enhanced  :-   In the Falcon 030's True-Colour modes the STEP value  would 
+               not be of much use so in these modes there are 3 parameters 
+               (one  for each colour component) which specify the  amounts 
+               by  which  the RED,  GREEN and BLUE components of  the  pen 
+               colour are to be incremented.
+
+Example   :-   100 _falc pen 5,8,2
+               110 _falc paper 0,0,0
+               120 RED_INCR=2 : GREEN_INCR=1 : BLUE_INCR=2
+               130 _falc multipen on RED_INCR,GREEN_INCR,BLUE_INCR
+               140 _falc print "A"
+               150 _falc multipen off
+
+               In the above example the string "A" is output to the screen 
+               with each of the characters scanlines in the colours:-
+
+               Character Scanline       Colour index
+
+                     *****         RED=5,GREEN=8,BLUE=2
+                    **   **        RED=7,GREEN=9,BLUE=4     (5+2,8+1,2+2)
+                    **   **        RED=9,GREEN=10,BLUE=6    (7+2,9+1,4+2)
+                    **   **
+                    *******                  and so on ......
+                    **   **
+                    **   **
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc multipen status
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   X=_falc multipen status
+Action    :-   This  command gets the multipen colour status for  all  the 
+               _falc print operations.  Returns X=TRUE (-1) if multipen on 
+               (active) else FALSE (0).
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc xcurs
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   X=_falc xcurs
+Action    :-   Returns X with the current _falc print cursor X position.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc ycurs
+Machine   :-   All ST's/ST(e)'s/TT's and Falcon's.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   Y=_falc ycurs
+Action    :-   Returns Y with the current _falc print cursor Y position.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc ink
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc ink COL_REG                 (For 16/256 colour modes)
+               _falc ink RED,GREEN,BLUE          (For TRUE-Colour modes)
+
+Action    :-   Sets the ink colour to colour register COL_REG for ALL  the 
+               16/256  colour  video  modes  plot,   draw,   box  and  bar 
+               operations. This is equivalent to the STOS ink command.
+
+               In the Falcon's 16 colour modes the value of COL_REG ranges 
+               between 0 to 15.  (In 256 colour modes the value of COL_REG 
+               ranges between 0 to 255).
+
+               In the Falcon's TRUE-COLOUR mode a palette is not available 
+               so  the  ink colour is set by selecting the  required  RED, 
+               GREEN and BLUE components, where:-
+
+               RED       =    0 - 31    \    These RED, GREEN, BLUE
+               GREEN     =    0 - 31     >   component values allow any
+               BLUE      =    0 - 31    /    choice from 32768 colours.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc draw mode
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc draw mode GR_MODE
+Action    :-   Sets  the  graphics  writing mode to GR_MODE  for  ALL  the 
+               16/256  colour  video  modes  plot,   draw,   box  and  bar 
+               operations.  This  is  equivalent to the  STOS  gr  writing 
+               command.
+
+
+               GR_MODE   =    1    Replace mode (default mode)
+               GR_MODE   =    2    XOR mode
+               GR_MODE   =    3    Transparent mode
+               GR_MODE   =    4    Inverse transparent mode
+
+Important :-   Currently,  this command has no effect in TRUE-COLOUR video 
+               modes and by default behaves as Replace mode.
+
+--------------------------------------------------------------------------
+
+Command   :-   _def linepattern
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _def linepattern PATTERN
+Action    :-   Defines  the  line pattern for ALL the  16/256  colour  and 
+               TRUE-COLOUR video modes drawing operations.
+
+               PATTERN  is  a  16-bit value whose  bitmap  determines  the 
+               pattern used for line drawing.
+
+               e.g. 100 _def linepattern %1100110011001100
+                    110 _falc line 24,48,80,48
+
+                    will produce the resulting line pattern:
+
+                    __  __  __  __
+
+               and  100 _def linepattern %1010101010101010
+                    110 _falc line 24,48,80,48
+
+                    will produce the resulting line pattern:
+
+                    _ _ _ _ _ _ _ _
+
+--------------------------------------------------------------------------
+
+Command   :-   _def stipple
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _def stipple STIPPLE
+Action    :-   Defines the stipple pattern for ALL the 16/256 colour   and 
+               TRUE-COLOUR  video modes filled graphics operations  (these 
+               are the _falc bar, _falc polyfill and _falc contourfill).
+
+               When the value of STIPPLE is in the range 1 - 24 the  range 
+               of  patterns (stipples) is equivalent to those used by  the 
+               STOS SETPAINT command. Any other  32-bit value is used as a 
+               bitmap which determines the stipple used for the fill.
+
+example #1:-   100 _falc ink 12
+               110 _falc draw mode 1
+               120 _def stipple $C5C5A5A5
+               130 _falc bar 24,48,120,128
+
+
+
+
+
+                          Continued overleaf...
+
+example #2:-   100 _falc ink 12
+               110 _falc draw mode 1
+               120 for STIPPLE=1 to 24
+               120 : _def stipple STIPPLE
+               130 : _falc bar 24,48,120,128
+               140 : wait 50
+               150 next STIPPLE
+
+--------------------------------------------------------------------------
+
+Command   :-   _get pixel
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   COL_REG=_get pixel(X,Y)           (For 16/256 colour modes)
+               RGB=_get pixel(X,Y)               (For TRUE-Colour modes)
+
+Action    :-   This  function  returns COL_REG with  the  colour  register 
+               belonging to the pixel specified by the coordinates X,Y.
+
+               In the Falcon's 16 colour modes the value of COL_REG ranges 
+               between 0 to 15.  (In 256 colour modes the value of COL_REG 
+               ranges between 0 to 255).
+
+Enhanced  :-   The  Falcon 030's TRUE-COLOUR video modes are supported  by 
+               this  command and returns a LONGWORD (only the lower  16  - 
+               bits are used) RGB value of the colour of the pixel at  X,Y 
+               whose bitmap is as follows:-
+
+               Bits 15_14_13_12_11_10_9_8_7_6_5_4_3_2_1_0
+                    \            / \        / | \       /
+                         RED         GREEN    |   BLUE
+                                              |
+                                             Bit #5
+                                             overlay
+                                             bit.
+
+               Each  component (RED,  GREEN and BLUE) ranges 0 -  31  thus 
+               giving a total of 32x32x32 (32768) possible colours.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc plot
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc plot X,Y
+Action    :-   Plots a pixel at the coordinates specified by X and Y.  The 
+               colour of the pixel is set by the _falc ink command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc line
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc line X1,Y1,X2,Y2
+Action    :-   Draws  a  line at the coordinates specified  by  X1,Y1  and 
+               X2,Y2.  The  colour  of the line is set by  the  _falc  ink 
+               command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc box
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc box X1,Y1,X2,Y2
+Action    :-   Draws a [hollow] rectangle at the coordinates specified  by 
+               X1,Y1 and X2,Y2.  The colour of the box is set by the _falc 
+               ink command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc bar
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc bar X1,Y1,X2,Y2
+Action    :-   Draws  a filled rectangle at the coordinates  specified  by 
+               X1,Y1 and X2,Y2.  The colour of the bar is set by the _falc 
+               ink  command.  The fill pattern is that determined by  _def 
+               stipple (by default, a solid fill).
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc polyline
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc polyline varptr(XY_ARRAY(0)),PTS
+Action    :-   Draws  a hollow (not filled) polygon whose  X-Y  coordinate 
+               pairs  are stored in the array XY_ARRAY() and the  variable 
+               PTS containing the number of X-Y coordinate pairs.
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc polyfill
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc polyfill varptr(XY_ARRAY(0)),PTS
+Action    :-   Draws  a  filled  polygon whose X-Y  coordinate  pairs  are 
+               stored  in  the  array  XY_ARRAY()  and  the  variable  PTS 
+               containing  the number of X-Y coordinate  pairs.  You  must 
+               ensure  the  ending  X-Y coordinates are the  same  as  the 
+               starting X-Y coordinates to close the polygon.
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc contourfill
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc contourfill X,Y
+Action    :-   Fills the contour starting at the coordinates X,Y. The fill 
+               pattern is that determined by _def stipple (by  default,  a 
+               solid fill).
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc circle
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc circle X,Y,R
+Action    :-   Draws  a  filled circle at coordinates X,Y of a  radius  R. 
+               The  fill  pattern is that determined by _def  stipple  (by 
+               default, a solid fill).
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+               In the RGB/TV 80 column non-interlaced video modes (640*200 
+               and  768*240 overscan) and the VGA 80 column  line-doubling 
+               modes   (640*240)   the  radius  in  the   Y-direction   is 
+               automatically  scaled  internally  so that  the  circle  is 
+               ALWAYS drawn as a circle and not as an ellipse.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc ellipse
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc ellipse X,Y,X_RAD,Y_RAD
+Action    :-   Draws a filled ellipse at coordinates X,Y of Xradius  X_RAD 
+               and Yradius Y_RAD.  The fill pattern is that determined  by 
+               _def stipple (by default, a solid fill).
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+               In the RGB/TV 80 column non-interlaced video modes (640*200 
+               and  768*240 overscan) and the VGA 80 column  line-doubling 
+               modes   (640*240)  the  Yradius  is  automatically   scaled 
+               internally  so  that  the ellipse is ALWAYS  drawn  in  the 
+               correct elliptical ratio.
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc arc
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc arc X,Y,R,BEG_ANGLE,END_ANGLE
+Action    :-   Draws  an  arc  in the same way as the  STOS  ARC  command, 
+               X=Xcoord ,  Y=Ycoord, R=radius and BEG_ANGLE=start angle to 
+               draw from and END_ANGLE=end angle to draw to.  As with  the 
+               STOS ARC command ALL angles are in the range 0 - 3600.
+
+               e.g.  90 degrees =  900
+                    270 degrees = 2700
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+               In the RGB/TV 80 column non-interlaced video modes (640*200 
+               and  768*240 overscan) and the VGA 80 column  line-doubling 
+               modes   (640*240)   the  radius  in  the   Y-direction   is 
+               automatically  scaled internally so that the arc is  ALWAYS 
+               drawn as a circular arc and not as an elliptical arc.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc earc
+Machine   :-   Falcon 030's only - but compatible with ST resolutions.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   _falc earc X,Y,X_RAD,Y_RAD,BEG_ANGLE,END_ANGLE
+Action    :-   Draws  an elliptical arc in the same way as the  STOS  EARC 
+               command, X=Xcoord , Y=Ycoord, X_RAD=Xradius , Y_RAD=Yradius 
+               and  BEG_ANGLE=start angle to draw from  and  END_ANGLE=end 
+               angle to draw to.  As with the STOS EARC command ALL angles 
+               are in the range 0 - 3600.
+
+               e.g.  90 degrees =  900
+                    270 degrees = 2700
+
+Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the 
+               Falcon's  256  colour modes only the lower 16  of  the  256 
+               colours (set via the _falc ink command) may be used by this 
+               command.
+
+               In the RGB/TV 80 column non-interlaced video modes (640*200 
+               and  768*240 overscan) and the VGA 80 column  line-doubling 
+               modes   (640*240)  the  Yradius  is  automatically   scaled 
+               internally  so that the elliptical arc is ALWAYS  drawn  in 
+               the correct elliptical ratio.
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _tc rgb
+Machine   :-   Falcon 030's only.
+Version   :-   All GRAFIX (III) versions.
+Syntax    :-   RGB=_tc rgb(RED,GREEN,BLUE)        (TRUE-COLOUR mode ONLY)
+Action    :-   This function returns a LONGWORD value 'RGB' as the  result 
+               of the combined RED,GREEN and BLUE colour  components.  The 
+               result is contained in the lower 16 - bits whose bitmap  is 
+               as follows:-
+
+               Bits 15_14_13_12_11_10_9_8_7_6_5_4_3_2_1_0
+                    |            | |        | | |       |
+                    \            / \        / | \       /
+                         RED         GREEN    |   BLUE
+                                              |
+                                             Bit #5
+                                             not used
+                                             (overlay
+                                              bit).
+
+               Each  component (RED,  GREEN and BLUE) ranges 0 -  31  thus 
+               giving a total of 32x32x32 (32768) possible colours.
+
+
+This  command  is  particularly useful for assigning  an  RGB  value  from 
+specific  RED,GREEN  and  BLUE colour  components  when  initialising  the 
+'gemtext'  ForeGround  and BackGround colours in  TRUE-COLOUR  mode  which 
+gemtext color expects as 2 seperate parameters.
+
+
+i.e.,     gemtext color RED,GREEN,BLUE is INVALID we must use;
+
+          gemtext color FG,BG  ;This may be achieved as shown below:-
+
+
+500 rem ~~~~~~~~~~~~~~~ Assign gemtext color FG,BG colours ~~~~~~~~~~~~~~~
+510  : 
+520 RED=24 : rem Set gemtext ForeGround colour
+530 GREEN=24 : rem to Yellow.
+540 BLUE=5
+550 FG=_tc rgb(RED,GREEN,BlUE)
+560 :
+570 RED=0 : rem Set gemtext BackGround colour
+580 GREEN=0 : rem to Black.
+590 BLUE=0
+600 BG=_tc rgb(RED,GREEN,BlUE)
+610 gemtext color FG,BG
+
+
+
+
+
+
+
+
+
+
+
+
+                          Continued overleaf...
+
+Also when in TRUE-COLOUR mode and assigning the 3D effect  '_fileselector' 
+colours;  (FILL colour,  3D Button ForeGround/BackGround colours and  TEXT 
+colours) we might use a routine such as:-
+
+
+500 rem ~~~~~~~~~~~~~~~ Assign _falc fileselector Strings ~~~~~~~~~~~~~~~
+510  : 
+520 MSG$=" Please Select a Tracker MODule."
+530 MSK$="*.MOD"
+540  : 
+550 rem ~~~~~~~~~~~~~~~ Assign _falc fileselector colours ~~~~~~~~~~~~~~~
+560  : 
+570 COL1=_tc rgb(15,20,20) : rem FILL Colour MID-GREY-BLUE.
+580 COL2=_tc rgb(15,27,27) : rem 3D BTN FG Colour LIGHT-GREY-BLUE.
+590 COL3=_tc rgb(15,16,16) : rem 3D BTN BG Colour DARK-GREY-BLUE.
+600 COL4=_tc rgb(0,10,20) : rem TEXT colour 1.
+610 COL5=_tc rgb(15,31,31) : rem TEXT colour 2.
+620  : 
+630 rem ~~~~~~~~~~~~~~~ Now use _fileselector ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+640  : 
+650 FILE$=_fileselect$(MSK$,MSG$,COL1,COL2,COL3,COL4,COL5)
+
+--------------------------------------------------------------------------
+

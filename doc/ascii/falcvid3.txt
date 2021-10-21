@@ -1,0 +1,1423 @@
+**************************************************************************
+*                                                                        *
+*                                                                        *
+*  T h e  F a l c o n  0 3 0  V I D E O  ( I I I )  E x t e n s i o n.   *
+*                                                                        *
+*        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         *
+*                                                                        *
+*                    F o r  T h e  F a l c o n  0 3 0                    *
+*                                                                        *
+*                                                                        *
+*     (c) 1995, 1996, 1997, 1998 Anthony Hoskin                          *
+*                                45 Wythburn Rd,                         *
+*                                Newbold,                                *
+*                                Chesterfield,                           *
+*                                Derbyshire.                             *
+*                                S41 8DP (U.K).                          *
+*                                                                        *
+*               Current version: v0.4 (18th February 1998)               *
+*                                                                        *
+*                                                                        *
+*                       Conditions Of Registration                       *
+*                                                                        *
+*    You  may  NOT  distribute  this  software  or  its   associated     *
+*    program/document  files (either in whole or in part) in  anyway     *
+*    shape or form.   (Any translation of this document  file   into     *
+*    another language is  permitted and  will  be restricted to  the     *
+*    same  conditions  as  this   English   language   version  with     *
+*    respect  to  any other changes.)  You  are authorised  to  make     *
+*    personal  back-ups of the software provided they  are  complete     *
+*    and unchanged in any way.                                           *
+*                                                                        *
+*                                                                        *
+*                               Disclaimer                               *
+*                                                                        *
+*    This software is for the Atari Falcon 030 series computer only.     *
+*    If  you  try  to  run it on an ST(e)/TT you  will  be  politely     *
+*    informed that it  will  not run  on  these machines.  I take no     *
+*    responsibility whatsoever in the use/misuse of this software.       *
+*                                                                        *
+*                                                                        *
+*                          System Requirements                           *
+*                                                                        *
+*                                                                        *
+*                        Machine   :    Atari Falcon 030                 *
+*                        RAM       :    1, 4 or 14mb                     *
+*                        Monitor   :    RGB, VGA or TV                   *
+*                        Software  :    STOS Basic & STOSFIX3            *
+*                                                                        *
+*                                                                        *
+*                                Contents                                *
+*                                                                        *
+*                                                                        *
+* Introduction to the Falcon 030 VIDEO (III) Extension v0.4 .... Page  1 *
+* Falcon 030 VIDEO (III) Extension v0.4 command reference ...... Page  2 *
+* Video modes available via this command extension ............. Page 20 *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+**************************************************************************
+**************************************************************************
+*                                                                        *
+*                        I n t r o d u c t i o n                         *
+*                                                                        *
+**************************************************************************
+
+     This extension performs the  video modes/palette and ILBM image 
+     management of the Falcon's 16/256 colour and True-Colour screen 
+     modes.
+
+Video commands           :    montype             whichmode
+                              vgetsize            _hardphysic
+                              vgetmode            scr width
+                              vsetmode            scr height
+
+Palette commands         :    brightest           vgetpalt
+                              darkest             vsetpalt
+                              palfade in          _falc palt
+                              palfade out         _falc rgb
+                              _setcolour          _get st palette
+                              _getcolour          _get spritepalette
+                              _get red            _shift off
+                              _get green          _shift
+                              _get blue
+
+Zone commands            :    _set falc zone      _falc zone       
+                              _reset falc zone
+
+InterLeavedBitMap Image  :    vget ilbm mode      bmhdchunk
+commands                      ilbmpalt            ilbmchunk
+                              dpack ilbm          cmapchunk
+                              fmchunk             bodychunk
+
+Falcon Mouse Commands    :    While  updating these extensions  (in  early 
+                              1998) some major restructuring  necessitated 
+                              the  relocation  of some commands  to  other 
+                              extensions.  The '_falc mouse' commands have 
+                              now been renamed to 'st mouse' and relocated 
+                              to   the  new  ST(e)/TT/Falcon  030   System 
+                              Control Extension v0.9.
+
+Gemtext Commands         :    The 'gemtext' commands previously  available 
+                              from the old VIDEO (II) extension are now in 
+                              their  very  own  dedicated  ST(e)/TT/Falcon 
+                              Gemtext Extension v0.8.
+
+                                IMPORTANT
+                                =========
+
+     Both  the  interpreter and compiler extensions will  ONLY  work 
+     when  used with the patched 'SPRIT101.BIN'  and  'SPRIT101.LIB' 
+     files  as  supplied  with this update.  If you  get  the  error 
+     message shown below when booting STOS you must re-boot with the 
+     compatible library files.
+
+     Extension  ERROR - the 'SPRIT101.BIN' file version in the  STOS 
+     folder  is  incompatible with the Falcon  030  VIDEO  Extension 
+     v0.4.   Please  re-boot  your  system  with  the  version   5.8 
+     'SPRIT101.BIN' file in the STOS folder.
+
+**************************************************************************
+*                                                                        *
+*        Falcon 030 VIDEO (III) Extension v0.4 Command Reference         *
+*                                                                        *
+**************************************************************************
+
+   This command reference details the command in the following manner:-
+
+Command   :-   The command name.
+Version   :-   The VIDEO extension  version(s)  in which the  command  is 
+               available,  (if  a  command is available  in  only  certain 
+               versions these will be given as; VIDEO version A to B).
+Syntax    :-   The syntax used for the command.
+Action    :-   A description of the action(s) taken by the command.
+
+------------------------ Video System Commands ---------------------------
+
+Command   :-   montype
+Version   :-   All VIDEO versions.
+Syntax    :-   MON_TYPE=montype
+Action    :-   This  function returns with the monitor type  connected  to 
+               the system. The value returned has the following meaning:-
+
+               +--------------------------------------------+
+               | MON_TYPE |             Meaning             |
+               |----------+---------------------------------|
+               |    0     | ST mono high-resolution monitor |
+               |    1     | ST colour (RGB) monitor         |
+               |    2     | VGA monitor                     |
+               |    3     | Television                      |
+               +--------------------------------------------+
+
+--------------------------------------------------------------------------
+
+Command   :-   vgetsize
+Version   :-   All VIDEO versions.
+Syntax    :-   VID_SIZE=vgetsize(VID_MDE)
+Action    :-   This  function  returns VID_SIZE containing the  video  ram 
+               size  in  bytes  of the screen  mode  VID_MDE,  this  is  a 
+               modeword  which  is  a  bitmap  as  explained  below,   see 
+               whichmode. This  is  most  useful when  used in conjunction
+               with vsetmode. Since we can determine the  amount  of video
+               ram  required  and  allocate  say, a  STOS memory bank as a
+               screen  buffer  of  the  required  size.  This  can then be
+               followed by vsetmode  and set  physic and logic to point to
+               this STOS memory bank being used as the screen.
+
+--------------------------------------------------------------------------
+
+Command   :-   vgetmode
+Version   :-   All VIDEO versions.
+Syntax    :-   VID_MDE=vgetmode
+Action    :-   This function returns VID_MDE containing the current screen 
+               mode  as a MODEWORD which is a bitmap as  explained  below, 
+               see whichmode.
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   vsetmode
+Version   :-   All VIDEO versions.
+Syntax    :-   vsetmode VID_MDE
+Action    :-   This  command  sets  the screen mode as  requested  by  the 
+               modeword VID_MDE which is a bitmap as explained below,  see 
+               whichmode.
+
+Enhanced  :-   As  from VIDEO (II) extension version 3.3 this command  now 
+               automatically hides the STOS mouse pointer when  specifying 
+               non-ST  compatible screen modes and TRUE-COLOUR  modes  are 
+               supported  from version 3.4 in the 40/80 column RGB and  40 
+               column VGA modes, (not 80 column VGA).
+
+     N.B.      This  command  will immediately set  the  requested  screen 
+               mode,  but  there are certain conditions still to be  met:-
+
+               Screen  memory is NOT allocated by this  command.  Although 
+               the LINE_A variables table has some of its entries adjusted 
+               to  reflect changes in screen width/screen height  and  the 
+               number of bit-planes,  bytes/line etc.  The pointers PHYSIC 
+               and  LOGIC do NOT yet point to this screen and must be  set 
+               by the program prior to this command.
+
+               TOS 4.02 users (for the sake of programming consistency TOS 
+               4.04 users also) remember to :-
+
+               Set up PHYSIC and LOGIC screen addresses
+
+                                 and then
+
+               set video mode via the vsetmode MDE command.
+
+--------------------------------------------------------------------------
+
+Command   :-   whichmode
+Version   :-   All VIDEO versions.
+Syntax    :-   VID_MDE=whichmode(SCR_WIDTH,SCR_HEIGHT,N_COLOURS[,DEV_FLG])
+Action    :-   This  function returns VID_MDE containing a MODEWORD  which 
+               is a bitmap as defined below:-
+
+               SCR_WIDTH \    Are   the  requested screen modes width  and 
+               SCR_HEIGHT/    height respectively.
+
+               N_COLOURS      Is  a  variable  containing  the  number  of 
+                              colours requested for this screen mode 2, 4, 
+                              16  or  256  (TRUE-COLOUR  is  requested  by 
+                              N_COLOURS = -1).
+
+               DEV_FLG        This  optional parameter is  only  available 
+                              from version 5.8 and is intended for program 
+                              developers  and is explained under  Extended 
+                              video modes.
+
+
+
+
+
+
+                          Continued overleaf....
+
+               The MODEWORD bitmap:-
+
+                      bits 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+                           |                 | | | | | | | | | |
+                Reserved --------------------' | | | | | | | | |
+                                               | | | | | | | | |
+                If set enables interlace mode -' | | | | | | | |
+                on colour monitor or double      | | | | | | | |
+                line mode on VGA monitor.        | | | | | | | |
+                ST compatibility flag   ---------' | | | | | | |
+                Overscan flag (not VGA) -----------' | | | | | |
+                Set = use PAL mode else NTSC mode ---' | | | | |
+                Set = use VGA else use TV mode    -----' | | | |
+                Set = 80 columns else 40 columns  -------' | | |
+                Number of bits/pixel as given by  -------------'
+                bits 2 - 0 = X and bits/pixel = 2^X.
+
+               This MODEWORD is exactly of the same format as that used by 
+               vgetmode and vsetmode, however, because its much easier for 
+               a computer to calculate a modeword for any give screen mode 
+               than it is for me I decided to include this function  where 
+               you just specify the screen width and height and the number 
+               of simultaneous colours.
+
+     Note;     With  VIDEO  (II) versions <3.4 any  non-standard  or  non-
+               existant  screen  modes  will return VID_MDE  =  FALSE  (0) 
+               indicating an invalid screen mode.
+
+               As  from VIDEO (II) version 3.4 this function  now  returns 
+               the  MODEWORD for ST-MED rez if a non-valid  resolution  is 
+               requested.  This  now means the system will NOT  crack  and 
+               returns to a valid screen mode.
+
+Enhanced  :-   VIDEO (II) extension versions => 5.8 can now provide  users 
+               with several extended (non-standard) video modes.  As  from 
+               v5.8 this command may be used to determine the MODEWORD for 
+               these new extended video modes. (See below:)
+
+All that applies here to the old VIDEO (II) extension also applies to  the 
+new VIDEO (III) extensions.
+
+                          Extended video modes:
+                          =====================
+
+This  extensions internal video modes look-up table has now been  modified 
+to contain values for the VIDEL hardware registers. (These are responsible 
+for  the timing of the video signals and positioning the visible  area  of 
+the  Falcons  screen display.) As I modified the look-up  tables  it  soon 
+became  apparent  to me that it was now a very simple  matter  to  include 
+extended  video  modes.  (Although the VIDEL can be programmed  for  these 
+extended modes quite simply,  they are not normally available to the  user 
+as Atari themselves never programmed TOS to provide them.)
+
+With the availability of these extended video modes it it now possible  to 
+program  your graphics for a screen resolution common to both RGB and  VGA 
+displays.  These 'common' resolutions make so much for common sense that I 
+wonder why Atari never bothered to program TOS for these modes. (After all 
+what use is the letter-box appearance of the 640 * 200 screen mode?)
+
+
+       The new extended video modes now available to the user are:-
+
+   +------------------------------------------------------------------+
+   | Monitor | Resolution | Colours | MODEWORD | Mode information     |
+   |---------+------------+---------+----------+----------------------|
+   | TV/RGB  | 640 * 240  |     16  |   $102A  | Emulation of the VGA |
+   |         |            |         |          | 640 * 240  16 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | TV/RGB  | 640 * 240  |    256  |   $102B  | Emulation of the VGA |
+   |         |            |         |          | 640 * 240 256 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | TV/RGB  | 640 * 480  |     16  |   $112A  | Emulation of the VGA |
+   |         |            |         |          | 640 * 480  16 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | TV/RGB  | 640 * 480  |    256  |   $112B  | Emulation of the VGA |
+   |         |            |         |          | 640 * 480 256 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | TV/RGB  | 640 * 480  |TruColour|   $112C  | Emulation of the VGA |
+   |         |            |         |          | 640 * 480 resolution |
+   |         |            |         |          | in TruColour mode.   |
+   |---------+------------+---------+----------+----------------------|
+   | (S)VGA  | 768 * 240  |     16  |   $213A  | Emulation of the RGB |
+   |         |            |         |          | 768 * 240  16 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | (S)VGA  | 768 * 240  |    256  |   $213B  | Emulation of the RGB |
+   |         |            |         |          | 768 * 240 256 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | (S)VGA  | 768 * 480  |     16  |   $203A  | Emulation of the RGB |
+   |         |            |         |          | 768 * 480  16 colour |
+   |         |            |         |          | video mode.          |
+   |---------+------------+---------+----------+----------------------|
+   | (S)VGA  | 768 * 480  |    256  |   $203B  | Emulation of the RGB |
+   |         |            |         |          | 768 * 480 256 colour |
+   |         |            |         |          | video mode.          |
+   +------------------------------------------------------------------+
+
+
+About the MODEWORD:
+
+Bits  15  - 9 of the 16-bit value used by the Falcon's XBIOS  to  set  the 
+video mode are not normally used.  (Officially they are reserved by  Atari 
+for future enhancement.) Since the demise of Atari it is now most unlikely 
+they  will be used officially,  so I have made use of them to  distinguish 
+the new extended modes that I have provided.
+
+
+
+
+
+
+
+
+                          Continued overleaf....
+
+Also,  specially  for those users whose Falcon's have the  Black  Scorpion 
+Nemesis system accelerator hardware installed there is a new extended  VGA 
+video mode now available:-
+
+   +------------------------------------------------------------------+
+   | Monitor | Resolution | Colours | MODEWORD | Mode information     |
+   |---------+------------+---------+----------+----------------------|
+   | (S)VGA  | 640 * 480  |TruColour|   $2034  | Emulation of the VGA |
+   |         |            |         |          | 640 * 480 resolution |
+   |         |            |         |          | in TruColour mode.   |
+   |------------------------------------------------------------------|
+   | IMPORTANT:   THIS MODE IS ONLY AVAILABLE TO THE VGA DISPLAY WHEN |
+   |              BLACK SCORPION'S NEMESIS (THE FALCON 030 SYSTEM     |
+   |              ACCELERATOR) IS INSTALLED.......                    |
+   |                                                                  |
+   | To  use this video mode you must ensure you set the  Nemesis  to |
+   | the  high-clock-rate (24MHz) to get a stable  display.  The  new |
+   | SYSTEM CONTROL v4 extension provides the user with the necessary |
+   | commands/functions to determine if Nemesis IS installed on  your |
+   | machine and set the cpu clock accordingly...                     |
+   +------------------------------------------------------------------+
+
+The  optional parameter DEV_FLG is only available from version 5.8 and  is 
+intended  for  program  developers  using  the  Extended  video  modes  on 
+multisync  RGB/VGA  monitors  (e.g.   Microvitec  1438).  This  is  better 
+explained by an example;
+
+e.g. My  system  runs a Microvitec 1438 multisync RGB/VGA  monitor  fitted 
+     with a 2 - way switch in the video connector so I can toggle  between 
+     RGB and VGA modes.  Normally the switch is in the VGA position so the 
+     system boots up 'knowing' a VGA display is to be used.  However, when 
+     using the VIDEO extensions commands I may switch between RGB and  VGA 
+     modes  at  any  time  and  since  the  monitor  is  a  multisync   it 
+     automatically re-syncs to the new modes.
+
+     The extended video modes provide a 640 * 240 256 colour VGA emulation 
+     mode  (exactly the same resolution and colour depth as VGA  but  with 
+     different video signal timings).
+
+     Now, let's suppose you are writing a program to use the 640 * 240 256 
+     colour video mode so that the screen size is the same on both RGB and 
+     VGA displays. Also, let's say that the multisync monitor is currently 
+     running  in VGA mode but you wish to test the  640 * 240  256  colour 
+     video mode as if it were running as an RGB display. 
+
+     Normally  when  we  use the  command  MDE=whichmode(640,240,256)  the 
+     extension  will  first determine which monitor is  connected  to  the 
+     Falcon and if it finds it is a TV/RGB monitor will return the correct 
+     MODEWORD for the RGB configuration.  If it finds it is a VGA  monitor 
+     will return the correct MODEWORD for the VGA configuration.
+
+
+
+
+
+
+
+
+                          Continued overleaf....
+
+     If  we use the command MDE=whichmode(640,240,256) then the  extension 
+     will  find it is using a VGA monitor and so will return the  MODEWORD 
+     for  the  VGA configuration but we wanted the RGB  configuration  for 
+     the  new extended mode.  By using optional DEV_FLG parameter  in  the 
+     'whichmode' command where;
+
+     DEV_FLG   =    1 or 3    Returns  the RGB MODEWORD for the  requested 
+                              video mode.
+               =    2         Returns  the VGA MODEWORD for the  requested 
+                              video mode.
+
+     Any other value causes the command to behave normally (as if  without 
+     the DEV_FLG parameter).
+
+     In otherwords, by using MDE=whichmode(640,240,256,3) the extension is 
+     now   forced  into  returning  the  correct  MODEWORD  for  the   RGB 
+     configuration.  So this means that although the multisync monitor  is 
+     currently running in VGA mode it will toggle to RGB mode so that  you 
+     may  then verify the RGB configuration matches that of the VGA  mode. 
+
+     Once you have developed your program and verified the screen  display 
+     in  both RGB and VGA configurations the DEV_FLG parameter  should  be 
+     removed  from the 'whichmode' command.  IT IS NOT INTENDED THAT  THIS 
+     PARAMETER  REMAIN  IN A COMPLETED PROGRAM,  IT IS ONLY  INCLUDED  FOR 
+     DEVELOPMENT PURPOSES.
+
+--------------------------------------------------------------------------
+
+Command   :-   scr width
+Version   :-   All VIDEO versions.
+Syntax    :-   SCR_WIDTH=scr width
+Action    :-   This  function returns SCR_WIDTH containing the  width  (in 
+               pixels) of the current screen mode.
+
+--------------------------------------------------------------------------
+
+Command   :-   scr height
+Version   :-   All VIDEO versions.
+Syntax    :-   SCR_HEIGHT=scr height
+Action    :-   This function returns SCR_HEIGHT containing the height  (in 
+               pixels) of the current screen mode.
+
+--------------------------------------------------------------------------
+
+Command   :    _hardphysic
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :    _hardphysic ADDR
+Action    :    This command sets the hardware register which points to the 
+               PHYSICAL screen. (Can be used for VERTICAL scrolling.)
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _bitblit
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _bitblit SOURCE,S_X,S_Y,WIDTH,HEIGHT,DEST,D_X,D_Y,OP
+Action    :-   This screencopies a section of the graphics from SOURCE  to 
+               DEST making use of the Blitter chip for speed.
+
+               SOURCE    =    Source screen (may be same as destination).
+               DEST      =    Destination screen (may be same as source).
+               S_X       =    Xcoord into source screen.
+               S_Y       =    Ycoord into source screen.
+               WIDTH     =    Width of source screen image block.
+               HEIGHT    =    Height of source screen image block.
+               D_X       =    Xcoord into destination screen.
+               D_Y       =    Ycoord into destination screen.
+               OP        =    Logic operation (see below).
+
+               +---------------------------------------------------------+
+               | OP | Logic operation    |          Description          |
+               |----+--------------------+-------------------------------|
+               |  0 | D1 = 0             | Clear destination block       |
+               |  1 | D1 = S AND D       |                               |
+               |  2 | D1 = S AND (NOT D) |                               |
+               |  3 | D1 = S             | Replace mode                  |
+               |  4 | D1 = (NOT S) AND D | Erase mode                    |
+               |  5 | D1 = D             | Destination unchanged         |
+               |  6 | D1 = S XOR D       | XOR mode                      |
+               |  7 | D1 = S OR D        | Transparent mode              |
+               |  8 | D1 = NOT (S OR D)  |                               |
+               |  9 | D1 = NOT (S XOR D) |                               |
+               | 10 | D1 = NOT D         |                               |
+               | 11 | D1 = S OR (NOT D)  |                               |
+               | 12 | D1 = NOT S         |                               |
+               | 13 | D1 = (NOT S) OR D  | Reverse transparent mode      |
+               | 14 | D1 = NOR (S AND D) |                               |
+               | 15 | D1 = 1             | Fill destination block        |
+               +---------------------------------------------------------+
+
+               S is the source image,  D is the destination image,  and D1 
+               is the destination image after the operation.
+
+
+Important :-   The  source  and destination screens MUST be  of  the  same 
+               type, (same number of bitplanes for S and D).
+
+               i.e, If  source screen = 16 colours then  destination  must 
+                    also be of 16 colours.
+
+                    If  source screen = 256 colours then destination  must 
+                    also be of 256 colours.
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   quickwipe
+Version   :-   All VIDEO versions.
+Syntax    :-   quickwipe START_ADDRESS,LENGTH
+Action    :-   This  command clears the block of memory specified  and  is 
+               effectively  used as a CLS for the Falcon's  16/256  colour 
+               screen modes when using a STOS memory bank for the screen.
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc cls
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _falc cls SCR_ADDRESS
+Action    :-   This command may be used to CLS when a Falcon 16/256 colour 
+               video mode is currently in use.
+               SCR_ADDR  may be PHYSIC or LOGIC or the absolute address of 
+               a STOS memory bank e.g., start(8).
+
+-------------------------- Falcon Zone Commands --------------------------
+
+Command   :-   _set falc zone
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _set falc zone ZNE,X1,Y1,X2,Y2
+Action    :-   This command performs exactly the same function as the STOS 
+               setzone  command,  this version is for the Falcon's  16/256 
+               colour and TRUE-COLOUR video modes.
+
+Important :-   The  STOS setzone command will work in the Falcon's  16/256 
+               colour  video  modes but the coords are restricted  to  the 
+               area of an ST compatible screen, for example:-
+
+                    Rez            STOS setzone coords restricted to
+
+                    640x240        X1=0 , Y1 = 0 , X2 = 639 , Y2 = 199
+
+               In other words,  the STOS setzone coords cannot go  outside 
+               the  bounds  of a 'normal ST  screen'.  Also  '_falc  zone' 
+               supports upto 512 zones as compared to STOS's setzone which 
+               only supports 128 zones.
+
+--------------------------------------------------------------------------
+
+Command   :-   _get falc zone
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   ZNE=_falc zone(N)
+Action    :-   This command performs exactly the same function as the STOS 
+               setzone  command,  this version is for the Falcon's  16/256 
+               colour and TRUE-COLOUR video modes.
+
+               Returns  ZNE  = Zone in which the mouse  pointer  is  found 
+               otherwise ZNE = 0.
+
+               N  =  number  of sprite to  test,  just  as  STOS  ZNE=zone 
+               function N = 0 for mouse pointer.  When used in conjunction 
+               with the Falcon mouse N must ALWAYS be 0.
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _reset falc zone
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _reset falc zone
+Action    :-   This command performs exactly the same function as the STOS 
+               reset zone command, this version is for the Falcon's 16/256 
+               colour and TRUE-COLOUR video modes.
+
+---------------------------- Palette Commands ----------------------------
+
+Command   :-   brightest
+Version   :-   All VIDEO versions.
+Syntax    :-   B=brightest
+Action    :-   This  function returns with B = index of the  colour  whose 
+               RGB's  give  the brightest colour in  the  Falcon's  16/256 
+               colour palette.
+
+Enhanced  :-   As of VIDEO (II) version 3.1 this function now works in all 
+               Falcon  16/256 colour modes (and ST compatible  modes).  In 
+               the TRUE-COLOUR modes this function WILL always return  the 
+               value $FFDF (equivalent to brightest WHITE).
+
+--------------------------------------------------------------------------
+
+Command   :-   darkest
+Version   :-   All VIDEO versions.
+Syntax    :-   D=darkest
+Action    :-   This  function returns with D = index of the  colour  whose 
+               RGB's give the darkest colour in the Falcon's 16/256 colour 
+               palette.
+
+Enhanced  :-   As of VIDEO (II) version 3.1 this function now works in all 
+               Falcon  16/256 colour modes (and ST compatible  modes).  In 
+               the TRUE-COLOUR modes this function WILL always return  the 
+               value $0000 (equivalent to darkest BLACK).
+
+--------------------------------------------------------------------------
+
+Command   :-   _setcolour
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _setcolour C,RGB
+               _setcolour C,RED,GREEN,BLUE
+Action    :    Assigns the RGB value to colour index C.
+
+               In ST compatible video modes the value RGB is a three digit 
+               hexadecimal value detailed under _getcolour.
+
+               In Falcon 16/256 colour video modes the value RGB is a  six 
+               digit hexadecimal value as detailed under _getcolour.
+
+               You may assign specific RED,  GREEN and BLUE values to  the 
+               colour index C.
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _getcolour
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   RGB=_getcolour (C)
+Action    :    Returns the RGB value of colour index C.
+               In ST compatible video modes the value RGB is returned as a 
+               three digit hexadecimal value exactly as the original  STOS 
+               command RGB=colour(C).
+
+               Bits 31 - 12   Unused
+               Bits 11 - 8    Red component   (0 - F hex)  Each component
+               Bits  7 - 4    Green component (0 - F hex)  has 16 levels.
+               Bits  3 - 0    Blue component  (0 - F hex)
+
+               In  the Falcon 16/256 colour video modes the value  RGB  is 
+               returned as a six digit hexadecimal value:-
+
+               Bits 31 - 24   Unused
+               Bits 23 - 16   Red component   (0 - 3F hex) Each component
+               Bits 15 - 8    Green component (0 - 3F hex) has 64 levels.
+               Bits  7 - 0    Blue component  (0 - 3F hex)
+
+Example   :-   Bright Red     = $3F0000 \    Note; the RGB value is
+               Bright Green   = $003F00  \         automatically right-
+               Bright Blue    = $00003F  /         justified to the lowest
+               Bright White   = $3F3F3F /          6 bits in each byte.
+
+--------------------------------------------------------------------------
+
+The  next three functions are available to ease the manipulation  of  each 
+colour component of a specific colour register in the 16/256 colour modes, 
+(they are not used for TRUE-COLOUR).
+
+Command   :-   _get red
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   RED=_get red(COL_INDEX)
+Action    :    Returns  RED  with  the value of colour  red  component  of 
+               colour index COL_INDEX.
+
+               In ST compatible video modes the value RED is returned as a 
+               single digit hexadecimal value 0 - F (0 - 15).
+
+               In Falcon 16/256 colour video modes the value RED is a  two 
+               digit hexadecimal value 0 - 3F (0 - 63).
+
+--------------------------------------------------------------------------
+
+Command   :-   _get green
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   GREEN=_get green(COL_INDEX)
+Action    :    Returns  GREEN with the value of colour green component  of 
+               colour index COL_INDEX.
+
+               In ST compatible video modes the value GREEN is returned as 
+               a single digit hexadecimal value 0 - F (0 - 15).
+
+               In  Falcon 16/256 colour video modes the value GREEN  is  a 
+               two digit hexadecimal value 0 - 3F (0 - 63).
+
+--------------------------------------------------------------------------
+
+Command   :-   _get blue
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   BLUE=_get blue(COL_INDEX)
+Action    :    Returns  BLUE  with the value of colour blue  component  of 
+               colour index COL_INDEX.
+
+               In ST compatible video modes the value BLUE is returned  as 
+               a single digit hexadecimal value 0 - F (0 - 15).
+
+               In Falcon 16/256 colour video modes the value BLUE is a two 
+               digit hexadecimal value 0 - 3F (0 - 63).
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc palt
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   X=_falc palt(ADDR)
+Action    :    Convert  an  old ST 16 colour palette to a  new  Falcon  16 
+               colour  palette.  ADDR is the address of an  INTEGER  array 
+               containing  the  ST palette.  The returned value 'X'  is  a 
+               dummy and has no meaning at this time.
+
+Example   :-   10 dim palt(15) :-rem set up 16 elements.
+               20 for C=0 to 15 :-rem 16 colours in ST palette.
+               30 palt(C)=colour(C) :-rem copy RGB's into array.
+               40 next C
+               50 X=_falc palt(varptr(palt(0))) :-rem convert ST palette
+               to a Falcon palette.
+               60 for C=0 to 15 :-rem 16 colours in Falcon palette.
+               70 _setcolour C,palt(C) :-rem copy RGB's into palette.
+               80 next C
+
+Important :-   This  command  will only work with an integer array  of  16 
+               elements each containing an RGB value from the ST  palette. 
+               An  array must be used because each RGB value is  contained 
+               in 32 bits (each element of the array = 32 bits and this is 
+               the  size  of RGB data used by the Falcon's  16/256  colour 
+               palettes).
+
+--------------------------------------------------------------------------
+
+Command   :-   _falc rgb
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   NEW_RGB=_falc rgb(OLD_RGB)
+Action    :    Convert an old ST colour value to a new Falcon one.
+               This  command  takes  a  value OLD_RGB  as  a  three  digit 
+               hexadecimal value;
+
+               e.g.      RED = $700     GREEN = $070
+                        BLUE = $007     WHITE = $777
+
+               and  will  return  the  value NEW_RGB  as  an  eight  digit 
+               hexadecimal value, (bits 31 - 24 are not used);
+
+               e.g.      RED = $003F0000  GREEN = $00003F00
+                        BLUE = $0000003F  WHITE = $003F3F3F
+
+
+                          Continued overleaf...
+
+               This  is  extremely  useful for  setting  a  single  colour 
+               register in the Falcon video modes to an ST compatible  RGB 
+               value.  The  returned  value can be used  directly  by  the 
+               _setcolour command.
+
+Example   :    10 OLD_RGB=$253 :-rem an ST RGB value in 3 digits.
+               20 RGB=_falc rgb(OLD_RGB)
+               30 _setcolour 4,RGB
+
+--------------------------------------------------------------------------
+
+Command   :-   _shift
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _shift DELAY,START
+Action    :    This  performs exactly as the STOS SHIFT but with  the  256 
+               colour palette.
+
+               DELAY = Delay between each rotation in 'VBL's
+                       PAL  systems 1 VBL = 1/50 second
+                       NTSC systems 1 VBL = 1/60 second
+               START = Beginning colour index to rotate from.
+
+--------------------------------------------------------------------------
+
+Command   :-   _shift off
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _shift off
+Action    :    Turns off the _shift command.
+
+--------------------------------------------------------------------------
+
+Command   :-   vgetpalt
+Version   :-   All VIDEO versions.
+Syntax    :-   vgetpalt RGB_BUFF
+Action    :-   This  function  returns the 256 colour  palettes  RGB's  as 
+               longword values in the buffer pointed to by RGB_BUFF.  This 
+               buffer must be long enough for the 256 RGB longwords, i.e., 
+               256*4 = 1024 bytes.
+
+     N.B.      If RGB_BUFF is in the range 1 to 15 this is taken to be the 
+               number of a STOS memory bank.  Any other value is taken  to 
+               be an absolute address value.
+
+--------------------------------------------------------------------------
+
+Command   :-   vsetpalt
+Version   :-   All VIDEO versions.
+Syntax    :-   vsetpalt RGB_BUFF
+Action    :-   This  command sets the 256 colour palettes RGB's  from  the 
+               longword  values  contained  in the buffer  pointed  to  by 
+               RGB_BUFF.  This buffer must be long enough for the 256  RGB 
+               longwords, i.e., 256*4 = 1024 bytes.
+
+     N.B.      If RGB_BUFF is in the range 1 to 15 this is taken to be the 
+               number of a STOS memory bank.  Any other value is taken  to 
+               be an absolute address value.
+
+
+--------------------------------------------------------------------------
+
+Command   :-   ilbmpalt
+Version   :-   All VIDEO versions.
+Syntax    :-   ilbmpalt S
+Action    :-   This  command  asserts the Falcon's 256 colour  palette  to 
+               that of an InterLeavedBitMap pictures palette contained  in 
+               the  buffer  pointed to by S (normally a  STOS  memory 
+               bank,  the same one as contains the ILBM picture data).  If 
+               the  picture  is not in a valid InterLeaved  BitMap  format 
+               this  command will return unprocessed leaving the  original 
+               palette unchanged.
+
+Enhanced  :-   As  of  VIDEO  (II)  version  3.1  this  function  is   now 
+               compatible with the older 16 colour IFF (Amiga) images.
+
+--------------------------------------------------------------------------
+
+Command   :-   palfade in
+Version   :-   All VIDEO versions.
+Syntax    :-   palfade in BANK
+Action    :-   This  command 'fades' the Falcon 030's 256  colour  palette 
+               from black to current RGB's held in BANK.
+
+--------------------------------------------------------------------------
+
+Command   :-   palfade out
+Version   :-   All VIDEO versions.
+Syntax    :-   palfade out
+Action    :-   This  command fades the Falcon 030's 16/256 colour  palette  
+               to black.
+
+--------------------------------------------------------------------------
+
+Command   :-   _get spritepalette
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _get spritepalette
+Action    :-   This  command  asserts  the 16 colour ST  palette  to  that 
+               contained in the sprite bank.  (Only operative in the ST(e) 
+               screen  modes.) I modified the name of this command  to  be 
+               more in keeping with what it actually does.
+
+--------------------------------------------------------------------------
+
+Command   :-   _get st palette
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _get st palette BANK[,COL_REG]
+Action    :    This  command  would normally be used in  conjunction  with 
+               the commands _paste pi1 and _convert pi1.
+
+               This  performs  the same function as the STOS  get  palette 
+               (BANK)  command,  where the palette of a  (unpacked)  Degas 
+               PI1/NEO image held in STOS memory bank BANK is loaded  into 
+               the Falcon's 16/256 colour palette hardware registers.
+
+Enhanced  :-   This  command  has  an  optional  parameter  to  allow  the 
+               remapping of 16 colour NEO/Degas images in the Falcon's 256 
+               colour video modes :-
+
+
+                          Continued overleaf...
+
+               COL_REG   0  - 240 (value MUST be multiples  of  16).  This 
+                         optional  parameter  sets  the base  -  colour  - 
+                         register  in  the Falcon's 256  colour  modes  to 
+                         where the NEO/Degas images palette consisting  of 
+                         16  colours  are copied to in  the  Falcon's  256 
+                         colour palette.
+
+                         If,  for example,  the parameter COL_REG=16  then 
+                         the  NEO/Degas images palette will be  copied  to 
+                         the  Falcon's 256 colour palette at colours 16  - 
+                         31. If COL_REG=48 then the NEO/Degas palette will 
+                         be  copied to the Falcon's 256 colour palette  at 
+                         colours 48 - 63.
+
+If  COL_REG  is omitted from the command then in the Falcon's  256  colour 
+modes  the image palette consisting of 16 colours are copied to the  LOWER 
+16 colours of the 256 colour palette.
+
+--------------------- Degas PI1/NEO Picture Commands ---------------------
+
+Command   :-   _paste pi1
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _paste pi1 SRCE,SX,SY,W,H,DEST,DX,DY[,COL_REG]
+Action    :-   This command allows the 'pasting' of a Degas PI1/NEO  image 
+               into a Falcon 16/256 colour screen at coords DX,DY.
+
+               SRCE =    Address of source image
+               SX   =    Xoffset into source image
+               SY   =    Yoffset into source image
+               W    =    Block width of source image
+               H    =    Block height of source image
+               DEST =    Address of destination screen
+               DX   =    Xoffset into destination screen
+               DY   =    Yoffset into destination screen
+
+Note      :-   You  may  specify the SOURCE X and Y coordinates  pixel  by 
+               pixel within the width and height of the PI1 image.
+
+               You  may also specify the DESTINATION X and  Y  coordinates 
+               pixel  by  pixel  within  the  width  and  height  of   the 
+               destination screen.
+
+Enhanced  :-   This  command  has an optional parameter  to  allow  colour 
+               remapping of 16 colour NEO/Degas images in the Falcon's 256 
+               colour video modes :-
+
+               COL_REG   0  - 240 (value MUST be multiples  of  16).  This 
+                         optional  parameter  sets  the base  -  colour  - 
+                         register  to  which the 'pasted'  image  will  be 
+                         mapped.
+
+                         If,  for example,  the parameter COL_REG=16  then 
+                         the  NEO/Degas  image  will be  'pasted'  to  the 
+                         Falcon's 256 colour screen and mapped to use  the 
+                         colours 16 - 31. If COL_REG=48 then the NEO/Degas 
+                         image will be 'pasted' to the Falcon's 256 colour 
+                         screen and mapped to use the colours 48 - 63.
+
+If  COL_REG  is omitted from the command the image will be mapped  to  use 
+colours 0 - 16, as was the default of the previous VIDEO versions command.
+  The best way to understand this command is by way of an example, i.e.,
+
+Example   :    10 reserve as screen 8 : rem Bank containing PI1 image.
+               20 reserve as work 10,160*1024 : rem Bank for PHYSIC & LOGIC
+                  (MUST be large enough for a 640*240 256 colour screen).
+               30 load "MY_PIC.PI1",8 : rem Load Degas image into bank.
+               40 OLD_MD=mode : rem Remember old video mode.
+               50 MON_TYPE=montype : rem returns 1=RGB, 2=VGA, 3=TV
+               60 if MON_TYPE=2 then MDE=whichmode(640,240,256) else 
+                  MDE=whichmode(640,200,256)
+               70 quickwipe start(10),length(10)
+               80 logic=start(10) : physic=start(10)
+               90 vsetmode MDE
+               100 SCE=8 : rem SOURCE = PI1 image in bank 8.
+               110 S_X=0 : rem Xcoord into SOURCE image.
+               120 S_Y=0 : rem Ycoord into SOURCE image.
+               130 WIDTH=320 : rem WIDTH of raster of SOURCE image.
+               140 HEIGHT=200 : rem HEIGHT of raster of SOURCE image.
+               150 DEST=10 : rem PHYSICAL screen in bank 10.
+               160 D_X=0 : rem Xcoord into DESTINATION screen.
+               170 D_Y=0 : rem Ycoord into DESTINATION screen.
+               180 _get st palette 8 : rem Copy PI1 images palette into 
+                   the LOWER 16 colours of the Falcon's 256 colour palette
+               190 _paste pi1 SCE,S_X,S_Y,WIDTH,HEIGHT,DEST,D_X,D_Y
+               200 while mousekey=false : wend
+               210 mode OLD_MD
+               220 physic=default physic : logic=default logic
+               230 default : end
+
+--------------------------------------------------------------------------
+
+Command   :-   _convert pi1
+Version   :-   All VIDEO (II) and (III) versions.
+Syntax    :-   _convert pi1 SRCE,DEST[,COL_REG]
+Action    :-   This command originally requested by Martin Milner is a  no 
+               -  frills - as - quick - as - possible conversion from  the 
+               320*200  image size to 640*200 image size.  The  image  may 
+               then be displayed in either 640*200 RGB [640*240 VGA] 16 or 
+               256 colour video modes.
+
+               Since  execution  speed was of the utmost priority  I  have 
+               included  this new command rather than modify the  original 
+               paste pi1 command. 
+
+               SRCE =    Address of the original PI1 image,  [this may  be 
+                         given  as the STOS memory bank # or the  absolute 
+                         address of the memory bank, e.g. start(8)].
+
+               DEST =    Address  where we wish to hold the converted  PI1 
+                         image, [this may be given as the STOS memory bank 
+                         #  or  the absolute address of the  memory  bank, 
+                         e.g.  start(9)],  or  you may convert  the  image 
+                         directly  to PHYSIC,  or any where else for  that 
+                         matter  so  long as the  SOURCE  and  DESTINATION 
+                         areas do NOT overlap.
+
+
+
+                          Continued overleaf....
+
+IMPORTANT :-   The PI1 image is converted to the 4 - bit plane format  (16 
+               colours)  for the 640*200/240 16 colour video modes OR 8  - 
+               bit plane format for the 640*200/240 256 colour video modes 
+               DEPENDENT on the current video mode.
+
+          i.e. If the current video mode is a 16 colour one then the image 
+               will be converted for a 16 colour screen.
+
+               If  the  current video mode is a 256 colour  one  then  the 
+               image will be converted for a 256 colour screen.
+
+               In either case the image will still contain the 16  colours 
+               of  the original PI1 image [using the LOWER 16  colours  of 
+               the 256 colour palette when in 256 colour video modes].
+
+Enhanced  :-   This  command  has an optional parameter  to  allow  colour 
+               remapping of 16 colour NEO/Degas images in the Falcon's 256 
+               colour video modes :-
+
+               COL_REG   0  - 240 (value MUST be multiples  of  16).  This 
+                         optional  parameter  sets  the base  -  colour  - 
+                         register  to  which the 'pasted'  image  will  be 
+                         mapped.
+
+                         If,  for example,  the parameter COL_REG=16  then 
+                         the  NEO/Degas  image  will be  'pasted'  to  the 
+                         Falcon's 256 colour screen and mapped to use  the 
+                         colours 16 - 31. If COL_REG=48 then the NEO/Degas 
+                         image will be 'pasted' to the Falcon's 256 colour 
+                         screen and mapped to use the colours 48 - 63.
+
+If  COL_REG  is omitted from the command the image will be mapped  to  use 
+colours 0 - 16, as was the default of the previous VIDEO versions command.
+
+-------------------------- ILBM Picture Commands -------------------------
+
+Command   :-   dpack ilbm
+Version   :-   All VIDEO versions.
+Syntax    :-   X=dpack ilbm(SCE_ADDR,DEST_ADDR)
+Action    :-   This  function depacks/converts an IFF (Amiga 16 colour)  / 
+               ILBM (256 colour) format picture file into  a normal bitmap 
+               ready to display on screen.
+
+               SCE_ADDR  =    Address  of buffer (normally a  STOS  memory 
+                              bank)  where the source  InterLeaved  BitMap 
+                              picture is held.
+
+               DEST_ADDR =    Destination  screen  for  the  picture  data 
+                              (again, a STOS memory bank).
+
+               X = FALSE (0)  If the picture is not in a valid InterLeaved 
+                              BitMap format.
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   vget ilbm mode
+Version   :-   All VIDEO versions.
+Syntax    :-   VID_MDE=vget ilbm mode(ADDR)
+Action    :-   This function returns VID_MDE with the MODEWORD required by
+               vsetmode to match the resolution of the InterLeaved  BitMap 
+               picture to the screen. 
+
+               ADDR =    Address  of buffer (normally a STOS memory  bank) 
+                         where  the source InterLeaved BitMap  picture  is 
+                         held.
+
+Important :-   In  the old VIDEO (II) extensions <v0.4 the value  returned 
+               by  VID_MDE=FALSE  (0)  if the picture is not  in  a  valid 
+               InterLeaved BitMap format.
+
+Enhanced  :-   In  VIDEO  (II) extensions =>v0.4 this  value  returned  by 
+               VID_MDE = modeword for ST compatible Med-Rez if the picture 
+               is  not  in a valid InterLeaved  BitMap  format.  This  was 
+               modified  because the previous versions returned FALSE  (0) 
+               and  this is not a valid modeword for the vsetmode  command 
+               and if ignored would lead to a system crash.
+
+               So, when using VIDEO (II) =>v0.4 or any VIDEO (III) version 
+               we should now test bit #7 of VID_MDE, if TRUE then returned 
+               modeword is ST compatible Med-Rez and a valid mode does not 
+               exist to match the requirements of the ILBM image.
+
+--------------------------------------------------------------------------
+
+Command   :-   fmchunk
+Version   :-   All VIDEO versions.
+Syntax    :-   ADR=fmchunk(BANK)
+Action    :-   This function returns the address of the 'FORM' chunk ID in
+               InterLeaved BitMap picture if found.    Otherwise   returns 
+               zero.  BANK  is  the address of the buffer where  the  ILBM 
+               picture is held. This is used to ensure the picture file we 
+               are working on is a valid InterLeavedBitMap picture.
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   ilbmchunk
+Version   :-   All VIDEO versions.
+Syntax    :-   ADR=ilbmchunk(BANK)
+Action    :-   This function returns the address of the 'ILBM' chunk ID in
+               InterLeaved BitMap picture if found.    Otherwise   returns 
+               zero.  BANK  is  the address of the buffer where  the  ILBM 
+               picture is held. This is used to ensure the picture file we 
+               are working on is a valid InterLeavedBitMap picture.
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   bmhdchunk
+Version   :-   All VIDEO versions.
+Syntax    :-   ADR=bmhdchunk(BANK)
+Action    :-   This function returns the address of the 'BMHD' chunk ID in
+               InterLeaved BitMap picture if found.    Otherwise   returns 
+               zero.  BANK  is  the address of the buffer where  the  ILBM 
+               picture  is held.  The   address   returned    gives    the   
+               following information:-
+
+               ADR       =    Address of 'BMHD' four character string.
+               ADR+4     =    The LONGWORD value held here gives length of 
+                              BMHD chunk.
+               ADR+8     =    The WORD here is IMAGE width (in pixels).
+               ADR+10    =    The WORD here is IMAGE height (in pixels).
+               ADR+18    =    The  BYTE  here is  IMAGE  compression  flag 
+                              (0 = uncompressed , 1 = compressed).
+               ADR+24    =    The  WORD  here is PAGE width  (usually  the 
+                              same as IMAGE width).
+               ADR+26    =    The  WORD here is PAGE height  (usually  the 
+                              same as IMAGE height).
+
+Example   :-   10 BANK=8 : rem ILBM picture is in STOS memory bank #8.
+               20 IMAGE_WIDTH=deek(bmhdchunk(BANK)+8)
+               30 IMAGE_HEIGHT=deek(bmhdchunk(BANK)+10)
+
+--------------------------------------------------------------------------
+
+Command   :-   cmapchunk
+Version   :-   All VIDEO versions.
+Syntax    :-   ADR=cmapchunk(BANK)
+Action    :-   This function returns the address of the 'CMAP' chunk ID in
+               InterLeaved BitMap picture if found.    Otherwise   returns 
+               zero.  BANK  is  the address of the buffer where  the  ILBM 
+               picture  is held.  The   address   returned    gives    the   
+               following information:-
+
+               ADR       =    Address of 'CMAP' four character string.
+               ADR+4     =    The  value held here divided by three  gives 
+                              the number of colours in the palette.
+               ADR+8     =    The start of the palette data.
+
+Example   :-   N_COLOURS=leek(cmapchunk(BANK)+4)/3
+
+--------------------------------------------------------------------------
+
+Command   :-   bodychunk
+Version   :-   All VIDEO versions.
+Syntax    :-   ADR=bodychunk(BANK)
+Action    :-   This function returns the address of the 'BODY' chunk ID in
+               InterLeaved BitMap picture if found.    Otherwise   returns 
+               zero.  BANK  is  the address of the buffer where  the  ILBM 
+               picture  is held.  The   address   returned    gives    the   
+               following information:-
+
+               ADR       =    Address of 'BODY' four character string.
+               ADR+4     =    The value held here gives the length of  the
+                              'body' data.
+               ADR+8     =    The start of the 'body' (picture) data, this 
+                              may or may not be compressed.
+
+**************************************************************************
+*                                                                        *
+*  F a l c o n  0 3 0  V I D E O  ( I I I )  E x t e n s i o n  v 0 . 4  *
+*                                                                        *
+*       Video modes available to STOS via this command extension.        *
+*                                                                        *
+**************************************************************************
+
+
++------------------------------------------------------------------------+
+|                 S T A N D A R D  V I D E O  M O D E S                  |
+|------------------------------------------------------------------------|
+| Monitor | Resolution | Colours | MODEWORD | Mode information           |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 320 * 200  |     16  |   $00A2  | 320 * 200  16 colour       |
+|         |            |         |          | ST Compatibility mode      |
+|         |            |         |          | [ST Low - Rez]             |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 200  |      4  |   $00A9  | 640 * 200   4 colour       |
+|         |            |         |          | ST Compatibility mode      |
+|         |            |         |          | [ST Med - Rez]             |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 400  |      2  |   $01A8  | 640 * 400   2 colour       |
+|         |            |         |          | ST Compatibility mode      |
+|         |            |         |          | [ST High - Rez]            |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 320 * 200  |    256  |   $0023  | Standard Falcon 030 video  |
+|         |            |         |          | mode. (Non-interlaced).    |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 320 * 200  |TruColour|   $0023  | Standard Falcon 030 video  |
+|         |            |         |          | mode. (Non-interlaced).    |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 320 * 400  |     16  |   $0122  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 320 * 400  |    256  |   $0123  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 320 * 400  |TruColour|   $0124  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 384 * 240  |     16  |   $0062  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Non-interlaced).     |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 384 * 240  |    256  |   $0063  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Non-interlaced).     |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 384 * 240  |TruColour|   $0064  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Non-interlaced).     |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 384 * 480  |     16  |   $0162  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 384 * 480  |    256  |   $0163  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 384 * 480  |TruColour|   $0164  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Interlaced).         |
++------------------------------------------------------------------------+
+
++------------------------------------------------------------------------+
+| Monitor | Resolution | Colours | MODEWORD | Mode information           |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 200  |     16  |   $002A  | Standard Falcon 030 video  |
+|         |            |         |          | mode. (Non-interlaced).    |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 200  |    256  |   $002B  | Standard Falcon 030 video  |
+|         |            |         |          | mode. (Non-interlaced).    |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 200  |TruColour|   $002C  | Standard Falcon 030 video  |
+|         |            |         |          | mode. (Non-interlaced).    |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 400  |      4  |   $0129  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 400  |     16  |   $012A  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 400  |    256  |   $012B  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 400  |TruColour|   $012C  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 768 * 240  |     16  |   $006A  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Non-interlaced).     |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 768 * 240  |    256  |   $006B  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Non-interlaced).     |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 768 * 240  |TruColour|   $006C  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Non-interlaced).     |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 768 * 480  |     16  |   $016A  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 768 * 480  |    256  |   $016B  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 768 * 480  |TruColour|   $016C  | Falcon 030 overscanned     |
+|         |            |         |          | mode (Interlaced).         |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 320 * 240  |     16  |   $0132  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling ON).   |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 320 * 240  |    256  |   $0133  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling ON).   |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 320 * 240  |TruColour|   $0134  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling ON).   |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 320 * 480  |     16  |   $0132  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 320 * 480  |    256  |   $0133  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 320 * 480  |TruColour|   $0134  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
++------------------------------------------------------------------------+
++------------------------------------------------------------------------+
+| Monitor | Resolution | Colours | MODEWORD | Mode information           |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 240  |      4  |   $0139  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling ON).   |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 240  |     16  |   $013A  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling ON).   |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 240  |    256  |   $013B  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling ON).   |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 480  | Mono(2) |   $0038  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 480  |      4  |   $0039  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 480  |     16  |   $003A  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 480  |    256  |   $003B  | Standard Falcon 030 video  |
+|         |            |         |          | mode (Line-doubling OFF).  |
++------------------------------------------------------------------------+
+
+
++------------------------------------------------------------------------+
+|                 E X T E N D E D  V I D E O  M O D E S                  |
+|------------------------------------------------------------------------|
+| Monitor | Resolution | Colours | MODEWORD | Mode information           |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 240  |     16  |   $102A  | Emulation of the VGA       |
+|         |            |         |          | 640 * 240  16 colour       |
+|         |            |         |          | video mode.                |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 240  |    256  |   $102B  | Emulation of the VGA       |
+|         |            |         |          | 640 * 240 256 colour       |
+|         |            |         |          | video mode.                |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 480  |     16  |   $112A  | Emulation of the VGA       |
+|         |            |         |          | 640 * 480  16 colour       |
+|         |            |         |          | video mode.                |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 480  |    256  |   $112B  | Emulation of the VGA       |
+|         |            |         |          | 640 * 480 256 colour       |
+|         |            |         |          | video mode.                |
+|---------+------------+---------+----------+----------------------------|
+| TV/RGB  | 640 * 480  |TruColour|   $112C  | Emulation of the VGA       |
+|         |            |         |          | 640 * 480 resolution       |
+|         |            |         |          | in TruColour mode.         |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 768 * 240  |     16  |   $213A  | Emulation of the RGB       |
+|         |            |         |          | 768 * 240  16 colour       |
+|         |            |         |          | video mode for VGA.        |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 768 * 240  |    256  |   $213B  | Emulation of the RGB       |
+|         |            |         |          | 768 * 240 256 colour       |
+|         |            |         |          | video mode for VGA.        |
++------------------------------------------------------------------------+
+
++------------------------------------------------------------------------+
+| Monitor | Resolution | Colours | MODEWORD | Mode information           |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 768 * 480  |     16  |   $203A  | Emulation of the RGB       |
+|         |            |         |          | 768 * 480  16 colour       |
+|         |            |         |          | video mode for VGA.        |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 768 * 480  |    256  |   $203B  | Emulation of the RGB       |
+|         |            |         |          | 768 * 480 256 colour       |
+|         |            |         |          | video mode for VGA.        |
++------------------------------------------------------------------------+
+
+Also,  specially  for those users whose Falcon's have the  Black  Scorpion 
+Nemesis  system  accelerator hardware installed there is a  new  specially 
+customised extended VGA video mode now available:-
+
++------------------------------------------------------------------------+
+| Monitor | Resolution | Colours | MODEWORD | Mode information           |
+|---------+------------+---------+----------+----------------------------|
+| (S)VGA  | 640 * 480  |TruColour|   $2034  | Emulation of the VGA       |
+|         |            |         |          | 640 * 480 resolution       |
+|         |            |         |          | in TruColour mode.         |
+|------------------------------------------------------------------------|
+| IMPORTANT:   THIS MODE IS ONLY AVAILABLE TO THE VGA DISPLAY WHEN       |
+|              BLACK SCORPION'S NEMESIS (THE FALCON 030 SYSTEM           |
+|              ACCELERATOR) IS INSTALLED.......                          |
+|                                                                        |
+|    To  use this video mode you must ensure you set the  Nemesis  to    |
+|    the  high-clock-rate (24MHz) to get a stable  display.  The  new    |
+|    SYSTEM CONTROL v4 extension provides the user with the necessary    |
+|    commands/functions to determine if Nemesis IS installed on  your    |
+|    machine and set the cpu clock accordingly...                        |
+|                                                                        |
++------------------------------------------------------------------------+
+
+About the MODEWORD:
+
+Bits  15  - 9 of the 16-bit value used by the Falcon's XBIOS  to  set  the 
+video mode are not normally used.  (Officially they are reserved by  Atari 
+for future enhancement.) Since the demise of Atari it is now most unlikely 
+they  will be used officially,  so I have made use of them to  distinguish 
+the new extended modes that I have provided.
+

@@ -1,0 +1,559 @@
+070000203050000140000004006010000
+1STOS Extension3D Menus & Alerts v0.61
+2- # -1
+F0110000001
+9[..........................................................]0110
+€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ                                                                     บ
+บ                                                                     บ
+บ                                 The                               บ
+บ                                                                     บ
+บ                      3DMenu  &Alert s                  บ
+บ                                                                     บ
+บ                           E x t e n s i o n.                       บ
+บ                                                                        บ
+บ        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         บ
+บ                                                                        บ
+บ           FortheST(e)/TT/Falcon 030บ
+บ                                                                     บ
+บ                                                                        บ
+บ    (c)1995,1996,1997&1998AnthonyHoskin.บ
+บ       45WythburnRoad,บ
+บ       Newbold,บ
+บ       Chesterfield,บ
+บ       Derbyshire,บ
+บ       S418DP.(U.K.)บ
+บ                                                                     บ
+บ                Current version: v0.6 (21st February 1998)              บ
+บ                                                                     บ
+บ                                                                     บ
+บ                       ConditionsOfRegistration€                    บ
+บ                                                                     บ
+บ    YoumayNOTdistributethissoftwareoritsassociatedบ
+บ    program/documentfiles(eitherinwholeorinpart)inanyway บ
+บ    shapeorform.(Anytranslationofthisdocumentfileintoบ
+บ    anotherlanguageispermittedandwillberestrictedtotheบ
+บ    sameconditionsasthisEnglishlanguageversionwithบ
+บ    respecttoanyotherchanges.)Youareauthorisedtomakeบ
+บ    personalback-upsofthesoftwareprovidedtheyarecompleteบ
+บ    andunchangedinanyway.                                        บ
+บ                                                                     บ
+บ                                                                     บ
+บ                             Disclaimer€                            บ
+บ                                                                     บ
+บ    ThissoftwareisfortheAtariST(e)/TT/Falcon030computersบ
+บ    only.Itakeno responsibilitywhatsoeverintheuse/misuseofบ
+บ    thissoftware.                                               บ
+บ                                                                     บ
+บ                                                                     บ
+บ                          System Requirements€                        บ
+บ                                                                     บ
+บ              Machine   :    AnyAtariST(e)/TT/Falcon030           บ
+บ              RAM       :    Runsonmachineswith512kb-14mbบ
+บ              Monitor   :    TV,Mono/Colourmonitor[RGB&VGA]        บ
+บ              Software  :    STOSBasicv2.6upwards                 บ
+บ                                                                     บ
+บ                                Contents€                             บ
+บ                                                                     บ
+บ                                                                     บ
+บ   3DMenu&AlertExtensionv0.6,Introduction............ Page1บ
+บ    3DMenu&Alertv0.6commandreference.................. Page2บ
+บ   Programmingwiththe3DMenu&AlertExtensionv0.6 ..... Page7บ
+บ                                                                     บ
+บ                                                                     บ
+บ                                                                     บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ                                                                     บ
+บ                        บ
+บ                        Introduction                      บ
+บ                                                                     บ
+บ                                 The                               บ
+บ                                                                     บ
+บ                      3DMenu  &Alert s                  บ
+บ                                                                     บ
+บ                           E x t e n s i o n.                       บ
+บ                                                                        บ
+บ             v0.6            บ
+บ                                                                     บ
+บ                        บ
+บ          ฝ1995, 1996,1997 Anthony Hoskin,                          บ
+บ                  45WythburnRoad,             บ
+บ                Newbold,             บ
+บ             Chesterfield,             บ
+บ             Derbyshire,             บ
+บ                        บ
+บ             S418DP(U.K.)             บ
+บบ
+บ    ThisextensionallowsanallnewMenustriptobeinvokedfrom บ
+บ    withinanyoftheST(e)/TT/Falcon'scolourvideomodes.Keeping บ
+บ    toconventionasmuchasIpossiblycan,thenewcommands บ
+บ    followaverysimilarsyntaxtotheoldSTOSMenucommands. บ
+บ    ThisallowssimpleconversionofprogramsusingtheolderSTOS บ
+บ    Menucommands.                                                  บ
+บ                                                                     บ
+บบ
+บThefollowing12instructionsandfunctionsareavailable.บ
+บบ
+บ                 _fmenu init             _fmenu check item        บ
+บ                 _fmenu on               _fmenu uncheck item         บ
+บ                 _fmenu select           _fmenu$                  บ
+บ                 _fmenu item             _fmenu freeze               บ
+บ                 _fmenu$ on              _fmenukill                บ
+บ                 _fmenu$off           _fmenuheight               บ
+บ                                                                        บ
+บ                                                                     บ
+บ    IMPORTANT:THISEXTENSIONMUSTALSOBEUSEDWITHTHEบ
+บ    FOLLOWINGEXTENSION(S)ANDPATCHFILE(S).THESEบ
+บ    ARENEEDEDBECAUSETHEYCONTAINIMPORTANTบ
+บ    SUPPORTCOMMAND(S)/ROUTINESFORTHISEXTENSIONบ
+บ    TOFUNCTIONCORRECTLY.                            บ
+บ                                                                        บ
+บ              WINDO102.BIN[STOSinterpreterlibraryfile]           บ
+บ             WINDO102.LIB[STOScompilerlibraryfile]              บ
+บ                                                                     บ
+บ              SPRIT101.BIN[STOSinterpreterlibraryfile]           บ
+บ              SPRIT101.LIB[STOScompilerlibraryfile]              บ
+บ                                                                     บ
+บ              ST(e)/TT/Falcon030SystemControlExtension=>v0.9   บ
+บ                                                                     บ
+บ         Thepatchesandextension(s)listedabovecontain   บ
+บ         supportroutineswhichthe3DMenu&Alertsextension  บ
+บ         callsformostofitsfunctions.                          บ
+บ                                                                     บ
+บ                                                                     บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ         The3DMenu&AlertsExtensionv0.6commandreference บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+Command:-_fmenucmds
+Syntax:-_fmenucmds
+Version:-AllMenuextensionversions.
+Action:-Cannotbecompiled.UsedwithintheSTOSeditortolistthe
+quickreferenceforthe'Menu&Alerts'commands.
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu init
+Syntax    :-_fmenuinitCOL1,COL2,COL3,COL4
+Version:-AllMenuextensionversions.
+Action:-Thiscommandassignsthemenustrip3Dcoloursand
+initialisestheextensionsinternalvariablesforthe
+3DMenustripfortheCURRENTST(e)/Falcon030videomode.
+
+Important :-ThisMUSTbethefirstmenucommandtheprograminvokes,
+sinceallother_fmenucommandswillreturnerrorreports
+ifthemenustripisnotvalid.
+
+ThevariablesCOL1,COL2,COL3,COL4assignthecoloursto
+variouselementsofthe3DMenu/Alert.Theirvaluesmay
+rangebetween;
+
+0-1forall2colourresolutions(STHigh).
+0-3forall4colourresolutions(STMed).
+0-15forall16colourresolutions(STLow-including
+alltheFalcon's16colourvideomodes).
+0-255foralltheFalcon's256colourvideomodes.
+
+COL1Assignsthefillcolourforthemenustrip.
+COL2AssignsthecolouroftheLEFTsideandTOPedge
+borderofthe3Dmenustrip.
+COL3AssignsthecolouroftheRIGHTsideandBOTTOM
+edgeborderofthe3Dmenustrip.
+COL4AssignsthecolourtotheMenutextswhichare
+currentlyenabledbythe_fmenu$oncommand.[By
+defaultALLmenutitlesanditemsareenabled
+untildisabledbythe_fmenu$offcommand].
+COL2 \Arealsoassignedasthetextcoloursforthe
+               COL3 /    disabledmenutitle(s)/item(s).
+
+True-Colourcompatibility€.
+
+IfyouwouldliketousetheFalcon3DMenustripintheTrue-Colourvideo
+modesitisbesttoassignthecoloursviatheFalconGRAFIX(II)
+extensionsRGB=_tcrgbcommand.
+
+e.g.COL1=_tcrgb(20,20,20)   ThisassignsCOL1=lightgrey
+COL2=_tcrgb(30,30,30)   ThisassignsCOL2=white
+COL3=_tcrgb(10,10,10)   ThisassignsCOL3=darkgrey
+COL4=_tcrgb(30,0,0)     ThisassignsCOL4=red
+
+
+
+--------------------------------------------------------------------------
+
+€Command:-_fmenuheight
+Syntax    :-   H=_fmenuheight
+Version:-AllMenuextensionversions.
+Action    :-Returnstheheight(depth)ofthecurrent3Dmenustrip.
+Thiscommandisusefulfordeterminingtheheightofthe3D
+menustripsothatyourprogrammaycalculatetheYorigin
+foritsdrawingofgraphicsetcsuchastheydon'tencroach
+thescreenareaofthemenustrip.Thevaluereturnedwill
+dependuponthecurrentscreenresolutionandisasshown
+below:-
+
+H                   Screenresolution
+
+12320x200   320x240   640x200   640x240   768x240
+24320x400   320x480   640x240   640x480   768x480
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu$
+Syntax    :-   _fmenu$TITLE,TITLE$
+_fmenu$TITLE,ITEM,ITEM$
+Version:-AllMenuextensionversions.
+Action    :-Definemenutitles/options.
+
+_fmenu$TITLE,TITLE$assignsthestringTITLE$tothe
+menutitleTITLE.Thistitle
+stringisdisplayedinthe3Dmenu
+strip.
+
+_fmenu$TITLE,ITEM,ITEM$assignsthestringITEM$tothe
+menutitlesTITLEdrop-down.This
+itemstringisdisplayedinthe3D
+menudrop-down.
+
+Currentlytheparametersrangeasshownbelow:-
+
+TITLE     1-6Theupperlimitsarelimitedbythe
+sizeofthescreensavebufferusedby
+               ITEM      1-10   themenudrop-downs.Byusinginternal
+bufferstheprogramitselfdoesnot
+needtorestorethescreenafteramenu
+drop-downhasoccurred.
+
+IfTITLEorITEMareoutofrangethentheerror"Subscript
+outofrange"isgenerated.[Normallythiserrormessage
+relatestoanunDIMensionedstring,butitisappliedhere
+becausethestringsforthe_fmenu$commandareeffectively
+pre-dimensionedbythisextension].
+
+BothTITLE$andITEM$arelimitedto16charactersin
+length,ifstringslongerthanthisareusedtheywillbe
+truncatedtothefirst16characters.
+
+Ifthe3DMenustriphasnotbeenpreviouslyinitialised
+viathe_fmenuinitcommandtheerror"Menunot
+initialised._fmenuinitrequired."isgenerated.
+
+
+--------------------------------------------------------------------------
+
+€Command:-_fmenu on
+Syntax    :-   _fmenuon
+Version:-AllMenuextensionversions.
+Action    :-EquivalenttotheSTOSmenuoncommand.Turnsonthemenu
+interruptdriversanddisplaystheFalcon3DMenustrip.
+Aftertheprograminvokesthiscommandthe3Dmenuisfully
+operationaltotheprograminthesamewayastheoriginal
+STOSmenuoncommand.
+
+Ifthe3DMenustriphasnotbeenpreviouslyinitialised
+viathe_fmenuinitcommandtheerror"Menunot
+initialised._fmenuinitrequired."isgenerated.
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu$ off
+Syntax    :-   _fmenu$offTITLE
+_fmenu$offTITLE,ITEM
+Version:-AllMenuextensionversions.
+Action    :-_fmenu$offTITLEdisablesthemenutitleTITLE.Thistitle
+stringisthendisplayedinthe3DmenuinthecoloursCOL2
+&COL3.AnyfurtherattemptstoCLICKonthismenutitle
+arecompletelyignored.
+
+_fmenu$offTITLE,ITEMdisablesthemenuitemTITLE,ITEM.
+Thisitemstringisthendisplayedinthe3Dmenudrop-down
+inthecoloursCOL2&COL3.AnyfurtherattemptstoCLICK
+onthismenuitemarecompletelyignored.
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu$ on
+Syntax    :-   _fmenu$onTITLE
+_fmenu$onTITLE,ITEM
+Version:-AllMenuextensionversions.
+Action    :-Reversestheeffectoftheabovecommands.
+_fmenu$onTITLEenablesthemenutitleTITLE.Thistitle
+stringisthendisplayedinthe3DmenuinthecoloursCOL3
+&COL4.
+
+_fmenu$onTITLE,ITEMenablesthemenuitemTITLE,ITEM.
+Thisitemstringisthendisplayedinthe3Dmenudrop-down
+inthecoloursCOL3&COL4.
+
+Important :-Allmenutitles/itemsareenabledbydefaultunless
+previouslydisabledbythe_fmenu$offcommand.
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu select
+Syntax    :-   MN=_fmenuselect
+Version:-AllMenuextensionversions.
+Action    :-EquivalenttotheSTOSmnbarfunction,returnsanumber
+denotingthemenutitleyouhavechosenotherwisereturns
+zero.
+
+
+
+--------------------------------------------------------------------------
+
+€Command:-_fmenu item
+Syntax    :-   ITEM=_fmenuitem
+Version:-AllMenuextensionversions.
+Action    :-EquivalenttotheSTOSmnselectfunction,returnsanumber
+denotingthemenuoption/itemyouhavechosenotherwise
+returnszero.
+
+--------------------------------------------------------------------------
+
+Command   :-   _fmenu check item
+Syntax    :-   _fmenu check itemTITLE,ITEM
+Version:-AllMenuextensionversions.
+Action    :-Addsacheckmarkinfrontofthemenuitemstringindexed
+byTITLE,ITEM.
+
+--------------------------------------------------------------------------
+
+Command   :-   _fmenu uncheck item
+Syntax    :-   _fmenu uncheck itemTITLE,ITEM
+Version:-AllMenuextensionversions.
+Action    :-Removesthecheckmarkinfrontofthemenuitemstring
+indexedbyTITLE,ITEM.
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu freeze
+Syntax    :-   _fmenufreeze
+Version:-AllMenuextensionversions.
+Action    :-Temporarilyfreezes(turnsoff)theactionofthemenu.
+Themenucanberestartedwiththe_fmenuoncommand.
+
+--------------------------------------------------------------------------
+
+Command:-_fmenu kill
+Syntax    :-   _fmenukill
+Version:-AllMenuextensionversions.
+Action    :-Turnsofftheactionofthemenuanderasesitfrommemory.
+ThemenuCANNOTnowberestartedwiththe_fmenuon
+command,[anewmenumustbeinitialised].
+
+--------------------------------------------------------------------------
+
+Command   :-   _formalert
+Syntax :-BTN=_formalert(COL1,COL2,COL3,COL4,ALERT$)
+Version:-AllMenuextensionversions.
+Action :-Invokesa3DeffectalertdialogmodelledontheGEMalert
+dialog.ReturnsBTNwiththenumberofthebuttontheuser
+selected(range1-3dependingonthenumberofbuttonsin
+thealertdialog).
+
+               COL1=Colourindexofthe3Dalertdialogfillcolour.
+COL2=ColourindexoftheLEFT&TOPsidesofthe3D
+alertdialog.
+COL3=ColourindexoftheRIGHT&BOTTOMsidesofthe
+3Dalertdialog.
+COL4=Colourindexofthealerttextandicon.
+ALERT$=Stringcontainingthealertmessageandbutton
+text(s)andtakestheformatasshownbelow:-
+
+Continuedoverleaf.....
+€200ALERT$="[3][Alertmessageline#1|Alertmessageline#2|Alert message
+    line#3|Alertmessageline#4|Alertmessageline#5|Alertmessage
+    line#6|Alertmessageline#7][Button#1|Button#2]"
+
+Eachpartofthealertmessagestringiscontainedwithinpaired[]
+(squarebrackets)thusinthisexample;breakingupthestringeachpart
+hasthefollowingfunction:-
+
+[]pair#1---intheaboveexample---[3]=Icontypewhere;
+
+               0=Noicon
+1=!icon
+2=?icon
+3=STOPicon
+4=i(info)icon
+5=floppydiskicon
+
+Note:AnyotherASCIIvaluebehavesastype=0.
+
+[]pair#2 =[Alertmessageline#1|Alertmessageline#2|etc....]
+where;thealertmessageitselfiscontainedbetweenpaired
+[]bracketsandconsistofamaximum7linesoftexteach
+ofamaximumof32characters.Eachlineoftextbeing
+separatedbythe'|'character.
+
+[]pair#3=  [Buttonttext#1|Buttontext#2|etc....]where;
+
+Thealertdialogcanprovidetheuserwith1,2or3
+buttonsandeachbuttondefinitionbeingseperatedbythe
+'|'character,thetextcontainedwithineachbuttonis
+restrictedasfollows;
+
+1button=Maximumof24characterscentredwithinthebutton.
+2buttons=Maximumof12characterscentredwithineachbutton.
+3buttons=Maximumof8characterscentredwithineachbutton.
+
+Incommonwiththe3DMenuextension,the3Dalertautomaticallyredraws
+thescreenwhenitterminatesitscall,thismeansthatyoudon'tneedto
+redrawthescreenyourself.
+
+Exampleofcodeforthe_formalertcommand(part);
+
+1000rem~~~~~~~~~~~~~~~~InitialiseAlertstring~~~~~~~~~~~~~~~~~~~~
+1010:
+1020ALERT$="[4][ADemo303DAlertDialog|"
+1030ALERT$=ALERT$+"writteninSTOSBasic,|"
+1040ALERT$=ALERT$+"formoreinfocontact....|"
+1050ALERT$=ALERT$+"AnthonyHoskin.|"
+1060ALERT$=ALERT$+"45WythburnRd,Newbold,|"
+1070ALERT$=ALERT$+"Chesterfield,Derbyshire,|"
+1080ALERT$=ALERT$+"(U.K.)S418DP.]"
+1090ALERT$=ALERT$+"[TapHere]"
+1100:
+1110rem~~~~~~~~~~~~~~~Callthe3DAlertDialog~~~~~~~~~~~~~~~~~~
+1120:
+1130BTN=_formalert(COL1,COL2,COL3,COL4,ALERT$)
+
+
+--------------------------------------------------------------------------
+
+€A3DMenuProgrammingExample€.
+
+Theexamplebelowisaprogramfragmentshowingthesequencetosettingup
+a3Dmenu.Thisprogramfragmentdoesnotshowthecodetoselectvideo
+modeorpalette,itisonlyintendedasaguidetothe_fmenucommands.
+
+Formoredetailexaminethelisting(s)oftheexampleprogram(s)supplied
+onyourupdatedisk.
+
+300 rem ~~~~~~~~~~~~~~~~~ Initialise Menu ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+310  : 
+320 _fmenu init 5,7,4,15
+330 _fmenu$ 1,"MENU #1"
+340 _fmenu$ 1,1,"Option #1"
+350 _fmenu$ 1,2,"Exit"
+360  : 
+370 _fmenu$ 2,"MENU #2"
+380 _fmenu$ 2,1,"Option #3"
+390 _fmenu$ 2,2,"Option #4"
+400  : 
+410 _fmenu$ 3,"MENU #3"
+420 _fmenu$ 3,1,"Option #5"
+430 _fmenu$ 3,2,"Option #6"
+440 _fmenu$ 3,3,"Option #7"
+450  : 
+460 _fmenu on 
+470  : 
+480 FG=1 : L_FLAG=false
+490 stmouse 1 : stmouse colour FG
+500 if stmouse stat=false then stmouse on 
+510 pen FG : paper 0
+520  : 
+530 rem ~~~~~~~~~~~~~~~ Main activity loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+540  : 
+550  : 
+560 on _fmenu select gosub 590,600,610
+570 goto 550
+580  : 
+590 on _fmenu item gosub 810,680
+600 on _fmenu item gosub 920,1030
+610 on _fmenu item gosub 1140,1250,1360
+620 return 
+630  : 
+640 rem =================================================================
+650 rem Routine for menu selection 'Exit'.
+660 rem =================================================================
+670  : 
+680 pop 
+690 _fmenu kill 
+700 stmouse off 
+710 default : clear key : put key "`" : end 
+720  : 
+
+
+
+
+
+
+Continuedoverleaf...........
+
+€770 rem =================================================================
+780 rem Routine for menu selection 'Option #1'.
+790 rem =================================================================
+800  : 
+810 _fmenu freeze 
+820  : 
+830 rem Your code goes here......
+840  : 
+850 _fmenu on 
+860 return 
+870  : 
+880 rem =================================================================
+890 rem Routine for menu selection 'Option #3'.
+900 rem =================================================================
+910  : 
+920 _fmenu freeze 
+930  : 
+940 rem Your code goes here......
+950  : 
+960 _fmenu on 
+970 return 
+980  : 
+990 rem =================================================================
+1000 rem Routine for menu selection 'Option #4'.
+1010 rem =================================================================
+1020  : 
+1030 _fmenu freeze 
+1040  : 
+1050 rem Your code goes here......
+1060  : 
+1070 _fmenu on 
+1080 return 
+1090  : 
+1100 rem =================================================================
+1110 rem Routine for menu selection 'Option #5'.
+1120 rem =================================================================
+1130  : 
+1140 _fmenu freeze 
+1150  : 
+1160 rem Your code goes here......
+1170  : 
+1180 _fmenu on 
+1190 return 
+1200  : 
+1210 rem =================================================================
+1220 rem Routine for menu selection 'Option #6'.
+1230 rem =================================================================
+1240  : 
+1250 _fmenu freeze 
+1260  : 
+1270 rem Your code goes here......
+1280  : 
+1290 _fmenu on 
+1300 return 
+1310  : 
+
+
+
+Continuedoverleaf...........
+
+€1320 rem =================================================================
+1330 rem Routine for menu selection 'Option #7'.
+1340 rem =================================================================
+1350  : 
+1360 _fmenu freeze 
+1370  : 
+1380 rem Your code goes here......
+1390  : 
+1400 _fmenu on 
+1410 return 
+1420  : 
+
+--------------------------------------------------------------------------
+

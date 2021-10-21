@@ -633,7 +633,7 @@ stpvx:    rts
 ; TURN ON A VOICE
 ; D1= number of voice
 restartvoice:andi.w #3,d1
-          beq stpvx
+          beq.s restart1
           subq #1,d1
           lea voixon(pc),a0            ;Remet la voix
           move.w (a0),d0
@@ -641,6 +641,7 @@ restartvoice:andi.w #3,d1
           move d0,(a0)
           lea VoixOffCpt(pc),a0          ;Arrete l'arret automatique
           clr.b 0(a0,d1.w)
+restart1:
           rts
 
 ; TRAP #7,4

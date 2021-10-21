@@ -1,0 +1,420 @@
+070000203050000140000004006010000
+1STOS ExtensionFLI/FLC Player v0.251
+2- # -1
+F0110000001
+9[..........................................................]0110
+€
+ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ                                                                        บ
+บ                                                                     บ
+บ                       FLI/FLCPlayer                    บ
+บ                                                                     บ
+บ        A S T O S  B a s i c  C o m m a n d  E x t e n s i o nบ
+บ                                                                        บ
+บ                    F o r  T h e  F a l c o n  0 3 0                    บ
+บ                                                                        บ
+บ                  (c)1997 Anthony Hoskin.                         บ
+บ                                45 Wythburn Rd,                         บ
+บ                                Newbold,                                บ
+บ                                Chesterfield,                           บ
+บ                                Derbyshire.                             บ
+บ                                S41 8DP (U.K).                          บ
+บ                                                                        บ
+บ                 Current version: v0.25 (10thJune 1997)               บ
+บ                                                                     บ
+บ                                                                     บ
+บ                       ConditionsOfRegistration€                    บ
+บ                                                                     บ
+บ    YoumayNOTdistributethissoftwareoritsassociatedบ
+บ    program/documentfiles(eitherinwholeorinpart)inanyway บ
+บ    shapeorform.(Anytranslationofthisdocumentfileintoบ
+บ    anotherlanguageispermittedandwillberestrictedtotheบ
+บ    sameconditionsasthisEnglishlanguageversionwithบ
+บ    respecttoanyotherchanges.)Youareauthorisedtomakeบ
+บ    personalback-upsofthesoftwareprovidedtheyarecompleteบ
+บ    andunchangedinanyway.                                        บ
+บ                                                                     บ
+บ                                                                     บ
+บ                             Disclaimer€                            บ
+บ                                                                     บ
+บ    ThissoftwareisfortheAtariFalcon030seriescomputeronly.บ
+บ    IfyoutrytorunitonanST(e)/TTyouwillbepolitelyบ
+บ    informedthatitwillnotrunonthesemachines.Itakenoบ
+บ    responsibilitywhatsoeverintheuse/misuseofthissoftware.บ
+บ                                                                     บ
+บ                                                                     บ
+บ                          System Requirements€                        บ
+บ                                                                     บ
+บ                                                                     บ
+บ                        Machine   :    Atari Falcon 030              บ
+บ                        RAM       :    1, 4 or 14mb                  บ
+บ                        Monitor   :    RGB, VGA or TV                บ
+บ                        Software  :    STOS Basic & STOSFIX3         บ
+บ                                                                     บ
+บ                                                                     บ
+บ                                Contents€                             บ
+บ                                                                     บ
+บ                                                                     บ
+บ  IntroductiontotheFLI/FLCPlayerExtensionv0.25.... Page1บ
+บ  FLI/FLCPlayerExtensionv0.25commandreference.... Page2บ
+บAprogrammingexampleusingtheFLI/FLCExtensionv0.25.... Page5บ
+บHistoryoftheFLI/FLCPlayerExtension                .... Page7บ
+บ                                                                     บ
+บ                                                                     บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+€
+ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ                                                                     บ
+บ                                                                     บ
+บ                                                                     บ
+บ                        บ
+บ                        Introduction                      บ
+บ                                                                 บ
+บ             TheFalcon030           บ
+บ                        บ
+บ                     FLI/FLCMoviePlayerExtension          บ
+บ                        บ
+บ             v0.25            บ
+บ                                                                     บ
+บ                        บ
+บ    (c)1997AnthonyHoskin.             บ
+บ                  45WythburnRoad,             บ
+บ                Newbold,             บ
+บ             Chesterfield,             บ
+บ             Derbyshire,             บ
+บ                        บ
+บ             S418DP(U.K.)             บ
+บ                        บ
+บบ
+บ    ThisextensionallowsSTOStoplaybackFLI/FLCtypemovies.บ
+บ    ThereisanotherSTOS/FalconextensionwrittenbyAnthonyบ
+บ    Jacqueswithsimilarcommands.Butmyversionplaystheบ
+บ    animationsunderthecontroloftheVBLinterruptstomaintainaบ
+บ    constantplaybackspeed.                                         บ
+บ                                                                     บ
+บบ
+บThefollowing8instructionsandfunctionsareavailable.บ
+บ                                                                     บ
+บบ
+บ                   _fli bank               _fli framewidth              บ
+บ                   _fli screen             _fli frameheight             บ
+บ                   _fli play         _fli frames                  บ
+บ                   _fli stop        _fli frame                   บ
+บ                                                                     บ
+บบ
+บ    IMPORTANT:Currently,theFLI/FLCplayerextensionwillบ
+บ                   playbackanimationsintheFalcon'sTru-Colourบ
+บ                   videomodesonly.Itwon'tbreakinthe16/256บ
+บ                   colourmodes,butthescreenwillbeverymessy.บ
+บ                   I'mlookingattheplayercodetoseeifIcanบ
+บ                   maketheplayerrunfastenoughforthepaletteบ
+บ                   -based256colourmodes.(It'smuchquickerinบ
+บ                   writingtothescreeninTru-Colour.)บ
+บ                                                                     บ
+บ                   AnimationsoftheFLHformatareNOTsupportedบ
+บ                   bythisplayer.I'monthelookoutforบ
+บ                   informationontheFLHformat,ifyouknowwhereบ
+บ                   Icangetholdofthisinfopleaseletmeknow. บ
+บ                                                                     บ
+บ                                                                     บ
+บ                                                                     บ
+บ                                                                     บ
+บ                                                                     บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+€ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บTheFalcon030FLI/FLCPlayerExtensionv0.25commandreferenceบ
+ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+Thiscommandreferencedetailsthecommandinthefollowingmanner:-
+
+Command:-Thecommandname.
+Version:-TheFLI/FLCExtensionversion(s)inwhichthecommandis
+available.
+Syntax:-Thesyntaxusedforthecommand.
+Action:-Adescriptionoftheaction(s)takenbythecommand.
+
+Parameterscontainedinsquarebrackets[,..,..]areoptional.
+
+--------------------------------------------------------------------------
+
+Command:-_flibank
+Syntax    :-_flibankBNK
+Version:-AllFLI/FLCPlayerextensionversions.
+Action:-ThiscommandassignsSTOSmemorybankBNKtotheFLI/FLC
+playerandinitialisestheextensionsinternalvariables.
+
+Important :-ThiscommandMUSTbethefirst_flicommandtheprogram
+invokes,immediatelyafterloadingtheFLI/FLCanimation
+intoaSTOSmemorybank.
+
+BNKisthenumberoftheSTOSmemorybankintowhichthe
+FLI/FLCanimationisloaded,(thisistheactualbank
+number,NOTitsabsoluteaddress,i.e.,BNK=1to15).
+
+--------------------------------------------------------------------------
+
+Command:-_fliscreen
+Syntax    :-   _fliscreenSCRN[,X_OFFSET,Y_OFFSET]
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-AssignsthedestinationscreenaddresstotheFLI/FLC
+playerwhere:-
+
+SCRN =   Addressofscreen,e.g.physic,start(8)
+
+               X_OFFSET  \Thesetwoparametersareoptionalandmaybe
+               Y_OFFSET  /usedtospecifyXandYoffsetsintothe
+screenarea.(Usefulforcentreingan
+FLI/FLCanimationinalargescreen).
+
+--------------------------------------------------------------------------
+
+Command:-_fliplay
+Syntax    :-   _fliplay
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-TurnsontheFLI/FLCplayerinterruptdriveranddisplays
+theFLI/FLCanimationinthescreenspecifiedby
+_fliscreen.Theanimationwillcontinuetoplayuntil
+stoppedbythenextcommand.
+
+
+
+
+--------------------------------------------------------------------------
+
+€Command:-_flistop
+Syntax    :-   _flistop
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-TurnsofftheFLI/FLCplayerinterruptdriverandstopsthe
+FLI/FLCanimation.Theanimationmayberestartedbythe
+_fliplaycommand.
+
+--------------------------------------------------------------------------
+
+Command:-_fliframewidth
+Syntax    :-   FLI_W=_fliframewidth
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-Returnsthewidth(inpixels)oftheFLI/FLCanimation
+frame.(Usefultodeterminethewidthofthescreenfor
+displayingtheanimation).
+
+--------------------------------------------------------------------------
+
+Command:-_fliframeheight
+Syntax    :-   FLI_H=_fliframeheight
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-Returnstheheight(inpixels)oftheFLI/FLCanimation
+frame.(Usefultodeterminetheheightofthescreenfor
+displayingtheanimation).
+
+--------------------------------------------------------------------------
+
+Command:-_fliframes
+Syntax    :-   FRAMES=_fliframes
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-ReturnsthenumberofframesintheFLI/FLCanimation.
+
+--------------------------------------------------------------------------
+
+Command:-_fliframe
+Syntax    :-   FRAME=_fliframe
+Version:-AllFLI/FLCPlayerextensionversions.
+Action    :-Returnsthenumberofthecurrentframebeingplayedinthe
+FLI/FLCanimation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+€AFalcon030FLI/FLCPlayerProgrammingExample€.
+
+Theexampleshownbelowisaverysimpleprogramshowingthesequence
+involvedinloadingandplayingbackanFLI/FLCanimationmovie.Itis
+onlyintendedasaguidetothe_flicommands.
+
+10 rem ******************************************************************
+20 rem *        An FLI/FLC movie player demo for the Falcon 030.        *
+30 rem *        For TV/RGB monitors only.                               *
+40 rem ******************************************************************
+50  : 
+60 _cpucache on : _cpuspeed 16 : _blitterspeed 16 : _falconbus 
+70 key off : hide on : curs off : OLD_MDE=mode
+80 if OLD_MDE<2 then mode 1
+90 break off : auto back off : on error goto 1020
+100  : 
+110 rem ~~~~~~~ Remember old drive and old directory path(s) ~~~~~~~~~~~~~
+120  : 
+130 OLD_DRV=drive : OLD_DR$=dir$ : if OLD_DR$="" then OLD_DR$="\"
+140 MSK$="*.FL?" : L_FLAG=false : FLI_PLAY=true
+150  : 
+160 rem ~~~~~~~~~~~~~ Determine Falcon's video display ~~~~~~~~~~~~~~~~~~~
+170 rem
+180 rem Returns MON_TYPE = 0 = Monochrome monitor
+190 rem                    1 = Colour (RGB) monitor
+200 rem                    2 = Colour (VGA) monitor
+210 rem                    3 = TV
+220  : 
+230 MON_TYPE=montype
+240 if MON_TYPE=2 then goto 590 : rem We don't work on VGA...
+250  : 
+260 rem ~~~~~~~~~~~~~~ Reserve Falcon's screen memory ~~~~~~~~~~~~~~~~~~~
+270  : 
+280  : 
+290 SCR_SIZE=720*1024 : rem Large enough for 768*480 Tru-Colour
+300 reserve as work 8,SCR_SIZE+1024
+310  : 
+320 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+330  : 
+340 gosub 860 : rem Load an FLI/FLC animation video.
+350 if L_FLAG=false then goto 590:remEndnowifnoFLI/FLCloaded.
+360  : 
+370 _fli bank 6 : rem Assign bank #6 to FLI/FLC player extension.
+380 gosub 660 : rem Determine a Falcon video mode.
+390 gosub 770 : rem Initialise a Falcon Tru-Colour video mode.
+400  : 
+410 rem ~~~~~~~~~~~~~~~ Play the FLI animation  ~~~~~~~~~~~~~~~~~~~~~~~~~
+420  : 
+430 _fli screen physic,X_OFFSET,Y_OFFSET
+440 _fli play 
+450 while (mouse key=false) and (inkey$<>chr$(27))
+460 wend 
+470  : 
+480 MK=mouse key
+490 _fli stop 
+500  :
+
+
+Continuedoverleaf....
+
+€510 physic=default physic
+520 logic=default logic
+530 back=default back
+540 if OLD_MDE<2 then mode OLD_MDE
+550 if MK=1 then goto 340
+560  : 
+570 rem ~~~~~~~~~~~~~~~ Terminate program tidily ~~~~~~~~~~~~~~~~~~~~~~~
+580  : 
+590 drive=OLD_DRV : dir$=OLD_DR$
+600 _cpuspeed 8 : _blitterspeed 8
+610 if OLD_MDE<2 then mode OLD_MDE
+620 default : clear key : put key "cls:list10-9999`" : end 
+630  : 
+640 rem ~~~~~~~~~~~~~~~ Determine a Falcon video mode ~~~~~~~~~~~~~~~~~~
+650  : 
+660 SCR_W=768 : rem We're going to use the 768*480 overscan
+670 SCR_H=480 : rem RGB video mode in Tru-Colour (not VGA).
+680 FLI_W=_fli framewidth
+690 FLI_H=_fli frameheight
+700 X_OFFSET=(SCR_W-FLI_W)/2 : rem Calculate X and Y offsets to centre
+710 Y_OFFSET=(SCR_H-FLI_H)/2 : rem the FLI/FLC movie in the screen.
+720 VID_MDE=whichmode(SCR_W,SCR_H,-1)
+730 return 
+740  : 
+750 rem ~~~~~~~~~~~~~~ Initialise a Falcon video mode ~~~~~~~~~~~~~~~~~~
+760  : 
+770 quickwipe start(8),length(8)
+780 physic=start(8)
+790 logic=physic
+800 vsetmode VID_MDE
+810 loke $FF9800,0 : rem Make BORDER = BLACK
+820 return 
+830  : 
+840 rem ~~~~~~~~~~~~~~ Load an FLI animation video ~~~~~~~~~~~~~~~~~~~~~
+850  : 
+860 L_FLAG=false : show on 
+870 F$=file select$(MSK$," Select an FLI/FLC animation...")
+880 hide on : if F$="" then return 
+890  : 
+900 open in #1,F$
+910  : FLI_LEN=lof(1)
+920 close #1
+930  : 
+940 if length(6)>0 then erase 6
+950 reserve as work 6,FLI_LEN
+960 bload F$,6
+970 L_FLAG=true
+980 return 
+990  : 
+1000 rem ~~~~~~~~~~~~~~~~~~~~~~ Error Handler ~~~~~~~~~~~~~~~~~~~~~~~~~~
+1010  : 
+1020 _fli stop 
+1030 on error goto 0 : break on 
+1040 physic=default physic
+1050 logic=default logic
+1060 back=default back
+
+
+Continuedoverleaf....
+
+€1070 if OLD_MDE<2 then mode OLD_MDE
+1080 print "Error #"+str$(errn)-" ";
+1090 print " at line #"+str$(errl)-" "
+1100 print : print "Press any key to Quit."
+1110 wait key : resume 590
+1120 end 
+
+
+Formoredetailexaminethelisting(s)oftheexampleprogram(s)supplied
+onyourupdatedisk.
+
+--------------------------------------------------------------------------
+
+ษอออออออออออออออออออออออออออออออออออออออออป
+บHistoryoftheFLI/FLCPlayerExtensionบ
+ศอออออออออออออออออออออออออออออออออออออออออผ
+
+
+Date      Version
+
+23/05/97  v0.25FirstfullworkingversionofmyFalcon030FLI/FLC
+PlayerExtension.
+
+
+SometimeagoIregisteredwithAnthonyJacquesFalconextensionsandhad
+notreallyusedthemmuch(mainlyduetoworkonmyownSTOS-Falcon
+extensions).Then,whilesorting/movingfilesaroundonmyhard-driveI
+realisedIhadquiteafewFLI/FLCmovies.IrememberedAnthonyJacques
+extensionhadFLIcommandssoIinstalledhisextensionandwroteavery
+simpleprogramtoloadandplayFLImovies.
+
+Now,accordingtoAnthonyJacques'documentationhisextension(ver1.2a)
+couldplaybackboththeFLIandFLCformatmovies.ButIsoonfoundthis
+wasnotstrictlytrue.SomeFLC'swouldplaybackwithnoproblemsbutmany
+otherscrashedthesystem.(ThoseFLC'sweremostlycreatedbyAUTODESK-
+ANIMATORonthePC.)
+
+Also,moreimportantly,mostofmyFLC'sareof640*480framesize.Using
+AnthonyJacquesextensionitsoonbecameapparentthethateventhoughI
+codedtheprogramtoselectanappropriatevideomodetheFLIcommands
+assumedaresolutionof320*200(mostFLIanimationsarethissize)soall
+Iendedupwithwasascreenfullofunintelligebledata.
+
+Overthenext2weeksIsearchedmyentirecollectionofPDdisks,back-up
+floppiesandmyhard-drive(Ieven'surfedthenet'onmyneighboursPC)
+forasmuchinformationontheFLI/FLCformatasIcouldfind.
+
+Theresultofthissearchingforinformationandmuchlate-night
+keyboardpoundingistheFalcon030FLI/FLCPlayerExtensionv0.25.This
+extensionallowsSTOStoplaybackFLI/FLCtypemoviesandplays
+the animationsunderthecontroloftheVBLinterruptstomaintaina
+constantplaybackspeed.
+
+--------------------------------------------------------------------------
+

@@ -1,0 +1,780 @@
+**************************************************************************
+*                                                                        *
+*                                                                        *
+*                                 T h e                                  *
+*                                                                        *
+*                   D S P  T r a c k e r  P l a y e r                    *
+*                                                                        *
+*                           E x t e n s i o n                            *
+*                                                                        *
+*        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         *
+*                                                                        *
+*                    F o r  T h e  F a l c o n  0 3 0                    *
+*                                                                        *
+*     (c) 1995, 1996, 1997, 1998 Anthony Hoskin,                         *
+*                                45 Wythburn Rd,                         *
+*                                Newbold,                                *
+*                                Chesterfield,                           *
+*                                Derbyshire.                             *
+*                                S41 8DP (U.K).                          *
+*                                                                        *
+*               Current version: v2.8 (30th November 1998)               *
+*                                                                        *
+*                       Conditions Of Registration                       *
+*                       ==========================                       *
+*                                                                        *
+*       You  may NOT distribute this software or  its  associated        *
+*       program/document  files (either in whole or in  part)  in        *
+*       way shape or form. (Any translation of this document file        *
+*       into another language is permitted and will be restricted        *
+*       to  the same conditions as this English language  version        *
+*       with respect to any other changes.) You are authorised to        *
+*       make personal back-ups of the software provided they  are        *
+*       complete and unchanged in any way.                               *
+*                                                                        *
+*                               Disclaimer                               *
+*                               ==========                               *
+*                                                                        *
+*       This software is for the Atari Falcon 030 series computer        *
+*       only.  If  you try to run it on an ST(e)/TT you  will  be        *
+*       politely informed that it will not run on these machines.        *
+*       I take no responsibility whatsoever in the use/misuse  of        *
+*       this software.                                                   *
+*                                                                        *
+*                          System Requirements                           *
+*                          ===================                           *
+*                                                                        *
+*                        Machine   :    Atari Falcon 030                 *
+*                        RAM       :    1, 4 or 14mb                     *
+*                        Monitor   :    RGB, VGA or TV                   *
+*                        Software  :    STOS Basic & STOSFIX3            *
+*                                                                        *
+*                                                                        *
+*                               Contents                                 *
+*                               ========                                 *
+*                                                                        *
+* DSP Tracker Player Extension v2.8 command reference ......... Page  1  *
+* An example 'JTB_EX1.BAS' program listing .................... Page 11  *
+*                                                                        *
+*                                                                        *
+**************************************************************************
+**************************************************************************
+*   The Falcon 030 DSP Tracker Player Extension v2.8 command reference   *
+**************************************************************************
+
+                                IMPORTANT.
+
+Programs  written for use with  the DSP  Tracker Player Extension versions 
+lower than v2.4 must determine the length of the tracker module to  ensure 
+the destination memory bank is 32kb longer than the module loaded into it. 
+The  DSP Tracker player expects a workspace buffer to  immediately  follow 
+the module. This workspace is just under 31kb in size so users of versions 
+lower  than v2.4 should reserve the bank as module length+32kb as  a  safe 
+measure.
+
+   This command reference details the command in the following manner:-
+
+Command   :-   The command name.
+Version   :-   The DSP  Tracker  Player Extension version(s) in which  the 
+               command is available.
+Syntax    :-   The syntax used for the command.
+Action    :-   A description of the action(s) taken by the command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker load
+Version   :-   All DSP Tracker Player versions =>2.4
+Syntax    :-   _tracker load F$,B
+Action    :-   This  command  loads the tracker module file  F$  into  the 
+               memory bank B (1 - 15).  This command supports the  loading 
+               of  tracker modules packed with PACK-ICE v2.4  and  ATOMIK-
+               PACKER v3.5.  The memory bank need not have been previously 
+               reserved.  _tracker  load ERASES a previously loaded  bank. 
+               This command is best described by the following algorithm.
+
+               If bank B already reserved then
+                    Erase bank B
+               Endif
+
+               Read first 256 bytes of tracker module header into internal 
+               buffer.
+
+               If tracker module is PACK-ICEd or ATOMIK-PACKED then
+                    Read  FILESIZE (the uncompressed length of  file  from 
+                    the tracker module header)
+               Else
+                    Fetch FILESIZE from DIRECTORY DTA buffer.
+               Endif
+
+               Reserve bank B of length FILESIZE+32kb
+               Load tracker module F$ into bank B
+
+               If tracker module is PACK-ICEd or ATOMIK-PACKED then
+                    Depack the tracker module
+               Endif
+
+Comments  :-   Using this new command it is no longer necessary to reserve 
+               the  memory bank 32kb larger than the tracker  module.  All 
+               this is taken care of automatically by this command.
+--------------------------------------------------------------------------
+
+Command   :-   _tracker filelength
+Version   :-   All DSP Tracker Player versions =>2.4
+Syntax    :-   SIZE=_tracker filelength(B)
+Action    :-   This  command  is  intended to compliment  (and  SHOULD  be 
+               invoked  immediately following) the _tracker  load  command 
+               and returns SIZE=length of tracker module currently  loaded 
+               in bank B.  SIZE is then available for use directly in  the 
+               _tracker init command.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker init
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   X=_tracker init(ADDR,SIZE)
+Action    :-   This  function  initialises  a  Tracker  module  ready  for 
+               playback.
+
+               ADDR   =  start  address of the module,  (usually   a  STOS  
+                         memory  bank).  If  ADDR  is in the  range  1  to  
+                         15  inclusive  then this is taken to  be  a  STOS 
+                         memory  bank #.  Otherwise it is taken to  be  an 
+                         absolute address.
+
+               SIZE   =  length  of  the  module (NOT the  length  of  the 
+                         memory bank,  the memory bank must be 32kb larger 
+                         than the module).
+
+               Returns  X=TRUE (-1) if module is correctly identified  and 
+               initialised otherwise returns X=FALSE (0).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker reset
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker reset
+Action    :-   This command performs the following:
+
+                   a)   Stops  playback  of  a Tracker module  if  it  is 
+                        actually playing.
+
+                   b)   De-initialises  Tracker module,  (module MUST  be 
+                        re-initialised before it can be played again).
+
+                   c)   Resets the Falcon 030 sound hardware.
+
+Comments  :-   These   are  the  two  most  important  commands  in   this 
+               extension.  A Tracker module must be initialised before any 
+               other command(s) are issued.
+
+               Upon initialisation the following defaults are set:-
+
+               Playback frequency        (_tracker speed)   :  49.170 kHz
+               Repeat-enable of playback (_tracker loop)    :  ON
+
+               These  defaults  are reflected in the  bitmap  returned  by 
+               (_tracker  status)   holding  the current status   of   the  
+               Tracker module.
+
+                          Continued overleaf....
+
+               Upon terminating playback of a module via _tracker stop you  
+               may  recommence playback with _tracker play.  If,  however, 
+               you wish to terminate playback of one module and then  play 
+               a  different module you MUST issue a _tracker reset  before 
+               using _tracker init for the next module.
+
+               _tracker  reset   should also be issued just  before   your  
+               program terminates  (just  to be on the safe side and  keep  
+               things tidy).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker play
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker play
+Action    :-   This command starts playback of a Tracker module. Note; the 
+               module MUST first be initialised via _tracker init.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker pause
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker pause
+Action    :-   Pauses  playback  of a Tracker module (after  _tracker play  
+               has   been  issued).   Current status is reflected in   the  
+               bitmap  returned  by  (_tracker status).   module  may   be  
+               un-paused  by issueing the _tracker play command  whereupon 
+               the  module will re-commence  playback  from  the  position 
+               where the  pause  was activated.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker stop
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker stop
+Action    :-   Stops  playback of a Tracker module.  (Maybe restarted  via 
+               _tracker play.)
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker loop on
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker loop on
+Action    :-   Turns on the repeat-enable of playback of a Tracker module, 
+               (after   _tracker  play   has   been   issued).     Current  
+               status   is reflected in the bitmap returned  by  (_tracker 
+               status).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker loop off
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker loop off
+Action    :-   Turns  off  the  repeat-enable of  playback  of  a  Tracker 
+               module,  (after  _tracker play has  been  issued).  Current 
+               status  is  reflected in the bitmap returned  by  (_tracker 
+               status).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker volume
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker volume V
+Action    :-   This  command  sets the volume level (via  the  Falcon  030 
+               sound  hardware)  for  the  Tracker  module.   V=0  to   15 
+               inclusive. 0 = lowest, 15 = highest.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker speed
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker speed S
+Action    :-   This  command  sets the playback frequency of  the  Tracker 
+               module. S ranges between 0 (highest) and 5 (lowest).
+
+               S    =    0    Freq :   49170 Hz
+               S    =    1    Freq :   32780 Hz
+               S    =    2    Freq :   24585 Hz
+               S    =    3    Freq :   19668 Hz
+               S    =    4    Freq :   16390 Hz
+               S    =    5    Freq :   12292 Hz
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker status
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   X=_tracker status
+Action    :-   Returns  X  as a bitmap holding the current status  of  the 
+               Tracker module.
+
+                     X=_tracker status   bits 7_6_5_4_3_2_1_0
+                                              | |   | | | | |
+                Tracker module initialised, --' |   | | | | |
+                0 = No , 1 = Yes.               |   | | | | |
+                                                |   | | | | |
+                Tracker module end reached, ----'   | | | | |
+                0 = No , 1 = Yes.                   | | | | |
+                                                    | | | | |
+                Reserved (not used)     ------------' | | | |
+                                                      | | | |
+                Reserved (not used)     --------------' | | |
+                                                        | | |
+                Tracker module paused,  ----------------' | |
+                0 = No , 1 = Yes.                         | |
+                                                          | |
+                Tracker module repeat   ------------------' |
+                play, 0 = No , 1 = Yes.                     |
+                                                            |
+                Tracker module playing, --------------------'
+                0 = No , 1 = Yes.
+
+Enhanced  :-   Testing  bit # 6 can now tell us if the end of the  Tracker 
+               module  has been reached and if so we can issue a  _tracker 
+               stop and stop the playback of the module.
+
+Example   :-   1000 repeat
+               1010 : X=_tracker status
+               1020 until btst(6,X)=true
+               1030 _tracker stop
+
+Important :-   Due  to the internal command structure of a Tracker  module 
+               it  is  possible for a module to  continually  loop,  under 
+               these conditions the _tracker status function may never see 
+               an 'END of module' condition.  The Tracker module 'House Of 
+               The Rising Sun' is one such module that I know of.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker voices
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   MAX_VOICE=_tracker voices(ADDR)
+Action    :-   This  function  returns MAX_VOICE = number of voices  in  a 
+               Tracker  module.  ADDR  is  the address  where  the  module 
+               resides  (usually a STOS memory bank).  If ADDR is  in  the 
+               range  1  to 15 inclusive then this is taken to be  a  STOS 
+               memory  bank  #.  Otherwise it is taken to be  an  absolute 
+               address.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker vu
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   X=_tracker vu(VOICE)
+Action    :-   Returns   X  as a value ranging between 0 - 64 holding  the 
+               current  volume level of the Tracker  voice/channel  VOICE. 
+               This may be used in the displaying of VU meters etc.
+
+               MAX_VOICE :    Value returned by the command
+                              MAX_VOICE=_tracker voices(ADDR)
+
+               VOICE     :    May range between 1 and MAX_VOICE
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker spectrum
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   X=_tracker spectrum(VOICE)
+Action    :-   Returns  X  as a value ranging between 0 - 1234 holding the 
+               current relative spectrum analyser level (i.e. the relative 
+               active  time  of a channel) of  the  Tracker  voice/channel 
+               VOICE.  This  may  be used in the  displaying  of  spectrum 
+               analyser meters etc.
+
+               X = 0     =    Lowest  relative activity on a channel.
+               X = 1234  =    Highest relative activity on a channel.
+
+               MAX_VOICE :    Value returned by the command
+                              MAX_VOICE=_tracker voices(ADDR)
+
+               VOICE     :    May range between 1 and MAX_VOICE
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker songlength
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   X=_tracker songlength(ADDR)
+Action    :-   This function returns X=length of song in a Tracker module.
+               ADDR  is  the address where the module resides  (usually  a 
+               STOS  memory  bank).  If  ADDR  is in the  range  1  to  15 
+               inclusive then this is taken to be a STOS memory bank #.
+               Otherwise it is taken to be an absolute address.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker pattpos
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   P=_tracker pattpos
+Action    :-   This function returns P=current pattern  position  within a
+               Tracker module, (only during playback).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker songpos
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   P=_tracker songpos
+Action    :-   This  function  returns P=current song  position  within  a 
+               Tracker module, (only during playback).
+
+Comments  :-   These two commands are useful when used in conjunction with 
+               each  other.  For  example suppose we want  playback  of  a 
+               module  to stop automatically when the end is  reached,  we 
+               could use something like:-
+
+               1000 rem ~~~~~~~~~~~~~~~ Main program loop ~~~~~~~~~~~~~~~~
+               1010 rem
+               1020 while _tracker songpos<>_tracker songlength(BANK)
+               1030 wend
+               1040 _tracker stop : _tracker reset
+               1050 default : end
+
+               This might be better achieved by using the _tracker status 
+               function when using Tracker Player version =>1.0.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker ffwd
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker ffwd
+Action    :-   This command fast-forwards through a Tracker module,  (only 
+               during playback).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker songprev
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker songprev
+Action    :-   This  command reverse searches through a Tracker module  to 
+               the previous song position, (only during playback).
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker songnext
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker songnext
+Action    :-   This  command forward searches through a Tracker module  to 
+               the next song position, (only during playback).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker scope init
+Version   :-   All DSP Tracker Player versions =>2.8
+Syntax    :-   _tracker scope init SCREEN,SCOPE_X1,SCOPE_Y1,COLR
+Action    :-   This command initialises the tracker oscilloscope where :-
+
+               SCREEN    =    Address of the LOGICal screen (i.e. LOGIC).
+               SCOPE_X1  =    Xcoord of TOP-LEFT of oscilloscope.
+               SCOPE_Y1  =    Ycoord of TOP-LEFT of oscilloscope.
+               COLR      =    Colour index used for drawing the waveform.
+
+Important :-   The width and height of the tracker oscilloscope is  ALWAYS 
+               fixed at 64x48 (in pixels) - remember this when determining 
+               the screen coords...
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker scope draw
+Version   :-   All DSP Tracker Player versions =>2.8
+Syntax    :-   _tracker scope draw
+Action    :-   Draws the tracker oscilloscope waveform during playback  of 
+               a tracker module.
+Important :-   The  tracker oscilloscope MUST first have been  initialised 
+               with the _tracker scope init command prior to drawing it.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker name$
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   A$=_tracker name$(ADDR)
+Action    :-   This function returns in A$ the name (title) of the Tracker 
+               module.  ADDR  is  the  address where  the  module  resides 
+               (usually a STOS memory bank).  If ADDR is in the range 1  - 
+               15 inclusive then this is taken to be a STOS memory bank #. 
+               Otherwise it is taken to be an absolute address.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker type$(ADDR)
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   A$=_tracker type$
+Action    :-   This  function  returns  in A$ the  type  (format)  of  the 
+               Tracker  module.  ADDR  is  the address  where  the  module 
+               resides (usually a STOS memory bank).
+
+               If  ADDR  is in the range 1 to 15 inclusive  then  this  is 
+               taken to be a STOS memory bank #.  Otherwise it is taken to 
+               be an absolute address.
+
+Comments  :-   These  last  two  commands are useful  when  you  want  the 
+               program   to  load a module for playback  and  display  its 
+               title and format.
+
+                        Supported Tracker formats :
+                        ---------------------------
+
+Chunk     Number of Voices         Tracker                 File extensions
+
+????           4               Old 15 Samples Module        .MOD/.SD0
+M.K.           4               Noise/Pro-Tracker            .MOD/.NST
+M!K!           4               Noise/Pro-Tracker            .MOD/.NST
+M&K&           4               Noise/Pro-Tracker            .MOD/.NST
+FLT4           4               StarTrekker                  .MOD/.NST
+RASP           4               StarTrekker                  .MOD/.NST
+FA04           4               Digital Tracker              .MOD
+
+FA06           6               Digital Tracker              .MOD
+6CHN           6               FastTracker                  .MOD
+
+M.K.           8               Grave Composer               .WOW
+FLT8           8               StarTrekker                  .MOD/.WOW/.OCT
+8CHN           8               FastTracker                  .MOD/.WOW/.OCT
+CD81           8               Octalyser                    .MOD
+OCTA           8               Octalyser                    .MOD/.WOW/.OCT
+FA08           8               Digital Tracker              .MOD
+xxCH           xx              FastTracker                  .MOD
+
+--------------------------------------------------------------------------
+
+**************************************************************************
+*  Specialised commands to implement the ability to repeatedly playback  *
+*  any module without having to reload it from disk.                     *
+**************************************************************************
+
+The  following  commands  are  specifically available  for  use  with  the 
+JoinedTrackerBank  created  by the utility 'DSP  Tracker  Module  Merger'. 
+Please see the 'MERG_EX1.BAS' program supplied with this extension to  see 
+an implementation in a working example.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker copy
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   _tracker copy SOURCE_ADDR,DESTINATION_ADDR,LENGTH
+Action    :-   Copies  the Tracker module of LENGTH bytes from  SOURCE  to 
+               DESTINATION.
+
+               Due  to the internal workings of the DSP player code it  is 
+               not possible to play any given module from memory more than 
+               once without re-loading the module.
+
+               The  DSP code appears to modify at least the first  60%  of 
+               the Tracker module during playback. Because of this problem 
+               the modules cannot normally be played from within a  merged 
+               mod - bank as could be achieved with the older CPU  Tracker 
+               player.
+
+               There  is a way around this problem,  it isn't  elegant  or 
+               ideal  but it works.  If you are using the  merged  modules 
+               memory bank then instead of playing the module from  within 
+               the merged bank you copy that particular module to  another 
+               memory bank and then play it from there.
+
+               Note;  you do not need to use this method if your are  only 
+               concerned with loading modules from disk for  playback.  It 
+               is  only  when the module(s) is/are required to  remain  in 
+               memory for subsequent multiple playback(s).
+
+               Please  see the 'MERG_EX1.BAS' program supplied  with  this 
+               extension  to  see  how this is implemented  in  a  working 
+               example.
+
+IMPORTANT :-   The  destination memory bank MUST be 32kb longer  than  the 
+               module  copied to it.  The DSP player expects  a  workspace 
+               buffer to immediately follow the module.  This workspace is 
+               just under 31kb in size so use 32kb as a safe measure.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker howmany
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   HOW_MANY=_tracker howmany(BANK)
+Action    :-   Returns a value denoting the number of the Tracker  modules 
+               contained  within the JoinedTrackerBank [STOS memory  bank] 
+               BANK.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker startaddress
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   ADDR=_tracker startaddress(BANK,N)
+Action    :-   Returns  the start address of the Tracker module  N  within 
+               the JoinedTrackerBank [STOS memory bank] BANK.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker maxsize
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   MX_SIZE=_tracker maxsize(BANK)
+Action    :-   Returns the length of the largest Tracker module within the 
+               JoinedTrackerBank [STOS memory bank] BANK.
+
+Enhanced  :-   From v2.4 this command supports tracker modules within  the 
+               JoinedTrackerBank BANK which are packed with PACK-ICE  v2.4 
+               or ATOMIK-PACKER v3.5. If the module is packed then MX_SIZE 
+               always returns the UNPACKED length of the module.
+
+Comments  :-   This command is especially useful to determine the size  of 
+               the  replay bank length (to ensure it is large  enough  for 
+               any module to be eventually copied into another memory bank 
+               for replay).
+
+Remember  :-   The  destination memory bank MUST be 32kb longer  than  the 
+               module  copied to it.  The DSP player expects  a  workspace 
+               buffer to immediately follow the module.  This workspace is 
+               just under 31kb in size so use 32kb as a safe measure.
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker size
+Version   :-   All DSP Tracker Player versions =>1.0
+Syntax    :-   SIZE=_tracker size(BANK,N)
+Action    :-   Returns  the  length  of the Tracker module  N  within  the 
+               JoinedTrackerBank [STOS memory bank] BANK.
+
+Enhanced  :-   From v2.4 this command supports tracker modules within  the 
+               JoinedTrackerBank BANK which are packed with PACK-ICE  v2.4 
+               or  ATOMIK-PACKER v3.5.  If the module is packed then  SIZE 
+               always returns the UNPACKED length of the module.
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker packed
+Version   :-   All DSP Tracker Player versions =>2.4
+Syntax    :-   X=_tracker packed(BANK,N)
+Action    :-   This  command returns X=TRUE (-1) if the tracker  module  N 
+               within  the JoinedTrackerBank BANK is packed with  PACK-ICE 
+               v2.4 or ATOMIK-PACKER v3.5 otherwise returns X=FALSE (0).
+
+--------------------------------------------------------------------------
+
+Command   :-   _tracker depack
+Version   :-   All DSP Tracker Player versions =>2.4
+Syntax    :-   _tracker depack SOURCE,DEST
+Action    :-   Depacks  a  tracker  module  contained  within  a   Joined-
+               TrackerBank  if packed with PACK-ICE v2.4 or  ATOMIK-PACKER 
+               v3.5 otherwise returns unprocessed.
+
+               SOURCE    =    Address  of  Tracker module in  the  Joined-
+                              TrackerBank  (this is the start  address  of 
+                              the  Tracker  module  as  returned  by   the 
+                              SOURCE=_tracker startaddress command).
+
+               DEST      =    The destination (usually the playback  bank) 
+                              where the tracker module will be depacked.
+
+Example   :-   1100 JTB_START=_tracker startaddress(JTB_BANK,N)
+               1110 _tracker depack JTB_START,start(PL_AY_BANK)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+'JTB_EX1.BAS' program listing:
+
+10 rem ===================================================================
+20 rem  An example listing to replay Tracker modules from memory.
+30 rem ===================================================================
+40 : 
+50 rem ~~~~~~~~~~~~~~~~ Initialise screen setup. ~~~~~~~~~~~~~~~~~~~~
+60 : 
+70 key off : hide on : curs off : if mode<2 then mode 1
+80 _cpuspeed 16 : _cpucache on 
+90 windopen 1,0,0,80,3,1 : curs off 
+100 centre "A Demo Program To Playback Packed Modules Within A JTB Bank."
+110 windopen 2,0,3,80,22,16 : curs off 
+120 locate 0,19
+130 centre "Click LEFT mouse for NEXT module, click RIGHT mouse to QUIT."
+140 locate 0,1
+150 : 
+160 rem ~~~~~~ Assign STOS memory Bank 3 as Joined Tracker bank ~~~~~~
+170 rem ~~~~~~ and STOS memory Bank 4 as replay Tracker bank.   ~~~~~~
+180 : 
+190 JTB_BANK=3 : PL_AY_BANK=4
+200 : 
+210 rem ~~~~~~~~~~~ Load Joined Tracker bank into STOS bank 3 ~~~~~~~~
+220 : 
+230 open in #1,"TEST.JTB"
+240 LGTH=lof(#1) : close #1
+250 reserve as data JTB_BANK,LGTH
+260 bload "TEST.JTB",start(JTB_BANK)
+270 : 
+280 rem ~~~~~~~~~~~ Determine size of largest module in bank 3 ~~~~~~~
+290 rem ~~~~~~~~~~~ and reserve bank 4 of this size+32Kb.      ~~~~~~~
+300 : 
+310 MX_SIZE=_tracker maxsize(JTB_BANK)
+320 reserve as work PL_AY_BANK,MX_SIZE+$8000
+330 : 
+340 rem ~~~~~~~~~~~ Determine number of modules in bank 3      ~~~~~~~
+350 : 
+360 HOWMANY=_tracker howmany(JTB_BANK)
+370 print using "Number of modules in JTB bank :     ###";HOWMANY
+380 print using "Max length module in JTB bank : #######";MX_SIZE
+390 : 
+400 rem ~~~~~~~~~~~ Now enter loop and play each modules in turn ~~~~~
+410 : 
+420 VLM=5
+430 for M=1 to HOWMANY
+440 : 
+450 : rem Fetch Start address of Module # M.
+460 : 
+470 : JTB_START=_tracker startaddress(JTB_BANK,M)
+480 : 
+490 : rem Fetch length of Module # M.
+500 : 
+510 : JTB_SIZE=_tracker size(JTB_BANK,M)
+520 : 
+530 : rem Copy module # M to replay bank.
+540 : 
+550 : if _tracker packed(JTB_BANK,M)=true then gosub 1050 else gosub 960
+
+                          Continued overleaf....
+
+560 : 
+570 : rem Initialise Tracker module.
+580 : 
+590 : X=_tracker init(PL_AY_BANK,JTB_SIZE)
+600 : 
+610 : rem If incorrect/unrecognised module try next one.
+620 : 
+630 : if X=0 then goto 890
+640 : 
+650 : locate 0,5
+660 : print "Playing module #"+str$(M)-" ";
+670 : print " : ";
+680 : print _tracker name$(PL_AY_BANK)
+690 : SL=_tracker songlength(PL_AY_BANK)
+700 : print using "Song length  : ###";SL
+710 : _tracker volume VLM : _tracker play 
+720 : 
+730 : while mouse key=false
+740 : : K$=inkey$
+750 : : SNG_POS=_tracker songpos
+760 : : PATT_POS=_tracker pattpos
+770 : : locate 0,7
+780 : : print using "Song position : ###";SNG_POS;
+790 : : print using "  ##";PATT_POS
+800 : : if K$="-" then VLM=_sub lbound(VLM,1,0) : _tracker volume VLM
+810 : : if K$="+" then VLM=_add ubound(VLM,1,15) : _tracker volume VLM
+820 : : if upper$(K$)="P" then _tracker pause 
+830 : : if upper$(K$)="G" then _tracker play 
+840 : wend 
+850 : MK=mouse key
+860 : while mouse key<>false : wend 
+870 : _tracker stop : _tracker reset 
+880 : if MK=2 then goto 900
+890 next M
+900 erase JTB_BANK : erase PL_AY_BANK
+910 _cpuspeed 8 : default
+920 clear key : put key "cls:list`" : end 
+930 : 
+940 rem ~~~~~~~~~~~ Copy current module to playback bank ~~~~~~~~~~~~~
+950 : 
+960 locate 0,5
+970 print space$(64)
+980 print space$(64)
+990 print space$(64) : cup : cup : cup
+1000 _tracker copy JTB_START,start(PL_AY_BANK),JTB_SIZE
+1010 return 
+1020 : 
+1030 rem ~~~~~~~~~~~ Depack current module to playback bank ~~~~~~~~~~~
+1040 : 
+1050 locate 0,5
+1060 print space$(64)
+1070 print space$(64)
+1080 print space$(64) : cup : cup : cup
+1090 print "Depacking module #"+str$(M)-" " : cup
+1100 _tracker depack JTB_START,start(PL_AY_BANK)
+1110 print space$(24) : cup
+1120 return 
+
+--------------------------------------------------------------------------
+

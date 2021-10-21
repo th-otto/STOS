@@ -1,0 +1,636 @@
+070000203050000140000004006010000
+1STOS ExtensionDMA SOUND v2.21
+2- # -1
+F0110000001
+9[..........................................................]0110
+€
+ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                                                                        º
+º                                                                     º
+º                            DMASOUND                          º
+º                                                                        º
+º        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         º
+º                                                                        º
+º                    F o r  T h e  F a l c o n  0 3 0                    º
+º                                                                        º
+º           (c)1995, 1996,1997 Anthony Hoskin                          º
+º                                45 Wythburn Rd,                         º
+º                                Newbold,                                º
+º                                Chesterfield,                           º
+º                                Derbyshire.                             º
+º                                S41 8DP (U.K).                          º
+º                                                                        º
+º                 Current version: v2.2(16th March 1995)               º
+º                                                                     º
+º                                                                     º
+º                       ˆConditionsOfRegistration€                    º
+º                                                                     º
+º    YoumayNOTdistributethissoftwareoritsassociatedº
+º    program/documentfiles(eitherinwholeorinpart)inanyway º
+º    shapeorform.(Anytranslationofthisdocumentfileintoº
+º    anotherlanguageispermittedandwillberestrictedtotheº
+º    sameconditionsasthisEnglishlanguageversionwithº
+º    respecttoanyotherchanges.)Youareauthorisedtomakeº
+º    personalback-upsofthesoftwareprovidedtheyarecompleteº
+º    andunchangedinanyway.                                        º
+º                                                                     º
+º                                                                     º
+º                             ˆDisclaimer€                            º
+º                                                                     º
+º    ThissoftwareisfortheAtariFalcon030seriescomputeronly.º
+º    IfyoutrytorunitonanST(e)/TTyouwillbepolitelyº
+º    informedthatitwillnotrunonthesemachines.Itakenoº
+º    responsibilitywhatsoeverintheuse/misuseofthissoftware.º
+º                                                                     º
+º                                                                     º
+º                          ˆSystem Requirements€                        º
+º                                                                     º
+º                                                                     º
+º                        Machine   :    Atari Falcon 030              º
+º                        RAM       :    1, 4 or 14mb                  º
+º                        Monitor   :    RGB, VGA or TV                º
+º                        Software  :    STOS Basic & STOSFIX3         º
+º                                                                     º
+º                                                                     º
+º                                ˆContents€                             º
+º                                                                     º
+º                                                                     º
+º  IntroductiontotheFalcon030DMAExtensionv2.2....... Page1º
+º  Falcon030DMAExtensionv2.2commandreference....... Page2º
+ºº
+º                                                                     º
+º                                                                     º
+º                                                                     º
+ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+€
+ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                                                                     º
+º                                                                       º
+º                             The Falcon 030                           º
+º                                                                     º
+º                   STOS DMASOUND Extension                      º
+º                                                                       º
+º                                 v2.2                                º
+º                                                                       º
+º                        Introduction                       º
+º                                                                       º
+º                                                                        º
+º             Thisextensioncomprises34newinstructions            º
+º         specificallyforenhancingSTOSDMAsound              º
+º             capabilities.                                              º
+º                                                                       º
+º                                                                        º
+º                dma reset                  dma sammode                  º
+º                locksound                  dma playloop off             º
+º                dma buffer                 dma sampval                  º
+º                unlocksound                dma playloop on              º
+º                devconnect                 dma samconvert               º
+º                dma status                 dma samplay                  º
+º                dma samsign                dma samsize                  º
+º                dma samrecptr              dma samthru                 º
+º                dma setmode                dma samstop                  º
+º                dma samplayptr             adder in                     º
+º                dma samtracks              adc input                    º
+º                dma samstatus              left gain                    º
+º                dma montrack               right gain                   º
+º                dma samtype                left volume                  º
+º                dma interrupt              right volume                 º
+º                dma samfreq                speaker off                  º
+º                dma samrecord              speaker on                   º
+º                                                                       º
+º                                                                        º
+ÌÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹
+º                                                                       º
+º                                                                     º
+º                             GoodPoints:                           º
+º                                                                       º
+ºº
+ºMakesuseoftheFalcon'sDMAsoundfortheplaybackofAVR/WAVEº
+ºformatsoundsamplesaswellasstraight(RAW)sound.Facilitiesº
+ºinclude8-bit/16-bitstereoand8-bitmonoplayback.               º
+º                                                                       º
+ºº
+ºUnliketheoldSTOSMaestroextension,wheretheinterruptsetupforº
+ºMaestroslowsdownspritesetc,thenatureoftheDMAsoundsystemonº
+ºtheFalcon030issuchthatitbehavesindependentlyofthemainº
+º68030CPUandthereforeplacesnorestrictionsonthecurrentlyº
+ºrunningprogram.                                                   º
+º                                                                       º
+º                                                                       º
+º                                                                       º
+ºº
+ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+
+€     ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+     ºThe Falcon 030 DMASound Extension V2.2 command referenceº
+    ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+Thiscommandreferencedetailsthecommandinthefollowingmanner:-
+
+Command:-Thecommandname.
+Version   :-The DMASoundExtensionversion(s)inwhichthecommandis
+available,(ifacommandisavailableinonlycertain
+versionsthesewillbegivenas;DMASoundversionAtoB).
+Syntax:-Thesyntaxusedforthecommand.
+Action:-Adescriptionoftheaction(s)takenbythecommand.
+
+--------------------------------------------------------------------------
+
+Command:-dmareset
+Version   :-All DMASoundversions.
+Syntax:-dmareset
+Action:-ThiscommandcompletelyresetstheFalcon'sDMAsound
+systemandrestoresthedefaultsettingsassetatpower-
+up.Alsoclearscertaininternalvariableswithinthe
+extensionwhichareusedbyothersoundcommands:
+
+Uponresetthefollowingthingshappen:-
+
+*DSPistristated
+*Gainandattenuationarezeroed(maxvolume)
+*Oldmatrixconnectionsarereset
+*ADDERINisdisabled
+*Modeissetto8-bitstereo
+*Playandrecordtracksaresetto0
+*Monitortrackissetto0
+*Interruptsaredisabled
+*Bufferoperationisdisabled
+
+see:-dmabuffer
+
+--------------------------------------------------------------------------
+
+Command:-locksound
+Version   :-All DMASoundversions.
+Syntax:-X=locksound
+Action:-Thisfunctionlocksthesoundsystemtothecurrent
+application.
+
+Returns:-X=1ifsuccessfullylockedelsenegativeerrorcode.
+
+--------------------------------------------------------------------------
+
+Command:-unlocksound
+Version   :-All DMASoundversions.
+Syntax:-X=unlocksound
+Action:-Thisfunctionunlocksthesoundsystemfromthecurrent
+application.
+
+Returns:-X=0ifsuccessfullyunlockedelsenegativeerrorcodeif
+thesoundsystemwasn'tlockedpriortothecall.
+
+--------------------------------------------------------------------------
+
+€Command:-dmabuffer
+Version   :-All DMASoundversions.
+Syntax:-dmabufferREG,BEG_BUFF,EN_BUFF
+Action:-Thiscommandsetsupthestartingandendingaddressesof
+theinternalplaybackandrecordbuffers.Withthe
+exceptionofpreviouslyexplainedcommandsthismustbe
+theveryfirstcommandissuedbytheprogramsinceitalso
+setsupsomevariablesinternallyintheextensionusedfor
+mostoftheotherDMAsoundcommands,thereforethisreally
+shouldbetheprogramsveryfirstinstructionissuedso
+thatallothercommandsworkproperly.
+
+Thesevariablesareclearedontheexecutionofthedma
+resetcommand.
+
+REG=0meanssettheplaybackbuffer
+REG=1meanssettherecordbuffer
+BEG_BUFF=bufferstartaddress
+EN_BUFF=bufferendaddress
+
+Note;Important-WhenusingaSTOSmemorybankasthebuffer,
+theaddressesmustbepassedastheactualaddressesand
+NOTtheSTOSmemorybanknumber;
+
+[e.g.,start(8)andstart(8)+length(8)].
+
+--------------------------------------------------------------------------
+
+Command:-devconnect
+Version   :-All DMASoundversions.
+Syntax:-devconnectSOURCE,DEST,FREQ
+Action:-Connectasourcedeviceto[possiblemultiple]destination
+device(s)inthesoundsystemandsettherecord/playback
+frequency.
+
+SOURCEindicatesthesourcedevicetoconnectasfollows:
+
+SOURCEMeaning
+
+0DMAplayback
+1DSPtransmit[unsupportedatpresentbythis
+extension].
+2Externalinput
+3Microphone/YamahaPSGChip
+
+DESTisabitmapindicatingthedestinationdevice(s)to
+connectasfollows:
+
+BitMaskMeaning
+
+0x01DMArecord
+0x02DSPreceive[unsupportedatpresentbythis
+extension].
+0x04Externaloutput
+0x08DAC[headphonesorinternalspeaker]
+
+
+
+Continuedoverleaf...............
+
+€FREQistherecord/playbackfrequencyasfollows:
+
+50000Hz[STe/TTcompatiblefrequency]
+49170Hz[Falcon030CODEConly]
+33880Hz[Falcon030CODEConly]
+25000Hz[STe/TTcompatiblefrequency]
+24585Hz[Falcon030CODEConly]
+20770Hz[Falcon030CODEConly]
+16490Hz[Falcon030CODEConly]
+12500Hz[STe/TTcompatiblefrequency]
+12292Hz[Falcon030CODEConly]
+9834Hz[Falcon030CODEConly]
+8195Hz[Falcon030CODEConly]
+
+Note;Anyattemptatpassingafrequencyotherthanthevalues
+shownwillresultinthedevconnectcommandusingthe
+nearestavailablematch.Soifyoursoundsamplessound
+slightlyfastorslowthenyoushoulduseaprogramsuchas
+SuperSamtoresamplethesoundtothecorrectfrequency.
+FailingthatI'mafraidyou'rejuststuckwithit.
+
+--------------------------------------------------------------------------
+
+Command:-dmasamfreq
+Version   :-All DMASoundversions.
+Syntax:-FREQ=dmasamfreq
+Action:-ReturnstheplaybackfrequencyofaAVR/WAVtypesound
+sample.However,ifthesampleisnotofAVR/WAVtype(eg.
+isaRAWsoundsample)thenthereturnedvaluewilldefault
+to12292Hz.
+
+Thevaluereturnedherecanbeuseddirectlyinthe
+devconnectcommand.
+
+Note;IfaAVR/WAVsoundsampleusesafrequencyotherthanthe
+valuesshowninthedevconnecttable(Falconhardware
+frequencies)thenthenearestavailablematchisreturned.
+Soifyoursoundsamplessoundslightlyfastorslowthen
+youshoulduseaprogramsuchasSuperSamtoresamplethe
+soundtothecorrectfrequency.FailingthatI'mafraid
+you'rejuststuckwithit.
+
+--------------------------------------------------------------------------
+
+Command:-dmasamtype
+Version   :-All DMASoundversions.
+Syntax:-SND_TYPE=dmasamtype
+Action:-Thisfunctionreturnstheformatofasoundsample.
+
+ReturnsSND_TYPE=0foraRAWformatsample
+SND_TYPE=1foranAVRformatsample
+SND_TYPE=2foraWAVEformatsample
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+€Command:-dmasetmode
+Version   :-All DMASoundversions.
+Syntax:-dmasetmodeMDE
+Action:-Thiscommandsetsthecurrentplaybackmodeasfollows:
+
+MDEMeaning
+08-bitStereomode
+116-bitStereomode
+28-bitMonomode
+
+--------------------------------------------------------------------------
+
+Command:-dmasammode
+Version   :-All DMASoundversions.
+Syntax:-MDE=dmasammode
+Action:-ThisfunctionreturnstheplaybackmodeofanAVR/WAVE
+formatsoundsample.
+
+ReturnsMDE=0ifsampleisnotAVR/WAVEformat
+elseMDE=AVR/WAVEformatsampleplaybackmode:-
+
+0=8-bitstereomode
+1=16-bitstereomode
+2=8-bitmonomode
+
+--------------------------------------------------------------------------
+
+Command:-dmasamtracks
+Version   :-All DMASoundversions.
+Syntax:-dmasamtracksPLAYTRK,RECTRK
+Action:-Setsthenumberofrecordingandplaybacktracks.
+PLAYTRKspecifiesthenumberofplaybacktracks(0-3)
+RECTRKspecifiesthenumberofrecordtracks(0-3).
+
+--------------------------------------------------------------------------
+
+Command:-dmamontrack
+Version   :-All DMASoundversions.
+Syntax:-dmamontrackTRACK
+Action:-Thiscommanddefineswhichplaybacktrackisaudible
+throughtheinternalspeaker.TRACKspecifiestheplayback
+tracktomonitor(0-3).
+
+--------------------------------------------------------------------------
+
+Command:-adderin
+Version   :-All DMASoundversions.
+Syntax:-adderinX
+Action:-Thiscommandsetsthe16-bitADDERtoreceiveitsinput
+fromthesource(s)specifiedin'X'.'X'isabitmask
+whereeachbitindicatesapossiblesource.
+Bit#0representstheADC.Bit#1representstheconnection
+matrix.Settingeitherorbothofthesebitsdeterminesthe
+sourceoftheADDER.
+
+Note;Because'X'iscontainedinTWObitsthevalueis
+restrictedtotherange0<X>3.
+
+--------------------------------------------------------------------------
+
+€Command:-adcinput
+Version   :-All DMASoundversions.
+Syntax:-adcinputX
+Action:-Thiscommandsetstheinputsoftheleftandrightchannels
+oftheADC.'X'isabitmaskwithbit#0beingtheright
+channelandbit#1beingtheleftchannel.
+Settingabitcausesthatchanneltoreceiveitsinputfrom
+theYamahaPSGchip.Clearingabitcausesthatchannelto
+receiveitsinputfromthemicrophone.
+
+Note;Because'X'iscontainedinTWObitsthevalueis
+restrictedtotherange0<X>3.
+
+--------------------------------------------------------------------------
+
+Command:-dmainterrupt
+Version   :-All DMASoundversions.
+Syntax:-dmainterruptMODE,CAUSE
+Action:-Thiscommanddefinestheconditionsunderwhichan
+interruptisgeneratedbythesoundsystem.
+
+MODEconfiguresinterruptstooccurwhentheendofthe
+bufferisreached,avalueof0forMODEsetsTimerA,a
+valueof1setstheMFP#7interrupt.
+
+CAUSEdefinestheconditionsfortheinterruptasfollows:
+
+                    ÚÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+     ³CAUSE³  Function                 ³
+                    ÃÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+     ³   0³Disableinterrupt                  ³
+     ³1³Interruptatendofplaybuffer    ³
+     ³2³Interruptatendofrecordbuffer  ³
+     ³3³Interruptatendofbothbuffers   ³
+                    ÀÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+--------------------------------------------------------------------------
+
+Command:-dmasamplay
+Version   :-All DMASoundversions.
+Syntax:-dmasamplay
+Action:-Thiscommandstartsdmasoundplaybackbysettingthestate
+ofthePLAYBACKenableflagsinthehardwaresoundsystem.
+
+Bit-arrayindicatingthedesiredsoundsystemstate:
+
+Bits15_14_13_12_11_10_9_8_7_6_5_4_3_2_1_0
+³³³³³³
+ReservedÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³³³³
+RecordrepeatenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³³³
+RecordenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³³
+PlayrepeatenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³
+PlayenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+
+
+
+
+--------------------------------------------------------------------------
+
+€Command:-dmaplayloopon
+Version   :-All DMASoundversions.
+Syntax:-dmaplayloopon
+Action:-ThiscommandsetsthestateofthePLAYBACKrepeatenable
+flagsinthehardwaresoundsystemallowingthesound
+sampletobecontinuouslyplayedinaloop.
+
+--------------------------------------------------------------------------
+
+Command:-dmaplayloopoff
+Version   :-All DMASoundversions.
+Syntax:-dmaplayloopoff
+Action:-ThiscommandresetsthestateofthePLAYBACKrepeatenable
+flagsinthehardwaresoundsystemallowingthesound
+sampletobeplayedonceonly.
+
+--------------------------------------------------------------------------
+
+Command:-dmasamstop
+Version   :-All DMASoundversions.
+Syntax:-dmasamstop
+Action:-Thiscommandstopsallsoundsystemrecording/playback.
+
+--------------------------------------------------------------------------
+
+Command:-dmasamrecord
+Version   :-All DMASoundversions.
+Syntax:-dmasamrecord
+Action:-ThiscommandsetsthestateoftheRECORDenableflagsin
+thehardwaresoundsystem.
+
+Comments:-Aswithdmasamplay,thesoundsystemmustfirstbe
+initialisedwiththecommand:-
+
+dmabufferREG,BEG_BUFF,EN_BUFF
+
+--------------------------------------------------------------------------
+
+Command:-dmasamstatus
+Version   :-All DMASoundversions.
+Syntax:-X=dmasamstatus
+Action:-Thisfunctionreturnsthestateofthesoundsystems
+record/playenablebits,theseareaffectedbythesound
+interrupt.Byperiodicallytestingthestatusofthesebits
+youcandeterminewhenasoundsamplehasfinished
+recording/playing(hasreachedtheendofthebuffer).
+
+Xisabit-arrayindicatingthecurrentsoundsystem
+stateasfollows:
+
+Bits15_14_13_12_11_10_9_8_7_6_5_4_3_2_1_0
+³³³³³³
+ReservedÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³³³³
+RecordrepeatenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³³³
+RecordenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³³
+PlayrepeatenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ³
+PlayenableÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+--------------------------------------------------------------------------
+
+€Command:-dmastatus
+Version   :-All DMASoundversions.
+Syntax:-X=dmastatus
+Action:-Thisfunctionisusedtoerrortesttheconditionofthe
+soundsystem.Thereturnvalueindicatesthecurrenterror
+statusofthesoundsystemdefinedasfollows:
+
+Bit(s)Meaning
+
+3-0Thesebitsformavalueindicatingtheerror
+conditionofthesoundsystemasfollows;
+
+0=Noerror
+1=Invalidcontrolfield
+2=Invalidsyncformat
+3=Serialclockoutofrange
+
+4Ifthisbitisset,leftchannelclipping
+hasoccurred.
+
+5Ifthisbitisset,rightchannelclipping
+hasoccurred.
+
+31-6Unused.
+
+--------------------------------------------------------------------------
+
+Command:-dmasamsign
+Version   :-All DMASoundversions.
+Syntax:-dmasamsign
+Action:-Togglesthesignofasoundsample,(mostifnotallRIFF
+WAVEfmtsoundsamplesrequirethesigntobemodifiedsince
+theyareusuallyofPCorigins).
+
+--------------------------------------------------------------------------
+
+Command:-dmasamconvert
+Version   :-All DMASoundversions.
+Syntax:-MDE=dmasamconvert(S,D,M$)
+Action:-ThisfunctionconvertsAVR/WAVEsoundsampleresolution
+from16-bitstereoto8-bitstereo.
+ReturnsMDE=newmodewhichmaybeuseddirectlyinthe
+dmasetmodecommand.
+
+Where;S=Sourceresolution(8or16bit)
+D=Destinationresolution(8or16bit)
+M$="S"or"s"forstereo
+"M"or"m"formono
+
+--------------------------------------------------------------------------
+
+Command:-dmasamsize
+Version   :-All DMASoundversions.
+Syntax:-SZ=dmasamsize
+Action:-ThisfunctionreturnsSZ=0ifplaybacksamplenotpresent
+elseSZ=RAW/AVR/WAVEplaybacksamplesize
+[includingheaderinformation].
+
+--------------------------------------------------------------------------
+
+€Command:-dmasamrecptr
+Version   :-All DMASoundversions.
+Syntax:-POS=dmasamrecptr
+Action:-POSisreturnedwiththecurrentpositionoftherecord
+pointerwithintherecordbuffer.Note,thisvalueis
+relativetothestartofthebuffernottheabsolute
+address[e.g.,ifthebufferisSTOSmemorybanknumber8
+say,thenthevaluePOSwillbereturnedascurrentrecord
+pointerpositionminusstart(8)].
+
+--------------------------------------------------------------------------
+
+Command:-dmasamplayptr
+Version   :-All DMASoundversions.
+Syntax:-POS=dmasamplayptr
+Action:-POSisreturnedwiththecurrentpositionoftheplayback
+pointerwithintheplaybackbuffer.Note,thisvalueis
+relativetothestartofthebuffernottheabsolute
+address[e.g.,ifthebufferisSTOSmemorybanknumber8
+say,thenthevaluePOSwillbereturnedascurrent
+playbackpointerpositionminusstart(8)].
+
+--------------------------------------------------------------------------
+
+Command:-dmasamthru
+Version   :-All DMASoundversions.
+Syntax:-dmasamthru
+Action:-Thiscommandturnsonthedmasoundthroughplaybackfrom
+microphoneinputsthroughtospeakeroutput.
+
+--------------------------------------------------------------------------
+
+Command:-dmasampval
+Version   :-All DMASoundversions.
+Syntax:-X=dmasampval
+Action:-Thisfunctionreturnstheplaybacklevelofasoundsample.
+
+--------------------------------------------------------------------------
+
+Command:-leftvolume
+Version   :-All DMASoundversions.
+Syntax:-leftvolumeVOL
+Action:-Thiscommandsetsthevolumelevel(0<VOL>15)ofthe
+leftchannelofthesoundsystem.
+
+--------------------------------------------------------------------------
+
+Command:-rightvolume
+Version   :-All DMASoundversions.
+Syntax:-rightvolumeVOL
+Action:-Thiscommandsetsthevolumelevel(0<VOL>15)ofthe
+rightchannelofthesoundsystem.
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+€Command:-leftgain
+Version   :-All DMASoundversions.
+Syntax:-leftgainGN
+Action:-Thiscommandsetsthegainlevel(0<GN>15)oftheleft
+channelofthesoundsystem.
+
+--------------------------------------------------------------------------
+
+Command:-rightgain
+Version   :-All DMASoundversions.
+Syntax:-rightgainGN
+Action:-Thiscommandsetsthegainlevel(0<GN>15)oftheright
+channelofthesoundsystem.
+
+--------------------------------------------------------------------------
+
+Command:-speakeroff
+Version   :-All DMASoundversions.
+Syntax:-speakeroff
+Action:-ThiscommandswitchesofftheFalcon'sinternalspeaker.
+
+--------------------------------------------------------------------------
+
+Command:-speakeron
+Version   :-All DMASoundversions.
+Syntax:-speakeron
+Action:-ThiscommandswitchesontheFalcon'sinternalspeaker.
+
+--------------------------------------------------------------------------
+
+

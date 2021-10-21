@@ -1,0 +1,1354 @@
+**************************************************************************
+*                                                                        *
+*                                                                        *
+*                       S y s t e m  C o n t r o l                       *
+*                                                                        *
+*        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         *
+*                                                                        *
+*           F o r  t h e  S T ( e ) / T T / F a l c o n  0 3 0           *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+*     (c) 1995, 1996, 1997, 1998 Anthony Hoskin                          *
+*                                45 Wythburn Rd,                         *
+*                                Newbold,                                *
+*                                Chesterfield,                           *
+*                                Derbyshire.                             *
+*                                S41 8DP (U.K).                          *
+*                                                                        *
+*                                                                        *
+*               Current version: v0.9 (17th February 1998)               *
+*                                                                        *
+*                                                                        *
+*                       Conditions Of Registration                       *
+*                                                                        *
+*    You  may  NOT  distribute  this  software  or  its   associated     *
+*    program/document  files (either in whole or in part) in  anyway     *
+*    shape or form.   (Any translation of this document  file   into     *
+*    another language is  permitted and  will  be restricted to  the     *
+*    same  conditions  as  this   English   language   version  with     *
+*    respect  to  any other changes.)  You  are authorised  to  make     *
+*    personal  back-ups of the software provided they  are  complete     *
+*    and unchanged in any way.                                           *
+*                                                                        *
+*                                                                        *
+*                               Disclaimer                               *
+*                                                                        *
+*    This  software is for the Atari ST(e)/TT/Falcon  030  computers     *
+*    only.  I take no responsibility whatsoever in the use/misuse of     *
+*    this software.                                                      *
+*                                                                        *
+*                                                                        *
+*                          System Requirements                           *
+*                                                                        *
+*              Machine   :    Any Atari ST(e)/TT/Falcon 030              *
+*              RAM       :    Runs on machines with 512kb - 14mb         *
+*              Monitor   :    TV, Mono/Colour monitor [RGB & VGA]        *
+*              Software  :    STOS Basic v2.6 upwards                    *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+*                                Contents                                *
+*                                                                        *
+*  Introduction to the System Control Extension v0.9       .... Page  1  *
+*  System Control Extension v0.9 command reference         .... Page  2  *
+*  List of official Atari Cookies                          .... Page 17  *
+*  How to switch clock speeds under control of Nemesis     .... Page 20  *
+*                                                                        *
+*                                                                        *
+*                                                                        *
+**************************************************************************
+**************************************************************************
+*                        I n t r o d u c t i o n                         *
+**************************************************************************
+
+This extension comprises over 50 new instructions/functions for  enhancing 
+system  control of the Atari ST(e)/TT/Falcon 030.  Those  commands  listed 
+below which are preceded by  a '!' are compatible with machines  featuring 
+the enhanced joystick ports [STe and Falcon 030].  Those preceded by a '*' 
+are   specifically  for the Atari Falcon 030 machines  with  the  relevant 
+hardware  present.  All the other commands are available to all  machines. 
+A summary of the instructions and functions is shown below :-
+
+System commands;              coldboot            warmboot
+
+Cookie commands;              cookieptr           cookie
+
+Keyboard commands;            caps on             kbshift
+                              caps off
+
+ST Mouse commands;            st mouse on         st mouse colour
+                              st mouse off        st mouse stat
+                              st mouse            _limit st mouse
+
+CPU/Blitter control commands; * _cpuspeed         * _busmode
+                              * _blitterspeed     * _stebus
+                              * _cpucache on      * _falconbus
+                              * _cpucache stat    * _nemesis
+                              * _cpucache off
+
+Paddle/Jagpad commands;       ! _jagpad direction ! paddle x
+                              ! _jagpad fire      ! paddle y
+                              ! _jagpad pause     ! lpen x
+                              ! _jagpad option    ! lpen y
+                              ! _jagpad key$
+
+Arithmetic commands;          _add cbound         _add ubound
+                              _sub cbound         _sub lbound
+                              odd                 even
+
+String commands;              code$               lset$
+                              uncode$             rset$
+
+File management commands;     _fileselect$        _file attr
+                              _file exist
+
+                            Required patch(es)
+                            ==================
+
+               SPRIT101.BIN [STOS interpreter library file]
+               SPRIT101.LIB [STOS compiler library file]
+
+This  extension  provides STOS with a new 3D  effect  file-selector  which 
+although  originally  coded for the Falcon's extra video modes  will  also 
+work in the ST's native modes, i.e., ST Low/Med/Hi resolutions.
+
+This  3D effect fileselector requires the above patches because  the  main 
+STOS library files contain routines vital to the support of this  feature. 
+If  you  are  running  an  ST(e) and never  intend  using  the  3D  effect 
+fileselector then the patched library files need not be installed.
+
+**************************************************************************
+*          The System Control Extension v0.9 command reference           *
+**************************************************************************
+
+Command   :-   sys cmds
+Version   :-   System Control version => 0.9
+Syntax    :-   sys cmds
+Action    :-   Cannot  be  compiled.  Used from within the STOS  editor  - 
+               lists this extensions commands on screen.
+
+------------------------- System Reset Commands --------------------------
+
+Command   :-   coldboot
+Version   :-   System Control version => 0.9
+Syntax    :-   coldboot
+Action    :-   This command causes a coldboot of the machine (analogous to 
+               switching off the machine and powering up again).
+
+--------------------------------------------------------------------------
+
+Command   :-   warmboot
+Version   :-   System Control version => 0.9
+Syntax    :-   warmboot
+Action    :-   This command causes a warmboot of the machine (analogous to 
+               pressing the reset switch at the back of the computer).
+
+------------------------- Cookie Jar Commands ----------------------------
+
+Command   :-   cookieptr
+Version   :-   System Control version => 0.9
+Syntax    :-   P_COOKIE=cookieptr
+Action    :-   This  function returns P_COOKIE holding the address of  the 
+               Cookie Jar if present in the machine.
+               Otherwise P_COOKIE = 0 if cookie jar not found.
+
+               The  'cookie  jar'  is  an invention  from  Atari  to  make 
+               programs  more compatible with various TOS based  machines. 
+               If  you follow the 'rules' and start using the 'cookie'  in 
+               your own programs,  it is more likely they will run on  the 
+               Falcon  030 (and future ST computers) as well.  The  Cookie 
+               Jar  features  information about the system that  might  be 
+               useful while writing programs.
+
+               The  address $5A0 contains zero on all ST computers  except 
+               for the STE/TT/Falcon 030 where it contains the pointer  to 
+               the  Cookie  Jar.  It is an official system  variable  from 
+               Atari that you can trust!
+
+--------------------------------------------------------------------------
+
+Command   :-   cookie
+Version   :-   System Control version => 0.9
+Syntax    :-   COOKIE_VAL=cookie(ID$)
+Action    :-   This  function returns COOKIE_VAL holding the value of  the 
+               COOKIE  whose  identifier (cookie name) is passed  in  ID$. 
+
+
+
+                         Continued overleaf.....
+
+               e.g., PRINT cookie("_CPU")
+
+               will  return the CPU type 68000 for the standard  ST(e)  or 
+               68030 for the TT030/Falcon030.
+
+               The  'cookie jar' allows a program to find out at run  time 
+               which  machine  it is running on,   and what  features  the 
+               machine has.
+
+------------------------- Keyboard Commands ------------------------------
+
+Command   :-   caps on
+Version   :-   System Control version => 0.9
+Syntax    :-   caps on
+Action    :-   This command sets CAPS LOCK ON via BIOS function KBSHIFT.
+
+--------------------------------------------------------------------------
+
+Command   :-   caps off
+Version   :-   System Control version => 0.9
+Syntax    :-   caps off
+Action    :-   This command sets CAPS LOCK OFF via BIOS function KBSHIFT.
+
+--------------------------------------------------------------------------
+
+Command   :-   kbshift
+Version   :-   System Control version => 0.9
+Syntax    :-   X=kbshift
+Action    :-   This  function returns the status of the keyboard  modifier 
+               keys where the value X may be:-
+
+                     0   =    None of the keys listed below are pressed.
+                     1   =    Right shift key pressed.
+                     2   =    Left shift key pressed.
+                     4   =    Control key pressed.
+                     8   =    Alternate key pressed.
+                    16   =    Caps Lock On
+
+--------------------------- ST Mouse Commands ----------------------------
+
+These  ST mouse pointer commands were originally written specifically  for 
+the  Falcon  030's extended video modes,  particularly for the  3D  effect 
+fileselector   and   3D  effect  menu   commands.   However,   since   the 
+ST(e)/TT/Falcon  030  System  Control  extensions  are  now  fully  ST/STe 
+compatible  this  ST  mouse pointer is also available for  the  3D  effect 
+fileselector and 3D effect menu commands while running on ST/STe's.
+
+
+Command   :-   st mouse
+Version   :-   System Control version => 0.9
+Syntax    :-   st mouse N
+Action    :-   Sets the current mouse definition for the ST mouse pointer.
+
+               N = 1     Arrow (as per ST desktop mouse pointer).
+                 = 2     Hand with pointing finger.
+                 = 3     Crosshair.
+                 = 4     Outlined Crosshair.
+
+--------------------------------------------------------------------------
+
+Command   :-   st mouse on
+Version   :-   System Control version => 0.9
+Syntax    :-   st mouse colour COL_INDEX       For 2/4/16/256 colour modes
+               st mouse colour RED,GREEN,BLUE  For TRUE-Colour modes
+Action    :-   Sets the colour for the ST mouse pointer where:-
+
+               COL_INDEX      =    0 -   1 for   2 colour modes.
+                              =    0 -   3 for   4 colour modes.
+                              =    0 -  15 for  16 colour modes.
+                              =    0 - 255 for 256 colour modes.
+
+Enhanced  :-   In the Falcon's TRUE-COLOUR mode a palette is not available 
+               so  the  mouse  pointer  colour is  set  by  selecting  the 
+               required RED, GREEN and BLUE components, where:-
+
+               RED       =    0 - 31    \    These RED, GREEN, BLUE
+               GREEN     =    0 - 31     >   component values allow any
+               BLUE      =    0 - 31    /    choice from 32768 colours.
+
+--------------------------------------------------------------------------
+
+Command   :-   st mouse on
+Version   :-   System Control version => 0.9
+Syntax    :-   st mouse on
+Action    :-   Enables and displays the ST mouse pointer.
+Important :-   Before   issueing  this  command  when   in   ST-compatible 
+               resolutions  you  MUST  hide the old  STOS  mouse  pointer, 
+               however  the old STOS xmouse and ymouse will  still  report 
+               the  coords of the mouse.  Indeed my routines use the  STOS 
+               xmouse and ymouse routines to position the ST mouse pointer 
+               (this  is  actually a sprite in LINEA format and  uses  the 
+               LINEA Drawsprite/Undrawsprite routines).
+
+--------------------------------------------------------------------------
+
+Command   :-   _limit st mouse
+Version   :-   System Control version => 0.9
+Syntax    :-   _limit st mouse X1,Y1,X2,Y2
+               _limit st mouse -1
+Action    :-   This  command  restricts  the  ST  mouse  pointer  to   the 
+               rectangle specified by X1,Y1,X2,Y2.
+
+               To  allow  the  ST mouse pointer to use the  whole  of  the 
+               screen  area again the single parameter (-1) turns off  the 
+               limiting rectangle.
+
+--------------------------------------------------------------------------
+
+Command   :-   st mouse off
+Version   :-   System Control version => 0.9
+Syntax    :-   st mouse off
+Action    :-   Disables and removes the ST mouse pointer.  After  issueing 
+               this  command  when in ST-compatible resolutions  you  MUST 
+               show the old STOS mouse if you wish to make use of the STOS 
+               mouse.
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   st mouse stat
+Version   :-   System Control version => 0.9
+Syntax    :-   X=st mouse stat
+Action    :-   Returns X=TRUE if the ST mouse is enabled otherwise FALSE.
+
+------------------------- Jagpad/Paddle Commands -------------------------
+
+This group of commands allows the Jaguar Controller to be accessed by STOS 
+when  the device is connected to the STe/Falcon enhanced  joystick  ports. 
+
+Each  of  the  Jagpad/paddle  commands tests  for  the  '_MCH'  cookie  to 
+determine which machine the program is running on.  If this cookie is  not 
+found  or  its  ID  indicates the current machine  does  not  feature  the 
+enhanced joystick ports e.g.,  STFM or TT then all of these commands  will 
+return a NULL value.  This means your program may still be written and  to 
+some  extent,  tested on your machine without the system crashing [in  the 
+anticipation of it running on other systems such as an STe].
+
+Command   :-   _jagpad direction
+Version   :-   System Control version => 0.9
+Syntax    :-   D=_jagpad direction(PORT)
+Action    :-   Returns  the  value 'D' with the direction  of  the  jagpad 
+               (Jaguar  controller)  joypad  connected  to  the   enhanced 
+               joystick port PORT (0 - 1).
+
+               The directions correspond as follows:-
+
+                              1     
+                         5    |    9
+                          \   |   /       Note;   Neutral position returns
+                           \  |  /                a value of zero.
+                            \ | /
+                             \|/
+                        4-----+-----8
+                             /|\
+                            / | \
+                           /  |  \
+                          /   |   \
+                         6    |    10
+                              2    
+
+--------------------------------------------------------------------------
+
+Command   :-   _jagpad fire
+Version   :-   System Control version => 0.9
+Syntax    :-   F=_jagpad fire(PORT,BTN)
+Action    :-   Tests the condition of the fire-button (BTN) of the  jagpad 
+               (Jaguar controller) connected to the enhanced joystick port 
+               PORT (0 - 1).
+
+               BTN  =    0    Read Fire button A
+               BTN  =    1    Read Fire button B
+               BTN  =    2    Read Fire button C
+
+               Returns TRUE (-1) if fire-button pressed else FALSE (0).
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _jagpad option
+Version   :-   System Control version => 0.9
+Syntax    :-   X=_jagpad option(PORT)
+Action    :-   Tests  the  condition of the option-button  of  the  jagpad 
+               (Jaguar controller) connected to the enhanced joystick port 
+               PORT (0 - 1).
+
+               Returns TRUE (-1) if option-button pressed else FALSE (0).
+
+--------------------------------------------------------------------------
+
+Command   :-   _jagpad pause
+Version   :-   System Control version => 0.9
+Syntax    :-   X=_jagpad pause(PORT)
+Action    :-   Tests  the  condition  of the pause-button  of  the  jagpad 
+               (Jaguar controller) connected to the enhanced joystick port 
+               PORT (0 - 1).
+
+               Returns TRUE (-1) if pause-button pressed else FALSE (0).
+
+--------------------------------------------------------------------------
+
+Command   :-   _jagpad key$
+Version   :-   System Control version => 0.9
+Syntax    :-   K$=_jagpad key$(PORT)
+Action    :-   Reads  the  condition  of the 'phone-pad'  buttons  of  the 
+               jagpad  (Jaguar  controller)  connected  to  the   enhanced 
+               joystick port PORT (0 - 1).
+
+               Returns  K$  holding  the ASCII  character  of  the  button 
+               pressed else returns K$ as a NULL string.
+
+--------------------------------------------------------------------------
+
+Command   :-   paddle x
+Version   :-   System Control version => 0.9
+Syntax    :-   X=paddle x(P)
+Action    :-   Returns the x-coordinates of paddle P.
+
+--------------------------------------------------------------------------
+
+Command   :-   paddle y
+Version   :-   System Control version => 0.9
+Syntax    :-   Y=paddle y(P)
+Action    :-   Returns the y-coordinates of the paddle P.
+
+Note;     In  both these functions the paddle to be inquired is  given  by 
+          'P' and may be in the range 0 - 3 inclusive.
+
+--------------------------------------------------------------------------
+
+Command   :-   lpen x
+Version   :-   System Control version => 0.9
+Syntax    :-   X=lpen x
+Action    :-   Returns the x-coordinates of the light gun/pen.
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   lpen y
+Version   :-   System Control version => 0.9
+Syntax    :-   Y=lpen y
+Action    :-   Returns the y-coordinates of the light gun/pen.
+
+-------------------------- Arithmetic Commands ---------------------------
+
+Command   :-   _add cbound
+Version   :-   System Control version => 0.9
+Syntax    :-   A=_add cbound(A,I,L,U)
+Action    :-   Cyclic  integer addition of 'I' to 'A' checking the  result 
+               in  'A' is within the lower bound 'L' and upper bound  'U'. 
+               This  is useful where your code is required to perform  the 
+               following:-
+
+               10 A=30 : rem Initial value of 'A'.
+               20 I=1 : rem Integer constant to add to 'A'.
+               30 L=10 : rem Lowest permissible bound.
+               40 U=80 : rem Highest permissible bound.
+               50 :
+               60 A=A+I : if A>U then A=L
+
+               The code at line 60 can simplify to: A=_add cbound(A,I,L,U)
+
+--------------------------------------------------------------------------
+
+Command   :-   _sub cbound
+Version   :-   System Control version => 0.9
+Syntax    :-   A=_sub cbound(A,I,L,U)
+Action    :-   Cyclic  integer  subtraction of 'I' from 'A'  checking  the 
+               result in 'A' is within the lower bound 'L' and upper bound 
+               'U'.  This is useful where your code is required to perform 
+               the following:-
+
+               10 A=30 : rem Initial value of 'A'.
+               20 I=1 : rem Integer constant to add to 'A'.
+               30 L=10 : rem Lowest permissible bound.
+               40 U=80 : rem Highest permissible bound.
+               50 :
+               60 A=A-I : if A<L then A=U
+
+               The code at line 60 can simplify to: A=_sub cbound(A,I,L,U)
+
+--------------------------------------------------------------------------
+
+Command   :-   _add ubound
+Version   :-   System Control version => 0.9
+Syntax    :-   A=_add ubound(A,I,U)
+Action    :-   Integer  addition of 'I' to 'A' checking the result in  'A' 
+               is within upper bound 'U'.  This is useful where your  code 
+               is required to perform the following:-
+
+               10 A=30 : rem Initial value of 'A'.
+               20 I=1 : rem Integer constant to add to 'A'.
+               30 U=80 : rem Highest permissible bound.
+               40 :
+               50 A=A+I : if A>U then A=U
+
+               The code at line 50 can simplify to: A=_add ubound(A,I,U)
+
+Command   :-   _sub lbound
+Version   :-   System Control version => 0.9
+Syntax    :-   A=_sub lbound(A,I,L)
+Action    :-   Integer subtraction of 'I' from 'A' checking the result  in 
+               'A'  is within the lower bound 'L'.  This is  useful  where 
+               your code is required to perform the following:-
+
+               10 A=30 : rem Initial value of 'A'.
+               20 I=1 : rem Integer constant to add to 'A'.
+               30 L=10 : rem Lowest permissible bound.
+               40 :
+               50 A=A-I : if A<L then A=L
+
+               The code at line 50 can simplify to: A=_sub lbound(A,I,L)
+
+--------------------------------------------------------------------------
+
+Command   :-   odd
+Version   :-   System Control version => 0.9
+Syntax    :-   X=odd(A)
+Action    :-   X=TRUE (-1) if value A is odd otherwise X=FALSE (0).
+
+--------------------------------------------------------------------------
+
+Command   :-   even
+Version   :-   System Control version => 0.9
+Syntax    :-   X=even(A)
+Action    :-   X=TRUE (-1) if value A is even otherwise X=FALSE (0).
+
+----------------------------- File Commands ------------------------------
+
+Command   :-   _fileselect$
+Version   :-   System Control version =>2.7
+Syntax    :-   F$=_fileselect$(PATH$,TITLE$,BG_COLOUR,,BTN_COLOUR_1,
+                               BTN_COLOUR_2,TXT_COLOUR_1,TXT_COLOUR_2)
+
+Action    :-   This  function  allows  a user to  select files from  a  3D 
+               effect   fileselector   dialog  box   (now   fully   ST/STe 
+               compatible) originally designed for use within the Falcon's 
+               non-ST video modes (including the TRUE-COLOUR modes).
+
+               PATH$     =    A  string containing the search  mask  which 
+                              will be used to display the possible  files, 
+                              [same as for standard STOS fileselector].
+               TITLE$    =    A string containing the title of the  dialog 
+                              box,  [same purpose as for the standard STOS 
+                              fileselector].
+               BG_COLOUR =    The background colour of the dialog box.
+               BTN_COLOUR_1\  These two colours determine the 3D effect of
+               BTN_COLOUR_2/  the dialog buttons, [depending upon the set-
+                              up of the palette these buttons will have a 
+                              3D look].
+               TXT_COLOUR_1\  TXT_COLOUR_1 is the colour used for the de-
+               TXT_COLOUR_2/  selected drive buttons and remaining button
+                              texts.  TXT_COLOUR_2 is the colour used  for 
+                              the currently selected drive button and  the 
+                              display list of file/pathnames.
+
+                         Continued overleaf.....
+
+                   +--------------------------------+
+                   |   TITLE$ (upto 32 characters)  |
+                   | '---------------' '-''-''-''-' |
+Read/Previous dir ---|X|           ||| |A||B||C||D| | Only those buttons
+button. [Click on  | |-------------+-| '-''-''-''-' | belonging to actual
+this to re-read a  | |*EXAMPLES.BAS| | '-''-''-''-' | mounted drives will
+directory or go to | |*STOS_ACB    | | |E||F||G||H| | be enabled. Drives
+previous folder].  | | MYFILE  .TXT| | '-''-''-''-' | which are not avai-
+                   | |             | | '-''-''-''-' | lable are shown in
+The UP/DOWN arrows | |             | | |I||J||K||L| | lightened text.
+allow you to scan  | |             | | '-''-''-''-' |
+the filenames in   | |             | | '-''-''-''-' |
+the current        | |             | | |M||N||O||P| |
+directory.         | |             | | '-''-''-''-' |
+                   | |             | |'------------'|
+LEFT mouse button  | |             | ||     OK     ||
+scrolls line by    | |             |-|'------------'|
+line, RIGHT mouse  | |             |||'------------'|
+button scrolls     | '---------------'|   CANCEL   ||
+by window size.    |                  '------------'|
+                   |                  '------------'| Filename field
+* indicates a      |                  |MYFILE  .TXT|| [editable].
+  foldername.      |                  '------------'|
+                   |'------------------------------'|
+                   ||C:\STOS_BAS\*.TXT             || Directory path field
+                   ||                              || [non-editable].
+                   |'------------------------------'|
+                   +--------------------------------+
+
+
+IMPORTANT :-   If  the  ST  mouse  [st mouse command]  is  OFF  when  this 
+               fileselector function is called it will automatically  turn 
+               ON  for the duration of the _fileselect$ call and  then  be 
+               turned OFF again upon quitting the fileselector.
+
+               The  _fileselect$ function is fully compatible with the  ST 
+               Low/Med/Hi  resolutions - BUT YOU MUST ENSURE THE  STANDARD 
+               STOS MOUSE IS HIDDEN.
+
+--------------------------------------------------------------------------
+
+Command   :-   file exist
+Version   :-   System Control version => 0.9
+Syntax    :-   A=file exist(F$)
+Action    :-   Tests  the existence of the file specified by F$ (this  may 
+               be just the filename or may be the full-path-filename).
+
+               Unlike most Basics that have this function this returns the 
+               value A=LENGTH of the file if it IS found else returns  A=0 
+               if the file is NOT found.
+
+Example   :-   10 F$="A:\MYFILE.TXT"
+               20 if file exist(F$)>0 then print "File "+F$+" found." : 
+               else : print "File "+F$+" not found."
+               30 :
+               40 end
+
+
+--------------------------------------------------------------------------
+
+Command   :-   file attr
+Version   :-   System Control version => 0.9
+Syntax    :-   file attr FNAME$,ATTR
+Action    :-   To change a files attributes
+
+               Where:-   FNAME$  = filename of file whose attribute is  to 
+                         be modified and ATTR = new attribute for the file
+                         and may have the following values :-
+
+               0 = Normal, 1 = Read only, 2 = Hidden file, 4 = System file
+
+               N.B.      Use with extreme caution !!!!!!!
+
+---------------------------- String Commands -----------------------------
+
+Command   :-   code$
+Version   :-   System Control version => 0.9
+Syntax    :-   code$ A$,N
+Action    :-   Encodes the string A$ by adding the value 'N' to each ASCII 
+               character.
+
+--------------------------------------------------------------------------
+
+Command   :-   uncode$
+Version   :-   System Control version => 0.9
+Syntax    :-   uncode$ A$,N
+Action    :-   Decodes  the  string A$ by subtracting the value  'N'  from 
+               each ASCII character.
+
+--------------------------------------------------------------------------
+
+Command   :-   lset$
+Version   :-   System Control version => 0.9
+Syntax    :-   lset$ A$,B$
+Action    :-   Left justifies the  string B$ into the string A$.
+
+Example   :-   10 A$="    is a number"
+               20 B$="One"
+               30 lset$ A$,B$
+               40 print A$
+
+Result    :-   One is a number
+
+--------------------------------------------------------------------------
+
+Command   :-   rset$
+Version   :-   System Control version => 0.9
+Syntax    :-   rset$ A$,B$
+Action    :-   Right justifies the  string B$ into the string A$.
+
+Example   :-   10 A$="This is number   "
+               20 B$="Two"
+               30 rset$ A$,B$
+               40 print A$
+
+Result    :-   This is number Two
+
+
+
+
+------------------------- CPU and Blitter Commands -----------------------
+
+This  group of commands allows the programmer access to the  Falcon  030's 
+CPU control.  Each of the CPU/Blitter commands tests the '_MCH' and '_CPU' 
+cookies.  If either of these cookies are not found or their ID's  indicate 
+the  current machine does not feature a 68030 CPU e.g.,  ST(e) then  these 
+commands will either return a NULL value or return unprocessed. This means 
+your  program  may still be written and to some  extent,  tested  on  your 
+machine without the system crashing [in the anticipation of it running  on 
+other systems such as a Falcon 030 or perhaps an STe upgraded to a 68030].
+
+The System Control extension now has a new command to allow you to  detect 
+if  the  Black  Scorpion Nemesis System Accelerator is  installed  in  the 
+Falcon  030  and allows the switching of the cpu speed and  blitter  speed 
+under  Nemesis via the original commands listed below.  Before I  go  onto 
+detailing how to control Nemesis from the System Control extension I ought 
+to  mention that for the commands to work properly the  following  'rules' 
+MUST be obeyed.
+
+a)   Supplied with the Nemesis system accelerator are the programs:-
+
+     NEMESIS.PRG    This program installs the Nemesis cookie in the cookie 
+                    jar for the following three programs to recognise that 
+                    Nemesis is actually present in the machine.
+
+     NEMLO.PRG      This program activates Nemesis and clocks the  cpu/bus 
+                    at  20 MHz (and clocks the DSP at 40 MHz if  the  full 
+                    system acceleration has been implemented).
+
+     NEMHI.PRG      This program activates Nemesis and clocks the  cpu/bus 
+                    at  24 MHz (and clocks the DSP at 48 MHz if  the  full 
+                    system acceleration has been implemented).
+
+     NEMOFF.PRG     This  program  deactivates  Nemesis  and  clocks   the 
+                    cpu/bus  at 16 MHz and clocks the DSP at 32  MHz  (the 
+                    standard Falcon 030 clockrates).
+
+b)   For  STOS  to control the Nemesis system accelerator via  the  System 
+     Control extension commands the following must be observed:-
+
+     Always run the NEMESIS.PRG program from the AUTO folder such that  it 
+     will always be run BEFORE STOS Basic.  The new commands in the System 
+     Control  extension  test  for the Nemesis cookie entry  in  order  to 
+     determine how they will function.
+
+     The programs NEMLO.PRG, NEMHI.PRG and NEMOFF.PRG are not used by STOS 
+     (their functions are carried out by the System Control extension).
+
+Command   :-   _nemesis
+Version   :-   System Control version => 0.9
+Syntax    :-   NEMESIS_FLAG=_nemesis
+Action    :-   This  command  function  returns TRUE (-1)  if  Nemesis  is 
+               detected in the cookie jar otherwise returns FALSE (0).
+
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _cpuspeed
+Version   :-   System Control version => 0.9
+Syntax    :-   _cpuspeed N
+Action    :-   This command sets the clockrate of the 68030 CPU; where :-
+
+               N    =    8 sets the clockrate to  8 MHz     *
+               N    =   16 sets the clockrate to 16 MHz     *
+               N    =   20 sets the clockrate to 20 MHz (Nemesis only)
+               N    =   24 sets the clockrate to 24 MHz (Nemesis only)
+
+               *    If  Nemesis  is not installed any other value  of  'N' 
+                    generates an illegal function error.
+
+--------------------------------------------------------------------------
+
+Command   :-   _blitterspeed
+Version   :-   System Control version => 0.9
+Syntax    :-   _blitterspeed N
+Action    :-   This command,  although performing the same task as in  the 
+               previous  System  Control  version  now  works  differently 
+               depending on the presence of Nemesis.
+
+               *    If Nemesis is not installed or is inactive (i.e.  when 
+                    the  cpu  speed = 8 MHz or 16 MHz) then  this  command 
+                    sets the clockrate of the Blitter chip; where 
+
+                    N    =    8 sets the clockrate to  8 MHz
+                    N    =   16 sets the clockrate to 16 MHz
+
+                    any  other value of 'N' generates an illegal  function 
+                    error.
+
+               *    If  Nemesis  is  installed and  is  active  then  this 
+                    command  returns  unprocessed (the  clockrate  of  the 
+                    Blitter  chip is not changed).  I once read  somewhere 
+                    that the Blitter chip couldn't be clocked faster  than 
+                    16 MHz and this seems to be confirmed when Nemesis  is 
+                    installed and active.
+
+With Nemesis installed and active the BSS Nemesis software configures  the 
+blitter  clockrate to be the CPU clockrate/2.  I have simply followed  the 
+same 'rules' in my extension.
+
+e.g. When Nemesis is clocking the system at Nemesis-Lowspeed (20 MHz)  the 
+     blitter  will  be clocked at 10 MHz.  When Nemesis  is  clocking  the 
+     system  at Nemesis-Highspeed (24 MHz) the blitter will be clocked  at 
+     12 MHz.
+
+--------------------------------------------------------------------------
+
+Command   :-   _cpucache on
+Version   :-   System Control version => 0.9
+Syntax    :-   _cpucache on
+Action    :-   This   command   clears  and  enables  the   M68030   CPU's 
+               instruction/data cache.
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _cpucache off
+Version   :-   System Control version => 0.9
+Syntax    :-   _cpucache off
+Action    :-   This   command  clears  and  disables  the   M68030   CPU's 
+               instruction/data cache.
+
+--------------------------------------------------------------------------
+
+Command   :-   _cpucache stat
+Version   :-   System Control version => 0.9
+Syntax    :-   X=_cpucache stat
+Action    :-   This function returns X containing a 32 bit value from  the 
+               68030 CPU's CACR (cache control register),  thus  returning 
+               the enabled/disabled status of the 68030's cpu cache.
+
+               Note however, only the lower 16 bits are meaningful at this 
+               time.
+
+          The bitmap of the value X has the following meanings:-
+
+        +----------------------------------------------------------------+
+        | Bitmap |          Name          |             Meaning          |
+        |--------+------------------------+------------------------------|
+        |    1   | ENABLE_CACHE           | Enable instruction cache     |
+        |    2   | FREEZE_CACHE           | Freeze instruction cache     |
+        |    4   | CLEAR_INST_CACHE_ENTRY | Clear instruction cache entry|
+        |    8   | CLEAR_INST_CACHE       | Clear instruction cache      |
+        |   16   | INST_BURST_ENABLE      | Instruction burst enable     |
+        |  256   | ENABLE_DATA_CACHE      | Enable data cache            |
+        |  512   | FREEZE_DATA_CACHE      | Freeze data cache            |
+        | 1024   | CLEAR_DATA_CACHE_ENTRY | Clear data cache entry       |
+        | 2048   | CLEAR_DATA_CACHE       | Clear data cache             |
+        | 4096   | DATA_BURST_ENABLE      | Data burst enable            |
+        | 8192   | WRITE_ALLOCATE         | Write allocate               |
+        +----------------------------------------------------------------+
+
+See       :-   _cpucache on, _cpucache off.
+
+Example 1 :-   10 cls
+               20 _cpucache on : rem Enable (turn on) the CPU cache.
+               30 X=_cpucache stat : rem Fetch status of CPU cache.
+               40 print hex$(X,4) : rem Normally $3111 when enabled.
+               50 _cpucache off : rem Disable (turn off) the CPU cache.
+               60 X=_cpucache stat : rem Fetch status of CPU cache.
+               70 print hex$(X,4) : rem Normally 0 when disabled.
+               80 end
+
+Result    :-   $3111
+               $0000
+
+Example 2 :-   10 cls
+               20 if _cpucache stat=0 then _cpucache on
+
+               In this example,  if the CPU cache is disabled (turned off) 
+               then it will be re-enabled (turned on).
+
+Upon   breaking  out  of  a  program  with  CONTROL-C  and    subsequently           
+hitting   the  UNDO  key  twice,   the  CPU  cache  will   be   re-enabled           
+(turned on), the condition which I have chosen for the default.
+
+When  some compiled programs are run on the Falcon 030 it is possible  for 
+erroneous  errors to crop  up  for unknown reasons yet behave OK when  run 
+within   STOS   itself.  (The   game  SKYSTRIKE   is  one  example.)  Some 
+programs  appear   to   have   an absolute  aversion   to  the  68030  CPU 
+instruction/data   cache.   Using  this command  it has been  found  those 
+same  programs  will behave when the  cache is  disabled,  (although  this 
+slows program execution slightly).
+
+These CPU/BLITTER/CACHE control commands may be used wherever and whenever 
+the  programmer  sees fit to use them within a  program  listing.  As  has 
+already  been stated,  some STOS programs (particularly when compiled)  do 
+not  perform  exactly as required when the CPU Cache  is  enabled.  It  is 
+permissible therefore to turn off the cache just before the program enters 
+the problem code and then to turn the cache back on after it has finished.
+
+Similarly  if the program is currently running with the CPU  clockrate  of 
+8Mhz  and  is about to perform some processor intensive  calculations  for 
+example,  then it makes sense to toggle to 16Mhz CPU clockrate and perhaps 
+turn on the cache to take advantage of the system running at full steam.
+
+---------------------- System Bus Control Commands -----------------------
+
+This group of commands allows the Falcon 030's bus control to emulate  the 
+STe system bus,  check the current mode, or return to the Falcon bus mode. 
+I  can't exactly remember what it was,  but somewhile ago I found a  sound 
+sample  player  (it may even have been the STOS Maestro  extension)  would 
+only work properly when the STe bus emulation was set.  Up to the  present 
+time this is the only reason I have found for using these command(s).
+
+Command   :-   _falconbus
+Version   :-   System Control version => 0.9
+Syntax    :-   _falconbus
+Action    :-   This command returns the Falcon 030's system bus control to 
+               Falcon mode.
+
+Note;     Upon  breaking out of a program with CONTROL-C and  subsequently
+          hitting the UNDO key twice, the bus control will be reset to the
+          Falcon mode, the condition which I have chosen for the default.
+
+--------------------------------------------------------------------------
+
+Command   :-   _stebus
+Version   :-   System Control version => 0.9
+Syntax    :-   _stebus
+Action    :-   This  command  was originally ste bus,  but  was  found  to 
+               conflict  with the X=ste function of the STE  extension  by 
+               ASA  BURROWS  therefore  the  slight  modification  to  the 
+               spelling.  (No  two extensions may have a command with  the 
+               same name.)
+
+               This  command sets the Falcon 030's system bus  control  to 
+               emulate the STe.  This is achieved by clearing the required 
+               bits  at address $FF8007 (the Falcon 030 processor  control 
+               register).
+
+
+
+
+--------------------------------------------------------------------------
+
+Command   :-   _busmode
+Version   :-   System Control version => 0.9
+Syntax    :-   B=_busmode
+Action    :-   This function returns the current state of the Falcon 030's 
+               system bus control, B returns a bitmap as follows :-
+
+
+                                             Bit 7_6_5_4_3_2_1_0
+                                                     |     |   |
+                    STe Bus emulation  (0 = on) -----'     |   |
+                    Blitter   (0=8mHz, 1=16mHz) -----------'   |
+                    68030 CPU (0=8mHz, 1=16mHz) ---------------'
+
+               Note;     Bits   0 and 2 are manipulated by  the  _cpuspeed 
+                         and _blitterspeed commands respectively.
+
+                         If,  at any time a program needs to determine the 
+                         clockrate  the  CPU or Blitter was last  set  to, 
+                         _busmode  may be used and the bitmap interrogated 
+                         for the current clockrate setting(s).
+
+------------------------ Memory/Vars Commands ----------------------------
+
+Command   :-   _tos$
+Version   :-   System Control version => 0.9
+Syntax    :-   A$=_tos$
+Action    :-   This function returns the TOS version (as a five  character 
+               string) in A$.
+
+--------------------------------------------------------------------------
+
+Command   :-   _aes in
+Version   :-   System Control version => 0.9
+Syntax    :-   A=_aes in
+Action    :-   This function probes the presence of the AES.  Returns TRUE
+               (-1) if present else FALSE (0). Useful to determine whether
+               the program has been booted from the AUTO folder.
+
+--------------------------------------------------------------------------
+
+Command   :-   _phystop
+Version   :-   System Control version => 0.9
+Syntax    :-   X=_phystop
+Action    :-   This function returns X pointing to the top of physical  ST 
+               compatible RAM in the machine.
+
+--------------------------------------------------------------------------
+
+Command   :-   _memtop
+Version   :-   System Control version => 0.9
+Syntax    :-   X=_memtop
+Action    :-   This  function  returns X pointing to  the  highest  memory 
+               location available for the system heap.  This value is used 
+               to initialise GEMDOS free memory.
+
+
+
+
+
+
+------------------------- Printer Port Commands --------------------------
+
+Command   :-   _set printer
+Version   :-   System Control version => 0.9
+Syntax    :-   _set printer X
+Action    :-   This command sets the printer configuration. X is a bit-map 
+               defined as follows:-
+
+               Bit  When clear          When set
+
+                0   Dot Matrix          Daisy Wheel
+                1   Monochrome          Colour
+                2   Atari Printer       Epson Compatible Printer
+                3   Draft Mode          Final Mode
+                4   Parallel Port       Serial Port
+                5   Continuous Feed     Single Sheet Feed
+               6-15 Unused              Unused
+
+--------------------------------------------------------------------------
+
+Command   :-   _printer ready
+Version   :-   System Control version => 0.9
+Syntax    :-   A=_printer ready
+Action    :-   This  function returns the status of  the  printer (returns 
+               TRUE if ready else FALSE).
+
+------------------------- IDE Hard drive Commands ------------------------
+
+Command   :-   ide off
+Version   :-   System Control version => 0.9
+Syntax    :-   ide off
+Action    :-   This  command  switches off the Falcon 030's  internal  IDE 
+               hard drive.
+
+--------------------------------------------------------------------------
+
+Command   :-   ide on
+Version   :-   System Control version => 0.9
+Syntax    :-   ide on
+Action    :-   This command switches on the Falcon 030's internal IDE hard 
+               drive.
+
+Important :-   These  last two commands are NOT supported by the  compiler 
+               extension  as  it  was felt that they  are  not  really  of 
+               serious use from within a compiled program.
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+
+                        **************************
+                        * Official Atari Cookies *
+                        **************************
+
++------------------------------------------------------------------------+
+| Name |                     Values and Meanings                         |
+|------+-----------------------------------------------------------------|
+| _MCH | This cookie gives the machine type it consists of a minor number|
+|      | +low-word) and a major number +high-word) as follows:           |
+|      |                                                                 |
+|      |    Major     Minor     Machine                                  |
+|      |                                                                 |
+|      |    $0000     $0000     520/1040 or Mega ST                      |
+|      |    $0001     $0000     STe                                      |
+|      |    $0001     $0010     Mega STe                                 |
+|      |    $0002     $0000     TT                                       |
+|      |    $0003     $0000     Falcon 030                               |
+|      |                                                                 |
+|      | Normally you should use the more specific cookies in case       |
+|      | someone has added a 68030 processor to an STe, for example.     |
+|      |                                                                 |
+|      | One possible use for this cookie is to detect the presence of   |
+|      | the extra TT serial ports.                                      |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _VDO | The high word of this cookie contains a number from 0 to 3      |
+|      | which indicates what type of video shifter is fitted:           |
+|      |                                                                 |
+|      |              0 - Standard ST video shifter                      |
+|      |              1 - Improved STe video shifter                     |
+|      |              2 - TT Graphic Chip                                |
+|      |              3 - Falcon 030 video shifter                       |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _SND | Here it is the bits which tell us about the sound hardware.     |
+|      | This is bit oriented as follows +when bits are set):            |
+|      |                                                                 |
+|      | Sound hardware             Bit 4_3_2_1_0                        |
+|      |                                | | | | |                        |
+|      | Connection Matrix -------------' | | | |                        |
+|      |          DSP56001 ---------------' | | |                        |
+|      |  16-bit DMA sound -----------------' | |                        |
+|      |   8-bit DMA sound -------------------' |                        |
+|      |   YM2149 PSG chip ---------------------'                        |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _CPU | The number here is the decimal value of the last two digits of  |
+|      | the processor present in the machine, indicating which CPU of   |
+|      | the 68000 family it is, for example:                            |
+|      |                                                                 |
+|      |                   00 = 68000 , 10 = 68010                       |
+|      |                   20 = 68020 , 30 = 68030                       |
+|      |                                                                 |
++------------------------------------------------------------------------+
+
+
+
+
+
+
+                    Official Atari Cookies continued:
+
++------------------------------------------------------------------------+
+| Name |                     Values and Meanings                         |
+|------+-----------------------------------------------------------------|
+| _FPU | This gives an indication of any floating point maths unit       |
+|      | installed in the machine. Only the high-word is used at the     |
+|      | time of writing. The bits are used as follows +when set):       |
+|      |                                                                 |
+|      | Bit 0 >- I/O mapped 68881 +e.g. Atari's SFP004)                 |
+|      | Bit 1 >- 68881/68882 +unsure which)                             |
+|      | Bit 2 >- If bit 1==0 then 68881 else 68882                      |
+|      | Bit 3 >- 68040 internal floating point support                  |
+|      |                                                                 |
+|      |     i.e., FPU type High-word - hardware , low-word - software   |
+|      |                                                                 |
+|      | 0 - No FPU                                                      |
+|      | 1 - SFP004 or compatible 68881                                  |
+|      | 2 - 68881 or 68882 unsure which one   3 - plus SFP004           |
+|      | 4 - 68881 for sure                    5 - plus SFP004           |
+|      | 6 - 68882 for sure                    7 - plus SFP004           |
+|      | 8 - 68040's internal FPU              9 - plus SFP004           |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _FDC | This gives an indication of the highest density floppy drive    |
+|      | unit installed in the machine. The high byte of its value       |
+|      | indicates the highest density floppy present:                   |
+|      |                                                                 |
+|      |              0 = 360Kb/720Kb +Double Density)                   |
+|      |              1 = 1.44Mb      +High   Density)                   |
+|      |              2 = 2.88Mb      +Quad   Density)                   |
+|      |                                                                 |
+|      | The low 3 bytes give an indication of the origin of the unit,   |
+|      | the value 0x415443 +'ATC') indicates an Atari line-fit or       |
+|      | retro-fitted floppy drive unit.                                 |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _FLK | The version number of file sharing extensions. This cookie is   |
+|      | installed by a GEMDOS extension which supports the Atari file   |
+|      | locking extensions +i.e., the additional Fopen modes and the    |
+|      | Flock call). If the cookie cannot be found, file sharing is     |
+|      | not available.                                                  |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _FRB | On TT's you can also find a cookie called _FRB, this means Fast |
+|      | Ram Buffers and it is used with the ACSI DMA controller.        |
+|      | The longword points to a 64kb buffer used by the ACSI DMA.      |
+|      | If it is zero, no buffers are installed and if one doesn't      |
+|      | find it, there is no FRB at all +not to be found in ST/STE).    |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _SWI | This cookie is used to indicate the positions of the            |
+|      | configuration switches on Mega STE's and TT's.                  |
+|      | At present these switches are unused.                           |
+|      |                                                                 |
++------------------------------------------------------------------------+
+
+
+
+
+                    Official Atari Cookies continued:
+
++------------------------------------------------------------------------+
+| Name |                     Values and Meanings                         |
+|------+-----------------------------------------------------------------|
+| _AKP | Atari keyboard preference, [Falcon 030 only], this indicates    |
+|      | the preferred keyboard layout and the language preferences.     |
+|      |                                                                 |
+|      | 0 = USA                               9 = TUR [Turkey]          |
+|      | 1 = FRG [Germany]                    10 = FIN [Finland]         |
+|      | 2 = FRA [France]                     11 = NOR [Norway]          |
+|      | 3 = UK  [United Kingdom]             12 = DEN [Denmark]         |
+|      | 4 = SPA [Spain]                      13 = SAU [Saudi Arabia]    |
+|      | 5 = ITA [Italy]                      14 = HOL [Holland]         |
+|      | 6 = SWE [Sweden]                     15 = CZE [Czechoslovakia]  |
+|      | 7 = SWF [Switzerland +French)]       16 = HUN [Hungary]         |
+|      | 8 = SWG [Switzerland +German)]                                  |
+|      |                                                                 |
+|      | This cookie is used by any machine using AES version =>3.30     |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _IDT | Preferred international time and date display mode.             |
+|      | The high-word is currently unused and is reserved.              |
+|      | The low-word consists of three sections:                        |
+|      |                                                                 |
+|      | Bits 15.....12 +Time)  0 = 12 hour clock                        |
+|      |                        1 = 24 hour clock                        |
+|      | Bits 11......8 +Date)  0 = MM-DD-YY                             |
+|      |                        1 = DD-MM-YY                             |
+|      |                        2 = YY-MM-DD                             |
+|      |                        3 = YY-DD-MM                             |
+|      | Bits 7....0 are the ASCII value to be used as a separator,      |
+|      |             e.g., /.                                            |
+|      |                                                                 |
+|      | This cookie is used by any machine using AES version =>3.30     |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _NET | Networking software is available; the value is a pointer to a   |
+|      | structure of the following form:                                |
+|      |                                                                 |
+|      | struct netinfo +                                                |
+|      |        long publisher_id;                                       |
+|      |        long version;                                            |
+|      | );                                                              |
+|      |                                                                 |
+|      | At the time of writing the following publisher_id's had         |
+|      | been assigned:                                                  |
+|      |                                                                 |
+|      |    Application Design Software   'A&D\0'                        |
+|      |    Pams Software                 'PAMS'                         |
+|      |    Itos Software                 'ITOS'                         |
+|      |                                                                 |
+|      |                                                                 |
++------------------------------------------------------------------------+
+
+
+
+
+
+
+                    Official Atari Cookies continued:
+
++------------------------------------------------------------------------+
+| Name |                     Values and Meanings                         |
+|------+-----------------------------------------------------------------|
+| FSMC | This cookie is inserted by font scaling versions of GDOS;       |
+|      | the value is a pointer to a structure of the type:              |
+|      |                                                                 |
+|      | struct +                                                        |
+|      |        long  id;       /*   '_SPD'    */                        |
+|      |        short ver;      /*   major/minor revision number */      |
+|      |        short qual;     /*   quality setting */                  |
+|      | );                                                              |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| MiNT | The presence of the MiNT cookie indicates that MiNT is active   |
+|      | and that the MiNT extensions are available. At present the high-|
+|      | word is unused; the high-byte of the low-word contains the major|
+|      | version and the low-byte the minor version number.              |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| PMMU | This cookie indicates that a program has claimed sole access to |
+|      | the machines memory management unit; this occurs for example    |
+|      | when using virtual memory managers and MiNT to indicate to MiNT |
+|      | that an MMU table manager is already installed and that memory  |
+|      | protection should not be installed.                             |
+|      |                                                                 |
+|------+-----------------------------------------------------------------|
+| _OOL | Poolfix ID; Atari's Poolfix patch program +fixes bug in GEMDOS).|
+|      |                                                                 |
+|      |                                                                 |
+|      |                                                                 |
++------------------------------------------------------------------------+
+
+**************************************************************************
+*          How to switch clock speeds under control of Nemesis           *
+**************************************************************************
+
+                This is achieved in the following manner:-
+
+1)   Determine if the Falcon is running with Nemesis installed.  By  using 
+     the  command NEMESIS_FLAG=_nemesis we can test if the Nemesis  cookie 
+     is  present in the cookie jar.  +Returns TRUE if Nemesis is  detected 
+     otherwise returns FALSE).
+
+2)   If  Nemesis  is not detected then you may set the  cpu  clockrate  to 
+     either  8 MHz or 16 MHz +standard Falcon 030 lowspeed  and  highspeed 
+     respectively) using the command _cpuspeed 8 or _cpuspeed 16.
+
+3)   If  Nemesis is detected then you may set the cpu clockrate to  either 
+     8 MHz or 16 MHz +standard Falcon lowspeed and highspeed respectively) 
+     using  the command _cpuspeed 8 or _cpuspeed 16 and this will  disable 
+     Nemesis, although it will remain installed for further use.
+
+4)   If  Nemesis is detected then you may set the cpu clockrate to  either 
+     20 MHz or 24 MHz +Nemesis lowspeed and highspeed respectively)  using 
+     the command _cpuspeed 20 or _cpuspeed 24.
+
+                         Continued overleaf.....
+
+Example:
+
+     10 NEMESIS_FLAG=_nemesis : rem Test if the Nemesis cookie is present
+     20 if NEMESIS_FLAG=true then _cpuspeed 20 : rem Nemesis Lowspeed
+     30 if NEMESIS_FLAG=false then _cpuspeed 16 : rem Standard Falcon 030
+      highspeed
+     40 :
+     50 rem Main program code goes here .....
+     60 :
+     70 :
+     80 _cpuspeed 8 : rem Return to standard Falcon 030 Lowspeed before
+      terminating program.
+     90 end
+
+    How to determine the current clock speeds under control of Nemesis
+    ==================================================================
+
+The  program NEMESIS.PRG +run before STOS) installs the Nemesis cookie  in 
+the  cookie  jar  so it may be determined from  this  cookie  the  current 
+Nemesis state. This is achieved in the following manner:-
+
+1)   Determine if the Falcon is running with Nemesis installed.  By  using 
+     the  command NEMESIS_FLAG=_nemesis we can test if the Nemesis  cookie 
+     is  present in the cookie jar.  +Returns TRUE if Nemesis is  detected 
+     otherwise returns FALSE).
+
+2)   If  Nemesis is not detected +NEMESIS_FLAG=false) then  determine  the 
+     current cpu clockrate and blitter clockrate by the method:-
+
+     500 CLOCK_CNTRL=_busmode
+     510 if btst+0,CLOCK_CNTRL) then CPU_CLOCK=16 : else : CPU_CLOCK=8
+     520 if btst+2,CLOCK_CNTRL) then BLIT_CLOCK=16 : else : BLIT_CLOCK=8
+
+3)   If Nemesis is detected +NEMESIS_FLAG=true) then you may determine the 
+     current cpu clockrate and blitter clockrate by the method:-
+
+     200 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     210 rem Interogate NEMESIS cookie to determine if active and if so
+     220 rem the NEMESIS accelerated clock rates of the CPU & Blitter.
+     230 rem
+     240 rem     Cookie value returned           Meaning
+     250 rem              0             Nemesis disabled +standard Falcon
+     260 rem                            CPU & Blitter clockrates used).
+     270 rem              1             Nemesis enabled +Low-clock 20MHz)
+     280 rem              2             Nemesis enabled +High-clock 24MHz)
+     290 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     300  :
+     310 if _nemesis=false then goto 380
+     320 NEM_SPEED=cookie+"Nspd")
+     330 if NEM_SPEED=0 then goto 380
+     340 if NEM_SPEED=1 then CPU_CLOCK=20
+     350 if NEM_SPEED=2 then CPU_CLOCK=24
+     360 BLIT_CLOCK=CPU_CLOCK/2 : return
+     370 :
+     380 CLOCK_CNTRL=_busmode
+     390 if btst+0,CLOCK_CNTRL) then CPU_CLOCK=16 : else : CPU_CLOCK=8
+     400 if btst+2,CLOCK_CNTRL) then BLIT_CLOCK=16 : else : BLIT_CLOCK=8
+     410 return
+
+
+             Known Problems using STOS with Nemesis installed
+             ================================================
+
+         The only problems I have found so far are listed below:-
+
+1)   Video  'interference' on the monitor screen when running the  cpu/bus 
+     at Nemesis highspeed +24 MHz).  This normally happens in VGA modes +I 
+     haven't experienced this on RGB/TV monitors) and is due to the higher 
+     clockrates affecting the video timing.  Under GEM this would normally 
+     be  dealt with by 'Videlity' the software screen enhancer from  Black 
+     Scorpion Software.  The extra 'video modes' offered by Videlity  also 
+     take  into account the installation of Nemesis and sets up the  video 
+     timing  accordingly  to obtain completely  flicker/interference  free 
+     graphics.
+
+2)   For  some  peculiar reason the DSP Tracker Player  extension  doesn't 
+     like the Nemesis highspeed +24 MHz) clockrate.  It sometimes  doesn't 
+     like  it  at 20 MHz either!  While testing the  DSP_PLAY.BAS  program 
+     under  Nemesis at the 20 MHz and 24 MHz clockrates I found  that  the 
+     DSP  player code 'trips up' and you get all sorts of groaning  noises 
+     from the speaker. +It doesn't crash STOS though!)
+
+     I  have  however,  found  that by turning the cpu cache  OFF  in  the 
+     program  that  the  DSP player does work at the 20  MHz  and  24  MHz 
+     clockrates.  It  seems  the Falcon is now too damn fast for  the  DSP 
+     tracker player to keep up when running 24 MHz cpu with the cache  on. 
+     In my installation of Nemesis I haven't accelerated the DSP chip +its 
+     still running at 32 MHz).  I wonder if this is a possible reason  for 
+     the problem?  It is debatable though as to how much speed  difference 
+     there is when comparing a 16 MHz clockrate with the cpu cache on  and 
+     a 24 MHz clockrate and no cache. I haven't timed it, so I don't know.
+
+--------------------------------------------------------------------------
+

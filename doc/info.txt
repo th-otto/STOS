@@ -1,0 +1,153 @@
+**************************************************************************
+*                                                                        *
+*           Falcon - STOS Basic Extensions Suite Update Disk.            *
+*                                                                        *
+* Registered user     :    Chris Swinson.                                *
+*                                                                        *
+* Date                :    14/04/98                                      *
+*                                                                        *
+**************************************************************************
+
+                 This disk contains the following files:
+
+
+   Path/File          Size       File Info
+
+A:\STOS\*.*
+   STARS   .EXH        7,158  ST(e)/TT/Falcon STARS extension.
+   3D_MENU .EXU       15,553  ST(e)/TT/Falcon 3D Menu & Alerts extension.
+   GEM_TXT .EXL       14,407  ST(e)/TT/Falcon Gemtext extension.
+   SYS_CTRL.EXW       35,572  ST(e)/TT/Falcon SYSTEM CONTROL extension.
+   FALC_VID.EXX       15,462  Falcon 030 VIDEO (III) extension.
+   FALCGFX3.EXV       12,913  Falcon 030 GRAFIX (III) extension [this ext-
+                              ensions 'multipen' commands are compatible
+                              with ST's].
+
+   FALC_FLI.EXQ        2,712  Falcon 030 FLI/FLC Player Extension v0.25
+   FALC_SND.EXY        6,691  Falcon 030 DMA SOUND Extension V2.2
+   FALC_MOD.EXZ       11,730  Falcon 030 DSP Tracker Extension v2.87
+
+   SPRIT101.BIN       59,431  A  specially patched version of  the  SPRITE 
+                              manager interpreter  library file  [contains 
+                              vital   support  routines  for  the   SYSTEM 
+                              CONTROL,  3D Menu & Alerts,  VIDEO (III) and 
+                              GRAFIX (III) extensions].
+
+   WINDO102.BIN       22,942  A  specially patched version of  the  WINDOW 
+                              manager interpreter  library file  [contains 
+                              vital   support  routines  for  the   SYSTEM 
+                              CONTROL and 3D Menu & Alerts extensions].
+
+   MUSIC101.BIN       11,946  A  specially  patched version of  the  MUSIC 
+                              manager interpreter  library file  [contains 
+                              vital  support  routines for the DSP Tracker
+                              Player extension].
+
+   Path contains ->   12 items in    216,517 bytes.
+
+
+
+   Path/File          Size       File Info
+
+A:\COMPILER\*.*
+   STARS   .ECH        7,415  ST(e)/TT/Falcon STARS extension.
+   3D_MENU .ECU        1,264  ST(e)/TT/Falcon 3D Menu & Alerts extension.
+   GEM_TXT .ECL        5,820  ST(e)/TT/Falcon Gemtext extension.
+   SYS_CTRL.ECW        7,282  ST(e)/TT/Falcon SYSTEM CONTROL extension.
+   FALC_VID.ECX       22,329  Falcon 030 VIDEO (III) extension.
+   FALCGFX3.ECV       12,750  Falcon 030 GRAFIX (III) extension [this ext-
+                              ensions 'multipen' commands are compatible
+                              with ST's].
+
+   FALC_FLI.ECQ        2,888  Falcon 030 FLI/FLC Player Extension v0.25
+   FALC_SND.ECY        4,780  Falcon 030 DMA SOUND Extension V2.2
+   FALC_MOD.ECZ       10,532  Falcon 030 DSP Tracker Extension v2.87
+
+   SPRIT101.LIB       58,955  A  specially patched version of  the  SPRITE 
+                              manager  compiler  library  file   [contains 
+                              vital   support  routines  for  the   SYSTEM 
+                              CONTROL,  3D Menu & Alerts,  VIDEO (III) and 
+                              GRAFIX (III) extensions].
+
+   WINDO102.LIB       28,186  A  specially patched version of  the  WINDOW 
+                              manager  compiler  library  file   [contains 
+                              vital   support  routines  for  the   SYSTEM 
+                              CONTROL and 3D Menu & Alerts extensions].
+
+   MUSIC101.LIB       18,049  A  specially  patched version of  the  MUSIC 
+                              manager  compiler  library  file   [contains 
+                              vital  support  routines for the DSP Tracker
+                              Player extension].
+
+   Path contains ->   12 items in    180,250 bytes.
+
+A:\EXAMPLES\*.*
+   COOKIES .BAS        7,542  Demo showing usage of 'cookie' commands.
+   STARSDEM.BAS        5,736  Demo showing usage of new STARS commands.
+   FONTDEMO.BAS       14,442  Demo showing usage of GEM/GDOS fonts.
+   JAGPAD  .BAS        4,904  Demo showing usage of 'jagpad' commands.
+   MULTIPEN.BAS        4,204  Demo of multicoloured text using  'multipen' 
+                              commands.
+
+   3D_MENUS.BAS       20,968  A full working demo which loads and displays 
+                              GEM/GDOS  fonts [features include 3D  effect 
+                              menus & alerts and the 3D file-selector].
+
+   SHOW_JFB.BAS        6,550  This  is  an  example  showing  how  a  .JFB 
+                              (JoinedFontBank)  is accessed allowing  more 
+                              than one GEM/GDOS font to reside in a single 
+                              STOS memory bank.
+
+   EDMS15  .FNT        8,666  GEM Font 15 Point 'Edith Monospaced'
+   EDSW10  .FNT        4,026  GEM Font 10 Point 'Edith Swiss'
+                              [These  two GEM/GDOS fonts are to  accompany 
+                              the 3D_MENUS.BAS demo program].
+
+   GEMFNT_1.JFB       21,018  These two are example .JFB  (JoinedFontBank) 
+   GEMFNT_2.JFB       49,106  files. Used with the SHOW_JFB.BAS example.
+
+                          Continued overleaf...
+   DSP_MOD .BAS       37,816  DSP Tracker Player [latest version].
+   VIEW_LBM.BAS       11,354  A   full  working   Falcon  030  demo  which 
+                              loads and displays ILBM  [InterLeavedBitMap] 
+                              images. 
+
+   Path contains ->   13 items in    196,332 bytes.
+
+   Path/File          Size       File Info
+
+A:\UTILS\*.*
+   FALCPAL .ACB       35,444  Updated  STOS  accessory  to configure  the 
+                              Falcon's 16/256 colour palette.
+   FONTJOIN.BAS       14,496  A  utility  program  to  join  two  or more 
+                              GEM/GDOS fonts in one STOS memory bank.
+
+   Path contains ->    2 items in     49,940 bytes.
+
+A:\DOCS\1ST_WORD\*.*
+   STARS   .DOC       12,117  STARS manual [WordPlus format].
+   SYS_CNTL.DOC       67,694  SYSTEM CONTROL manual [WordPlus format].
+   3D_MENUS.DOC       27,070  3D Menu & Alerts manual [WordPlus format].
+   GTEXTCMD.DOC       19,172  Gemtext manual [WordPlus format].
+   FALCGFX3.DOC       37,401  GRAFIX (III) manual [WordPlus format].
+   FALCVID3.DOC       75,868  VIDEO (III) manual [WordPlus format].
+   FALC_FLI.DOC       20,041  FLI/FLC Player manual [WordPlus format].
+   FALC_SND.DOC       30,830  Falcon DMA SOUND manual [WordPlus format].
+   FALC_TRK.DOC       36,291  DSP Tracker Player manual [WordPlus format].
+
+   Path contains ->    9 items in    326,484 bytes.
+
+A:\DOCS\ASCII\*.*
+   STARS   .TXT       11,920  STARS manual [ASCII format].
+   SYS_CNTL.TXT       67,442  SYSTEM CONTROL manual [ASCII format].
+   3D_MENUS.TXT       26,810  3D Menu & Alerts manual [ASCII format].
+   GTEXTCMD.TXT       18,923  Gemtext manual [ASCII format].
+   FALCGFX3.TXT       37,153  GRAFIX (III) manual [ASCII format].
+   FALCVID3.TXT       75,613  VIDEO (III) manual [ASCII format].
+   FALC_FLI.TXT       19,803  FLI/FLC Player manual [ASCII format].
+   FALC_SND.TXT       30,611  Falcon DMA SOUND manual [ASCII format].
+   FALC_TRK.TXT       36,071  DSP Tracker Player manual [ASCII format].
+
+   Path contains ->    9 items in    324,346 bytes.
+
+End of this doc'.

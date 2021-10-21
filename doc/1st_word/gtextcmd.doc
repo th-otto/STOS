@@ -1,0 +1,350 @@
+070000203050000140000004006010000
+1STOS ExtensionGEMTEXT v0.81
+2- # -1
+F0110000001
+9[..........................................................]0110
+€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ                                                                     บ
+บ                                                                     บ
+บ                                 The                               บ
+บ                                                                     บ
+บ                             Gemtext                              บ
+บ                                                                     บ
+บ                           E x t e n s i o n.                       บ
+บ                                                                        บ
+บ        A  S T O S  B a s i c  C o m m a n d  E x t e n s i o n         บ
+บ                                                                        บ
+บ           FortheST(e)/TT/Falcon 030บ
+บ                                                                        บ
+บ                                                                     บ
+บ    (c)1995,1996,1997&1998AnthonyHoskin.บ
+บ       45WythburnRoad,บ
+บ       Newbold,บ
+บ       Chesterfield,บ
+บ       Derbyshire,บ
+บ       S418DP.(U.K.)บ
+บบ
+บ                                                                     บ
+บ                Current version: v0.8 (17th February 1998)              บ
+บ                                                                     บ
+บ                                                                     บ
+บ                       ConditionsOfRegistration€                    บ
+บ                                                                     บ
+บ    YoumayNOTdistributethissoftwareoritsassociatedบ
+บ    program/documentfiles(eitherinwholeorinpart)inanyway บ
+บ    shapeorform.(Anytranslationofthisdocumentfileintoบ
+บ    anotherlanguageispermittedandwillberestrictedtotheบ
+บ    sameconditionsasthisEnglishlanguageversionwithบ
+บ    respecttoanyotherchanges.)Youareauthorisedtomakeบ
+บ    personalback-upsofthesoftwareprovidedtheyarecompleteบ
+บ    andunchangedinanyway.                                        บ
+บ                                                                     บ
+บ                                                                     บ
+บ                             Disclaimer€                            บ
+บ                                                                     บ
+บ    ThissoftwareisfortheAtariST(e)/TT/Falcon030computersบ
+บ    only.Itakeno responsibilitywhatsoeverintheuse/misuseofบ
+บ    thissoftware.                                               บ
+บ                                                                     บ
+บ                                                                     บ
+บ                          System Requirements€                        บ
+บ                                                                     บ
+บ              Machine   :    AnyAtariST(e)/TT/Falcon030           บ
+บ              RAM       :    Runsonmachineswith512kb-14mbบ
+บ              Monitor   :    TV,Mono/Colourmonitor[RGB&VGA]        บ
+บ              Software  :    STOSBasicv2.6upwards                 บ
+บ                                                                     บ
+บ                                                                     บ
+บ                                Contents€                             บ
+บ                                                                     บ
+บ                                                                     บ
+บ       GemtextExtensionv0.8,Introduction............ Page1   บ
+บ        Gemtextv0.6commandreference.................. Page1  บ
+บ                                                                     บ
+บ                                                                     บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บ                                                                     บ
+บ                        Introduction                      บ
+บ                                                                     บ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+Waybackinearly1994mybrotherandIhadjustboughtourFalcon030's
+andasaresultofmybrothercomplainingaboutSTOSnotbehaving
+particularlywellontheFalconwedecidedtotrytodosomethingabout
+it.Asaresultoverthelast4yearsIdevelopedacomprehensive
+extensionsuiteandpatchedSTOSlibraryfileswhichmadeusingSTOSon
+theFalconmorethanjustapossibilitybutagreatpleasure.Nowwiththe
+extravideomodesandcoloursavailableamuchgreaterdiversitygrewinto
+howtheprogramscouldbepresentedwhenrunningontheFalcon.
+
+Theninlate1997/early1998IhadtodosomemajorupdatingonmyFalcon
+extensions-eachSTOSextensionhasalimitednumberofnewcommands
+availabletoitandminehadrapidlyreachedtheirlimitssometimeago.
+Idecidedthatsomecommandswouldbebetteroffintheirowndedicated
+extensions-theGemtextcommandsfrommyFalconVideoextensionfor
+example.Sooutofthismajorrestructuringnewextensionshavebeenborn.
+Amajorsidebenefitofthisisthatsomefacilitiespreviouslyavailable
+onlyfromtheFalconextensionsarenowavailableinextensionsnow
+compatiblewiththeST(e)andTTmachines.Thishasnowopenedthedoorto
+allthoseST'ersouttherelookingforthatbitextrafortheirmachines.
+
+ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
+บบ
+บ      ST(e)/TT/Falcon030Gemtextv0.8บ
+บบ
+บ                   CommandReferenceบ
+บบ
+ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+IMPORTANT :-ThisextensiononlysupportsuncompressedGEM/GDOSfonts,
+don'ttrytouseSpeedoGDOSfonts-ortheoldDEGASformat
+fonts,theyareNOTsupportedandwillmostcertainlycause
+themachinetocrash.
+
+Command:-gemfontcmds
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemfontcmds
+Action:-Cannotbecompiled.UsedwithintheSTOSeditortolistthe
+quickreferenceforthe'gemtext'commands.
+
+--------------------------------------------------------------------------
+
+Command:-gemfontload
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemfontloadFILENAME$,BNK
+Action:-ThiscommandloadsthespecifiedGEMfontintothememory
+bankBNK.Youshouldalwaysusethiscommandtoloada
+GEM/GDOSfontsincethefontitselfmustbeinitialisedin
+suchawaythatthisextensionwillrecogniseitasavalid
+font.Thememorybankneednothavebeenpreviously
+reserved.ThegemfontloadcommandERASESapreviously
+loadedbank.
+
+Continuedoverleaf...
+
+€Important :-TheSTOSmemorybankintowhichthespecifiedGEM/GDOSfont
+isloadedisALWAYSreservedasaDATAbank.Thismeans
+thatoncethefontisloadeditmaybesavedaspartof
+yourSTOSprograminthenormalway.[STOSmemorybanks
+reservedasWORKareonlytemporaryinmemoryandarenot
+savedwiththeprogram.]
+
+--------------------------------------------------------------------------
+
+Command:-gemtextinit
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextinit
+Action:-Thiscommandinitialisesallthenecessarygemtext
+parameterstotheirdefaultvalues.(Thisisalsoperformed
+automaticallyintheeditoreachtimeCONTROL-Cisusedto
+breakaprogramand/ortheUNDOkeyispressed).
+
+Defaultfont2  = 8*8systemfont.
+Defaultcolours1,0=foregroundcolour,backgroundcolour.
+Defaultmode0=replacementmode.
+Defaultstyle0=normal(nospecialeffects).
+Defaultangle0=norotationofcharacters.
+Defaultscale0=nocharacterscaling(normalsize).
+
+--------------------------------------------------------------------------
+
+Command:-gemtextfont
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-Thegemtextfontcommandhastwoformats;
+
+gemtextfontN      [oneparameter]
+gemtextfontB,N[twoparameters]
+
+Action:-Format1
+~~~~~~~~
+
+gemtextfontNthiscommandspecifiesthecurrentfont
+touseforoutputofgemtext.
+
+N=1istheST's6x6systemfont[inROM]
+N=2istheST's8x8systemfont[inROM]
+N=3istheST's8x16systemfont[inROM]
+N=4to15pointstoaSTOSmemorybankwhichholdsa
+convertedGEMfontloadedbythecommand
+'gemtextload'thusitispossibletodisplay
+manydifferent/customfontsonthesamescreen.
+Format2
+~~~~~~~~
+
+gemtextfontB,Nthiscommandspecifiesthecurrentfont
+touseforoutputofgemtext.
+
+B=1to15inclusivepointstoaSTOSmemorybankwhichis
+aJOINED_FONT_BANK.Thisisaspecialtypeof
+memorybankwhichholdsmorethanoneconverted
+GEMfont[uptoamaximumof15fontsmaybe
+storedinsuchabank].
+
+Continuedoverleaf...
+
+€N=1to15inclusiveistheindex#oftheGEMfontstored
+intheJOINED_FONT_BANK.Thisistheindex#of
+thefontthatwillbeusedingemtextoutput.
+
+TheJOINED_FONT_BANKisaspecialbankcontainingmorethanoneGEM/GDOS
+fontandiscreatedbythe'FONTJOIN.ACB'utility.Thisutilityishowever
+availableonlytoregisteredusersofmyextensions.[Justincaseyouare
+wondering-itisnotsimplyacaseoftaggingonefontbehindanotherin
+thesamebank,thebankmustalsofollowastrictstructureforvalidity.]
+
+--------------------------------------------------------------------------
+
+Command:-gemfontname$
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-NAME$=gemfontname$
+Action:-ThiscommandreturnsthecurrentGEMfontsfacename.
+
+--------------------------------------------------------------------------
+
+Command:-gemtextcolor
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextcolorFG,BG
+Action:-ThiscommandspecifiestheFG(foreground)andBG
+(background)coloursthatgemtextistouseforthe
+currentoutputoftext.
+
+N.B.Thebackgroundcolourchosenmaynothaveanyeffectin
+textmode0butsomespecialeffectscanbeobtainedfrom
+thebackgroundcolourwhentextmodeisspecifiedas1to3
+inclusive.
+
+--------------------------------------------------------------------------
+
+Command:-gemtextmode
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextmodeN
+Action:-Thiscommandspecifiesthegraphicswritingmodethat
+gemtextistouseforthecurrentoutputoftext.
+
+WhereN=0=replacementmode,
+=1=transparentmode,
+=2=XORmode,
+=3=inversetransparent.
+
+--------------------------------------------------------------------------
+
+Command:-gemtextstyle
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextstyleN
+Action:-Thiscommandspecifiesthestyleofthecharactersthat
+gemtextistouseforthecurrentoutputoftext.
+
+WhereN=0=normal(nospecialeffects),
+=1=bold,
+=2=shaded,(lightened)
+=4=italic,
+=16=outlined.
+
+Continuedoverleaf...
+
+€Anycombinationcanbemadebyaddingtogetherthenumbers
+forthevariouseffects,e.g.,21=outlined-italic-bold
+
+--------------------------------------------------------------------------
+
+Command:-gemtextscale
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextscaleN
+Action:-Thiscommandspecifiesthecurrentcharactersizescaling
+touseforthecurrentoutputofgemtext.
+
+N=zero=normalsize(noscaling),
+N=non-zero=twicesizecharacters.
+
+--------------------------------------------------------------------------
+
+Command:-gemtextangle
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextangleN
+Action:-Thiscommandspecifiestheangleofrotationofthe
+charactersthatgemtextistouseforthecurrentoutput
+oftext.Possiblevaluesare;0,90,180,270
+degrees,iftherotationangleiseither90or270degrees
+thetextwillbedisplayedatpositionsX,Yverticallywith
+incrementedycoordwhenthestringisgreaterthanone
+characterinlength.
+
+--------------------------------------------------------------------------
+
+Command:-gemtext
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-gemtextX,Y,A$
+Action:-ThiscommanddisplaysatextstringA$atthepixel
+coordinatesX,Yusingthefont,coloursandeffects
+specifiedbytheabovecommandsviatheLINE_Aemulators
+TEXT_BLITroutines.
+
+--------------------------------------------------------------------------
+
+Command:-gemfontcellwidth
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-W=gemfontcellwidth
+Action:-ThisfunctionreturnsWwiththewidthofthewidest
+charactercellintheGEMfontcurrentlyinuse(setbythe
+gemtextfontNcommand).Thecurrentcharactersize
+scaling,setbygemtextscale,isautomaticallytakeninto
+account.
+
+--------------------------------------------------------------------------
+
+Command:-gemfontcellheight
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-H=gemfontcellheight
+Action:-ThisfunctionreturnsHwiththeheightofthecharacter
+cellintheGEMfontcurrentlyinuse(setbythegemtext
+fontNcommand).Thecurrentcharactersizescaling,set
+bygemtextscale,isautomaticallytakenintoaccount.
+
+--------------------------------------------------------------------------
+
+€Command:-gemtextstringwidth
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-STRW=gemtextstringwidth(A$)
+Action:-ThisfunctionreturnsSTRWwiththewidth(inpixels)of
+thestringofcharactersinA$.Thisisusefulfor
+determiningthewidthofalineofcharactersinpixels
+whenyouwishtocentreagemtextstringonscreen.The
+currentcharactersizescaling,setbygemtextscale,is
+automaticallytakenintoaccount.
+
+--------------------------------------------------------------------------
+
+Command:-gemfontconvert
+Version:-ST(e)/TT/FalconGemtext=>v0.8
+Syntax:-Z=gemfontconvert(BNK)
+Action:-ThiscommandconvertsanoldGemtextfonttothenewformat.
+ReturnsZ=TRUEiffontwassuccessfullyconverted
+otherwiseZ=FALSE.
+
+TheST(e)/TT/FalconGemtextextensionusesadifferent
+structureforafontbankascomparedtotheold(now
+obsolete)Falcon030Videoextension.Afontbankcreated
+forusewiththeoldextensionmaybeupdatedtothenew
+formatwiththiscommand.
+
+Example   :-Convertinganoldfont(savedasbinary)tothenewformat.
+
+1000F$="MY_FONT.DAT":remfilenameofoldfontbank.
+1010openin#1,F$:remopenthefileand
+1020SIZE=lof(#1):remfetchlengthoffile.
+1030close#1
+1040reserveasdata7,SIZE:remreservesomestorage.
+1050bloadF$,7:remloadthebinaryfontintobank#7.
+1060Z=gemfontconvert(7):remconvertfontandresave.
+1070ifZ=TRUEthenbsaveF$,start(7)tostart(7)+SIZE
+
+Example   :-Convertinganoldfont(savedasanMBK)tothenewformat.
+
+1000F$="MY_FONT.MBK":remfilenameofoldfontbank.
+1010loadF$,7:remloadtheMBKfontintobank#7.
+1020Z=gemfontconvert(7):remconvertfontandresave.
+1030ifZ=TRUEthensaveF$,7
+
+--------------------------------------------------------------------------
+
