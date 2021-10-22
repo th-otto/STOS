@@ -79,13 +79,6 @@ dsp_isr     = $ffffa202 /* Interrupt Status Register */
 dsp_ivr     = $ffffa203 /* Interrupt Vector Register */
 TRANSLONG   = $ffffa204
 
-; tracker status bits
-STATUS_PLAYING = 0
-STATUS_REPEAT  = 1
-STATUS_PAUSED  = 2
-STATUS_END     = 6
-STATUS_INIT    = 7
-
 sound_init_flag: dc.w 0
 playing_flag: dc.w 0
 pause_flag: dc.w 0
@@ -2050,7 +2043,7 @@ voice_init_tab:
 		dc.l -54
 
 dsp_voices: ds.b 4*Voice_Size
-Voices: ds.b 32*Voice_Size
+Voices: ds.b MAX_VOICES*Voice_Size
 Module: dc.l 0
 workspace: dc.l 0
 end_of_samples: dc.l 0
@@ -2058,7 +2051,7 @@ Voices_Nb: dc.w 0
 Samples_Nb: dc.w 0
 Sequence_Adr: dc.l 0
 Patterns_Adr: dc.l 0
-Samples_Adr: ds.l 31
+Samples_Adr: ds.l MAX_VOICES-1 /* why -1? */
 Line_Size: dc.w 0
 Pattern_Size: dc.w 0
 Song_Position: dc.w 0

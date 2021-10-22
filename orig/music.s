@@ -181,6 +181,10 @@ stopinter: bsr initsound
           .ENDC
 PaArr:    rts
 
+*
+* this string is checked by the extension
+* and must stay here, just before the trap entry
+*
           .IFNE FALCON
           .IFEQ COMPILER
           dc.b "FALCON 030 STOS DSP/Mod 2.85",0

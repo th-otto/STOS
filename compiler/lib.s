@@ -4866,7 +4866,7 @@ l204w:  move.l (a6)+,d0
         move.w d0,-(sp)
         bra.s l204r
 ; On y va!
-l204g:  jsr L_adoubank.l
+l204g:  jsr L_addrofbank.l
         pea l204q(pc)
         move.l d3,-(sp)
         lea callreg(a5),a6
@@ -5138,7 +5138,7 @@ l213z:  moveq #E_illegalfunc,d0
         jmp (a0)
 
 *************************************************************************
-*       ADOUBANK
+*       ADDROFBANK
 L214:   dc.w l214a-L214,0
 **************************
         move.l (a6)+,d3
@@ -5160,9 +5160,9 @@ l214z:  moveq #E_not_reserved,d0
 L215:   dc.w l215a-L215,l215b-L215,0
 *************************************
         move.l (a6)+,d4         ;mot a copier
-l215a:  jsr L_adoubank.l            ;adresse de fin
+l215a:  jsr L_addrofbank.l            ;adresse de fin
         move.l d3,d2
-l215b:  jsr L_adoubank.l
+l215b:  jsr L_addrofbank.l
         move.l d3,a0
         sub.l a0,d2
         bcs.s l215z
@@ -5187,11 +5187,11 @@ l215z:  moveq #E_illegalfunc,d0
 *       COPY
 L216:   dc.w l216a-L216,l216b-L216,l216c-L216,l216d-L216,0
 ***********************************************************
-l216a:  jsr L_adoubank.l
+l216a:  jsr L_addrofbank.l
         move.l d3,a3            ;Adresse d'arrivee
-l216b:  jsr L_adoubank.l
+l216b:  jsr L_addrofbank.l
         move.l d3,-(sp)         ;Adresse de fin
-l216c:  jsr L_adoubank.l
+l216c:  jsr L_addrofbank.l
         move.l d3,a2            ;Adresse de depart
         move.l (sp)+,d3
         sub.l a2,d3             ;Taille a bouger
@@ -5207,9 +5207,9 @@ L217:   dc.w l217a-L217,l217b-L217,l217c-L217,0
 ************************************************
 l217a:  jsr L_chverbuf.l            ;Chaine---> buffer
         move.w d2,-(sp)
-l217b:  jsr L_adoubank.l
+l217b:  jsr L_addrofbank.l
         move.l d3,d7            ;Adresse de fin
-l217c:  jsr L_adoubank.l
+l217c:  jsr L_addrofbank.l
         move.l d3,a0            ;Adresse de recherche
         move.w (sp)+,d2
         subq.w #1,d2
@@ -6389,7 +6389,7 @@ dp2:    move.w d1,d0
         move.w d0,6(a2)
 ; Set pattern (adresse)
         move.w d0,-(sp)
-l265a:  jsr L_adoubank.l
+l265a:  jsr L_addrofbank.l
         move.w (sp)+,d1
         move.l d3,a1
         subq #1,d1
@@ -10567,7 +10567,7 @@ L494:   dc.w l494a-L494,l494b-L494,l494c-L494
         dc.w l494z-L494,0
 **************************
 l494a:  jsr L_setdta.l
-l494b:  jsr L_adoubank.l
+l494b:  jsr L_addrofbank.l
         move.l d3,-(sp)
 l494c:  jsr L_namedisk.l
         clr.l d0
@@ -10598,9 +10598,9 @@ L495:   dc.w l495a-L495,l495b-L495,l495c-L495
         dc.w l495z-L495,0
 **************************
 l495a:  jsr L_setdta.l
-l495b:  jsr L_adoubank.l
+l495b:  jsr L_addrofbank.l
         move.l d3,-(sp)
-l495c:  jsr L_adoubank.l
+l495c:  jsr L_addrofbank.l
         move.l (sp),d0
         move.l d3,(sp)
         move.l d0,-(sp)

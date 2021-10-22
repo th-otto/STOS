@@ -1436,7 +1436,7 @@ routines: dc.l buffer               ;$00
           dc.l savect
           dc.l loadvect             ;$80
           dc.l menage
-          dc.l adoubank
+          dc.l addrofbank
           dc.l adscreen
           dc.l abck                 ;$90
           dc.l abis
@@ -5057,7 +5057,7 @@ bload:    bsr setdta
           cmp.b #",",(a6)+
           bne syntax
           bsr expentier
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           clr.l d0
           lea name1,a0
@@ -5081,12 +5081,12 @@ bsave:    bsr setdta
           cmp.b #",",(a6)+
           bne syntax
           bsr expentier
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #$80,(a6)+    ;token de TO
           bne syntax
           bsr expentier
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           clr.l d0
           lea name1,a0
@@ -13503,8 +13503,8 @@ leng3:	move.l d2,d3
 	bsr adbank
 	bra.s leng2
 
-; ADOUBANK: returns the absolute address of the bank if <16
-adoubank: cmp.l #16,d3
+; ADDROFBANK: returns the absolute address of the bank if <16
+addrofbank: cmp.l #16,d3
           bcc.s adou1
 ; numero de banque
           bsr adbank          ;adresse de la banque
@@ -13516,17 +13516,17 @@ adou1:    rts
 
 ; COPY depart(inclus),fin(exclue) TO arrivee: COPIE DE PLAGES MEMOIRE
 copy:     bsr expentier       ;adresse de depart
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #",",(a6)+
           bne syntax
           bsr expentier       ;adresse de fin
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #$80,(a6)+    ;token de TO
           bne syntax
           bsr expentier       ;adresse d'arrivee
-          bsr adoubank
+          bsr addrofbank
           move.l d3,a3        ;en A3
           move.l (sp)+,d3
           move.l (sp)+,a2     ;adresse de depart en A2
@@ -13537,12 +13537,12 @@ copy:     bsr expentier       ;adresse de depart
 
 ; FILL depart(inclus) TO fin(exclue), mot long: REMPLI DES PLAGES MEMOIRE
 fill:     bsr expentier       ;adresse de depart
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #$80,(a6)+    ;token de TO
           bne syntax
           bsr expentier       ;longueur
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #",",(a6)+
           bne syntax
@@ -13571,12 +13571,12 @@ faind:    cmp.b #"(",(a6)+
           move parenth,-(sp)
           clr parenth
           bsr entierbis
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #$80,(a6)+    ;token de TO
           bne syntax
           bsr entierbis
-          bsr adoubank
+          bsr addrofbank
           move.l d3,-(sp)
           cmp.b #",",(a6)+
           bne syntax
@@ -13915,7 +13915,7 @@ regc:     movem.l d0-d1,-(sp)
 
 ; CALL adbank/ad: charge les registres d0-d7/a0-a7
 call:     bsr expentier
-          bsr adoubank
+          bsr addrofbank
           move.l d3,buffer
           movem.l a4-a6,-(sp)           ;sauve les registres importants!
           lea callreg,a6
@@ -14045,7 +14045,7 @@ munt2:    rts
 ; adscreen: return and verify a screen address
 adscreen:  cmp.l #16,d3
           bcc.s adec1
-          bsr adoubank
+          bsr addrofbank
           andi.w #$7f,d0
           cmp.b #2,d0         ;est-ce un ecran?
           bne notscreen
@@ -16124,7 +16124,7 @@ dp2:      move.w d1,d0
           bne typemis
 ; Set pattern (adresse)
           move.w d0,-(sp)
-          bsr adoubank
+          bsr addrofbank
           move.w (sp)+,d1
           move.l d3,a1
           subq #1,d1

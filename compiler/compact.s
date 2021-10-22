@@ -159,7 +159,7 @@ unpackreloc1:
 ; Un parametre          ;Origine
 unp4:   
 unpackreloc2:
-        jsr        L_adoubank.l
+        jsr        L_addrofbank.l
         move.l d3,a0            ;adresse d'origine
         move.l 2(a2),a1         ;adresse destination
         move.w dx(a2),d1         ;dx
@@ -411,7 +411,7 @@ pack2:  move.l (a6)+,d3      ;empile les cinq params
 ; deux parametres
 pack3:  
 packreloc1:
-        jsr L_adoubank.l      ;va chercher "destination"
+        jsr L_addrofbank.l      ;va chercher "destination"
         move.l d3,-(a7)
 packreloc2:
         jsr L_adscreen.l      ;va chercher "origine"

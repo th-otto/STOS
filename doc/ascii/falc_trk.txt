@@ -452,9 +452,9 @@ Important :-   The  tracker oscilloscope MUST first have been  initialised
 
 --------------------------------------------------------------------------
 
-Command   :-   _tracker name$
+Command   :-   _tracker title$
 Version   :-   All DSP Tracker Player versions =>1.0
-Syntax    :-   A$=_tracker name$(ADDR)
+Syntax    :-   A$=_tracker title$(ADDR)
 Action    :-   This function returns in A$ the name (title) of the Tracker 
                module.  ADDR  is  the  address where  the  module  resides 
                (usually a STOS memory bank).  If ADDR is in the range 1  - 
@@ -463,9 +463,9 @@ Action    :-   This function returns in A$ the name (title) of the Tracker
 
 --------------------------------------------------------------------------
 
-Command   :-   _tracker type$(ADDR)
+Command   :-   _tracker format$(ADDR)
 Version   :-   All DSP Tracker Player versions =>1.0
-Syntax    :-   A$=_tracker type$
+Syntax    :-   A$=_tracker format$
 Action    :-   This  function  returns  in A$ the  type  (format)  of  the 
                Tracker  module.  ADDR  is  the address  where  the  module 
                resides (usually a STOS memory bank).

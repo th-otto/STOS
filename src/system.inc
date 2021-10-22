@@ -148,7 +148,7 @@ sys_menage:     .ds.l 1 ; 0x84
 ;   d3.l: memory bank # (1-15)
 ; outputs:
 ;   d3.l: address
-sys_adoubank:   .ds.l 1 ; 0x88
+sys_addrofbank: .ds.l 1 ; 0x88
 
 ; get/verify address of screen
 ; inputs:

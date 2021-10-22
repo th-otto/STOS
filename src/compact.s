@@ -116,10 +116,10 @@ entier: move.l (sp)+,d0
         movem.l (sp)+,a0-a2
 finent: rts
 
-; Adoubank
-adoubank:movem.l a0-a2,-(sp)
+; addrofbank
+addrofbank:movem.l a0-a2,-(sp)
         move.l table(pc),a0
-        move.l sys_adoubank(a0),a0
+        move.l sys_addrofbank(a0),a0
         jsr (a0)
         movem.l (sp)+,a0-a2
         rts
@@ -188,7 +188,7 @@ pack2:  bsr entier      ;empile les cinq params
         dbra d7,pack2
 ; deux parametres
 pack3:  bsr entier      ;va chercher "destination"
-        bsr adoubank
+        bsr addrofbank
         move.l d3,a1
         bsr entier      ;va chercher "origine"
         bsr adecran
@@ -286,7 +286,7 @@ unp3:   move #1,unpflg-params(a2)  ;Image
         move.l d3,2(a2)
 ; Un parametre          ;Origine
 unp4:   bsr entier
-        bsr adoubank
+        bsr addrofbank
         move.l d3,a0            ;adresse d'origine
         move.l 2(a2),a1         ;adresse destination
         move.w dx(a2),d1         ;dx

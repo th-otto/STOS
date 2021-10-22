@@ -678,10 +678,10 @@ access2:
 	move.w sampbank(A3),d3		; Get default sample bank number
 	and.l #$ffff,d3			; Long word it
 	move.l d3,-(a6)			; Push onto pile
-L3A:	jsr L_adoubank.l			; Get start address
+L3A:	jsr L_addrofbank.l			; Get start address
  
 * What I just did was pushed the sample bank number ( default 5 ) onto
-* the pile, then called the adoubank routine to get the address of it
+* the pile, then called the addrofbank routine to get the address of it
 * Is that O.K ?? Or should I not do that.
 ************************************************** PERFECT MAN!
 

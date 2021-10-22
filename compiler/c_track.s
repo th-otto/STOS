@@ -169,7 +169,7 @@ L1d	jsr	L_resbis.l
 	bsr	Read
 	bne	L1DErr
 	move.l	d6,-(a6)
-L1e	jsr	L_adoubank.l
+L1e	jsr	L_addrofbank.l
 	move.l	d3,a0
 	move.l	d5,d0
 	bsr	Read
@@ -255,7 +255,7 @@ L3:	dc.w	L3a-L3,0
 	lea	MB-Data(a3),a0
 	clr.l	MusBank-MB(a0)
 	move.l	(a6)+,d3
-L3a:	jsr	L_adoubank.l
+L3a:	jsr	L_addrofbank.l
 	move.l	a0,a1
 	jsr	BkNew-Data(a3)
 	bne.s	L3Bad
