@@ -1,6 +1,6 @@
 compiler\falc_mod.ecz
 .L[-S=0]
-.S[-S]
+.S[-2]
 .S[-DCOMPILER=1]
 .S[-I..\..\src]
 .S[-I..\..\compiler]

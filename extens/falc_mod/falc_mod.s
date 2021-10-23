@@ -11,7 +11,7 @@ FALCON_SND_COOKIE = 31
 
 MAX_BANK_NUM = 15
 MAX_STRINGLEN = 20
-MAX_VOICES = 31
+MAX_VOICES = 32
 
 ; tracker status bits
 STATUS_PLAYING = 0
@@ -158,17 +158,17 @@ welcome:
 
 table: dc.l 0
 returnpc: dc.l 0
-x103a2: dc.w 0
-x103a4: dc.w 0
-x103a6: dc.w 0
+        dc.w 0 /* unused */
+        dc.w 0 /* unused */
+        dc.w 0 /* unused */
 mch_cookie: dc.l 0
 vdo_cookie: dc.l 0
 snd_cookie: dc.l 0
 cookieid: dc.l 0
 cookievalue: dc.l 0
-x103bc: dc.w 0
-mode: dc.w 0
-x103c0: dc.w 0
+warmflag: dc.w 0
+mode:   dc.w 0
+        dc.w 0 /* unused */
 ltatten_value: dc.w 0
 rtatten_value: dc.w 0
 status_bits: dc.b 0
@@ -187,7 +187,7 @@ cold:
 	andi.l     #3,d0 /* BUG: should not be masked */
 	lea.l      mode(pc),a0
 	move.w     d0,(a0)
-	move.l     #0,x103bc /* BUG: word only; clobbers mode from above */
+	move.l     #0,warmflag /* BUG: word only; clobbers mode from above */
 	move.l     #0,ltatten_value /* also clears rtatten_value */
 	lea.l      mch_cookie(pc),a0
 	clr.l      (a0)+
@@ -260,9 +260,9 @@ warm:
 	move.l     snd_cookie(pc),d6
 	cmpi.l     #FALCON_SND_COOKIE,d6
 	beq.s      warm3
-	tst.w      x103bc
+	tst.w      warmflag
 	bne.s      warm3
-	move.w     #-1,x103bc
+	move.w     #-1,warmflag
 	btst       #STATUS_PLAYING,status_bits
 	bne.s      warm1
 	bra.s      warm2
@@ -493,21 +493,21 @@ addrofbank:
 	movem.l    (a7)+,a0-a2
 	rts
 
-x10ae4:
+reserve:
 	movem.l    d0-d7/a1-a6,-(a7)
 	movea.l    table(pc),a0
 	movea.l    sys_extjumps(a0),a0
-	movea.l    4*(T_locate-$70)(a0),a0
-	jsr        130(a0)
+	movea.l    4*(T_exti_reserve-$70)(a0),a0 ; 228
+	jsr        130(a0) /* calls reserve_entry in interpreter */
 	movem.l    (a7)+,d0-d7/a1-a6
 	rts
 
-x10afe:
+erase:
 	movem.l    d0-d7/a1-a2,-(a7)
 	movea.l    table(pc),a0
 	movea.l    sys_extjumps(a0),a0
-	movea.l    4*(T_extensioninst-$70)(a0),a0
-	jsr        20(a0)
+	movea.l    4*(T_exti_erase-$70)(a0),a0 ; 224
+	jsr        20(a0) /* calls erase_entry in interpreter */
 	movem.l    (a7)+,d0-d7/a1-a2
 	rts
 
@@ -622,7 +622,7 @@ errormsgs:
 * Syntax    : _tracker reset
 tracker_reset:
 	move.l     (a7)+,returnpc
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	move.l     snd_cookie(pc),d6
 	cmpi.l     #FALCON_SND_COOKIE,d6
 	bne        illfalconfunc
@@ -651,7 +651,7 @@ tracker_reset1:
 * Syntax    : X=_tracker init(ADDR,SIZE)
 tracker_init:
 	move.l     (a7)+,returnpc
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	move.l     snd_cookie(pc),d6
 	cmpi.l     #FALCON_SND_COOKIE,d6
 	bne        illfalconfunc
@@ -688,7 +688,7 @@ tracker_init2:
 	moveq.l    #-1,d0
 tracker_init3:
 	tst.l      d0
-	beq.w      tracker_init5
+	beq.w      tracker_init5 /* XXX */
 	moveq.l    #LTATTEN,d0
 	move.w     #-1,d1
 	bsr        soundcmd
@@ -715,7 +715,7 @@ tracker_init3:
 	move.l     d0,d3
 	tst.l      d0
 	beq.s      tracker_init4
-	bset       #7,(a2)
+	bset       #STATUS_INIT,(a2)
 tracker_init4:
 	movem.l    (a7)+,a0-a6
 	clr.l      d2
@@ -735,7 +735,7 @@ tracker_init_size: dc.l 0
 * Syntax    : _tracker play
 tracker_play:
 	move.l     (a7)+,returnpc
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	move.l     snd_cookie(pc),d6
 	cmpi.l     #FALCON_SND_COOKIE,d6
 	bne        illfalconfunc
@@ -813,7 +813,7 @@ tracker_title6:
 * Syntax    : _tracker loop on
 tracker_loop_on:
 	move.l     (a7)+,returnpc
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	move.l     snd_cookie(pc),d6
 	cmpi.l     #FALCON_SND_COOKIE,d6
 	bne        illfalconfunc
@@ -862,7 +862,7 @@ tracker_format2:
 * Syntax    : _tracker loop off
 tracker_loop_off:
 	move.l     (a7)+,returnpc
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	move.l     snd_cookie(pc),d6
 	cmpi.l     #FALCON_SND_COOKIE,d6
 	bne        illfalconfunc
@@ -931,7 +931,7 @@ tracker_stop:
 	bne        illfalconfunc
 	tst.w      d0
 	bne        syntax
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	movem.l    a0-a6,-(a7)
 	moveq.l    #M_trackerstop,d0
 	trap       #7
@@ -1104,7 +1104,7 @@ tracker_volume:
 	bne        illfalconfunc
 	cmp.w      #1,d0
 	bne        syntax
-	move.w     #0,x103bc
+	move.w     #0,warmflag
 	bsr        getinteger
 	andi.l     #15,d3
 	not.w      d3
@@ -1380,7 +1380,7 @@ tracker_vu:
 	cmp.w      #1,d0
 	bne        syntax
 	bsr        getinteger
-	andi.l     #MAX_BANK_NUM,d3
+	andi.l     #15,d3 /* BUG? */
 	movem.l    d0-d2/d4-d7/a0-a6,-(a7)
 	move.l     d3,d1
 	moveq.l    #0,d3
@@ -1413,7 +1413,7 @@ tracker_spectrum:
 	cmp.w      #1,d0
 	bne        syntax
 	bsr        getinteger
-	andi.l     #MAX_BANK_NUM,d3
+	andi.l     #15,d3 /* BUG? */
 	movem.l    a0-a6,-(a7)
 	move.l     d3,d1
 	moveq.l    #0,d3
@@ -1706,13 +1706,13 @@ tracker_load1:
 	move.b     #0,(a1)
 	movem.l    a0-a6,-(a7)
 	move.w     #7-1,d7
-	lea.l      x12ea8(pc),a0
+	lea.l      module_header(pc),a0
 tracker_load2:
 	clr.l      (a0)+
 	dbf        d7,tracker_load2
 	moveq.l    #0,d3
 	move.w     load_banknum(pc),d3
-	bsr        x10afe
+	bsr        erase
 	move.w     #47,-(a7) /* Fgetdta */
 	trap       #1
 	addq.l     #2,a7
@@ -1731,9 +1731,9 @@ tracker_load3:
 	tst.l      d0
 	beq        tracker_load10
 	movea.l    dtaptr(pc),a0
-	move.l     26(a0),d3
+	move.l     26(a0),d3 /* file size from DTA */
 	andi.l     #0x7FFFFFFF,d3
-	lea.l      x12e24(pc),a0
+	lea.l      compressed_len(pc),a0
 	move.l     d3,(a0)
 	lea.l      loaded_filelength(pc),a1
 	move.l     d3,(a1)
@@ -1741,18 +1741,18 @@ tracker_load3:
 	bsr        open
 	tst.w      d0
 	bmi        tracker_load11
-	lea.l      x12ea8(pc),a0
+	lea.l      module_header(pc),a0
 	moveq.l    #26,d0
 	bsr        read
 	tst.l      d0
 	bmi        tracker_load11
 	bsr        close
 	lea.l      status_bits(pc),a2
-	lea.l      x12e24(pc),a0
+	lea.l      compressed_len(pc),a0
 	move.l     (a0),d3
 	lea.l      load_paktype(pc),a1
 	move.w     #0,(a1)
-	lea.l      x12ea8(pc),a0
+	lea.l      module_header(pc),a0
 	cmpi.l     #PACK_ICE2,(a0)
 	beq.s      tracker_load5
 	cmpi.l     #PACK_ATOMIC,(a0)
@@ -1779,7 +1779,7 @@ tracker_load6:
 	moveq.l    #0,d2
 	move.w     load_banknum(pc),d2
 	addi.l     #0x00008000,d3
-	bsr        x10ae4
+	bsr        reserve
 	moveq.l    #0,d3
 	move.w     load_banknum(pc),d3
 	bsr        addrofbank
@@ -1790,7 +1790,7 @@ tracker_load6:
 	tst.w      d0
 	bmi.s      tracker_load11
 	movea.l    load_faddr(pc),a0
-	move.l     x12e24(pc),d0
+	move.l     compressed_len(pc),d0
 	bsr.s      read
 	tst.l      d0
 	bmi.s      tracker_load11
@@ -2092,9 +2092,9 @@ tracker_scope_draw1:
 	trap       #7
 	tst.w      d0
 	beq        tracker_scope_draw5
-	lea.l      x12d56(pc),a2
+	lea.l      undraw_flag(pc),a2
 	move.w     #0,(a2)
-	bsr        x120f0
+	bsr        undraw_scope
 	movea.l    a0,a1
 	move.w     scope_x2(pc),d7
 	sub.w      scope_x1(pc),d7
@@ -2135,10 +2135,10 @@ tracker_scope_draw3:
 	trap       #7
 	bra.s      tracker_scope_draw5
 tracker_scope_draw4:
-	lea.l      x12d56(pc),a2
+	lea.l      undraw_flag(pc),a2
 	tst.w      (a2)
 	bmi.s      tracker_scope_draw5
-	bsr.w      x120f0
+	bsr.w      undraw_scope
 	move.w     #-1,(a2)
 tracker_scope_draw5:
 	movem.l    (a7)+,d0-d7/a0-a6
@@ -2146,53 +2146,53 @@ tracker_scope_draw5:
 	jmp        (a0)
 
 
-x120f0:
+undraw_scope:
 	movem.l    d0-d7/a0-a6,-(a7)
 	lea.l      scope_currcolor(pc),a0
 	lea.l      scope_x1(pc),a1
 	lea.l      scope_currx(pc),a2
 	move.w     #0,(a0)
 	movem.w    (a1)+,d0-d3 /* scope_x1/scope_y1/scope_x2/scope_y2 */
-	bsr        x121d4
+	bsr        draw_bars
 	move.w     scope_color(pc),(a0)
 	move.w     scope_x1(pc),(a2)
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
 
-x1211a:
+draw_rectangle:
 	movem.l    d0-d7/a0-a6,-(a7)
 	andi.l     #0x000003FF,d0
 	andi.l     #0x000001FF,d1
 	andi.l     #0x000003FF,d2
 	andi.l     #0x000001FF,d3
 	cmp.w      d0,d2
-	bcc.s      x1211a_1
+	bcc.s      draw_rectangle_1
 	exg        d0,d2
-x1211a_1:
+draw_rectangle_1:
 	cmp.w      d1,d3
-	bcc.s      x1211a_2
+	bcc.s      draw_rectangle_2
 	exg        d1,d3
-x1211a_2:
-	lea.l      x12d58(pc),a1
+draw_rectangle_2:
+	lea.l      cliprect(pc),a1
 	/* cmp.w      0(a1),d0 */
 	dc.w 0xb069,0 /* XXX */
-	bcc.s      x1211a_3
+	bcc.s      draw_rectangle_3
 	/* move.w     0(a1),d0 */
 	dc.w 0x3029,0
-x1211a_3:
+draw_rectangle_3:
 	cmp.w      4(a1),d2
-	bcs.s      x1211a_4
+	bcs.s      draw_rectangle_4
 	move.w     4(a1),d2
-x1211a_4:
+draw_rectangle_4:
 	cmp.w      2(a1),d1
-	bcc.s      x1211a_5
+	bcc.s      draw_rectangle_5
 	move.w     2(a1),d1
-x1211a_5:
+draw_rectangle_5:
 	cmp.w      6(a1),d3
-	bcs.s      x1211a_6
+	bcs.s      draw_rectangle_6
 	move.w     6(a1),d3
-x1211a_6:
-	lea.l      x121cc(pc),a4
+draw_rectangle_6:
+	lea.l      rectangle_coords(pc),a4
 	movem.w    d0-d3,(a4)
 	/* move.w     0(a4),d0 */
 	dc.w 0x302c,0 /* XXX */
@@ -2220,56 +2220,56 @@ x1211a_6:
 	bsr        draw_line
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
-x121cc: ds.w 4
+rectangle_coords: ds.w 4
 
-x121d4:
+draw_bars:
 	movem.l    d0-d7/a0-a6,-(a7)
 	andi.l     #0x000003FF,d0
 	andi.l     #0x000001FF,d1
 	andi.l     #0x000003FF,d2
 	andi.l     #0x000001FF,d3
 	cmp.w      d0,d2
-	bcc.s      x121d4_1
+	bcc.s      draw_bars_1
 	exg        d0,d2
-x121d4_1:
+draw_bars_1:
 	cmp.w      d1,d3
-	bcc.s      x121d4_2
+	bcc.s      draw_bars_2
 	exg        d1,d3
-x121d4_2:
-	lea.l      x12d58(pc),a1
-	bra.s      x121d4_7
-x121d4_3:
+draw_bars_2:
+	lea.l      cliprect(pc),a1
+	bra.s      draw_bars_7
+draw_bars_3:
 	/* cmp.w      0(a1),d0 */
 	dc.w 0xb069,0 /* XXX */
-	bcc.s      x121d4_4
+	bcc.s      draw_bars_4
 	/* move.w     0(a1),d0 */
 	dc.w 0x3029,0 /* XXX */
-x121d4_4:
+draw_bars_4:
 	cmp.w      4(a1),d2
-	bcs.s      x121d4_5
+	bcs.s      draw_bars_5
 	move.w     4(a1),d2
-x121d4_5:
+draw_bars_5:
 	cmp.w      2(a1),d1
-	bcc.s      x121d4_6
+	bcc.s      draw_bars_6
 	move.w     2(a1),d1
-x121d4_6:
+draw_bars_6:
 	cmp.w      6(a1),d3
-	bcs.s      x121d4_7
+	bcs.s      draw_bars_7
 	move.w     6(a1),d3
-x121d4_7:
-	lea.l      x1228a(pc),a4
+draw_bars_7:
+	lea.l      bars_coords(pc),a4
 	movem.w    d0-d3,(a4)
 	cmp.w      d0,d2
-	beq.s      x121d4_9
+	beq.s      draw_bars_9
 	cmp.w      d1,d3
-	beq.s      x121d4_9
+	beq.s      draw_bars_9
 	/* move.w     0(a4),d0 */
 	dc.w 0x302c,0 /* XXX */
 	move.w     2(a4),d1
 	move.w     4(a4),d2
 	move.w     2(a4),d3
 	bsr.w      draw_line
-x121d4_8:
+draw_bars_8:
 	addq.w     #1,2(a4)
 	/* move.w     0(a4),d0 */
 	dc.w 0x302c,0 /* XXX */
@@ -2279,17 +2279,17 @@ x121d4_8:
 	bsr        draw_back
 	move.w     6(a4),d0
 	cmp.w      2(a4),d0
-	bne.s      x121d4_8
+	bne.s      draw_bars_8
 	/* move.w     0(a4),d0 */
 	dc.w 0x302c,0 /* XXX */
 	move.w     6(a4),d1
 	move.w     4(a4),d2
 	move.w     6(a4),d3
 	bsr.w      draw_line
-x121d4_9:
+draw_bars_9:
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
-x1228a: ds.w 4
+bars_coords: ds.w 4
 
 draw_line:
 	movem.l    d0-d7/a0-a6,-(a7)
@@ -2334,23 +2334,23 @@ draw_line5:
 draw_diagline:
 	bsr        calc_screenaddr
 	bsr        calc_endaddr
-	lea.l      x1239e(pc),a0
+	lea.l      drawdiag_coords(pc),a0
 	movem.w    d0-d3,(a0)
 	moveq.l    #0,d4
 	moveq.l    #0,d5
 	moveq.l    #0,d6
 	moveq.l    #0,d7
-	lea.l      x123a6(pc),a3
-	move.w     x1239e+0(pc),d0
-	move.w     x1239e+2(pc),d1
-	move.w     x1239e+4(pc),d2
-	move.w     x1239e+6(pc),d3
+	lea.l      drawdiag_flags(pc),a3
+	move.w     drawdiag_coords+0(pc),d0
+	move.w     drawdiag_coords+2(pc),d1
+	move.w     drawdiag_coords+4(pc),d2
+	move.w     drawdiag_coords+6(pc),d3
 	sub.w      d0,d2
 	sub.w      d1,d3
 	move.w     d2,d4
 	move.w     d3,d5
-	move.w     x1239e+0(pc),d0
-	move.w     x1239e+2(pc),d1
+	move.w     drawdiag_coords+0(pc),d0
+	move.w     drawdiag_coords+2(pc),d1
 	tst.w      d4
 	bpl.s      draw_diagline1
 	neg.w      d4
@@ -2374,9 +2374,9 @@ draw_diagline4:
 draw_diagline5:
 	move.w     #0,4(a3)
 draw_diagline6:
-	cmp.w      x1239e+4(pc),d0
+	cmp.w      drawdiag_coords+4(pc),d0
 	bne.s      draw_diagline7
-	cmp.w      x1239e+6(pc),d1
+	cmp.w      drawdiag_coords+6(pc),d1
 	beq.s      draw_diagline10
 draw_diagline7:
 	move.w     4(a3),d6
@@ -2395,8 +2395,8 @@ draw_diagline9:
 draw_diagline10:
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
-x1239e: ds.w 4
-x123a6: ds.w 3
+drawdiag_coords: ds.w 4
+drawdiag_flags: ds.w 3
 
 drawhi_line:
 	cmp.w      d0,d2
@@ -2595,7 +2595,7 @@ draw_horline14:
 	rts
 draw_horline15:
 	bsr        calc_bitstartpos
-	lea.l      x12602(pc),a4
+	lea.l      horline_params(pc),a4
 	movem.w    d6-d7,(a4)
 	bsr        calc_bitendpos
 	movem.w    d6-d7,4(a4)
@@ -2637,7 +2637,7 @@ draw_horline21:
 	dbf        d5,draw_horline19
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
-x12602: ds.w 16
+horline_params: ds.w 16
 
 draw_vertline:
 	movem.l    d0-d7/a0-a6,-(a7)
@@ -2838,7 +2838,7 @@ draw_back11:
 	rts
 draw_back12:
 	bsr        calc_bitstartpos
-	lea.l      x128b0(pc),a4
+	lea.l      drawback_params(pc),a4
 	movem.w    d6-d7,(a4)
 	bsr        calc_bitendpos
 	movem.w    d6-d7,4(a4)
@@ -2892,10 +2892,10 @@ draw_back18:
 	dbf        d5,draw_back16
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
-x128b0: ds.w 16
+drawback_params: ds.w 16
 
 drawhi_back:
-	lea.l      x12972(pc),a0
+	lea.l      drawhiback_ccords(pc),a0
 	movem.w    d0-d3,(a0)
 	movea.l    lineavars(pc),a0
 	cmpi.w     #16,(a0)
@@ -2908,10 +2908,10 @@ drawhi_back:
 	moveq.l    #0,d5
 	moveq.l    #0,d6
 	moveq.l    #0,d7
-	move.w     x12972+0(pc),d4
-	move.w     x12972+2(pc),d5
-	move.w     x12972+4(pc),d6
-	move.w     x12972+6(pc),d7
+	move.w     drawhiback_ccords+0(pc),d4
+	move.w     drawhiback_ccords+2(pc),d5
+	move.w     drawhiback_ccords+4(pc),d6
+	move.w     drawhiback_ccords+6(pc),d7
 	cmp.w      d4,d6
 	bcc.s      draw_hiback1
 	exg        d4,d6
@@ -2958,7 +2958,7 @@ draw_hiback7:
 	move.w     scope_currcolor(pc),(a0)+
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
-x12972: ds.w 4
+drawhiback_ccords: ds.w 4
 
 calc_screenaddr:
 	movem.l    d0-d6/a0-a1,-(a7)
@@ -3140,31 +3140,70 @@ joined_module_id:
 	dc.b 'DSP Tracker Joined Module Bank 11051953'
 joined_module_id_end:	dc.b 0
 generic4_id:
-	dc.b $18,'4 Voice 15-Sample format',0
+	dc.b generic4_id_end-generic4_id-1
+	dc.b '4 Voice 15-Sample format'
+generic4_id_end:
+	dc.b 0
 mk_id:
-	dc.b $19,'4 Voice Noise/Pro-Tracker',0
+	dc.b mk_id_end-mk_id-1
+	dc.b '4 Voice Noise/Pro-Tracker'
+mk_id_end:
+	dc.b 0
 fa04_id:
-	dc.b $17,'4 Voice Digital Tracker',0
+	dc.b fa04_id_end-fa04_id-1
+	dc.b '4 Voice Digital Tracker'
+fa04_id_end:
+	dc.b 0
 flt4_id:
-	dc.b $16,'4 Voice Startrekker v1',0
+	dc.b flt4_id_end-flt4_id-1
+	dc.b '4 Voice Startrekker v1'
+flt4_id_end:
+	dc.b 0
 rasp_id:
-	dc.b $13,'4 Voice Startrekker',0
+	dc.b rasp_id_end-rasp_id-1
+	dc.b '4 Voice Startrekker'
+rasp_id_end:
+	dc.b 0
 fa06_id:
-	dc.b $17,'6 Voice Digital Tracker',0
+	dc.b fa06_id_end-fa06_id-1
+	dc.b '6 Voice Digital Tracker'
+fa06_id_end:
+	dc.b 0
 chn6_id:
-	dc.b $13,'6 Voice FastTracker',0
+	dc.b chn6_id_end-chn6_id-1
+	dc.b '6 Voice FastTracker'
+chn6_id_end:
+	dc.b 0
 flt6_id:
-	dc.b $13,'6 Voice Startrekker',0
+	dc.b flt6_id_end-flt6_id-1
+	dc.b '6 Voice Startrekker'
+flt6_id_end:
+	dc.b 0
 fa08_id:
-	dc.b $17,'8 Voice Digital Tracker',0
+	dc.b fa08_id_end-fa08_id-1
+	dc.b '8 Voice Digital Tracker'
+fa08_id_end:
+	dc.b 0
 chn8_id:
-	dc.b $13,'8 Voice FastTracker',0
+	dc.b chn8_id_end-chn8_id-1
+	dc.b '8 Voice FastTracker'
+chn8_id_end:
+	dc.b 0
 cd81_id:
-	dc.b $11,'8 Voice Octalyser',0
+	dc.b cd81_id_end-cd81_id-1
+	dc.b '8 Voice Octalyser'
+cd81_id_end:
+	dc.b 0
 flt8_id:
-	dc.b $13,'8 Voice Startrekker',0
+	dc.b flt8_id_end-flt8_id-1
+	dc.b '8 Voice Startrekker'
+flt8_id_end:
+	dc.b 0
 octa_id:
-	dc.b $11,'8 Voice Octalyser',0
+	dc.b octa_id_end-octa_id-1
+	dc.b '8 Voice Octalyser'
+octa_id_end:
+	dc.b 0
 	.even
 
 notes_table:
@@ -3259,8 +3298,8 @@ scope_ymid: ds.w 1 /* 12d4e */
 scope_currx: ds.w 1
 scope_curry: ds.w 1
 scope_active: ds.w 1
-x12d56: ds.w 1
-x12d58: ds.w 4
+undraw_flag: ds.w 1
+cliprect: ds.w 4
 scope_currcolor: ds.w 1
         ds.w 1 /* unused */
 scope_colormask: ds.w 1
@@ -3276,11 +3315,9 @@ load_paktype: ds.w 1 /* 12e18 */
 loaded_filelength: ds.l 1 /* 12e1a */
 dtaptr: ds.l 1 /* 12e1e */
 filehandle: ds.w 1 /* 12e22 */
-x12e24: ds.l 1
+compressed_len: ds.l 1
 load_filename: ds.b 128 /* 12e28 */
-x12ea8: ds.l 7
-
-	ds.b 24
+module_header: ds.l 13
 
 finprg:
 
