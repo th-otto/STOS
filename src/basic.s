@@ -8274,8 +8274,12 @@ o8:       addq #1,d0
 o9:       clr autoflg
           rts
 
+* new compiler entries for RUN
+		  bra.w run_alone_entry
+		  bra.w run_name_entry
+
 ; RUN / RUN xx / RUN "dklskdl.bas"
-run:      bsr finie                     ;run tout seul
+run:      bsr finie                     ;run alone
           beq.s run3
           move.l a6,-(sp)
           bsr evalue
@@ -8283,6 +8287,12 @@ run:      bsr finie                     ;run tout seul
           tst.b d2                      ;run # de ligne
           beq.s run2
           bpl.s run1
+*
+* Note: this location must be at run+$1C
+* (called by compiled STOS programs)
+*
+run_name_entry:
+
 ; run NOM$
           bsr setdta                    ;E/S disque
           bsr namedisk                  ;va chercher le nom
@@ -8295,6 +8305,11 @@ run0:     bsr load3                     ;va faire NEW, va charger le pgm
 run1:     bsr fltoint                   ;run FLOAT!
 run2:     bsr findrun
           bra.s run4
+*
+* Note: this location must be at run+$38
+* (called by compiled STOS programs)
+*
+run_alone_entry:
 run3:     move.l dsource,a0
 run4:     move.l a0,-(sp)
           bsr clause                    ;ferme tous les fichiers
@@ -13177,6 +13192,14 @@ erase:    bsr mentiers        ;va chercher le numero de la banque
           cmp.w #1,d0
           bne syntax
           move.l d1,d3        ;un seul param: efface dans le programme
+erase_entry:
+		  /* certain extensions call at erase+20 */
+		  .IFNE (erase+20)!=erase_entry
+*		  .ERROR "wrong offset for erase_entry"
+          dc.l erase_entry
+          dc.l erase
+		  dc.l erase_entry-erase-20
+		  .ENDC
 erasbis:  bsr effbank
           bne.s er0
           bsr calclong
@@ -13273,6 +13296,11 @@ res5:     movem.l d1/d3,-(sp) ;va chercher la longueur de la banque
           bne syntax
           bsr expentier
           movem.l (sp)+,d1/d2
+reserve_entry:
+		  /* certain extensions call at reserve+130 */
+		  .IF (reserve+130)!=reserve_entry
+*		  .ERROR "wrong offset for reserve_entry"
+		  .ENDC
 res6:     bsr reservin
 resbis:   bsr calclong
           bsr movevar         ;remet les variables

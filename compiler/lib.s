@@ -14385,7 +14385,7 @@ l581a:  jsr L_delete.l                  ;Va deloger
         move.l table(a5),a2
         move.l sys_extjumps(a2),a2               ;extjump
         move.l 4*(T_exti_run-$70)(a2),a2             ;RUN
-        lea $38(a2),a2                  ;RUN -seul-
+        lea -8(a2),a2                  ;RUN -seul-
         jmp (a2)
 ; Sous GEM
 l581z:  moveq #E_syntax,d0
@@ -14405,7 +14405,7 @@ l582b:  jsr L_delete.l                  ;Deloge
         move.l table(a5),a2
         move.l sys_extjumps(a2),a2               ;extjump
         move.l 4*(T_exti_run-$70)(a2),a2             ;RUN
-        lea $1c(a2),a2                  ;RUN -NOM-
+        lea -4(a2),a2                  ; calls run_name_entry
         movem.l (sp)+,d0/a0/a1
         tst.w d0
         jmp (a2)
