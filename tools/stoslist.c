@@ -26,9 +26,14 @@ struct token {
 	unsigned char val1;
 	unsigned char val2;
 };
+
+#define EXTIF_SYSCTRL  0x0001
+#define EXTIF_CONTROL  0x0002
+
 struct extension {
 	char extension;
 	unsigned char opcode;
+	unsigned short extension_if;
 	const char *name;
 };
 
@@ -407,680 +412,882 @@ static struct token const extinstructions[] = {
 };
 
 static struct extension const external_extensions[] = {
-    /* Compact: 2 commands */
-    { 'A', 0x80, "unpack" },
-    { 'A', 0x81, "pack" },
+	/* Compact: 2 commands */
+	{ 'A', 0x80, 0, "unpack" },
+	{ 'A', 0x81, 0, "pack" },
 
-    /* STOS Compiler: 5 commands */
-    { 'C', 0x80, "compad" },
-    { 'C', 0x82, "comptest off" },
-    { 'C', 0x84, "comptest on" },
-    { 'C', 0x86, "comptest always" },
-    { 'C', 0x88, "comptest" },
+	/* STOS Compiler: 5 commands */
+	{ 'C', 0x80, 0, "compad" },
+	{ 'C', 0x82, 0, "comptest off" },
+	{ 'C', 0x84, 0, "comptest on" },
+	{ 'C', 0x86, 0, "comptest always" },
+	{ 'C', 0x88, 0, "comptest" },
 
-    /* STOS Maestro: 20 commands */
-	{ 'D', 0x80, "sound init" },
-	{ 'D', 0x81, "sample" },
-	{ 'D', 0x82, "samplay" },
-	{ 'D', 0x83, "samplace" },
-	{ 'D', 0x84, "samspeed manual" },
-	{ 'D', 0x86, "samspeed auto" },
-	{ 'D', 0x88, "samspeed" },
-	{ 'D', 0x8a, "samstop" },
-	{ 'D', 0x8c, "samloop off" },
-	{ 'D', 0x8e, "samloop on" },
-	{ 'D', 0x90, "samdir forward" },
-	{ 'D', 0x92, "samdir backward" },
-	{ 'D', 0x94, "samsweep on" },
-	{ 'D', 0x96, "samsweep off" },
-	{ 'D', 0x98, "samraw" },
-	{ 'D', 0x9a, "samrecord" },
-	{ 'D', 0x9c, "samcopy" },
-	{ 'D', 0x9e, "sammusic" },
-	{ 'D', 0xa2, "samthru" },
-	{ 'D', 0xa4, "sambank" },
-    
-    /* STOS Squasher: 2 commands */
-	{ 'E', 0x80, "unsquash" },
-	{ 'E', 0x81, "squash" },
+	/* STOS Maestro: 20 commands */
+	{ 'D', 0x80, 0, "sound init" },
+	{ 'D', 0x81, 0, "sample" },
+	{ 'D', 0x82, 0, "samplay" },
+	{ 'D', 0x83, 0, "samplace" },
+	{ 'D', 0x84, 0, "samspeed manual" },
+	{ 'D', 0x86, 0, "samspeed auto" },
+	{ 'D', 0x88, 0, "samspeed" },
+	{ 'D', 0x8a, 0, "samstop" },
+	{ 'D', 0x8c, 0, "samloop off" },
+	{ 'D', 0x8e, 0, "samloop on" },
+	{ 'D', 0x90, 0, "samdir forward" },
+	{ 'D', 0x92, 0, "samdir backward" },
+	{ 'D', 0x94, 0, "samsweep on" },
+	{ 'D', 0x96, 0, "samsweep off" },
+	{ 'D', 0x98, 0, "samraw" },
+	{ 'D', 0x9a, 0, "samrecord" },
+	{ 'D', 0x9c, 0, "samcopy" },
+	{ 'D', 0x9e, 0, "sammusic" },
+	{ 'D', 0xa2, 0, "samthru" },
+	{ 'D', 0xa4, 0, "sambank" },
+
+	/* STOS Squasher: 2 commands */
+	{ 'E', 0x80, 0, "unsquash" },
+	{ 'E', 0x81, 0, "squash" },
 
 	/* STE extension: 35 commands */
-	{ 'F', 0x80, "sticks on" },
-	{ 'F', 0x81, "stick1" },
-	{ 'F', 0x82, "sticks off" },
-	{ 'F', 0x83, "stick2" },
-	{ 'F', 0x84, "dac convert" },
-	{ 'F', 0x85, "l stick" },
-	{ 'F', 0x86, "dac raw" },
-	{ 'F', 0x87, "r stick" },
-	{ 'F', 0x88, "dac speed" },
-	{ 'F', 0x89, "u stick" },
-	{ 'F', 0x8a, "dac stop" },
-	{ 'F', 0x8b, "d stick" },
-	{ 'F', 0x8c, "dac m volume" },
-	{ 'F', 0x8d, "f stick" },
-	{ 'F', 0x8e, "dac l volume" },
-	{ 'F', 0x8f, "light x" },
-	{ 'F', 0x90, "dac r volume" },
-	{ 'F', 0x91, "light y" },
-	{ 'F', 0x92, "dac treble" },
-	{ 'F', 0x93, "ste" },
-	{ 'F', 0x94, "dac bass" },
-	{ 'F', 0x95, "e color" },
-	{ 'F', 0x96, "dac mix on" },
-	{ 'F', 0x97, "hard physic" },
-	{ 'F', 0x98, "dac mix off" },
+	{ 'F', 0x80, 0, "sticks on" },
+	{ 'F', 0x81, 0, "stick1" },
+	{ 'F', 0x82, 0, "sticks off" },
+	{ 'F', 0x83, 0, "stick2" },
+	{ 'F', 0x84, 0, "dac convert" },
+	{ 'F', 0x85, 0, "l stick" },
+	{ 'F', 0x86, 0, "dac raw" },
+	{ 'F', 0x87, 0, "r stick" },
+	{ 'F', 0x88, 0, "dac speed" },
+	{ 'F', 0x89, 0, "u stick" },
+	{ 'F', 0x8a, 0, "dac stop" },
+	{ 'F', 0x8b, 0, "d stick" },
+	{ 'F', 0x8c, 0, "dac m volume" },
+	{ 'F', 0x8d, 0, "f stick" },
+	{ 'F', 0x8e, 0, "dac l volume" },
+	{ 'F', 0x8f, 0, "light x" },
+	{ 'F', 0x90, 0, "dac r volume" },
+	{ 'F', 0x91, 0, "light y" },
+	{ 'F', 0x92, 0, "dac treble" },
+	{ 'F', 0x93, 0, "ste" },
+	{ 'F', 0x94, 0, "dac bass" },
+	{ 'F', 0x95, 0, "e color" },
+	{ 'F', 0x96, 0, "dac mix on" },
+	{ 'F', 0x97, 0, "hard physic" },
+	{ 'F', 0x98, 0, "dac mix off" },
 	/* 0x99 unused */
-	{ 'F', 0x9a, "dac mono" },
+	{ 'F', 0x9a, 0, "dac mono" },
 	/* 0x9b unused */
-	{ 'F', 0x9c, "dac stereo" },
+	{ 'F', 0x9c, 0, "dac stereo" },
 	/* 0x9d unused */
-	{ 'F', 0x9e, "dac loop on" },
+	{ 'F', 0x9e, 0, "dac loop on" },
 	/* 0x9f unused */
-	{ 'F', 0xa0, "dac loop off" },
+	{ 'F', 0xa0, 0, "dac loop off" },
 	/* 0xa1 unused */
-	{ 'F', 0xa2, " e palette" },
+	{ 'F', 0xa2, 0, " e palette" },
 	/* 0xa3 unused */
-	{ 'F', 0xa4, "e colour" },
+	{ 'F', 0xa4, 0, "e colour" },
 	/* 0xa5 unused */
-	{ 'F', 0xa6, "hard screen size" },
+	{ 'F', 0xa6, 0, "hard screen size" },
 	/* 0xa7 unused */
-	{ 'F', 0xa8, "hard screen offset" },
+	{ 'F', 0xa8, 0, "hard screen offset" },
 	/* 0xa9 unused */
-	{ 'F', 0xaa, "hard screen offset" },
+	{ 'F', 0xaa, 0, "hard screen offset" },
 	/* 0xab unused */
-	{ 'F', 0xac, "hard screen offset" },
+	{ 'F', 0xac, 0, "hard screen offset" },
 
 	/* Blitter Extension. v 1.1 by Ambrah */
-	{ 'G', 0x80, "blit halftone" },
-	{ 'G', 0x81, "blit busy" },
-	{ 'G', 0x82, "blit source x inc" },
-	{ 'G', 0x83, "blitter" },
-	{ 'G', 0x84, "blit source y inc" },
-	{ 'G', 0x85, "blit remain" },
-	{ 'G', 0x86, "blit source address" },
+	{ 'G', 0x80, 0, "blit halftone" },
+	{ 'G', 0x81, 0, "blit busy" },
+	{ 'G', 0x82, 0, "blit source x inc" },
+	{ 'G', 0x83, 0, "blitter" },
+	{ 'G', 0x84, 0, "blit source y inc" },
+	{ 'G', 0x85, 0, "blit remain" },
+	{ 'G', 0x86, 0, "blit source address" },
 	/* 0x87 unused */
-	{ 'G', 0x88, "blit dest x inc" },
+	{ 'G', 0x88, 0, "blit dest x inc" },
 	/* 0x89 unused */
-	{ 'G', 0x8a, "blit dest y inc" },
+	{ 'G', 0x8a, 0, "blit dest y inc" },
 	/* 0x8b unused */
-	{ 'G', 0x8c, "blit dest address" },
+	{ 'G', 0x8c, 0, "blit dest address" },
 	/* 0x8d unused */
-	{ 'G', 0x8e, "blit endmask 1" },
+	{ 'G', 0x8e, 0, "blit endmask 1" },
 	/* 0x8f unused */
-	{ 'G', 0x90, "blit endmask 2" },
+	{ 'G', 0x90, 0, "blit endmask 2" },
 	/* 0x91 unused */
-	{ 'G', 0x92, "blit endmask 3" },
+	{ 'G', 0x92, 0, "blit endmask 3" },
 	/* 0x93 unused */
-	{ 'G', 0x94, "blit x count" },
+	{ 'G', 0x94, 0, "blit x count" },
 	/* 0x95 unused */
-	{ 'G', 0x96, "blit y count" },
+	{ 'G', 0x96, 0, "blit y count" },
 	/* 0x97 unused */
-	{ 'G', 0x98, "blit hop" },
+	{ 'G', 0x98, 0, "blit hop" },
 	/* 0x99 unused */
-	{ 'G', 0x9a, "blit op" },
+	{ 'G', 0x9a, 0, "blit op" },
 	/* 0x9b unused */
-	{ 'G', 0x9c, "blit h line" },
+	{ 'G', 0x9c, 0, "blit h line" },
 	/* 0x9d unused */
-	{ 'G', 0x9e, "blit smudge" },
+	{ 'G', 0x9e, 0, "blit smudge" },
 	/* 0x9f unused */
-	{ 'G', 0xa0, "blit hog" },
+	{ 'G', 0xa0, 0, "blit hog" },
 	/* 0xa1 unused */
-	{ 'G', 0xa2, " blit it" },
+	{ 'G', 0xa2, 0, " blit it" },
 	/* 0xa3 unused */
-	{ 'G', 0xa4, "blit skew" },
+	{ 'G', 0xa4, 0, "blit skew" },
 	/* 0xa5 unused */
-	{ 'G', 0xa6, "blit nfsr" },
+	{ 'G', 0xa6, 0, "blit nfsr" },
 	/* 0xa7 unused */
-	{ 'G', 0xa8, "blit fxsr" },
+	{ 'G', 0xa8, 0, "blit fxsr" },
 	/* 0xa9 unused */
-	{ 'G', 0xaa, "blit cls" },
+	{ 'G', 0xaa, 0, "blit cls" },
 	/* 0xab unused */
-	{ 'G', 0xac, "blit copy" },
+	{ 'G', 0xac, 0, "blit copy" },
 	/* 0xad unused */
-	{ 'G', 0xae, "about blitter" },
+	{ 'G', 0xae, 0, "about blitter" },
 
 	/* STORM/GBP blitter extension: 18 commands */
-	{ 'G', 0x80, "blit sinc" },
-	{ 'G', 0x81, "blit clr" },
-	{ 'G', 0x82, "blit dinc" },
-	{ 'G', 0x83, "blit fskopy" },
-	{ 'G', 0x84, "blit address" },
+	{ 'G', 0x80, 0, "blit sinc" },
+	{ 'G', 0x81, 0, "blit clr" },
+	{ 'G', 0x82, 0, "blit dinc" },
+	{ 'G', 0x83, 0, "blit fskopy" },
+	{ 'G', 0x84, 0, "blit address" },
 	/* 0x85 unused */
-	{ 'G', 0x86, "blit mask" },
+	{ 'G', 0x86, 0, "blit mask" },
 	/* 0x87 unused */
-	{ 'G', 0x88, "blit count" },
+	{ 'G', 0x88, 0, "blit count" },
 	/* 0x89 unused */
-	{ 'G', 0x8a, "blit hop" },
+	{ 'G', 0x8a, 0, "blit hop" },
 	/* 0x8b unused */
-	{ 'G', 0x8c, "blit op" },
+	{ 'G', 0x8c, 0, "blit op" },
 	/* 0x8d unused */
-	{ 'G', 0x8e, "blit skew" },
+	{ 'G', 0x8e, 0, "blit skew" },
 	/* 0x8f unused */
-	{ 'G', 0x90, "blit nfsr" },
+	{ 'G', 0x90, 0, "blit nfsr" },
 	/* 0x91 unused */
-	{ 'G', 0x92, "blit fxsr" },
+	{ 'G', 0x92, 0, "blit fxsr" },
 	/* 0x93 unused */
-	{ 'G', 0x94, "blit line" },
+	{ 'G', 0x94, 0, "blit line" },
 	/* 0x95 unused */
-	{ 'G', 0x96, "blit smudge" },
+	{ 'G', 0x96, 0, "blit smudge" },
 	/* 0x97 unused */
-	{ 'G', 0x98, "blit hog" },
+	{ 'G', 0x98, 0, "blit hog" },
 	/* 0x99 unused */
-	{ 'G', 0x9a, "blit it" },
+	{ 'G', 0x9a, 0, "blit it" },
 	/* 0x9b unused */
-	{ 'G', 0x9c, "fcopy" },
+	{ 'G', 0x9c, 0, "fcopy" },
 	/* 0x9c unused */
-	{ 'G', 0x9d, "cls" },
+	{ 'G', 0x9d, 0, "cls" },
 
-    /* Stars: 4 commands */
-	{ 'H', 0x80, "set stars" },
+	/* Stars: 4 commands */
+	{ 'H', 0x80, 0, "set stars" },
 	/* 0x81 unused */
-	{ 'H', 0x82, "go stars" },
+	{ 'H', 0x82, 0, "go stars" },
 	/* 0x83 unused */
-	{ 'H', 0x84, "wipe stars on" },
+	{ 'H', 0x84, 0, "wipe stars on" },
 	/* 0x85 unused */
-	{ 'H', 0x86, "wipe stars off" },
+	{ 'H', 0x86, 0, "wipe stars off" },
 
-    /* Misty: 21 commands */
-	{ 'M', 0x80, "fastcopy" },
-	{ 'M', 0x81, "col" },
-	{ 'M', 0x82, "floprd" },
-	{ 'M', 0x83, "mediach" },
-	{ 'M', 0x84, "flopwrt" },
-	{ 'M', 0x85, "hardkey" },
-	{ 'M', 0x86, "dot" },
-	{ 'M', 0x87, "ndrv" },
-	{ 'M', 0x88, "mouseoff" },
-	{ 'M', 0x89, "freq" },
-	{ 'M', 0x8a, "mouseon" },
-	{ 'M', 0x8b, "resvalid" },
-	{ 'M', 0x8c, "skopy" },
-	{ 'M', 0x8d, "aesin" },
-	{ 'M', 0x8e, "setrtim" },
-	{ 'M', 0x8f, "rtim" },
-	{ 'M', 0x90, "warmboot" },
-	{ 'M', 0x91, "blitter" },
-	{ 'M', 0x92, "silence" },
-	{ 'M', 0x93, "kbshift" },
-	{ 'M', 0x94, "kopy" },
+	/* GEM text */
+	{ 'L', 0x80, 0, "gemtext init" },
+	{ 'L', 0x81, 0, "gemfont name$" },
+	{ 'L', 0x82, 0, "gemtext color" },
+	{ 'L', 0x83, 0, "gemfont cellwidth" },
+	{ 'L', 0x84, 0, "gemtext mode" },
+	{ 'L', 0x85, 0, "gemfont cellheight" },
+	{ 'L', 0x86, 0, "gemtext style" },
+	{ 'L', 0x87, 0, "gemtext stringwidth" },
+	{ 'L', 0x88, 0, "gemtext angle" },
+	{ 'L', 0x89, 0, "gemfont convert" },
+	{ 'L', 0x8a, 0, "gemtext font" },
+	{ 'L', 0x8b, 0, "gemfont info" },
+	{ 'L', 0x8c, 0, "gemtext scale" },
+	/* 0x8d unused */
+	{ 'L', 0x8e, 0, "gemtext" },
+	/* 0x8f unused */
+	{ 'L', 0x90, 0, "gemfont load" },
+	/* 0x91 unused */
+	{ 'L', 0x92, 0, "gemfont cmds" },
 
-    /* MIDI: 5 commands */
-	{ 'M', 0x80, "midi on" },
-	{ 'M', 0x81, "midi in" },
-	{ 'M', 0x82, "midi off" },
+	/* Misty: 21 commands */
+	{ 'M', 0x80, 0, "fastcopy" },
+	{ 'M', 0x81, 0, "col" },
+	{ 'M', 0x82, 0, "floprd" },
+	{ 'M', 0x83, 0, "mediach" },
+	{ 'M', 0x84, 0, "flopwrt" },
+	{ 'M', 0x85, 0, "hardkey" },
+	{ 'M', 0x86, 0, "dot" },
+	{ 'M', 0x87, 0, "ndrv" },
+	{ 'M', 0x88, 0, "mouseoff" },
+	{ 'M', 0x89, 0, "freq" },
+	{ 'M', 0x8a, 0, "mouseon" },
+	{ 'M', 0x8b, 0, "resvalid" },
+	{ 'M', 0x8c, 0, "skopy" },
+	{ 'M', 0x8d, 0, "aesin" },
+	{ 'M', 0x8e, 0, "setrtim" },
+	{ 'M', 0x8f, 0, "rtim" },
+	{ 'M', 0x90, 0, "warmboot" },
+	{ 'M', 0x91, 0, "blitter" },
+	{ 'M', 0x92, 0, "silence" },
+	{ 'M', 0x93, 0, "kbshift" },
+	{ 'M', 0x94, 0, "kopy" },
+
+	/* MIDI: 5 commands */
+	{ 'M', 0x80, 0, "midi on" },
+	{ 'M', 0x81, 0, "midi in" },
+	{ 'M', 0x82, 0, "midi off" },
 	/* 0x83 unused */
-	{ 'M', 0x84, "midi out" },
+	{ 'M', 0x84, 0, "midi out" },
 	/* 0x85 unused */
-	{ 'M', 0x86, "about musician" },
+	{ 'M', 0x86, 0, "about musician" },
 
-    /* GBP: 32 commands */
-	{ 'P', 128, "lights on" },
-	{ 'P', 129, "pready" },
-	{ 'P', 130, "lights off" },
-	{ 'P', 131, "xpen" },
-	{ 'P', 132, "fastwipe" },
-	{ 'P', 133, "paktype" },
-	{ 'P', 134, "dac volume" },
-	{ 'P', 135, "even" },
-	{ 'P', 136, "setpal" },
-	{ 'P', 137, "setprt" },
-	{ 'P', 138, "d crunch" },
-	{ 'P', 139, "eplace" },
-	{ 'P', 140, "elite unpack" },
-	{ 'P', 141, "foffset" },
-	{ 'P', 142, "estop" },
-	{ 'P', 143, "jar" },
-	{ 'P', 144, "mirror" },
-	{ 'P', 145, "percent" },
-	{ 'P', 146, "tiny unpack" },
-	{ 'P', 147, "paksize" },
-	{ 'P', 148, "treble" },
-	{ 'P', 149, "special key" },
-	{ 'P', 150, "bass" },
-	{ 'P', 151, "fstart" },
-	{ 'P', 152, "hcopy" },
-	{ 'P', 153, "flength" },
-	{ 'P', 154, "ca unpack" },
-	{ 'P', 155, "ca pack" },
-	{ 'P', 156, "bcls" },
-	{ 'P', 157, "cookie" },
-	{ 'P', 158, "eplay" },
-	{ 'P', 159, "ypen" },
+	/* GBP: 32 commands */
+	{ 'P', 0x80, 0, "lights on" },
+	{ 'P', 0x81, 0, "pready" },
+	{ 'P', 0x82, 0, "lights off" },
+	{ 'P', 0x83, 0, "xpen" },
+	{ 'P', 0x84, 0, "fastwipe" },
+	{ 'P', 0x85, 0, "paktype" },
+	{ 'P', 0x86, 0, "dac volume" },
+	{ 'P', 0x87, 0, "even" },
+	{ 'P', 0x88, 0, "setpal" },
+	{ 'P', 0x89, 0, "setprt" },
+	{ 'P', 0x8a, 0, "d crunch" },
+	{ 'P', 0x8b, 0, "eplace" },
+	{ 'P', 0x8c, 0, "elite unpack" },
+	{ 'P', 0x8d, 0, "foffset" },
+	{ 'P', 0x8e, 0, "estop" },
+	{ 'P', 0x8f, 0, "jar" },
+	{ 'P', 0x90, 0, "mirror" },
+	{ 'P', 0x91, 0, "percent" },
+	{ 'P', 0x92, 0, "tiny unpack" },
+	{ 'P', 0x93, 0, "paksize" },
+	{ 'P', 0x94, 0, "treble" },
+	{ 'P', 0x95, 0, "special key" },
+	{ 'P', 0x96, 0, "bass" },
+	{ 'P', 0x97, 0, "fstart" },
+	{ 'P', 0x98, 0, "hcopy" },
+	{ 'P', 0x99, 0, "flength" },
+	{ 'P', 0x9a, 0, "ca unpack" },
+	{ 'P', 0x9b, 0, "ca pack" },
+	{ 'P', 0x9c, 0, "bcls" },
+	{ 'P', 0x9d, 0, "cookie" },
+	{ 'P', 0x9e, 0, "eplay" },
+	{ 'P', 0x9f, 0, "ypen" },
 
-    /* Protracker: 3 commands */
-	{ 'P', 0x80, "propack" },
-	{ 'P', 0x81, "mpack" },
-	{ 'P', 0x83, "munpack" },
+	/* Protracker: 3 commands */
+	{ 'P', 0x80, 0, "propack" },
+	{ 'P', 0x81, 0, "mpack" },
+	{ 'P', 0x83, 0, "munpack" },
 
-    /* Missing Link: 33 commands (link1) */
-	{ 'Q', 0x80, "landscape" },
-	{ 'Q', 0x81, "overlap" },
-	{ 'Q', 0x82, "bob" },
-	{ 'Q', 0x83, "map toggle" },
-	{ 'Q', 0x84, "wipe" },
-	{ 'Q', 0x85, "boundary" },
-	{ 'Q', 0x86, "tile" },
-	{ 'Q', 0x87, "palt" },
-	{ 'Q', 0x88, "world" },
-	{ 'Q', 0x89, "musauto" },
-	{ 'Q', 0x8a, "musplay" },
-	{ 'Q', 0x8b, "which block" },
-	{ 'Q', 0x8c, "relocate" },
-	{ 'Q', 0x8d, "p left" },
-	{ 'Q', 0x8e, "p on" },
-	{ 'Q', 0x8f, "p joy" },
-	{ 'Q', 0x90, "p stop" },
-	{ 'Q', 0x91, "p up" },
-	{ 'Q', 0x92, "set block" },
-	{ 'Q', 0x93, "p right" },
-	{ 'Q', 0x94, "palsplit" },
-	{ 'Q', 0x95, "p down" },
-	{ 'Q', 0x96, "floodpal" },
-	{ 'Q', 0x97, "p fire" },
-	{ 'Q', 0x98, "digi play" },
-	{ 'Q', 0x99, "string" },
-	{ 'Q', 0x9a, "samsign" },
-	{ 'Q', 0x9b, "depack" },
-	{ 'Q', 0x9c, "replace blocks" },
-	{ 'Q', 0x9d, "dload" },
-	{ 'Q', 0x9e, "display pc1" },
-	{ 'Q', 0x9f, "dsave" },
-	{ 'Q', 0xa0, "honesty" },
+	/* Missing Link: 33 commands (link1) */
+	{ 'Q', 0x80, 0, "landscape" },
+	{ 'Q', 0x81, 0, "overlap" },
+	{ 'Q', 0x82, 0, "bob" },
+	{ 'Q', 0x83, 0, "map toggle" },
+	{ 'Q', 0x84, 0, "wipe" },
+	{ 'Q', 0x85, 0, "boundary" },
+	{ 'Q', 0x86, 0, "tile" },
+	{ 'Q', 0x87, 0, "palt" },
+	{ 'Q', 0x88, 0, "world" },
+	{ 'Q', 0x89, 0, "musauto" },
+	{ 'Q', 0x8a, 0, "musplay" },
+	{ 'Q', 0x8b, 0, "which block" },
+	{ 'Q', 0x8c, 0, "relocate" },
+	{ 'Q', 0x8d, 0, "p left" },
+	{ 'Q', 0x8e, 0, "p on" },
+	{ 'Q', 0x8f, 0, "p joy" },
+	{ 'Q', 0x90, 0, "p stop" },
+	{ 'Q', 0x91, 0, "p up" },
+	{ 'Q', 0x92, 0, "set block" },
+	{ 'Q', 0x93, 0, "p right" },
+	{ 'Q', 0x94, 0, "palsplit" },
+	{ 'Q', 0x95, 0, "p down" },
+	{ 'Q', 0x96, 0, "floodpal" },
+	{ 'Q', 0x97, 0, "p fire" },
+	{ 'Q', 0x98, 0, "digi play" },
+	{ 'Q', 0x99, 0, "string" },
+	{ 'Q', 0x9a, 0, "samsign" },
+	{ 'Q', 0x9b, 0, "depack" },
+	{ 'Q', 0x9c, 0, "replace blocks" },
+	{ 'Q', 0x9d, 0, "dload" },
+	{ 'Q', 0x9e, 0, "display pc1" },
+	{ 'Q', 0x9f, 0, "dsave" },
+	{ 'Q', 0xa0, 0, "honesty" },
 
-    /* Ninja Tracker: 9 commands */
-	{ 'Q', 0x80, "track play" },
-	{ 'Q', 0x81, "vu meter" },
-	{ 'Q', 0x82, "track frequency" },
-	{ 'Q', 0x83, "track pos" },
-	{ 'Q', 0x84, "track info" },
-	{ 'Q', 0x85, "track pattern" },
+	/* Ninja Tracker: 9 commands */
+	{ 'Q', 0x80, 0, "track play" },
+	{ 'Q', 0x81, 0, "vu meter" },
+	{ 'Q', 0x82, 0, "track frequency" },
+	{ 'Q', 0x83, 0, "track pos" },
+	{ 'Q', 0x84, 0, "track info" },
+	{ 'Q', 0x85, 0, "track pattern" },
 	/* 0x86 unused */
-	{ 'Q', 0x87, "track key" },
-	{ 'Q', 0x88, "track unpack" },
-	{ 'Q', 0x89, "track name" },
+	{ 'Q', 0x87, 0, "track key" },
+	{ 'Q', 0x88, 0, "track unpack" },
+	{ 'Q', 0x89, 0, "track name" },
 
-    /* Missing Link: 28 commands (link2) */
-	{ 'R', 0x80, "joey" },
-	{ 'R', 0x81, "b height" },
-	{ 'R', 0x82, "blit" },
-	{ 'R', 0x83, "b width" },
-	{ 'R', 0x84, "spot" },
-	{ 'R', 0x85, "block amount" },
-	{ 'R', 0x86, "reflect" },
-	{ 'R', 0x87, "compstate" },
-	{ 'R', 0x88, "mozaic" },
-	{ 'R', 0x89, "x limit" },
-	{ 'R', 0x8a, "xy block" },
-	{ 'R', 0x8b, "y limit" },
-	{ 'R', 0x8c, "text" },
-	{ 'R', 0x8d, "mostly harmless" },
-	{ 'R', 0x8e, "wash" },
-	{ 'R', 0x8f, "real length" },
-	{ 'R', 0x90, "reboot" },
-	{ 'R', 0x91, "brightest" },
-	{ 'R', 0x92, "bank load" },
-	{ 'R', 0x93, "bank length" },
-	{ 'R', 0x94, "bank copy" },
-	{ 'R', 0x95, "bank size" },
-	{ 'R', 0x96, "m blit" },
-	{ 'R', 0x97, "win block amount" },
-	{ 'R', 0x98, "replace range" },
-	{ 'R', 0x99, "empty" },
-	{ 'R', 0x9a, "win replace blocks" },
-	{ 'R', 0x9b, "empty2" },
-	{ 'R', 0x9c, "win replace range" },
-	{ 'R', 0x9d, "empty3" },
-	{ 'R', 0x9e, "win xy block" },
+	/* Missing L0, ink: 28 commands (link2) */
+	{ 'R', 0x80, 0, "joey" },
+	{ 'R', 0x81, 0, "b height" },
+	{ 'R', 0x82, 0, "blit" },
+	{ 'R', 0x83, 0, "b width" },
+	{ 'R', 0x84, 0, "spot" },
+	{ 'R', 0x85, 0, "block amount" },
+	{ 'R', 0x86, 0, "reflect" },
+	{ 'R', 0x87, 0, "compstate" },
+	{ 'R', 0x88, 0, "mozaic" },
+	{ 'R', 0x89, 0, "x limit" },
+	{ 'R', 0x8a, 0, "xy block" },
+	{ 'R', 0x8b, 0, "y limit" },
+	{ 'R', 0x8c, 0, "text" },
+	{ 'R', 0x8d, 0, "mostly harmless" },
+	{ 'R', 0x8e, 0, "wash" },
+	{ 'R', 0x8f, 0, "real length" },
+	{ 'R', 0x90, 0, "reboot" },
+	{ 'R', 0x91, 0, "brightest" },
+	{ 'R', 0x92, 0, "bank load" },
+	{ 'R', 0x93, 0, "bank length" },
+	{ 'R', 0x94, 0, "bank copy" },
+	{ 'R', 0x95, 0, "bank size" },
+	{ 'R', 0x96, 0, "m blit" },
+	{ 'R', 0x97, 0, "win block amount" },
+	{ 'R', 0x98, 0, "replace range" },
+	{ 'R', 0x99, 0, "empty" },
+	{ 'R', 0x9a, 0, "win replace blocks" },
+	{ 'R', 0x9b, 0, "empty2" },
+	{ 'R', 0x9c, 0, "win replace range" },
+	{ 'R', 0x9d, 0, "empty3" },
+	{ 'R', 0x9e, 0, "win xy block" },
 
-    /* Missing Link: 13 commands (link3) */
-	{ 'S', 0x80, "many add" },
-	{ 'S', 0x81, "many overlap" },
-	{ 'S', 0x82, "many sub" },
-	{ 'S', 0x83, "function2" },
-	{ 'S', 0x84, "many bob" },
-	{ 'S', 0x85, "function3" },
-	{ 'S', 0x86, "many joey" },
-	{ 'S', 0x87, "hertz" },
-	{ 'S', 0x88, "set hertz" },
-	{ 'S', 0x89, "function4" },
-	{ 'S', 0x8a, "many inc" },
-	{ 'S', 0x8b, "function5" },
-	{ 'S', 0x8c, "many dec" },
-	{ 'S', 0x8d, "function6" },
-	{ 'S', 0x8e, "raster" },
-	{ 'S', 0x8f, "function7" },
-	{ 'S', 0x90, "bullet" },
-	{ 'S', 0x91, "function8" },
-	{ 'S', 0x92, "many bullet" },
-	{ 'S', 0x93, "function9" },
-	{ 'S', 0x94, "many spot" },
+	/* Missing Link: 13 commands (link3) */
+	{ 'S', 0x80, 0, "many add" },
+	{ 'S', 0x81, 0, "many overlap" },
+	{ 'S', 0x82, 0, "many sub" },
+	{ 'S', 0x83, 0, "function2" },
+	{ 'S', 0x84, 0, "many bob" },
+	{ 'S', 0x85, 0, "function3" },
+	{ 'S', 0x86, 0, "many joey" },
+	{ 'S', 0x87, 0, "hertz" },
+	{ 'S', 0x88, 0, "set hertz" },
+	{ 'S', 0x89, 0, "function4" },
+	{ 'S', 0x8a, 0, "many inc" },
+	{ 'S', 0x8b, 0, "function5" },
+	{ 'S', 0x8c, 0, "many dec" },
+	{ 'S', 0x8d, 0, "function6" },
+	{ 'S', 0x8e, 0, "raster" },
+	{ 'S', 0x8f, 0, "function7" },
+	{ 'S', 0x90, 0, "bullet" },
+	{ 'S', 0x91, 0, "function8" },
+	{ 'S', 0x92, 0, "many bullet" },
+	{ 'S', 0x93, 0, "function9" },
+	{ 'S', 0x94, 0, "many spot" },
 
 	/* STOS 3D: 59 commands */
-	{ 'S', 0x80, "td priority" },
-	{ 'S', 0x81, "td visible" },
-	{ 'S', 0x82, "td load" },
-	{ 'S', 0x83, "td range" },
-	{ 'S', 0x84, "td clear all" },
-	{ 'S', 0x85, "td position x" },
-	{ 'S', 0x86, "td object" },
-	{ 'S', 0x87, "td position y" },
-	{ 'S', 0x88, "td screen height" },
-	{ 'S', 0x89, "td position z" },
-	{ 'S', 0x8a, "td kill" },
-	{ 'S', 0x8b, "td attitude a" },
-	{ 'S', 0x8c, "td move x" },
-	{ 'S', 0x8d, "td attitude b" },
-	{ 'S', 0x8e, "td move y" },
-	{ 'S', 0x8f, "td attitude b" },
-	{ 'S', 0x90, "td move z" },
-	{ 'S', 0x91, "td collide" },
-	{ 'S', 0x92, "td move rel" },
-	{ 'S', 0x93, "td zone x" },
-	{ 'S', 0x94, "td move" },
-	{ 'S', 0x95, "td zone y" },
-	{ 'S', 0x96, "td angle a" },
-	{ 'S', 0x97, "td zone z" },
-	{ 'S', 0x98, "td angle b" },
-	{ 'S', 0x99, "td zone r" },
-	{ 'S', 0x9a, "td angle c" },
-	{ 'S', 0x9b, "td world x" },
-	{ 'S', 0x9c, "td angle rel" },
-	{ 'S', 0x9d, "td world y" },
-	{ 'S', 0x9e, "td angle" },
-	{ 'S', 0x9f, "td world z" },
+	{ 'S', 0x80, 0, "td priority" },
+	{ 'S', 0x81, 0, "td visible" },
+	{ 'S', 0x82, 0, "td load" },
+	{ 'S', 0x83, 0, "td range" },
+	{ 'S', 0x84, 0, "td clear all" },
+	{ 'S', 0x85, 0, "td position x" },
+	{ 'S', 0x86, 0, "td object" },
+	{ 'S', 0x87, 0, "td position y" },
+	{ 'S', 0x88, 0, "td screen height" },
+	{ 'S', 0x89, 0, "td position z" },
+	{ 'S', 0x8a, 0, "td kill" },
+	{ 'S', 0x8b, 0, "td attitude a" },
+	{ 'S', 0x8c, 0, "td move x" },
+	{ 'S', 0x8d, 0, "td attitude b" },
+	{ 'S', 0x8e, 0, "td move y" },
+	{ 'S', 0x8f, 0, "td attitude b" },
+	{ 'S', 0x90, 0, "td move z" },
+	{ 'S', 0x91, 0, "td collide" },
+	{ 'S', 0x92, 0, "td move rel" },
+	{ 'S', 0x93, 0, "td zone x" },
+	{ 'S', 0x94, 0, "td move" },
+	{ 'S', 0x95, 0, "td zone y" },
+	{ 'S', 0x96, 0, "td angle a" },
+	{ 'S', 0x97, 0, "td zone z" },
+	{ 'S', 0x98, 0, "td angle b" },
+	{ 'S', 0x99, 0, "td zone r" },
+	{ 'S', 0x9a, 0, "td angle c" },
+	{ 'S', 0x9b, 0, "td world x" },
+	{ 'S', 0x9c, 0, "td angle rel" },
+	{ 'S', 0x9d, 0, "td world y" },
+	{ 'S', 0x9e, 0, "td angle" },
+	{ 'S', 0x9f, 0, "td world z" },
 	/* 0xa0 unused */
-	{ 'S', 0xa1, "td view x" },
-	{ 'S', 0xa2, "td delete zone" },
-	{ 'S', 0xa3, "td view y" },
-	{ 'S', 0xa4, "td redraw" },
-	{ 'S', 0xa5, "td view z" },
-	{ 'S', 0xa6, "td set zone" },
-	{ 'S', 0xa7, "td screen x" },
-	{ 'S', 0xa8, "td cls" },
-	{ 'S', 0xa9, "td screen y" },
-	{ 'S', 0xaa, "td background" },
-	{ 'S', 0xab, "td bearing a" },
-	{ 'S', 0xac, "td dir" },
-	{ 'S', 0xad, "td bearing b" },
-	{ 'S', 0xae, "td set colour" },
-	{ 'S', 0xaf, "td bearing r" },
-	{ 'S', 0xb0, "td anim rel" },
-	{ 'S', 0xb1, "td anim point x" },
-	{ 'S', 0xb2, "td init" },
-	{ 'S', 0xb3, "td anim point y" },
-	{ 'S', 0xb4, "td face" },
-	{ 'S', 0xb5, "td anim point z" },
-	{ 'S', 0xb6, "td forward" },
-	{ 'S', 0xb7, "td advanced" },
+	{ 'S', 0xa1, 0, "td view x" },
+	{ 'S', 0xa2, 0, "td delete zone" },
+	{ 'S', 0xa3, 0, "td view y" },
+	{ 'S', 0xa4, 0, "td redraw" },
+	{ 'S', 0xa5, 0, "td view z" },
+	{ 'S', 0xa6, 0, "td set zone" },
+	{ 'S', 0xa7, 0, "td screen x" },
+	{ 'S', 0xa8, 0, "td cls" },
+	{ 'S', 0xa9, 0, "td screen y" },
+	{ 'S', 0xaa, 0, "td background" },
+	{ 'S', 0xab, 0, "td bearing a" },
+	{ 'S', 0xac, 0, "td dir" },
+	{ 'S', 0xad, 0, "td bearing b" },
+	{ 'S', 0xae, 0, "td set colour" },
+	{ 'S', 0xaf, 0, "td bearing r" },
+	{ 'S', 0xb0, 0, "td anim rel" },
+	{ 'S', 0xb1, 0, "td anim point x" },
+	{ 'S', 0xb2, 0, "td init" },
+	{ 'S', 0xb3, 0, "td anim point y" },
+	{ 'S', 0xb4, 0, "td face" },
+	{ 'S', 0xb5, 0, "td anim point z" },
+	{ 'S', 0xb6, 0, "td forward" },
+	{ 'S', 0xb7, 0, "td advanced" },
 	/* 0xb8 unused */
-	{ 'S', 0xb9, "td debug" },
-	{ 'S', 0xba, "td anim" },
+	{ 'S', 0xb9, 0, "td debug" },
+	{ 'S', 0xba, 0, "td anim" },
 	/* 0xbb unused */
-	{ 'S', 0xbc, "td surface points" },
+	{ 'S', 0xbc, 0, "td surface points" },
 	/* 0xbd unused */
-	{ 'S', 0xbe, "td surface" },
+	{ 'S', 0xbe, 0, "td surface" },
 
-    /* STOS Tracker: 9 commands (track_7/track_14) */
-	{ 'S', 0x80, "track load" },
-	{ 'S', 0x81, "track scan" },
-	{ 'S', 0x82, "track bank" },
-	{ 'S', 0x83, "track vu" },
-	{ 'S', 0x84, "track play" },
+	/* STOS Tracker: 9 commands (track_7/track_14) */
+	{ 'S', 0x80, 0, "track load" },
+	{ 'S', 0x81, 0, "track scan" },
+	{ 'S', 0x82, 0, "track bank" },
+	{ 'S', 0x83, 0, "track vu" },
+	{ 'S', 0x84, 0, "track play" },
 	/* 0x85 unused */
-	{ 'S', 0x86, "track key" },
+	{ 'S', 0x86, 0, "track key" },
 	/* 0x87 unused */
-	{ 'S', 0x88, "track volume" },
+	{ 'S', 0x88, 0, "track volume" },
 	/* 0x89 unused */
-	{ 'S', 0x8a, "track tempo" },
+	{ 'S', 0x8a, 0, "track tempo" },
 	/* 0x8b unused */
-	{ 'S', 0x8c, "track stop" },
+	{ 'S', 0x8c, 0, "track stop" },
 
-    /* STOS Tracker: 9 commands (track_10) */
-	{ 'T', 0x80, "track load" },
-	{ 'T', 0x81, "track scan" },
-	{ 'T', 0x82, "track bank" },
-	{ 'T', 0x83, "track vu" },
-	{ 'T', 0x84, "track play" },
+	/* STOS Tracker: 9 commands (track_10) */
+	{ 'T', 0x80, 0, "track load" },
+	{ 'T', 0x81, 0, "track scan" },
+	{ 'T', 0x82, 0, "track bank" },
+	{ 'T', 0x83, 0, "track vu" },
+	{ 'T', 0x84, 0, "track play" },
 	/* 0x85 unused */
-	{ 'T', 0x86, "track key" },
+	{ 'T', 0x86, 0, "track key" },
 	/* 0x87 unused */
-	{ 'T', 0x88, "track volume" },
+	{ 'T', 0x88, 0, "track volume" },
 	/* 0x89 unused */
-	{ 'T', 0x8a, "track tempo" },
+	{ 'T', 0x8a, 0, "track tempo" },
 	/* 0x8b unused */
-	{ 'T', 0x8c, "track stop" },
+	{ 'T', 0x8c, 0, "track stop" },
 
-    /* Control: 61 commands */
-	{ 'W', 0x80, "switch on" },
-	{ 'W', 0x81, "case" },
-	{ 'W', 0x82, "switch off" },
-	{ 'W', 0x83, "otherwise" },
-	{ 'W', 0x84, "cmove" },
+	/* 3D menu */
+	{ 'U', 0x80, 0, "_fmenu init" },
+	{ 'U', 0x81, 0, "_fmenu select" },
+	{ 'U', 0x82, 0, "_fmenu on" },
+	{ 'U', 0x83, 0, "_fmenu item" },
+	{ 'U', 0x84, 0, "_fmenu$ off" },
+	{ 'U', 0x85, 0, "_fmenu height" },
+	{ 'U', 0x86, 0, "_fmenu$ on" },
+	/* 0x87 unused */
+	{ 'U', 0x88, 0, "_fmenu$" },
+	/* 0x89 unused */
+	{ 'U', 0x8a, 0, "_fmenu kill" },
+	/* 0x8b unused */
+	{ 'U', 0x8c, 0, "_fmenu freeze" },
+	/* 0x8d unused */
+	{ 'U', 0x8e, 0, "_fmenu uncheck item" },
+	/* 0x8f unused */
+	{ 'U', 0x90, 0, "_fmenu check item" },
+	{ 'U', 0x91, 0, "_form alert" },
+	{ 'U', 0x92, 0, "_fmenu cmds" },
+
+	/* Control: 61 commands */
+	{ 'W', 0x80, EXTIF_CONTROL, "switch on" },
+	{ 'W', 0x81, EXTIF_CONTROL, "case" },
+	{ 'W', 0x82, EXTIF_CONTROL, "switch off" },
+	{ 'W', 0x83, EXTIF_CONTROL, "otherwise" },
+	{ 'W', 0x84, EXTIF_CONTROL, "cmove" },
 	/* 0x85 unused */
-	{ 'W', 0x86, "write" },
-	{ 'W', 0x87, "parallel" },
-	{ 'W', 0x88, "cremember" },
-	{ 'W', 0x89, "para fire" },
-	{ 'W', 0x8a, "crecall" },
-	{ 'W', 0x8b, "add" },
-	{ 'W', 0x8c, "ctrl" },
-	{ 'W', 0x8d, "test megazone" },
-	{ 'W', 0x8e, "para on" },
-	{ 'W', 0x8f, "para up" },
-	{ 'W', 0x90, "para off" },
-	{ 'W', 0x91, "para down" },
-	{ 'W', 0x92, "init megazone" },
-	{ 'W', 0x93, "para left" },
-	{ 'W', 0x94, "set megazone" },
-	{ 'W', 0x95, "klatu" },
-	{ 'W', 0x96, "range megazone" },
-	{ 'W', 0x97, "exist$" },
-	{ 'W', 0x98, "map write" },
+	{ 'W', 0x86, EXTIF_CONTROL, "write" },
+	{ 'W', 0x87, EXTIF_CONTROL, "parallel" },
+	{ 'W', 0x88, EXTIF_CONTROL, "cremember" },
+	{ 'W', 0x89, EXTIF_CONTROL, "para fire" },
+	{ 'W', 0x8a, EXTIF_CONTROL, "crecall" },
+	{ 'W', 0x8b, EXTIF_CONTROL, "add" },
+	{ 'W', 0x8c, EXTIF_CONTROL, "ctrl" },
+	{ 'W', 0x8d, EXTIF_CONTROL, "test megazone" },
+	{ 'W', 0x8e, EXTIF_CONTROL, "para on" },
+	{ 'W', 0x8f, EXTIF_CONTROL, "para up" },
+	{ 'W', 0x90, EXTIF_CONTROL, "para off" },
+	{ 'W', 0x91, EXTIF_CONTROL, "para down" },
+	{ 'W', 0x92, EXTIF_CONTROL, "init megazone" },
+	{ 'W', 0x93, EXTIF_CONTROL, "para left" },
+	{ 'W', 0x94, EXTIF_CONTROL, "set megazone" },
+	{ 'W', 0x95, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0x96, EXTIF_CONTROL, "range megazone" },
+	{ 'W', 0x97, EXTIF_CONTROL, "exist$" },
+	{ 'W', 0x98, EXTIF_CONTROL, "map write" },
 	/* 0x99 unused */
-	{ 'W', 0x9a, "spread" },
-	{ 'W', 0x9b, "para right" },
-	{ 'W', 0x9c, "brdr remove" },
-	{ 'W', 0x9d, "crack pac" },
-	{ 'W', 0x9e, "crack unpac" },
-	{ 'W', 0x9f, "map address" },
-	{ 'W', 0xa0, "quick screen" },
-	{ 'W', 0xa1, "klatu" },
-	{ 'W', 0xa2, "font" },
-	{ 'W', 0xa3, "map h" },
-	{ 'W', 0xa4, "image put" },
-	{ 'W', 0xa5, "map w" },
-	{ 'W', 0xa6, "screen size" },
-	{ 'W', 0xa7, "klatu" },
-	{ 'W', 0xa8, "hscroll" },
-	{ 'W', 0xa9, "image width" },
-	{ 'W', 0xaa, "image palette" },
-	{ 'W', 0xab, "image height" },
-	{ 'W', 0xac, "many image" },
-	{ 'W', 0xad, "map read" },
-	{ 'W', 0xae, "set clip" },
-	{ 'W', 0xaf, "klatu" },
-	{ 'W', 0xb0, "turbocopy" },
-	{ 'W', 0xb1, "klatu" },
-	{ 'W', 0xb2, "bigcls" },
-	{ 'W', 0xb3, "inside" },
-	{ 'W', 0xb4, "bigcopy" },
-	{ 'W', 0xb5, "image collide" },
-	{ 'W', 0xb6, "screen offset" },
-	{ 'W', 0xb7, "image mcollide" },
-	{ 'W', 0xb8, "cylinder" },
-	{ 'W', 0xb9, "klatu" },
-	{ 'W', 0xba, "image map" },
-	{ 'W', 0xbb, "jagjoy" },
-	{ 'W', 0xbc, "set map" },
-	{ 'W', 0xbd, "klatu" },
-	{ 'W', 0xbe, "image offset" },
+	{ 'W', 0x9a, EXTIF_CONTROL, "spread" },
+	{ 'W', 0x9b, EXTIF_CONTROL, "para right" },
+	{ 'W', 0x9c, EXTIF_CONTROL, "brdr remove" },
+	{ 'W', 0x9d, EXTIF_CONTROL, "crack pac" },
+	{ 'W', 0x9e, EXTIF_CONTROL, "crack unpac" },
+	{ 'W', 0x9f, EXTIF_CONTROL, "map address" },
+	{ 'W', 0xa0, EXTIF_CONTROL, "quick screen" },
+	{ 'W', 0xa1, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0xa2, EXTIF_CONTROL, "font" },
+	{ 'W', 0xa3, EXTIF_CONTROL, "map h" },
+	{ 'W', 0xa4, EXTIF_CONTROL, "image put" },
+	{ 'W', 0xa5, EXTIF_CONTROL, "map w" },
+	{ 'W', 0xa6, EXTIF_CONTROL, "screen size" },
+	{ 'W', 0xa7, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0xa8, EXTIF_CONTROL, "hscroll" },
+	{ 'W', 0xa9, EXTIF_CONTROL, "image width" },
+	{ 'W', 0xaa, EXTIF_CONTROL, "image palette" },
+	{ 'W', 0xab, EXTIF_CONTROL, "image height" },
+	{ 'W', 0xac, EXTIF_CONTROL, "many image" },
+	{ 'W', 0xad, EXTIF_CONTROL, "map read" },
+	{ 'W', 0xae, EXTIF_CONTROL, "set clip" },
+	{ 'W', 0xaf, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0xb0, EXTIF_CONTROL, "turbocopy" },
+	{ 'W', 0xb1, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0xb2, EXTIF_CONTROL, "bigcls" },
+	{ 'W', 0xb3, EXTIF_CONTROL, "inside" },
+	{ 'W', 0xb4, EXTIF_CONTROL, "bigcopy" },
+	{ 'W', 0xb5, EXTIF_CONTROL, "image collide" },
+	{ 'W', 0xb6, EXTIF_CONTROL, "screen offset" },
+	{ 'W', 0xb7, EXTIF_CONTROL, "image mcollide" },
+	{ 'W', 0xb8, EXTIF_CONTROL, "cylinder" },
+	{ 'W', 0xb9, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0xba, EXTIF_CONTROL, "image map" },
+	{ 'W', 0xbb, EXTIF_CONTROL, "jagjoy" },
+	{ 'W', 0xbc, EXTIF_CONTROL, "set map" },
+	{ 'W', 0xbd, EXTIF_CONTROL, "klatu" },
+	{ 'W', 0xbe, EXTIF_CONTROL, "image offset" },
 
-	{ 'Y', 0x80, "dma reset" },
-	{ 'Y', 0x81, "locksound" },
-	{ 'Y', 0x82, "dma buffer" },
-	{ 'Y', 0x83, "unlocksound" },
-	{ 'Y', 0x84, "devconnect" },
-	{ 'Y', 0x85, "dma status" },
-	{ 'Y', 0x86, "dma samsign" },
-	{ 'Y', 0x87, "dma samrecptr" },
-	{ 'Y', 0x88, "dma setmode" },
-	{ 'Y', 0x89, "dma samplayptr" },
-	{ 'Y', 0x8a, "dma samtracks" },
-	{ 'Y', 0x8b, "dma samstatus" },
-	{ 'Y', 0x8c, "dma montrack" },
-	{ 'Y', 0x8d, "dma samtype" },
-	{ 'Y', 0x8e, "dma interrupt" },
-	{ 'Y', 0x8f, "dma samfreq" },
-	{ 'Y', 0x90, "dma samrecord" },
-	{ 'Y', 0x91, "dma sammode" },
-	{ 'Y', 0x92, "dma playloop off" },
-	{ 'Y', 0x93, "dma sampval" },
-	{ 'Y', 0x94, "dma playloop on" },
-	{ 'Y', 0x95, "dma samconvert" },
-	{ 'Y', 0x96, "dma samplay" },
-	{ 'Y', 0x97, "dma samsize" },
-	{ 'Y', 0x98, "dma samthru" },
+	/* Falcon gfx3 */
+	{ 'V', 0x80, 0, "_falc pen" },
+	{ 'V', 0x81, 0, "_falc xcurs" },
+	{ 'V', 0x82, 0, "_falc paper" },
+	{ 'V', 0x83, 0, "_falc ycurs" },
+	{ 'V', 0x84, 0, "_falc locate" },
+	{ 'V', 0x85, 0, "_stos charwidth" },
+	{ 'V', 0x86, 0, "_falc print" },
+	{ 'V', 0x87, 0, "_stos charheight" },
+	{ 'V', 0x88, 0, "_stosfont" },
+	{ 'V', 0x89, 0, "_falc multipen status" },
+	{ 'V', 0x8a, 0, "_falc multipen off" },
+	{ 'V', 0x8b, 0, "_charset addr" },
+	{ 'V', 0x8c, 0, "_falc multipen on" },
+	{ 'V', 0x8d, 0, "_tc rgb" },
+	{ 'V', 0x8e, 0, "_falc ink" },
+	/* 0x8f unused */
+	{ 'V', 0x90, 0, "_falc draw mode" },
+	{ 'V', 0x91, 0, "_get pixel" },
+	{ 'V', 0x92, 0, "_def linepattern" },
+	/* 0x93 unused */
+	{ 'V', 0x94, 0, "_def stipple" },
+	/* 0x95 unused */
+	{ 'V', 0x96, 0, "_falc plot" },
+	/* 0x97 unused */
+	{ 'V', 0x98, 0, "_falc line" },
 	/* 0x99 unused */
-	{ 'Y', 0x9a, "dma samstop" },
+	{ 'V', 0x9a, 0, "_falc box" },
 	/* 0x9b unused */
-	{ 'Y', 0x9c, "adder in" },
+	{ 'V', 0x9c, 0, "_falc bar" },
 	/* 0x9d unused */
-	{ 'Y', 0x9e, "adc input" },
+	{ 'V', 0x9e, 0, "_falc polyline" },
+	/* 0x9f unused */
+	{ 'V', 0xa0, 0, "_falc centre" },
+	/* 0xa1 unused */
+	{ 'V', 0xa2, 0, "_falc polyfill" },
+	/* 0xa3 unused */
+	{ 'V', 0xa4, 0, "_falc contourfill" },
+	/* 0xa5 unused */
+	{ 'V', 0xa6, 0, "_falc circle" },
+	/* 0xa7 unused */
+	{ 'V', 0xa8, 0, "_falc ellipse" },
+	/* 0xa9 unused */
+	{ 'V', 0xaa, 0, "_falc earc" },
+	/* 0xab unused */
+	{ 'V', 0xac, 0, "_falc arc" },
+
+	/* Falcon sys_ctrl extension */
+	{ 'W', 0x80, EXTIF_SYSCTRL, "coldboot" },
+	{ 'W', 0x81, EXTIF_SYSCTRL, "cookieptr" },
+	{ 'W', 0x82, EXTIF_SYSCTRL, "warmboot" },
+	{ 'W', 0x83, EXTIF_SYSCTRL, "cookie" },
+	{ 'W', 0x84, EXTIF_SYSCTRL, "caps on" },
+	{ 'W', 0x85, EXTIF_SYSCTRL, "_tos$" },
+	{ 'W', 0x86, EXTIF_SYSCTRL, "caps off" },
+	{ 'W', 0x87, EXTIF_SYSCTRL, "_phystop" },
+	{ 'W', 0x88, EXTIF_SYSCTRL, "_cpuspeed" },
+	{ 'W', 0x89, EXTIF_SYSCTRL, "_memtop" },
+	{ 'W', 0x8a, EXTIF_SYSCTRL, "_blitterspeed" },
+	{ 'W', 0x8b, EXTIF_SYSCTRL, "_busmode" },
+	{ 'W', 0x8c, EXTIF_SYSCTRL, "_stebus" },
+	{ 'W', 0x8d, EXTIF_SYSCTRL, "paddle x" },
+	{ 'W', 0x8e, EXTIF_SYSCTRL, "_falconbus" },
+	{ 'W', 0x8f, EXTIF_SYSCTRL, "paddle y" },
+	{ 'W', 0x90, EXTIF_SYSCTRL, "_cpucache on" },
+	{ 'W', 0x91, EXTIF_SYSCTRL, "_cpucache stat" },
+	{ 'W', 0x92, EXTIF_SYSCTRL, "_cpucache off" },
+	{ 'W', 0x93, EXTIF_SYSCTRL, "lpen x" },
+	{ 'W', 0x94, EXTIF_SYSCTRL, "ide on" },
+	{ 'W', 0x95, EXTIF_SYSCTRL, "lpen y" },
+	{ 'W', 0x96, EXTIF_SYSCTRL, "ide off" },
+	{ 'W', 0x97, EXTIF_SYSCTRL, "_nemesis" },
+	{ 'W', 0x98, EXTIF_SYSCTRL, "_set printer" },
+	{ 'W', 0x99, EXTIF_SYSCTRL, "_printer ready" },
+	{ 'W', 0x9a, EXTIF_SYSCTRL, "_file attr" },
+	{ 'W', 0x9b, EXTIF_SYSCTRL, "kbshift" },
+	{ 'W', 0x9c, EXTIF_SYSCTRL, "code$" },
+	{ 'W', 0x9d, EXTIF_SYSCTRL, "_aes in" },
+	{ 'W', 0x9e, EXTIF_SYSCTRL, "uncode$" },
+	{ 'W', 0x9f, EXTIF_SYSCTRL, "_file exist" },
+	/* 0xa0 unused */
+	{ 'W', 0xa1, EXTIF_SYSCTRL, "_add cbound" },
+	{ 'W', 0xa2, EXTIF_SYSCTRL, "lset$" },
+	{ 'W', 0xa3, EXTIF_SYSCTRL, "_sub cbound" },
+	{ 'W', 0xa4, EXTIF_SYSCTRL, "rset$" },
+	{ 'W', 0xa5, EXTIF_SYSCTRL, "_add ubound" },
+	{ 'W', 0xa6, EXTIF_SYSCTRL, "st mouse on" },
+	{ 'W', 0xa7, EXTIF_SYSCTRL, "_sub lbound" },
+	{ 'W', 0xa8, EXTIF_SYSCTRL, "st mouse off" },
+	{ 'W', 0xa9, EXTIF_SYSCTRL, "odd" },
+	{ 'W', 0xaa, EXTIF_SYSCTRL, "st mouse colour" },
+	{ 'W', 0xab, EXTIF_SYSCTRL, "even" },
+	{ 'W', 0xac, EXTIF_SYSCTRL, "_limit st mouse" },
+	{ 'W', 0xad, EXTIF_SYSCTRL, "st mouse stat" },
+	{ 'W', 0xae, EXTIF_SYSCTRL, "st mouse" },
+	{ 'W', 0xaf, EXTIF_SYSCTRL, "_fileselect$" },
+	/* 0xb0 unused */
+	{ 'W', 0xb1, EXTIF_SYSCTRL, "_jagpad direction" },
+	/* 0xb2 unused */
+	{ 'W', 0xb3, EXTIF_SYSCTRL, "_jagpad fire" },
+	/* 0xb4 unused */
+	{ 'W', 0xb5, EXTIF_SYSCTRL, "_jagpad pause" },
+	/* 0xb6 unused */
+	{ 'W', 0xb7, EXTIF_SYSCTRL, "_jagpad option" },
+	/* 0xb8 unused */
+	{ 'W', 0xb9, EXTIF_SYSCTRL, "_jagpad key$" },
+	{ 'W', 0xba, EXTIF_SYSCTRL, "sys cmds" },
+
+	/* Falcon video */
+	{ 'X', 0x80, 0, "vsetmode" },
+	{ 'X', 0x81, 0, "vgetmode" },
+	{ 'X', 0x82, 0, "_falc cls" },
+	{ 'X', 0x83, 0, "vgetsize" },
+	{ 'X', 0x84, 0, "vgetpalt" },
+	{ 'X', 0x85, 0, "montype" },
+	{ 'X', 0x86, 0, "vsetpalt" },
+	{ 'X', 0x87, 0, "whichmode" },
+	{ 'X', 0x88, 0, "_get spritepalette" },
+	{ 'X', 0x89, 0, "scr width" },
+	{ 'X', 0x8a, 0, "_hardphysic" },
+	{ 'X', 0x8b, 0, "scr height" },
+	{ 'X', 0x8c, 0, "_setcolour" },
+	{ 'X', 0x8d, 0, "_getcolour" },
+	{ 'X', 0x8e, 0, "_get st palette" },
+	{ 'X', 0x8f, 0, "_falc rgb" },
+	{ 'X', 0x90, 0, "palfade in" },
+	{ 'X', 0x91, 0, "_falc palt" },
+	{ 'X', 0x92, 0, "palfade out" },
+	{ 'X', 0x93, 0, "darkest" },
+	{ 'X', 0x94, 0, "quickwipe" },
+	{ 'X', 0x95, 0, "brightest" },
+	{ 'X', 0x96, 0, "ilbmpalt" },
+	{ 'X', 0x97, 0, "_get red" },
+	{ 'X', 0x98, 0, "_shift off" },
+	{ 'X', 0x99, 0, "_get green" },
+	{ 'X', 0x9a, 0, "_shift" },
+	{ 'X', 0x9b, 0, "_get blue" },
+	/* 0x9c unused */
+	{ 'X', 0x9d, 0, "vget ilbm mode" },
+	/* 0x9e unused */
+	{ 'X', 0x9f, 0, "dpack ilbm" },
+	/* 0xa0 unused */
+	{ 'X', 0xa1, 0, "fmchunk" },
+	/* 0xa2 unused */
+	{ 'X', 0xa3, 0, "_falc zone" },
+	/* 0xa4 unused */
+	{ 'X', 0xa5, 0, "ilbmchunk" },
+	{ 'X', 0xa6, 0, "_reset falc zone" },
+	{ 'X', 0xa7, 0, "bmhdchunk" },
+	{ 'X', 0xa8, 0, "_set falc zone" },
+	{ 'X', 0xa9, 0, "cmapchunk" },
+	{ 'X', 0xaa, 0, "_paste pi1" },
+	{ 'X', 0xab, 0, "bodychunk" },
+	{ 'X', 0xac, 0, "_bitblit" },
+	/* 0xad unused */
+	{ 'X', 0xae, 0, "_convert pi1" },
+
+	{ 'Y', 0x80, 0, "dma reset" },
+	{ 'Y', 0x81, 0, "locksound" },
+	{ 'Y', 0x82, 0, "dma buffer" },
+	{ 'Y', 0x83, 0, "unlocksound" },
+	{ 'Y', 0x84, 0, "devconnect" },
+	{ 'Y', 0x85, 0, "dma status" },
+	{ 'Y', 0x86, 0, "dma samsign" },
+	{ 'Y', 0x87, 0, "dma samrecptr" },
+	{ 'Y', 0x88, 0, "dma setmode" },
+	{ 'Y', 0x89, 0, "dma samplayptr" },
+	{ 'Y', 0x8a, 0, "dma samtracks" },
+	{ 'Y', 0x8b, 0, "dma samstatus" },
+	{ 'Y', 0x8c, 0, "dma montrack" },
+	{ 'Y', 0x8d, 0, "dma samtype" },
+	{ 'Y', 0x8e, 0, "dma interrupt" },
+	{ 'Y', 0x8f, 0, "dma samfreq" },
+	{ 'Y', 0x90, 0, "dma samrecord" },
+	{ 'Y', 0x91, 0, "dma sammode" },
+	{ 'Y', 0x92, 0, "dma playloop off" },
+	{ 'Y', 0x93, 0, "dma sampval" },
+	{ 'Y', 0x94, 0, "dma playloop on" },
+	{ 'Y', 0x95, 0, "dma samconvert" },
+	{ 'Y', 0x96, 0, "dma samplay" },
+	{ 'Y', 0x97, 0, "dma samsize" },
+	{ 'Y', 0x98, 0, "dma samthru" },
+	/* 0x99 unused */
+	{ 'Y', 0x9a, 0, "dma samstop" },
+	/* 0x9b unused */
+	{ 'Y', 0x9c, 0, "adder in" },
+	/* 0x9d unused */
+	{ 'Y', 0x9e, 0, "adc input" },
 	/* 0x9f unused */
 	/* 0xa0 unused */
 	/* 0xa1 unused */
-	{ 'Y', 0xa2, "left gain" },
+	{ 'Y', 0xa2, 0, "left gain" },
 	/* 0xa3 unused */
-	{ 'Y', 0xa4, "right gain" },
+	{ 'Y', 0xa4, 0, "right gain" },
 	/* 0xa5 unused */
-	{ 'Y', 0xa6, "left volume" },
+	{ 'Y', 0xa6, 0, "left volume" },
 	/* 0xa7 unused */
-	{ 'Y', 0xa8, "right volume" },
+	{ 'Y', 0xa8, 0, "right volume" },
 	/* 0xa9 unused */
-	{ 'Y', 0xaa, "speaker off" },
+	{ 'Y', 0xaa, 0, "speaker off" },
 	/* 0xab unused */
-	{ 'Y', 0xac, "speaker on" },
+	{ 'Y', 0xac, 0, "speaker on" },
 
-    /* Cyber: 2 commands */
-	{ 'Y', 0x80, "cyber" },
+	/* Cyber: 2 commands */
+	{ 'Y', 0x80, 0, "cyber" },
 	/* 0x81 unused */
-	{ 'Y', 0x82, "view cyber" },
+	{ 'Y', 0x82, 0, "view cyber" },
 
 	/* Falcon tracker mod */
-	{ 'Z', 0x80, "_tracker reset" },
-	{ 'Z', 0x81, "_tracker init" },
-	{ 'Z', 0x82, "_tracker play" },
-	{ 'Z', 0x83, "_tracker title$" },
-	{ 'Z', 0x84, "_tracker loop on" },
-	{ 'Z', 0x85, "_tracker format$" },
-	{ 'Z', 0x86, "_tracker loop off" },
-	{ 'Z', 0x87, "_tracker startaddress" },
-	{ 'Z', 0x88, "_tracker stop" },
-	{ 'Z', 0x89, "_tracker size" },
-	{ 'Z', 0x8a, "_tracker pause" },
-	{ 'Z', 0x8b, "_tracker songlength" },
-	{ 'Z', 0x8c, "_tracker speed" },
-	{ 'Z', 0x8d, "_tracker instruments max" },
-	{ 'Z', 0x8e, "_tracker volume" },
-	{ 'Z', 0x8f, "_tracker status" },
-	{ 'Z', 0x90, "_tracker copy" },
-	{ 'Z', 0x91, "_tracker songpos" },
+	{ 'Z', 0x80, 0, "_tracker reset" },
+	{ 'Z', 0x81, 0, "_tracker init" },
+	{ 'Z', 0x82, 0, "_tracker play" },
+	{ 'Z', 0x83, 0, "_tracker title$" },
+	{ 'Z', 0x84, 0, "_tracker loop on" },
+	{ 'Z', 0x85, 0, "_tracker format$" },
+	{ 'Z', 0x86, 0, "_tracker loop off" },
+	{ 'Z', 0x87, 0, "_tracker startaddress" },
+	{ 'Z', 0x88, 0, "_tracker stop" },
+	{ 'Z', 0x89, 0, "_tracker size" },
+	{ 'Z', 0x8a, 0, "_tracker pause" },
+	{ 'Z', 0x8b, 0, "_tracker songlength" },
+	{ 'Z', 0x8c, 0, "_tracker speed" },
+	{ 'Z', 0x8d, 0, "_tracker instruments max" },
+	{ 'Z', 0x8e, 0, "_tracker volume" },
+	{ 'Z', 0x8f, 0, "_tracker status" },
+	{ 'Z', 0x90, 0, "_tracker copy" },
+	{ 'Z', 0x91, 0, "_tracker songpos" },
 	/* 0x92 unused */
-	{ 'Z', 0x93, "_tracker pattpos" },
-	{ 'Z', 0x94, "_tracker ffwd" },
-	{ 'Z', 0x95, "_tracker sample title$" },
-	{ 'Z', 0x96, "_tracker songprev" },
-	{ 'Z', 0x97, "_tracker voices" },
-	{ 'Z', 0x98, "_tracker songnext" },
-	{ 'Z', 0x99, "_tracker vu" },
+	{ 'Z', 0x93, 0, "_tracker pattpos" },
+	{ 'Z', 0x94, 0, "_tracker ffwd" },
+	{ 'Z', 0x95, 0, "_tracker sample title$" },
+	{ 'Z', 0x96, 0, "_tracker songprev" },
+	{ 'Z', 0x97, 0, "_tracker voices" },
+	{ 'Z', 0x98, 0, "_tracker songnext" },
+	{ 'Z', 0x99, 0, "_tracker vu" },
 	/* 0x9a unused */
-	{ 'Z', 0x9b, "_tracker spectrum" },
+	{ 'Z', 0x9b, 0, "_tracker spectrum" },
 	/* 0x9c unused */
-	{ 'Z', 0x9d, "_tracker maxsize" },
+	{ 'Z', 0x9d, 0, "_tracker maxsize" },
 	/* 0x9e unused */
-	{ 'Z', 0x9f, "_tracker howmany" },
+	{ 'Z', 0x9f, 0, "_tracker howmany" },
 	/* 0xa0 unused */
-	{ 'Z', 0xa1, "_tracker packed" },
-	{ 'Z', 0xa2, "_tracker depack" },
-	{ 'Z', 0xa3, "_tracker filelength" },
-	{ 'Z', 0xa4, "_tracker load" },
-	{ 'Z', 0xa5, "_tracker instruments used" },
-	{ 'Z', 0xa6, "_tracker scope init" },
-	{ 'Z', 0xa7, "_tracker patt info$" },
-	{ 'Z', 0xa8, "_tracker scope draw" },
-	{ 'Z', 0xa9, "_tracker tempo" },
+	{ 'Z', 0xa1, 0, "_tracker packed" },
+	{ 'Z', 0xa2, 0, "_tracker depack" },
+	{ 'Z', 0xa3, 0, "_tracker filelength" },
+	{ 'Z', 0xa4, 0, "_tracker load" },
+	{ 'Z', 0xa5, 0, "_tracker instruments used" },
+	{ 'Z', 0xa6, 0, "_tracker scope init" },
+	{ 'Z', 0xa7, 0, "_tracker patt info$" },
+	{ 'Z', 0xa8, 0, "_tracker scope draw" },
+	{ 'Z', 0xa9, 0, "_tracker tempo" },
 
-    /* Extra: 61 commands */
-	{ 'Z', 0x80, "extra" },
-	{ 'Z', 0x81, "prntr" },
-	{ 'Z', 0x82, "caps lock on" },
-	{ 'Z', 0x83, "ndrv" },
-	{ 'Z', 0x84, "caps lock on" },
-	{ 'Z', 0x85, "write protected" },
-	{ 'Z', 0x86, "swp col" },
-	{ 'Z', 0x87, "gemdos version$" },
-	{ 'Z', 0x88, "screen dump" },
-	{ 'Z', 0x89, "os version$" },
-	{ 'Z', 0x8a, "disk verify on" },
-	{ 'Z', 0x8b, "left shift key" },
-	{ 'Z', 0x8c, "disk verify off" },
-	{ 'Z', 0x8d, "right shift key" },
-	{ 'Z', 0x8e, "fmt disc" },
-	{ 'Z', 0x8f, "cntrl key" },
-	{ 'Z', 0x90, "cpy disc" },
-	{ 'Z', 0x91, "alt key" },
-	{ 'Z', 0x92, "visible input" },
-	{ 'Z', 0x93, "caps lock" },
-	{ 'Z', 0x94, "blur" },
-	{ 'Z', 0x95, "screen hz" },
-	{ 'Z', 0x96, "set rs232" },
-	{ 'Z', 0x97, "media status" },
-	{ 'Z', 0x98, "deshade" },
-	{ 'Z', 0x99, "power" },
-	{ 'Z', 0x9a, "set printer data" },
-	{ 'Z', 0x9b, "cartridge input" },
-	{ 'Z', 0x9c, "hrev" },
-	{ 'Z', 0x9d, "disc sides" },
-	{ 'Z', 0x9e, "set fattrib" },
-	{ 'Z', 0x9f, "disc tracks" },
+	/* Extra: 61 commands */
+	{ 'Z', 0x80, 0, "extra" },
+	{ 'Z', 0x81, 0, "prntr" },
+	{ 'Z', 0x82, 0, "caps lock on" },
+	{ 'Z', 0x83, 0, "ndrv" },
+	{ 'Z', 0x84, 0, "caps lock on" },
+	{ 'Z', 0x85, 0, "write protected" },
+	{ 'Z', 0x86, 0, "swp col" },
+	{ 'Z', 0x87, 0, "gemdos version$" },
+	{ 'Z', 0x88, 0, "screen dump" },
+	{ 'Z', 0x89, 0, "os version$" },
+	{ 'Z', 0x8a, 0, "disk verify on" },
+	{ 'Z', 0x8b, 0, "left shift key" },
+	{ 'Z', 0x8c, 0, "disk verify off" },
+	{ 'Z', 0x8d, 0, "right shift key" },
+	{ 'Z', 0x8e, 0, "fmt disc" },
+	{ 'Z', 0x8f, 0, "cntrl key" },
+	{ 'Z', 0x90, 0, "cpy disc" },
+	{ 'Z', 0x91, 0, "alt key" },
+	{ 'Z', 0x92, 0, "visible input" },
+	{ 'Z', 0x93, 0, "caps lock" },
+	{ 'Z', 0x94, 0, "blur" },
+	{ 'Z', 0x95, 0, "screen hz" },
+	{ 'Z', 0x96, 0, "set rs232" },
+	{ 'Z', 0x97, 0, "media status" },
+	{ 'Z', 0x98, 0, "deshade" },
+	{ 'Z', 0x99, 0, "power" },
+	{ 'Z', 0x9a, 0, "set printer data" },
+	{ 'Z', 0x9b, 0, "cartridge input" },
+	{ 'Z', 0x9c, 0, "hrev" },
+	{ 'Z', 0x9d, 0, "disc sides" },
+	{ 'Z', 0x9e, 0, "set fattrib" },
+	{ 'Z', 0x9f, 0, "disc tracks" },
 	/* 0xa0 unused */
-	{ 'Z', 0xa1, "cookie _cpu" },
-	{ 'Z', 0xa2, "pal inverse" },
-	{ 'Z', 0xa3, "disc spt" },
-	{ 'Z', 0xa4, "set screen hz" },
+	{ 'Z', 0xa1, 0, "cookie _cpu" },
+	{ 'Z', 0xa2, 0, "pal inverse" },
+	{ 'Z', 0xa3, 0, "disc spt" },
+	{ 'Z', 0xa4, 0, "set screen hz" },
 	/* 0xa5 unused */
-	{ 'Z', 0xa6, "pal change" },
-	{ 'Z', 0xa7, "fattrib" },
-	{ 'Z', 0xa8, "ppsc" },
-	{ 'Z', 0xa9, "cookie _mch" },
-	{ 'Z', 0xaa, "opaque screen" },
-	{ 'Z', 0xab, "compact" },
-	{ 'Z', 0xac, "vrev" },
-	{ 'Z', 0xad, "mem config" },
-	{ 'Z', 0xae, "desquash" },
-	{ 'Z', 0xaf, "disc verify" },
-	{ 'Z', 0xb0, "del" },
-	{ 'Z', 0xb1, "disc size" },
-	{ 'Z', 0xb2, "pload" },
-	{ 'Z', 0xb3, "disc free" },
-	{ 'Z', 0xb4, "disable mouse" },
-	{ 'Z', 0xb5, "disc used" },
-	{ 'Z', 0xb6, "enable mouse" },
-	{ 'Z', 0xb7, "vtab" },
-	{ 'Z', 0xb8, "screen squash" },
-	{ 'Z', 0xb9, "ltab" },
-	{ 'Z', 0xba, "label disc" },
-	{ 'Z', 0xbb, "setup of printer" },
-	{ 'Z', 0xbc, "rmv dup col" },
+	{ 'Z', 0xa6, 0, "pal change" },
+	{ 'Z', 0xa7, 0, "fattrib" },
+	{ 'Z', 0xa8, 0, "ppsc" },
+	{ 'Z', 0xa9, 0, "cookie _mch" },
+	{ 'Z', 0xaa, 0, "opaque screen" },
+	{ 'Z', 0xab, 0, "compact" },
+	{ 'Z', 0xac, 0, "vrev" },
+	{ 'Z', 0xad, 0, "mem config" },
+	{ 'Z', 0xae, 0, "desquash" },
+	{ 'Z', 0xaf, 0, "disc verify" },
+	{ 'Z', 0xb0, 0, "del" },
+	{ 'Z', 0xb1, 0, "disc size" },
+	{ 'Z', 0xb2, 0, "pload" },
+	{ 'Z', 0xb3, 0, "disc free" },
+	{ 'Z', 0xb4, 0, "disable mouse" },
+	{ 'Z', 0xb5, 0, "disc used" },
+	{ 'Z', 0xb6, 0, "enable mouse" },
+	{ 'Z', 0xb7, 0, "vtab" },
+	{ 'Z', 0xb8, 0, "screen squash" },
+	{ 'Z', 0xb9, 0, "ltab" },
+	{ 'Z', 0xba, 0, "label disc" },
+	{ 'Z', 0xbb, 0, "setup of printer" },
+	{ 'Z', 0xbc, 0, "rmv dup col" },
 	/* 0xbd unused */
-	{ 'Z', 0xbe, "ren" },
-	{ 'Z', 0xbf, "fmt text" },
+	{ 'Z', 0xbe, 0, "ren" },
+	{ 'Z', 0xbf, 0, "fmt text" },
 
-	{ 0, 0, NULL }
+	{ 0, 0, 0, NULL }
 };
 
 static int upperflag = FALSE;
+static unsigned int extensions = EXTIF_SYSCTRL;
+#define MAX_EXTENSIONS 26
+unsigned int unknown_extensions[MAX_EXTENSIONS + 1];
 
 #define TOUPPER(c) (upperflag ? ((c) >= 'a' && (c) <= 'z' ? (c) - ('a' - 'A') : (c)) : (c))
 #define TOLOWER(c) (upperflag ? ((c) >= 'A' && (c) <= 'Z' ? (c) + ('a' - 'A') : (c)) : (c))
@@ -1170,20 +1377,28 @@ static void print_token(unsigned char opcode, const struct token *tokens, FILE *
 }
 
 
-static void print_external_extension(char extension, unsigned char opcode, FILE *out)
+static void print_external_extension(int extension, unsigned char opcode, FILE *out)
 {
 	const struct extension *ext = external_extensions;
+	char extension_char = 'A' + extension;
 	
 	while (ext->name != NULL)
 	{
-		if (ext->extension == extension && ext->opcode == opcode)
+		if (ext->extension == extension_char && ext->opcode == opcode)
 		{
-			print_upper(ext->name, out);
-			return;
+			if (ext->extension_if == 0 ||
+				(extensions & ext->extension_if) != 0)
+			{
+				print_upper(ext->name, out);
+				return;
+			}
 		}
 		ext++;
 	}
-	fprintf(out, "extension #%c(0x%02x)", extension, opcode);
+	fprintf(out, "extension #%c(0x%02x)", extension_char, opcode);
+	if (extension >= MAX_EXTENSIONS)
+		extension = MAX_EXTENSIONS;
+	unknown_extensions[extension]++;
 }
 
 
@@ -1209,6 +1424,10 @@ static int listfile(FILE *fp, FILE *out)
 		fprintf(stderr, "Not a STOS basic file\n");
 		return FALSE;
 	}
+	
+	for (i = 0; i <= MAX_EXTENSIONS; i++)
+		unknown_extensions[i] = 0;
+
 	prglen = getbe32(&header.databank[0][0]);
 	while (prglen > 0)
 	{
@@ -1238,7 +1457,7 @@ static int listfile(FILE *fp, FILE *out)
 #if 0
 		fprintf(out, "%5u (0x%04x) ", lineno, linelength);
 #else
-		fprintf(out, "%5u ", lineno);
+		fprintf(out, "%u ", lineno);
 #endif
 		
 		linelength -= 4;
@@ -1296,7 +1515,7 @@ static int listfile(FILE *fp, FILE *out)
 					case T_consthex:
 						v = readbe32(fp);
 						linelength -= 4;
-						fprintf(out, "$%lx", (unsigned long)v);
+						fprintf(out, "$%lX", (unsigned long)v);
 						break;
 					case T_constint:
 						v = readbe32(fp);
@@ -1402,7 +1621,7 @@ static int listfile(FILE *fp, FILE *out)
 				/*
 				 * TODO: load extensions
 				 */
-				print_external_extension('A' + extension, opcode, out);
+				print_external_extension(extension, opcode, out);
 			} else
 			{
 				/* NORMAL token */
@@ -1444,6 +1663,14 @@ static int listfile(FILE *fp, FILE *out)
 	{
 		fprintf(stderr, "bad floating point constants detected,\n");
 		fprintf(stderr, "run CONVERT.BAS\n");
+	}
+
+	for (i = 0; i <= MAX_EXTENSIONS; i++)
+	{
+		if (unknown_extensions[i] != 0)
+		{
+			fprintf(stderr, "%u unknown calls to extension %c found\n", unknown_extensions[i], i + 'A');
+		}
 	}
 	return TRUE;
 }

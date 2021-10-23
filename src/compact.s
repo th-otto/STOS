@@ -15,7 +15,7 @@
 
 ; Adaptation au Stos basic
         bra.w load
-        even
+
         dc.b $80
 tokens: dc.b "unpack",$80
         dc.b "pack",$81
