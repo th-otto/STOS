@@ -56,8 +56,9 @@ Amiga_Size:                        * 30 octets
 	.text
 
 ; Adaptation au Stos basic
+entry:
         bra.w load
-        even
+
         dc.b $80
 tokens:
 		dc.b "_tracker reset",$80
@@ -3283,18 +3284,18 @@ notes_table_end:
 	
 	.bss
 
-lineavars: ds.l 1 /* 12d32 */
-la_bytes_line: ds.w 1 /* 12d36 */
-la_planes: ds.w 1 /* 12d38 */
-la_pixeloff: ds.w 1 /* 12d3a */
+lineavars: ds.l 1
+la_bytes_line: ds.w 1
+la_planes: ds.w 1
+la_pixeloff: ds.w 1
 	.ds.l 1 /* unused */
-scope_screen: ds.l 1 /* 12d40 */
-scope_color: ds.w 1 /* 12d44 */
-scope_x1: ds.w 1 /* 12d46 */
-scope_y1: ds.w 1 /* 12d48 */
-scope_x2: ds.w 1 /* 12d4a */
-scope_y2: ds.w 1 /* 12d4c */
-scope_ymid: ds.w 1 /* 12d4e */
+scope_screen: ds.l 1
+scope_color: ds.w 1
+scope_x1: ds.w 1
+scope_y1: ds.w 1
+scope_x2: ds.w 1
+scope_y2: ds.w 1
+scope_ymid: ds.w 1
 scope_currx: ds.w 1
 scope_curry: ds.w 1
 scope_active: ds.w 1
@@ -3307,16 +3308,16 @@ x12d66: ds.l 1
 x12d6a: ds.w 1
         ds.l 1 /* unused */
 zeroflag: ds.w 1
-stringbuf: ds.b 160 /* 12d72 */ /* BUG: too short for pattern info */
+stringbuf: ds.b 160 /* BUG: too short for pattern info */
 
-load_banknum: ds.w 1 /* 12e12 */
-load_faddr: ds.l 1 /* 12e14 */
-load_paktype: ds.w 1 /* 12e18 */
-loaded_filelength: ds.l 1 /* 12e1a */
-dtaptr: ds.l 1 /* 12e1e */
-filehandle: ds.w 1 /* 12e22 */
+load_banknum: ds.w 1
+load_faddr: ds.l 1
+load_paktype: ds.w 1
+loaded_filelength: ds.l 1
+dtaptr: ds.l 1
+filehandle: ds.w 1
 compressed_len: ds.l 1
-load_filename: ds.b 128 /* 12e28 */
+load_filename: ds.b 128
 module_header: ds.l 13
 
 finprg:

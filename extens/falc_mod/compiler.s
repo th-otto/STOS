@@ -1410,30 +1410,30 @@ set_screenaddr: /* unused */
 
 
 	
-lineavars: ds.l 1 /* 11166 */
-la_bytes_line: ds.w 1 /* 1116a */
-la_planes: ds.w 1 /* 11116c */
-la_pixeloff: ds.w 1 /* 1116e */
+lineavars: ds.l 1
+la_bytes_line: ds.w 1
+la_planes: ds.w 1
+la_pixeloff: ds.w 1
 	.ds.l 1 /* unused */
-scope_screen: ds.l 1 /* 11174 */
-scope_color: ds.w 1 /* 11178 */
-scope_x1: ds.w 1 /* 1117a */
-scope_y1: ds.w 1 /* 1117c */
-scope_x2: ds.w 1 /* 1117e */
-scope_y2: ds.w 1 /* 11180 */
-scope_ymid: ds.w 1 /* 11182 */
-scope_currx: ds.w 1 /* 11184 */
-scope_curry: ds.w 1 /* 11186 */
-scope_active: ds.w 1 /* 11188 */
-undraw_flag: ds.w 1 /* 1118a */
-cliprect: ds.w 4 /* 1118c */
-scope_currcolor: ds.w 1 /* 11194 */
-        ds.w 1 /* unused */ /* 11196 */
-scope_colormask: ds.w 1 /* 11198 */
+scope_screen: ds.l 1
+scope_color: ds.w 1
+scope_x1: ds.w 1
+scope_y1: ds.w 1
+scope_x2: ds.w 1
+scope_y2: ds.w 1
+scope_ymid: ds.w 1
+scope_currx: ds.w 1
+scope_curry: ds.w 1
+scope_active: ds.w 1
+undraw_flag: ds.w 1
+cliprect: ds.w 4
+scope_currcolor: ds.w 1
+        ds.w 1 /* unused */
+scope_colormask: ds.w 1
 
 
-x12d66: ds.l 1 /* 1119c */
-x12d6a: ds.w 1 /* 111a0 */
+x12d66: ds.l 1
+x12d6a: ds.w 1
         ds.l 1 /* unused */
 
 init:
@@ -3065,13 +3065,13 @@ close:
 	addq.l     #4,a7
 	rts
 
-load_banknum: ds.w 1 /* 12e12 */
-load_faddr: ds.l 1 /* 12e14 */
-load_paktype: ds.w 1 /* 12e18 */
-dtaptr: ds.l 1 /* 12e1e */
-filehandle: ds.w 1 /* 12e22 */
+load_banknum: ds.w 1
+load_faddr: ds.l 1
+load_paktype: ds.w 1
+dtaptr: ds.l 1
+filehandle: ds.w 1
 compressed_len: ds.l 1
-load_filename: ds.b 128 /* 12e28 */
+load_filename: ds.b 128
 module_header: ds.l 13
 
 * Syntax    : X=_tracker instruments used(ADDR)
