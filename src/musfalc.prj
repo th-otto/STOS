@@ -1,7 +1,7 @@
-stos\musfalc.bin
+stos\music101.bin
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]
 .S[-DFALCON=1]
 =
-musfalc.s
+music.s

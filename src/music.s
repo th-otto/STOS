@@ -1,5 +1,4 @@
 
-
           bra.w debut
 
 
@@ -47,6 +46,27 @@ jumps:    dc.l initsound      ;0:  Sound init
           dc.l stopinter      ;8:  End interrupts
           dc.l transpose      ;9:  Transpose
           dc.l voicepos       ;10: Returns music note played
+          .IFNE FALCON
+          dc.l trackerinit
+          dc.l soundreset
+          dc.l trackerplay
+          dc.l trackerloop
+          dc.l trackerffwd
+          dc.l trackerpause
+          dc.l trackerstop
+          dc.l trackerspeed
+          dc.l trackersongpos
+          dc.l trackerpattpos
+          dc.l trackervu
+          dc.l trackerspectrum
+          dc.l trackersongprev
+          dc.l trackersongnext
+          dc.l trackerstatus
+          dc.l trackerscopedraw
+          dc.l trackerscopeundraw
+          dc.l trackerpattinfo
+          dc.l trackertempo
+          .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Parametres musique
@@ -93,14 +113,15 @@ musique:  ds.b tmusic*3
 ; TABLE DES PERIODES DES NOTES (8 octaves--->96 notes)
           dc.w 0
 periodes: dc.w 0              ;silence!
+          ;       C   C#    D   D#    E    F   F#    G   G#    A   A#    B
           dc.w 3822,3608,3405,3214,3034,2863,2703,2551,2408,2273,2145,2025
           dc.w 1911,1804,1703,1607,1517,1432,1351,1276,1204,1136,1073,1012
-          dc.w 956,902,851,804,758,716,676,638,602,568,536,506
-          dc.w 476,451,426,402,379,358,338,319,301,284,268,253
-          dc.w 239,225,213,201,190,179,169,159,150,142,134,127
-          dc.w 119,113,106,100,95,89,84,80,75,71,67,63
-          dc.w 60,56,53,50,47,45,42,40,38,36,34,32
-          dc.w 30,28,27,25,24,22,21,20,19,18,17,16
+          dc.w  956, 902, 851, 804, 758, 716, 676, 638, 602, 568, 536, 506
+          dc.w  476, 451, 426, 402, 379, 358, 338, 319, 301, 284, 268, 253
+          dc.w  239, 225, 213, 201, 190, 179, 169, 159, 150, 142, 134, 127
+          dc.w  119, 113, 106, 100,  95,  89,  84,  80,  75,  71,  67,  63
+          dc.w   60,  56,  53,  50,  47,  45,  42,  40,  38,  36,  34,  32
+          dc.w   30,  28,  27,  25,  24,  22,  21,  20,  19,  18,  17,  16
 ; TABLE DES LONGUEURS DES NOTES (Tcroche ---> blanche pointee)
 longueurs:dc.w 1,2,4,6,8,12,16,24,32,48
 
@@ -149,12 +170,23 @@ stopinter: bsr initsound
           move.l d0,$400
 PaArr:    rts
 
+*
+* this string is checked by the extension
+* and must stay here, just before the trap entry
+*
+          .IFNE FALCON
+          .IFEQ COMPILER
+          dc.b "FALCON 030 STOS DSP/Mod 2.85",0
+          .even
+          .ENDC
+          .ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Entree de la trappe
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 entrappe: movem.l d1-d7/a1-a6,-(sp)
           lsl #2,d0
-          lea jumps,a1
+          lea jumps(pc),a1
           move.l 0(a1,d0.w),a1
           jsr (a1)
           movem.l (sp)+,d1-d7/a1-a6
@@ -569,7 +601,7 @@ stm10:    rts
 ; TRAP #7,0
 ; Init Sound
 ; Resets sound generator and kills music
-initsound:   clr musicflg                  ;plus de musique pour l'instant
+initsound: clr musicflg                  ;plus de musique pour l'instant
           clr transp
           move #7,voixon                ;Remet toutes les voix
           move #7,avoixon
@@ -632,7 +664,8 @@ stpvx:    rts
 ; TRAP #7,3
 ; TURN ON A VOICE
 ; D1= number of voice
-restartvoice:andi.w #3,d1
+restartvoice:
+          andi.w #3,d1
           beq.s restart1
           subq #1,d1
           lea voixon(pc),a0            ;Remet la voix
@@ -666,17 +699,18 @@ frzz1:    rts
 unfreeze:
           lea chipcopy(pc),a4
           tst.w freezflg-chipcopy(a4)
-          beq frzz1
+          beq.s unfreeze1
           lea chip,a3
           bsr pokechip        ;remet la musique
           clr freezflg-chipcopy(a4)
           move #1,musicflg-chipcopy(a4)
+unfreeze1:
           rts
 
 ; TRAP #7,6
 ; CHANGE TEMPO
 chgtempo: cmpi.w #100,d1
-          bhi chgt1
+          bhi.s chgt1
 		  lea tempo(pc),a3
           move.w d1,(a3)
 chgt1:    rts
@@ -692,17 +726,24 @@ transpose:
 ; TRAP #7,10
 ; GET VOICE POS (D1)
 voicepos: andi.w #3,d1
-          beq vp1
+          beq.s vp1
           subq #1,d1
           mulu #tmusic,d1
           lea musique(pc),a0
           moveq #0,d0
           tst muscpt(a0,d1.w)                ;bring back 0 if the music is off
-          beq vp1
+          beq.s vp1
           move.w musold(a0,d1.w),d0     ;sinon, ramene la position ACTUELLE
 vp1:      rts
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+          .IFNE FALCON
+          .include "dsptrack.s"
+          .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

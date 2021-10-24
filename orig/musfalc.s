@@ -82,7 +82,7 @@ voixon:   dc.w 0              ;flag: voice currently on the way
 avoixon:  dc.w 0
 admusic:  dc.l 0              ;absolute starting address music definition
 transp:   dc.w 0              ;music transposition
-chip      = $ffff8800
+chip      = $ff8800
 chipcopy: ds.w 16             ;copy of sound chip registers
 even
 ; TABLE DES ENVELOPPES ET DES TREMOLOS
@@ -132,32 +132,36 @@ VoixOffCpt:      dc.b 0,0,0,0    ;Compteurs voix arretees
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 debut:
 		  .IFNE COMPILER
-		  move.l #entrappe,$9c          ;trap #7
+		  move.l #entrappe,$9c.l          ;trap #7 /* XXX */
 		  moveq #0,d0
 		  rts
 
 		  .ELSE
 
-          pea initrap(pc)               ;initialise sous mode superviseur!
+          pea initrap                   ;initialise sous mode superviseur!
           move.w #38,-(sp)
           trap #14
           addq.l #6,sp
-          lea finmusic+16(pc),a0        ;ramene l'adresse de fin du prg; 16 de securite!
+          .IFNE FALCON
+          lea finmusic-4,a0               ;XXX BUG
+          .ELSE
+          lea finmusic+16,a0               ;ramene l'adresse de fin du prg; 16 de securite!
+          .ENDC
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-initrap:  move.l #entrappe,$9c          ;trap #7
+initrap:  move.l #entrappe,$9c.l          ;trap #7 /* XXX */
           rts
 
           .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TRAP #7,7
-;         Start of interruptions
+;         Depart des interruptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 startint: bsr initsound
-          move.l $400,inter
-          move.l #wedge,$400
+          move.l $400.l,inter /* XXX */
+          move.l #wedge,$400.l /* XXX */
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -165,9 +169,17 @@ startint: bsr initsound
 ;         Arret des interruptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 stopinter: bsr initsound
-          move.l inter(pc),d0
+	      .IFEQ COMPILER
+          move.l inter,$400.l /* XXX */
+          .ELSE
+          .IFEQ FALCON
+          move.l inter,$400.l /* XXX */
+          .ELSE
+          move.l inter,d0 /* XXX check missing in interpreter */
           beq.s PaArr
-          move.l d0,$400
+          move.l d0,$400.l
+          .ENDC
+          .ENDC
 PaArr:    rts
 
 *
@@ -185,8 +197,21 @@ PaArr:    rts
 ;         Entree de la trappe
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 entrappe: movem.l d1-d7/a1-a6,-(sp)
+          .IFNE FALCON
+          .IFEQ COMPILER
+          andi.l #0xff,d0 /* XXX unneeded */
+          .ENDC
+          .ENDC
           lsl #2,d0
+          .IFNE FALCON
+          .IFEQ COMPILER
           lea jumps(pc),a1
+          .ELSE
+          lea jumps,a1
+          .ENDC
+          .ELSE
+          lea jumps,a1
+          .ENDC
           move.l 0(a1,d0.w),a1
           jsr (a1)
           movem.l (sp)+,d1-d7/a1-a6
@@ -249,7 +274,8 @@ music:    lea 2*tmusic+musique,a6
           move.l admusic(pc),a2         ;adresse de depart des tables
 music1:   tst (a6)
           beq.s music2
-          sub #1,(a6)
+          /* sub #1,(a6) */
+          dc.w 0x456,1 /* XXX */
           beq.s music3
 music2:   lea -tmusic(a6),a6
           dbra d6,music1
@@ -287,7 +313,7 @@ music3e:  lea periodes(pc),a0
           move.b d0,0(a4,d2.w)          ;poke dans la copie
           move.b d1,1(a4,d2.w)
           btst d6,d7
-          beq music4
+          beq.w music4 /* XXX */
           move.b d2,(a3)                ;poke dans le chip
           move.b d0,2(a3)
           addq #1,d2
@@ -339,8 +365,9 @@ music20:  lsr #8,d5
 ; fin de la musique sur cette voix: %10000000
 music10:  tst musrep(a6)                   ;recommencer?
           beq.s music11
-          sub #1,musrep(a6)
-          beq music12
+          /* sub #1,musrep(a6)*/
+          dc.w 0x46e,1,musrep /* XXX */
+          beq.w music12 /* XXX */
 music11:  move.w musrepd(a6),muspos(a6)    ;repointe la note ou redemmarrer
           bra music3
 music12:  clr (a6)                         ;stop !
@@ -348,7 +375,7 @@ music12:  clr (a6)                         ;stop !
 
 ; ETIQUETTE SUR UN MOT LONG? (%11xxxxxx) = $c000-DECALAGE SIGNE-
 music20a: btst #6,d5
-          beq music30
+          beq.w music30 /* XXX */
           andi.w #$3f,d5
           move.w 2(a2,d3.w),d2
           ext.l d2
@@ -376,7 +403,7 @@ music21:  move d6,d0
           bra music3
 ; Etiquette MARCHE TREMOLO? (%11000010)+ad = $c2+ad
 music22:  cmpi.b #2,d5
-          bne music23
+          bne.w music23 /* XXX */
           move #1,mustre(a6)  ;flag: il y a un tremolo!
           bsr stadsr
           bra music3
@@ -397,7 +424,7 @@ music30:  btst #5,d5
           move d3,muspos(a6)      ;avance le pointeur
           andi.w #$1f,d5
           cmpi.w #4,d5
-          bcc music35
+          bcc.w music35 /* XXX */
           move d6,d1
           addq #3,d1
 ; Etiquette VOIX DE MUSIQUE %101xxxx0 = $a000
@@ -416,9 +443,9 @@ music31:  cmpi.b #1,d5
           bra.s music34
 ; Etiquette STOP BRUIT ASSOCIE? %101xxx10 = $a200
 music32:  cmpi.b #2,d5
-          bne music33
+          bne.w music33 /* XXX */
           bset d1,7(a4)
-          bra music34
+          bra.w music34 /* XXX */
 ; Etiquette MARCHE BRUIT ASSOCIE? %101xxx11 xxFFFFF = $a3FF f=frequence bruit
 music33:  cmpi.b #3,d5
           bne music3
@@ -521,7 +548,7 @@ adsr5:    cmp.b 0(a2,d0.w),d1
           move.b 0(a2,d0.w),d1
 adsr6:    move.b d1,8(a4,d0.w)
           btst d0,d7
-          beq adsr10
+          beq.w adsr10 /* XXX */
           addq #8,d0
           move.b d0,(a3)               ;selection du registre
           move.b d1,2(a3)              ;poke le volume
@@ -540,7 +567,9 @@ adsr9:    move.b d1,6(a4)
           move.b #6,(a3)
           move.b d1,2(a3)
 ; passe au son suivant?
-adsr10:   sub.b #1,envnb(a5)
+adsr10:
+		  /* sub.b #1,envnb(a5) */
+		  dc.w 0x42d,1,envnb
           bne adsr2
 ; passe au son suivant
           move.l envad(a5),a0
@@ -571,10 +600,10 @@ nxadsr:   move.b 0(a0,d0.w),(a5)        ;poke la nouvelle vitesse
           rts
 
 ; TRAP #7,1
-; START MUSIC: START A MUSIC POINTED BY A0
+; START MUSIC: FAIT DEMARRER UNE MUSIQUE POINTEE PAR A0
 startmusic:  bsr initsound
           cmp.l #$19631969,(a0)         ;code de verification au debut
-          bne stm10
+          bne.w stm10 /* XXX */
           move.l a0,admusic             ;depart absolu!
           addq.l #4,a0
           move.w (a0)+,tempo            ;tempo!
@@ -582,7 +611,7 @@ startmusic:  bsr initsound
           clr d1
           lea musique,a6
 stm1:     move.w (a0)+,d0               ;si zero: pas en route!
-          beq stm2
+          beq.w stm2 /* XXX */
           move.w d0,musdeb(a6)          ;poke l'ecart de depart
           move.w d0,muspos(a6)          ;commence au debut
           move.w d0,musrepd(a6)         ;par securite!
@@ -593,7 +622,7 @@ stm1:     move.w (a0)+,d0               ;si zero: pas en route!
 stm2:     lea tmusic(a6),a6
           addq #1,d1
           cmpi.w #3,d1
-          bne stm1
+          bne.w stm1 /* XXX */
           move.l #$0f0f0f00,volume      ;par defaut: volume a 15
           move #1,musicflg              ;reautorise la musique
 stm10:    rts
@@ -624,9 +653,9 @@ son3:     clr.b (a1)+                   ;nettoie la table du circuit
 ; ENVOIE TOUTE LA COPIE DANS LE CIRCUIT SON
 pokechip: moveq #13,d2                  ;13 registres
 pkchp1:   cmpi.w #7,d2
-          bne pkchp2
+          bne.w pkchp2 /* XXX */
           bsr mixer
-          bra pkchp3
+          bra.w pkchp3 /* XXX */
 pkchp2:   move.b d2,(a3)                ;selection du registre
           move.b 0(a4,d2.w),2(a3)       ;envoie le son
 pkchp3:   dbra d2,pkchp1
@@ -646,13 +675,12 @@ mixer:    move.b #7,(a3)                ;selection du mixer
 ; STOP A VOICE
 ; D1= number of voice
 ; D2= 50th duration of the shutdown
-stopvoice: andi.w #3,d1
-          beq stpvx
+stopvoice: andi.w #$3,d1
+          beq.w stpvx /* XXX */
           subq #1,d1
-          lea voixon(pc),a0            ;Stop the voice
-          move.w (a0),d0
+          move voixon(pc),d0            ;Arrete la voix
           bclr d1,d0
-          move d0,(a0)
+          move d0,voixon
           lea VoixOffCpt(pc),a0         ;Poke le delai
           move.b d2,0(a0,d1.w)
           lea chip,a0                   ;Volume a zero!
@@ -665,13 +693,16 @@ stpvx:    rts
 ; TURN ON A VOICE
 ; D1= number of voice
 restartvoice:
-          andi.w #3,d1
-          beq.s restart1
+		  andi.w #$3,d1
+		  .IFNE FALCON
+          beq.w restart1 /* XXX */
+          .ELSE
+          beq.w stpvx /* XXX */
+          .ENDC
           subq #1,d1
-          lea voixon(pc),a0            ;Remet la voix
-          move.w (a0),d0
+          move voixon(pc),d0            ;Remet la voix
           bset d1,d0
-          move d0,(a0)
+          move d0,voixon
           lea VoixOffCpt(pc),a0          ;Arrete l'arret automatique
           clr.b 0(a0,d1.w)
 restart1:
@@ -679,12 +710,11 @@ restart1:
 
 ; TRAP #7,4
 ; FREEZE MUSIC
-freeze:   lea freezflg(pc),a3
-		  clr.w (a3)
-          tst.w musicflg-freezflg(a3)
-          beq frzz1
-          clr musicflg-freezflg(a3)
-          move #1,(a3)
+freeze:   clr freezflg
+          tst musicflg
+          beq.w frzz1 /* XXX */
+          clr musicflg
+          move #1,freezflg
           lea chip,a3
           moveq #8,d0
 frzz0:    move.b d0,(a3)                ;Volume des trois voix a zero!
@@ -696,43 +726,43 @@ frzz1:    rts
 
 ; TRAP #7,5
 ; UNFREEZE MUSIC
-unfreeze:
-          lea chipcopy(pc),a4
-          tst.w freezflg-chipcopy(a4)
-          beq.s unfreeze1
+unfreeze: tst freezflg
+          .IFNE FALCON
+          beq.w unfreeze1 /* XXX */
+          .ELSE
+          beq.w frzz1 /* XXX */
+          .ENDC
           lea chip,a3
+          lea chipcopy(pc),a4
           bsr pokechip        ;remet la musique
-          clr freezflg-chipcopy(a4)
-          move #1,musicflg-chipcopy(a4)
+          clr freezflg
+          move #1,musicflg
 unfreeze1:
           rts
 
 ; TRAP #7,6
 ; CHANGE TEMPO
 chgtempo: cmpi.w #100,d1
-          bhi.s chgt1
-		  lea tempo(pc),a3
-          move.w d1,(a3)
+          bhi.w chgt1 /* XXX */
+          move.w d1,tempo
 chgt1:    rts
 
 
 ; TRAP #7,9
 ; CHANGE TRANSPOSITION
-transpose:
-		  lea transp(pc),a3
-		  move.w d1,(a3)
+transpose:move.w d1,transp
           rts
 
 ; TRAP #7,10
 ; GET VOICE POS (D1)
-voicepos: andi.w #3,d1
-          beq.s vp1
+voicepos: andi.w #$3,d1
+          beq.w vp1 /* XXX */
           subq #1,d1
           mulu #tmusic,d1
-          lea musique(pc),a0
+          lea musique,a0
           moveq #0,d0
-          tst muscpt(a0,d1.w)                ;bring back 0 if the music is off
-          beq.s vp1
+          tst 0(a0,d1.w)                ;ramene 0 si la musique est arretee
+          beq.w vp1 /* XXX */
           move.w musold(a0,d1.w),d0     ;sinon, ramene la position ACTUELLE
 vp1:      rts
 
