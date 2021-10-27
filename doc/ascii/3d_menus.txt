@@ -383,7 +383,7 @@ has the following function :-
                of  a  maximum of 32 characters.  Each line of  text  being 
                separated by the '|' character.
 
-[] pair #3 =   [Buttont text #1|Button text #2|etc....] where;
+[] pair #3 =   [Button text #1|Button text #2|etc....] where;
 
                The  alert  dialog  can provide the user with  1,  2  or  3 
                buttons  and each button definition being seperated by  the 

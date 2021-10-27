@@ -1,0 +1,7 @@
+stos\winfalc.bin
+.L[-S=0]
+.S[-S]
+.S[-DCOMPILER=0]
+.S[-DFALCON=1]
+=
+winfalc.s

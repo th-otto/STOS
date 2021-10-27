@@ -4,12 +4,17 @@
 ;                                  1/11/1989                                          ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-	.include "adapt.inc"
-
+	.include "sprites.inc"
+	
 	.text
 
           bra debut
+
+		  .IFNE COMPILER
+          dc.b "Window 102"       ;repere pour trouver le debut
+          .ELSE
           dc.b "Window"       ;repere pour trouver le debut
+          .ENDC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TABLE DE DEFINITION  DES FONCTIONS DE LA TRAPPE
 
@@ -41,18 +46,18 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l setback,0        ;19
           dc.l autoins,1        ;20
           dc.l join,1           ;21
-          dc.l smallcursor,1    ;22
-          dc.l largecursor,1    ;23
-          dc.l windmove,1       ;24
-          dc.l currwindow,1     ;25
+          dc.l curbas,1         ;22
+          dc.l curhaut,1        ;23
+          dc.l windmov,1        ;24
+          dc.l effenvite,1      ;25
           dc.l newicon,0        ;26
           dc.l actcache,1       ;27
           dc.l getchar,0        ;28
           dc.l setchar,0        ;29
           dc.l border,1         ;30
           dc.l title,1          ;31
-          dc.l autobackon,1     ;32
-          dc.l autobackoff,0    ;33
+          dc.l autobon,1        ;32
+          dc.l autoboff,0       ;33
           dc.l ancauto,1        ;34
           dc.l xgraphic,0       ;35
           dc.l ygraphic,0       ;36
@@ -60,6 +65,32 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l ytext,0          ;38
           dc.l box,1            ;39
           dc.l update,0         ;40
+          .IFNE FALCON
+          dc.l fmenu_select,0   ;41
+          dc.l fmenu_item,0     ;42
+          dc.l fmenu_init,0     ;43
+          dc.l fmenu_on,0       ;44
+          dc.l fmenu_kill,0     ;45
+          dc.l fmenu_freeze,0   ;46
+          dc.l fmenustr,0       ;47
+          dc.l fmenustr_off,0   ;48
+          dc.l fmenustr_on,0    ;49
+          dc.l fmenu_check_item,0 ;50
+          dc.l fmenu_height,0   ;51
+          dc.l form_alert,0     ;52
+
+mch_cookie: dc.l 0 /* 101b2 */
+vdo_cookie:	dc.l 0 /* 101b6 */
+snd_cookie: dc.l 0 /* 101ba */
+cookieid: dc.l 0 /* 101be */
+cookievalue: dc.l 0 /* 101c2 */
+lineavars: dc.l 0 /* 101c6 */
+lineasave: ds.l 16 /* 101ca */
+
+falconmode: dc.w 0 /* 1020a */
+falcon_screensize: dc.l 0 /* 1020c */
+
+          .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TABLE DES COULEURS (ET HACHURES)
@@ -110,15 +141,20 @@ initres:  dc.w 4,40,200,160,4,2           ;basse resolution
           dc.w 1,80,400,80,2,5            ;haute resolution
           dc.b $ff,$ff,1,1,1,0,0,0
 
-;fond TOTAL utilise par INITMODE
+;TOTAL background used by INITMODE
 ftotal:   dc.w 0,1,0,0,40,25,1,0
           dc.w 0,2,0,0,80,25,1,0
           dc.w 0,3,0,0,80,25,1,0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; donnees propres au mode de resolution
+; data specific to the resolution mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ecran      = $44e
+	.IFNE FALCON
+  dc.w 0
+  dc.w 0
+  dc.w 0
+	.ENDC
 back:      dc.l 0
 mode:      dc.w 0
 nbplan:    dc.w 0
@@ -129,7 +165,6 @@ tcarcopie: dc.w 0
 autoback:  dc.w 0
 oldauto:   dc.w 0
 nbjeux:    dc.w 0
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; table des tours de fenetre 16 tours differents!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -188,9 +223,9 @@ controle: dc.l 0              ;0
 ; update on/off
 upd:      dc.w 0
 
-; current window
-curwindow: dc.w 0
-adcurwindow: dc.l 0
+; fenetre courante
+courante: dc.w 0
+adcouran: dc.l 0
 freelle:  dc.w 0                  ;fenetre avec les bords? (8)
 tempinit: dc.w 0
 tempeff1: dc.w 0
@@ -274,12 +309,12 @@ souligne: dc.w $ffff,$ffff,$ffff,$ffff
 
 ; ancien vecteur contenu en 4($456)
 anc456:   dc.l 0
+		  .IFNE COMPILER
 FlgDep:	  dc.w 0
-
-          .IFEQ COMPILER
+		  .ELSE
 ; DTA
 dta:      ds.b 48
-          .ENDC
+		  .ENDC
 
 ;-------------------------------> icones
 adicon:   dc.l 0              ;adresse de la banque d'icones
@@ -301,7 +336,7 @@ debut:
         move.w d0,maxcopie
         add.w d0,a0
 ; Jeux de caracteres
-        lea adjeux(pc),a5
+        lea adjeux,a5
         cmp.l #$06071963,(a2)+
         bne.s Debout
         move.l a2,(a5)+
@@ -323,13 +358,13 @@ debut:
         moveq #0,d0
 dout:   movem.l (sp)+,d1-d7/a1-a6
         rts
-
+		
 ; Out of mem
 Debout: moveq #1,d0
         bra.s dout
 
 		.ELSE
-
+		
 ;          move.l 4(sp),a0
 ;          move.l #$100,d6
 ;          add.l 12(a0),d6
@@ -339,13 +374,28 @@ Debout: moveq #1,d0
 ; initialise la trappe
           bsr initrap
 ; charge les jeux de caractere *.CRx
-          pea dta(pc)
+          move.l #dta,-(sp)
           move.w #$1a,-(sp)
           trap #1             ;SETDTA
           addq.l #6,sp
-          clr d7              ;compteur numero du jeu de caracteres
-          clr.l d6            ;taille totale des jeux de caracteres
+
+	.IFNE FALCON
+		move.w     mch_cookie(pc),d6
+		cmpi.l     #3,d6
+		bne.s      initfalc1
+		lea.l      screenbuf+122880,a6
+		bra.s      initfalc2
+initfalc1:
+		lea.l      screenbuf,a6
+		adda.l     #$00008000,a6
+initfalc2:
+	.ENDC
+
+          clr d7              ;character set number counter
+          clr.l d6            ;total size of character sets
+	.IFEQ FALCON
           lea bufcopie+maxcopie+64,a6      ;debut des jeux de caracteres par defaut
+    .ENDC
 debut1:   move.b #"0",numjeux ;*.CR0/*.CR1/....
           add.b d7,numjeux
           clr.w -(sp)
@@ -354,27 +404,48 @@ debut1:   move.b #"0",numjeux ;*.CR0/*.CR1/....
           trap #1
           addq.l #8,sp
           tst d0
+          .IFNE FALCON
           bne debut4
+          .ELSE
+          bne.w debut4 /* XXX */
+          .ENDC
           clr.w -(sp)
-          pea dta+30(pc)
+          pea dta+30
           move.w #$3d,-(sp)
           trap #1
           addq.l #8,sp
           move d0,d5          ;handle en D5
-          bmi debut1          ;erreur!
+          .IFNE FALCON
+          bmi debut1          ;erreur! /* XXX */
+          .ELSE
+          bmi.w debut1          ;erreur! /* XXX */
+          .ENDC
           move.l a6,-(sp)     ;adresse de chargement
-          move.l dta+26(pc),-(sp) ;taille du fichier
+          move.l dta+26,-(sp) ;taille du fichier
           move.w d5,-(sp)
           move.w #$3f,-(sp)
           trap #1
+          .IFNE FALCON
           lea 12(sp),sp
+          .ELSE
+          /* add.l #12,sp */
+          dc.w 0xdffc,0,12 /* XXX */
+          .ENDC
           tst.l d0
-          bmi debut3
+          .IFNE FALCON
+          bmi debut3 /* XXX */
+          .ELSE
+          bmi.w debut3 /* XXX */
+          .ENDC
           cmp.l #$06071963,(a6)         ;code de reconnaissance
-          bne debut3
+          .IFNE FALCON
+          bne debut3 /* XXX */
+          .ELSE
+          bne.w debut3 /* XXX */
+          .ENDC
           add.l d0,d6                   ;taille totale
           subq.l #4,d0                  ;taille des caracteres (moins code)
-          lea adjeux(pc),a0
+          lea adjeux,a0
           move d7,d1
           lsl #2,d1
           addq.l #4,a6         ;saute le code
@@ -388,8 +459,8 @@ debut3:   move.w d5,-(sp)
           cmpi.w #16,d7
           bcs debut1
 
-debut4:   move d7,nbjeux       ;premier jeux de caracteres libre!
-          move.l a6,a0         ;transmet l'adresse de FIN du programme!
+debut4:   move d7,nbjeux       ;first free character game!
+          move.l a6,a0         ;transmits the END address of the program!
           rts
 ;          move.l (sp)+,d0     ;recupere la longueur du PGM
 ;          add.l #maxcopie,d0  ;plus taille du buffer
@@ -411,29 +482,110 @@ initrap:  move.l #entrappe,-(sp)        ;setexec
           move.w #5,-(sp)               ;initialisation de la
           trap #13                      ;trappe 3
           addq.l #8,sp
+
+	.IFNE FALCON
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      mch_cookie(pc),a0
+		clr.l      (a0)+
+		clr.l      (a0)+ /* vdo_cookie */
+		move.l     #1,(a0)+ /* snd_cookie */
+		lea.l      cookieid(pc),a1
+		move.l     #$5F4D4348,(a1) /* "_MCH" */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold1
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid(pc),a1
+		move.l     #$5F56444F,(a1) /* "_VDO" */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold2
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+cold2:
+		dc.w       0xa000
+		move.l     a0,lineavars
+		move.w     #16-1,d7
+		lea.l      lineasave,a0
+cold3:
+		move.l     (a2)+,(a0)+
+		dbf        d7,cold3
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+getcookie:
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		beq.s      getcookie3
+		movea.l    d0,a0
+		clr.l      d4
+getcookie1:
+		move.l     (a0)+,d0
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.s      getcookie3
+		cmp.l      d3,d0
+		beq.s      getcookie2
+		addq.w     #1,d4
+		bra.s      getcookie1
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.s      getcookie3
+		move.l     d1,(a5)
+getcookie3:
+	.ENDC
           rts
 
-; TRAP #3,15
-; START OF INTERRUPTS
+; DEPART DES INTERRUPTIONS
 startinter:move #-1,offcur               ;empeche l'affichage du curseur
           clr inhibc
-          move.l ecran,a0
+          move.l ecran.l,a0 /* XXX */
           sub.l  #$8000,a0               ;par defaut: decor=ecran-$8000
           move.l a0,back
-          move.l $456,a0
+          move.l $456.l,a0 /* XXX */
           move.l 4(a0),anc456
           move.l #gcurseur,4(a0)        ;en deuxieme position
+		  .IFNE COMPILER
           move.w #1,FlgDep
+          .ENDC
           rts
-
-; TRAP #3,7
-; STOP INTERRUPTS
+; ARRET DES INTERRUPTIONS
 stopinter:
+		  .IFNE COMPILER
           tst.w FlgDep
 	      beq.s PaArr
-          move.l $456,a0
-          move.l anc456(pc),4(a0)
+	      .ENDC
+          move.l $456.l,a0 /* XXX */
+          move.l anc456,4(a0)
 PaArr:    rts
+
+*
+* this string is checked by the extension
+* and must stay here, just before the trap entry
+*
+		.IFNE FALCON
+		.IFEQ COMPILER
+		.dc.b "FALCON 030 STOS Window 4.6",0
+		.even
+		.ENDC
+		.ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ENTREE DE LA TRAPPE
@@ -442,13 +594,13 @@ entrappe: movem.l d1-d7/a1-a6,-(sp)
           lsl #3,d7
           lea ttrappe,a5
           move.l 0(a5,d7.w),a6
-          move.l adcurwindow(pc),a4
+          move.l adcouran,a4
           tst 6(a5,d7.w)      ;should we stop the sprites?
           beq.s pastop
 ; FONCTIONS ARRETANT LA SOURIS ET LES SPRITES
           bsr curoff
           movem.l d0/d1,-(sp)
-          moveq #28,d0        ;quick mouse stop
+          moveq #28,d0        ;arret rapide de la souris
           trap #5
           movem.l (sp)+,d0/d1
           jsr (a6)
@@ -458,24 +610,27 @@ entrappe: movem.l d1-d7/a1-a6,-(sp)
           beq.s entrap0
           tst autoback
           bne.s entrap1
-entrap0:  moveq #41,d0        ;restart mouse
+entrap0:  moveq #41,d0        ;mouse bete
           bra.s entrap2
-entrap1:  moveq #29,d0        ;restart mouse AND ALL SPRITES!
+entrap1:  moveq #29,d0        ;remise en route souris ET TOUS LES SPRITES!
 entrap2:  trap #5
           move.l (sp)+,d0
           movem.l (sp)+,d1-d7/a1-a6
           rte
-; FUNCTIONS THAT DO NOT STOP THE MOUSE AND SPRITES
+; FONCTIONS N'ARRETANT PAS LA SOURIS ET LES SPRITES
 pastop:   jsr (a6)
           movem.l (sp)+,d1-d7/a1-a6
           rte
 
-; TRAP #3,12
-; HARDCOPY OF THE OPEN WINDOW
+;HARDCOPY DE LA FENETRE OUVERTE
 hardcopy: moveq #27,d0         ;RESET imprimante
+		.IFEQ FALCON /* BUG? */
           bsr outprt
+        .ENDC
           moveq #64,d0
+		.IFEQ FALCON /* BUG? */
           bsr outprt
+        .ENDC
           clr d3
           move bordure(a4),d5
           tst d5               ;impression de la bordure?
@@ -486,14 +641,26 @@ hard0:    move #cartour,d0
           bsr outprt
           dbra d1,hard0
 hard1:    moveq #13,d0         ;retour a la ligne
+		  .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           moveq #10,d0
+		  .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           clr d2
           tst d5
           beq.s hard2
           move #cartour,d0
+          .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
 hard2:    move d2,d0
           move d3,d1
           bsr screen
@@ -502,32 +669,65 @@ hard2:    move d2,d0
           cmpi.b #32,d0        ;filtre les icones
           bcc.s hard3
 hard2a:   move.b #32,d0
-hard3:    bsr.s outprt
+hard3:
+		  .IFNE FALCON
+		  bsr.s outprt
+		  .ELSE
+		  bsr outprt
+		  .ENDC
           addq #1,d2
           cmp txtext(a4),d2
           blt.s hard2
           tst d5
           beq.s hard4
           move #cartour,d0
+		  .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
 hard4:    addq #1,d3
           cmp tytext(a4),d3
-          blt hard1
+          .IFNE FALCON
+          blt.s hard1 /* XXX */
+          .ELSE
+          blt.w hard1 /* XXX */
+          .ENDC
           moveq #13,d0
+          .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           moveq #10,d0
+          .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           tst d5
           beq.s hard6
           move txreel(a4),d1
           subq #1,d1
 hard5:    move #cartour,d0
+          .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           dbra d1,hard5
 hard6:    moveq #13,d0
+          .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           moveq #10,d0
+          .IFNE FALCON
           bsr.s outprt
+          .ELSE
+          bsr outprt
+          .ENDC
           clr.l d0
           rts
 
@@ -550,18 +750,15 @@ bconout2: move.w d0,-(sp)
           addq.l #6,sp
           rts
 
-; TRAP #3,19
-; SETBACK: CHANGES THE ADDRESS OF THE SPRITE BACKGROUND
+; SETBACK: CHANGE L'ADRESSE DU DECOR
 setback:  move.l a0,back      ;que c'est long!
           rts
 
-; TRAP #3,40
 ; UPDATE ON/OFF
 update:   move d0,upd
           rts
 
-; TRAP #3,10
-; INITIALIZATION TO RESOLUTION MODE and general window reset
+; INITIALISATION AU MODE DE RESOLUTION et RAZ generale fenetres
 initmode: move.w #4,-(sp)     ;getrez
           trap #14
           addq.l #2,sp
@@ -581,7 +778,7 @@ initmode: move.w #4,-(sp)     ;getrez
           trap #14
           addq.l #6,sp
 ; initialisation des FENETRES
-          lea priofen(pc),a0
+          lea priofen,a0
           move #nbfenetre-1,d0
 initpr:   clr.b (a0)+
           dbra d0,initpr
@@ -610,16 +807,74 @@ initpr:   clr.b (a0)+
           bsr initwind
 ; Fin d'initmode
           move nbjeux,d0      ;premier jeu de caracteres accessible!
+          .IFNE FALCON
+		move.l #32000,falcon_screensize
+		bsr.s  initmenu
+          .ENDC
           rts
 
-; TRAP #3,8
-; INITIALIZING A WINDOW: D0 numero de la fenetre
-;                        D1 jeu de caractere et bordure
-;                        D2/D3 startx et y
-;                        D4/D5 txtext et tytext
-;                        D6    pen et paper
-initwind: andi.w #$000f,d0
-          move.l flagfen(pc),d7
+          .IFNE FALCON
+initmenu:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.l     #32000,d0
+		lea.l      falcon_screensize(pc),a0
+		move.l     d0,(a0)
+		move.w     #2,-(a7)
+		trap       #14
+		addq.l     #2,a7
+		lea.l      physic(pc),a1
+		move.l     d0,(a1)
+		move.w     #3,-(a7)
+		trap       #14
+		addq.l     #2,a7
+		lea.l      logic(pc),a1
+		move.l     d0,(a1)
+		lea.l      mch_cookie(pc),a0
+		cmpi.l     #0x00030000,(a0)
+		bne.s      initmenu2
+		lea.l      vdo_cookie(pc),a0
+		cmpi.l     #0x00030000,(a0)
+		bne.s      initmenu2
+		move.w     #-1,-(a7)
+		move.w     #0x0058,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		lea.l      falconmode(pc),a0
+		move.w     d0,(a0)
+		btst       #7,d0 /* ST-compatible mode? */
+		beq.s      initmenu1
+		move.l     #32000,d0
+		lea.l      falcon_screensize(pc),a0
+		move.l     d0,(a0)
+		bra.s      initmenu2
+initmenu1:
+		move.w     d0,-(a7)
+		move.w     #0x005B,-(a7) /* VgetSize */
+		trap       #14
+		addq.l     #4,a7
+		lea.l      falcon_screensize(pc),a0
+		move.l     d0,(a0)
+		movea.l    lineavars,a0
+		lea.l      mode(pc),a2
+		move.w     LA_PLANES(a0),nbplan-mode(a2)
+		move.w     V_REZ_HZ(a0),d1
+		asr.w      #3,d1
+		move.w     d1,xoctets-mode(a2)
+		move.w     DEV_TAB+2(a0),d1 /* DEV_TAB[1] */
+		move.w     d1,yoctets-mode(a2)
+		move.w     V_BYTES_LIN(a0),tlecran-mode(a2)
+initmenu2:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+          .ENDC
+
+; INITIALISATION D'UNE FENETRE: D0 numero de la fenetre
+;                               D1 jeu de caractere et bordure
+;                               D2/D3 startx et y
+;                               D4/D5 txtext et tytext
+;                               D6    pen et paper
+initwind: andi.w #15,d0
+          move.l flagfen,d7
           btst d0,d7
           bne error2          ;--->deja ouverte!
           move d0,tempinit    ;stocke le numero de la fenetre
@@ -633,13 +888,14 @@ initwind: andi.w #$000f,d0
           bhi error6          ;--->jeu de caractere n'existe pas
           subq #1,d1
           lsl #2,d1
-          lea adjeux(pc),a1
+          lea adjeux,a1
           add.w d1,a1
           tst.l (a1)
           beq error6          ;--->pas de jeu a ce numero!
           move.l (a1),a1     ;a1 pointe le jeu de caracteres
 ; initialisation du jeu de caractere
-          move.l a1,adjeucar(a4)
+          /* move.l a1,adjeucar(a4) */
+          dc.w 0x2949,adjeucar /* XXX */
           move (a1)+,d0
           move d0,chrxsize(a4)
           move (a1),d1
@@ -659,13 +915,21 @@ initwind: andi.w #$000f,d0
           andi.w #$000f,d1
           move d1,bordure(a4)
           tst d1
-          beq pasbord
-          addq.w #1,startx(a4)   ;BORDURE: decale la zone utile */
-          addq.w #1,starty(a4)           ;vers le centre de la fenetre */
-          subq.w #2,txtext(a4)
+          .IFNE FALCON
+          beq.s pasbord /* XXX */
+          .ELSE
+          beq.w pasbord /* XXX */
+          .ENDC
+          /* addi.w #1,startx(a4)   ;BORDURE: decale la zone utile */
+          dc.w 0x66c,1,startx /* XXX */
+          /* addi.w #1,starty(a4)           ;vers le centre de la fenetre */
+          dc.w 0x66c,1,starty /* XXX */
+          /* subi.w #2,txtext(a4) */
+          dc.w 0x46c,2,txtext /* XXX */
           beq error4
           bcs error4          ;---> fenetre trop petite!
-          subq.w #2,tytext(a4)
+          /* subi.w #2,tytext(a4) */
+          dc.w 0x46c,2,tytext /* XXX */
           beq error4
           bcs error4          ;---> fenetre trop petite!
 pasbord:  swap d1             ;reprend la taille car en Y
@@ -678,14 +942,14 @@ pasbord:  swap d1             ;reprend la taille car en Y
           cmp yoctets,d3
           bhi error5          ;---> fenetre trop grande en Y!
 ; paper et pen
-          clr flags(a4)
+          clr flags(a4)       
           move d6,d0
           bsr setpaper
           swap d6
           move d6,d0
           bsr setpen
 ; initialisation de la copie texte
-          move topcopie(pc),d3
+          move topcopie,d3
           mulu d5,d4          ;txtext*tytext*tcarcopie = taille copie texte
           mulu tcarcopie,d4
           move d4,d5
@@ -698,14 +962,14 @@ pasbord:  swap d1             ;reprend la taille car en Y
           bcc error7          ;---> plus de place buffer!
           move d5,topcopie
 		  .IFNE COMPILER
-          move.l bufcopie(pc),a2
+          move.l bufcopie,a2
           .ELSE
-          lea bufcopie(pc),a2
+          lea bufcopie,a2
           .ENDC
           add.w d3,a2
           move.l a2,copie(a4) ;stocke l'adresse de la copie
 ; initialisations diverses
-          move.l a4,adcurwindow  ;adresse de la fenetre curwindow=celle-ci
+          move.l a4,adcouran  ;adresse de la fenetre courante=celle-ci
           clr freelle         ;pour pouvoir imprimer IMBECILE!
           move mode,d0
           mulu #20,d0
@@ -718,31 +982,43 @@ pasbord:  swap d1             ;reprend la taille car en Y
           clr escape
 ; affiche le tour de la fenetre
           move bordure(a4),d0
-          beq ouvre
+          IFNE FALCON
+          beq.s ouvre /* XXX */
           bsr.s afftour
+          .ELSE
+          beq.w ouvre /* XXX */
+          bsr afftour
+          .ENDC
 ; active la fenetre elle meme
 ouvre:    bsr clears
           bsr scrollon
-          move tempinit(pc),d0
-          move.l flagfen(pc),d7
+          move tempinit,d0
+          move.l flagfen,d7
           bset d0,d7          ;fenetre ouverte!
           move.l d7,flagfen
           move #1,tempinit
           bra actzero
 
-; TRAP #3,30
-; Change the border of the current window
-border:   bsr.s afftour
+; BORDER
+border:   .IFNE FALCON
+          bsr.s afftour
+          .ELSE
+          bsr afftour
+          .ENDC
           move.l d0,-(sp)
           bsr recopie
           move.l (sp)+,d0
           rts
 
-; AFFICHE LE TOUR D0 DE LA FENETRE curwindow, si zero, remet la meme!
+; AFFICHE LE TOUR D0 DE LA FENETRE COURANTE, si zero, remet la meme!
 afftour:  move bordure(a4),d1
           beq tourerr         ;fenetre sans bordure!!!
           andi.w #$f,d0
-          bne afftour1
+          .IFNE FALCON
+          bne.s afftour1 /* XXX */
+          .ELSE
+          bne.w afftour1 /* XXX */
+          .ENDC
           move d1,d0
 afftour1: move d0,bordure(a4)
 ; prepare la fenetre
@@ -807,20 +1083,39 @@ initw6:   bsr chrdec          ;ligne du bas
 tourerr:  moveq #1,d0
           rts
 
-; TRAP #3,27
-; MULTIPLE ACTIVATION (A0 ---> TABLE)
+; ACTIVATION MULTIPLE (A0 ---> TABLE)
 actcache: move.w (a0)+,d0
-          bmi actch2
+          .IFNE FALCON
+          bmi.s actch2 /* XXX */
+          .ELSE
+          bmi.w actch2 /* XXX */
+          .ENDC
           move.l a0,-(sp)
           move #1,tempinit
+          .IFNE FALCON
           bsr.s windon2
+          .ELSE
+          bsr windon2
+          .ENDC
           tst d0              ;une erreur: recopie et arrete!
-          bne actch3
+          .IFNE FALCON
+          bne.s actch3 /* XXX */
+          .ELSE
+          bne.w actch3 /* XXX */
+          .ENDC
           tst d1              ;peut on dessiner?
-          bne.s actch1
+          .IFNE FALCON
+          bne.s actch1 /* XXX */
+          .ELSE
+          bne.w actch1 /* XXX */
+          .ENDC
           bsr windaff         ;oui !!!
 actch1:   move.l (sp)+,a0
-          bra actcache
+          .IFNE FALCON
+          bra.s actcache /* XXX */
+          .ELSE
+          bra.w actcache /* XXX */
+          .ENDC
 actch2:   bsr recopie         ;pas d'erreur
           clr.l d0
           rts
@@ -829,42 +1124,67 @@ actch3:   move.l d0,(sp)      ;une erreur: la sauve, recopie!
           move.l (sp)+,d0
           rts
 
-; TRAP #3,16
-; QUICK ACTIVATION OF A WINDOW
+; ACTIVATION RAPIDE D'UNE FENETRE
 qwindon:  move #1,tempinit
-          bra windon2
+          .IFNE FALCON
+          bra.s windon2 /* XXX */
+          .ELSE
+          bra.w windon2 /* XXX */
+          .ENDC
 ; ACTIVATION DE LA FENETRE D0
 windon:   clr tempinit
 windon2:  andi.w #$000f,d0
-          move.l flagfen(pc),d7
+          move.l flagfen,d7
           btst d0,d7
           beq error3          ;--->pas ouverte!
-          cmp curwindow(pc),d0
-          beq dejaact         ;banane! Elle est deja activee!
+          cmp courante,d0
+          .IFNE FALCON
+          beq.s dejaact         ;banane! Elle est deja activee! /* XXX */
+          .ELSE
+          beq.w dejaact         ;banane! Elle est deja activee! /* XXX */
+          .ENDC
 ; table des priortes
-actzero:  move d0,curwindow
-          lea priofen(pc),a1       ;adresse de la table des priorte
+actzero:  move d0,courante
+          lea priofen,a1       ;adresse de la table des priorte
           move.b 0(a1,d0.w),d2 ;ancienne priorte
-          bne wdon0
+          .IFNE FALCON
+          bne.s wdon0 /* XXX */
+          .ELSE
+          bne.w wdon0 /* XXX */
+          .ENDC
           move #nbfenetre+1,d2
 wdon0:    move #nbfenetre-1,d1
 wdon1:    move.b 0(a1,d1.w),d3
-          beq wdon2
+          .IFNE FALCON
+          beq.s wdon2 /* XXX */
+          .ELSE
+          beq.w wdon2 /* XXX */
+          .ENDC
           cmp.b d3,d2
-          bls wdon2
-          add.b #1,0(a1,d1.w)  ;recule celles qui etaient devant elle
+          .IFNE FALCON
+          bls.s wdon2 /* XXX */
+          .ELSE
+          bls.w wdon2 /* XXX */
+          .ENDC
+          /* add.b #1,0(a1,d1.w)  ;recule celles qui etaient devant elle */
+          dc.w 0x631,1,0x1000 /* XXX */
 wdon2:    dbra d1,wdon1
           move.b #1,0(a1,d0.w) ;c'est maintenant la premiere
 
           mulu #lfenetre,d0
           lea tfenetre,a4
           add.w d0,a4           ;a4 contient l'adresse de la fenetre
-          move.l a4,adcurwindow  ;stocke l'adcourante
+          move.l a4,adcouran  ;stocke l'adcourante
 
 ; Affiche la fenetre telle qu'elle est stockee! SUPER!
           tst tempinit
-          bne finwindon       ;pas de dessin: la fenetre est vide!
+          .IFNE FALCON
+          bne.s finwindon       ;pas de dessin: la fenetre est vide! /* XXX */
           bsr.s windaff         ;va la dessiner dans le decor
+          .ELSE
+          bne.w finwindon       ;pas de dessin: la fenetre est vide! /* XXX */
+          bsr windaff         ;va la dessiner dans le decor
+          .ENDC
           bsr recopie         ;recopie rapide sur l'ecran C'EST JOLI...
 ; fini sans aucune erreur
 finwindon:clr tempinit
@@ -880,21 +1200,12 @@ dejaact:  clr tempinit
 ; SOUS PROGRAMME DE WINDON: AFFICHE UNE FENETRE, (SANS RECOPIE)
 ; Efface le fond graphique avec les flags actuels!
 windaff:  clr escape
-      .IFNE 1
 	  move #8,freelle	;TOUTE la fenetre!
           move txreel(a4),d2
           move tyreel(a4),d3
           clr d0
           clr d1
           bsr effecran
-      .ELSE
-          move txtext(a4),d2
-          move tytext(a4),d3
-          clr d0
-          clr d1
-          bsr effecran
-	  move #8,freelle	;TOUTE la fenetre!
-      .ENDC
 ; Ecris le tour et la fenetre
           move ycursor(a4),-(sp)
           move xcursor(a4),-(sp)
@@ -917,27 +1228,51 @@ wdon4:    tst mode
           move.w (a2)+,d4     ;HI et MID resolution
           move.b d4,d0
           clr.b d4
-          bra wdon5
+          .IFNE FALCON
+          bra.s wdon5 /* XXX */
+          .ELSE
+          bra.w wdon5 /* XXX */
+          .ENDC
 actlow:   move.l (a2)+,d4
           move.b d4,d0
           swap d4
 wdon5:    cmpi.b #32,d0        ;caractere different de 32/255
           bne.s wdon5c
           cmp d4,d1
-          bne wdon5c
+          .IFNE FALCON
+          bne.s wdon5c /* XXX */
+          .ELSE
+          bne.w wdon5c /* XXX */
+          .ENDC
 wdon5b:   bsr finafact
-          bra wdon7
+          .IFNE FALCON
+          bra.s wdon7 /* XXX */
+          .ELSE
+          bra.w wdon7 /* XXX */
+          .ENDC
 wdon5c:   cmp d7,d4           ;est-ce actualis‚?
-          beq wdon6           ;oui: c'est bon directement!
+          .IFNE FALCON
+          beq.s wdon6           ;oui: c'est bon directement! /* XXX */
+          .ELSE
+          beq.w wdon6           ;oui: c'est bon directement! /* XXX */
+          .ENDC
           bsr actualise       ;non, on actualise,
           move d4,d7          ;on stocke,
 wdon6:    bsr chrdec
 wdon7:    addq #1,d2
           cmp d5,d2           ;fin de la ligne?
-          bcs wdon4
+          .IFNE FALCON
+          bcs.s wdon4 /* XXX */
+          .ELSE
+          bcs.w wdon4 /* XXX */
+          .ENDC
           addq #1,d3
           cmp d6,d3           ;fin de la page?
-          bcs wdon3
+          .IFNE FALCON
+          bcs.s wdon3 /* XXX */
+          .ELSE
+          bcs.w wdon3 /* XXX */
+          .ENDC
 ; fini: remet le curseur et les flags
           clr freelle         ;fenetre restreinte!
           move (sp)+,scrollup(a4)       ;retabli les scrollings
@@ -949,35 +1284,50 @@ wdon7:    addq #1,d2
           rts
 
 ; REAFFICHE TOUTES LES FENETRES, DANS L'ORDRE INVERSE DES PRIORITES!
-reaffiche:move.l adcurwindow(pc),-(sp)
+reaffiche:move.l adcouran,-(sp)
           moveq #nbfenetre,d7
-windm1:   move.l flagfen(pc),d6
-          lea priofen(pc),a0
+windm1:   move.l flagfen,d6
+          lea priofen,a0
           move #-1,d0
           moveq #nbfenetre-1,d1
 windm2:   addq #1,d0
           cmp.b (a0)+,d7
-          beq windm4
+          .IFNE FALCON
+          beq.s windm4 /* XXX */
+          .ELSE
+          beq.w windm4 /* XXX */
+          .ENDC
           dbra d1,windm2
 windm3:   subq #1,d7          ;on bouge la fenetre activee=> la premiere
-          bne windm1          ;====> la derniere a etre affichee!
-          move.l (sp)+,a4     ;restore l'ancien adcurwindow
-          move.l a4,adcurwindow
+          .IFNE FALCON
+          bne.s windm1          ;====> la derniere a etre affichee! /* XXX */
+          .ELSE
+          bne.w windm1          ;====> la derniere a etre affichee! /* XXX */
+          .ENDC
+          move.l (sp)+,a4     ;restore l'ancien ADCOURAN
+          move.l a4,adcouran
           rts                 ;====> rien a faire a la fin!!!
 windm4:   btst d0,d6          ;pas ouverte!
-          beq windm3
+          .IFNE FALCON
+          beq.s windm3 /* XXX */
+          .ELSE
+          beq.w windm3 /* XXX */
+          .ENDC
           move d7,-(sp)       ;pousse le numero de priorite
           mulu #lfenetre,d0
           lea tfenetre,a4
           add.w d0,a4
-          move.l a4,adcurwindow
+          move.l a4,adcouran
           bsr windaff         ;va afficher la fenetre!
           move (sp)+,d7       ;recupere la priorite
-          bra windm3          ;suivante!
+          .IFNE FALCON
+          bra.s windm3          ;suivante! /* XXX */
+          .ELSE
+          bra.w windm3          ;suivante! /* XXX */
+          .ENDC
 
-; TRAP #3,24
-; MOVE WINDOW: CHANGES THE POSITION OF THE CURRENT WINDOW
-windmove:  move d0,d2
+; MOVE WINDOW: CHANGE LA POSITION DE LA FENETRE COURANTE  !!!! GENIAL !!!!
+windmov:  move d0,d2
           add.w txreel(a4),d2   ;taille totale en X
           mulu chrxsize(a4),d2
           cmp xoctets,d2      ;trop grande en X
@@ -1008,13 +1358,21 @@ windmove:  move d0,d2
 actualise:movem d0-d7,-(sp)
           move d4,flags(a4)
           tst mode
-          beq actulow
+          .IFNE FALCON
+          beq.s actulow /* XXX */
+          .ELSE
+          beq.w actulow /* XXX */
+          .ENDC
           lsr #6,d4          ;recupere PAPER et PEN en HI ou MID resolution
           lsr #6,d4
           move d4,d5
           lsr #2,d4          ;d4 paper
           andi.w #$0003,d5      ;d5 pen
-          bra actua
+          .IFNE FALCON
+          bra.s actua /* XXX */
+          .ELSE
+          bra.w actua /* XXX */
+          .ENDC
 actulow:  move d4,d5
           lsr #4,d4
           andi.w #$000f,d4      ;d4 paper
@@ -1026,19 +1384,24 @@ actua:    move d4,d0
           movem (sp)+,d0-d7
           rts
 
-; TRAP #3,25
-; CURRENT WINDOW QUICK
-currwindow:move #1,rapeflag
-          move curwindow(pc),d0
-          bra effenbis
-
-; TRAP #3,9
-; DELETE A WINDOW
+; EFFACEMENT RAPIDE DE LA FENETRE COURANTE
+effenvite:move #1,rapeflag
+          move courante,d0
+          .IFNE FALCON
+          bra.s effenbis /* XXX */
+          .ELSE
+          bra.w effenbis /* XXX */
+          .ENDC
+; EFFACEMENT D'UNE FENETRE
 effenetre:clr rapeflag
 effenbis: andi.w #$000f,d0
-          move.l flagfen(pc),d7
+          move.l flagfen,d7
           btst d0,d7
-          beq error3          ;--->pas ouverte!
+          .IFNE FALCON
+          beq error3          ;--->pas ouverte! /* XXX */
+          .ELSE
+          beq.w error3          ;--->pas ouverte! /* XXX */
+          .ENDC
           bclr d0,d7          ;Fenetre inhibee
           move.l d7,flagfen
           move d0,tempinit
@@ -1055,11 +1418,19 @@ videbuf:  move.l copie(a4),a2 ;entree pour effacement rapide!
           sub.w d2,topcopie       ;baisse topcopie de la taille enlevee
 vide0:    lea tfenetre,a4
           move #nbfenetre-1,d3
-          move.l flagfen(pc),d7
+          move.l flagfen,d7
 vide1:    btst d3,d7            ;fenetre en route? BUG BUG BUG BUG BUG BUG
-          beq vide3
+          .IFNE FALCON
+          beq.s vide3 /* XXX */
+          .ELSE
+          beq.w vide3 /* XXX */
+          .ENDC
           cmp.l copie(a4),a3
-          bne vide3             ;pas egal: essaie la suivante
+          .IFNE FALCON
+          bne.s vide3             ;pas egal: essaie la suivante /* XXX */
+          .ELSE
+          bne.w vide3             ;pas egal: essaie la suivante /* XXX */
+          .ENDC
           move.l a2,copie(a4)   ;stocke la nouvelle adresse de base
           move txreel(a4),d4
           mulu tyreel(a4),d4
@@ -1073,78 +1444,146 @@ vide2:    move.w (a3)+,(a2)+    ;transfere les copies
           bsr adresse
           move.l a0,adcopie(a4)
           move.l a1,adecran(a4) ;les adresses sont retablies
-          bra vide0             ;reexplore toute la table
+          .IFNE FALCON
+          bra.s vide0             ;reexplore toute la table /* XXX */
+          .ELSE
+          bra.w vide0             ;reexplore toute la table /* XXX */
+          .ENDC
 vide3:    add.l #lfenetre,a4      ;fenetre suivante
           addq #1,d3
           cmpi.w #nbfenetre,d3
-          bne vide1
+          .IFNE FALCON
+          bne.s vide1 /* XXX */
+          .ELSE
+          bne.w vide1 /* XXX */
+          .ENDC
 ; refait la table des priorites
-          lea priofen(pc),a0      ;toutes les fenetres des poids
-          move tempinit(pc),d1    ;inferieures a elle sont
+          lea priofen,a0      ;toutes les fenetres des poids
+          move tempinit,d1    ;inferieures a elle sont
           move.b 0(a0,d1.w),d0  ;augmentees de 1
           clr.b 0(a0,d1.w)    ;efface la fenetre de la prioritable
           move #nbfenetre-1,d1
 refait1:  tst.b 0(a0,d1.w)
-          beq refait2
+          .IFNE FALCON
+          beq.s refait2 /* XXX */
+          .ELSE
+          beq.w refait2 /* XXX */
+          .ENDC
           cmp.b 0(a0,d1.w),d0
-          bge refait2
-          sub.b #1,0(a0,d1.w)
+          .IFNE FALCON
+          bge.s refait2 /* XXX */
+          .ELSE
+          bge.w refait2 /* XXX */
+          .ENDC
+          /* sub.b #1,0(a0,d1.w) */
+          dc.w 0x0430,1,0x1000 /* XXX */
 refait2:  dbra d1,refait1
 ; reaffiche tout l'ecran (sauf si effacement rapide)
           tst rapeflag
-          bne pasrap
+          .IFNE FALCON
+          bne.s pasrap /* XXX */
+          .ELSE
+          bne.w pasrap /* XXX */
+          .ENDC
           bsr reaffiche
           bsr recopie
 ; trouve la fenetre courante
-pasrap:   move tempinit(pc),d0
-          cmp curwindow(pc),d0 ;la fenetre courante n'est pas celle
-          bne finieff         ;qui vient d'etre effacee: on change rien!
+pasrap:   move tempinit,d0
+          cmp courante,d0     ;la fenetre courante n'est pas celle
+          .IFNE FALCON
+          bne.s finieff         ;qui vient d'etre effacee: on change rien! /* XXX */
+          .ELSE
+          bne.w finieff         ;qui vient d'etre effacee: on change rien! /* XXX */
+          .ENDC
           move #1,tempinit
-          lea priofen(pc),a0
+          lea priofen,a0
           clr d0
 trouv1:   cmp.b #1,(a0)+
-          beq trouv2          ;active la fenetre de poids le plus fort!
+          .IFNE FALCON
+          beq.s trouv2          ;active la fenetre de poids le plus fort! /* XXX */
+          .ELSE
+          beq.w trouv2          ;active la fenetre de poids le plus fort! /* XXX */
+          .ENDC
           addq #1,d0
           cmpi.w #nbfenetre,d0
-          blt trouv1
+          .IFNE FALCON
+          blt.s trouv1 /* XXX */
+          .ELSE
+          blt.w trouv1 /* XXX */
+          .ENDC
 finieff:  clr tempinit
           clr d0              ;pas d'erreur
           rts
 ; cherche une autre fenetre que la 15!
 trouv2:   cmpi.w #15,d0          ;active toute fenetre, SAUF LA 15!!! SYSTEME!!!
           bne actzero
-          lea priofen(pc),a0
+          lea priofen,a0
           clr d0
 trouv3:   cmp.b #2,(a0)+      ;on peut activer la # deux!!!
           beq actzero
           addq #1,d0
           cmpi.w #nbfenetre,d0
-          blt trouv3
+          .IFNE FALCON
+          blt.s trouv3 /* XXX */
+          .ELSE
+          blt.w trouv3 /* XXX */
+          .ENDC
 ; (peu probable): la fenetre 15 est la seule: active le fond!
           clr d0
+          .IFNE FALCON
           bra windon
-
+          .ELSE
+          bra.w windon /* XXX */
+          .ENDC
+          
 ; ERREURS FENETRES
 error1:   move #1,d0    ;Out of range
-          bra finerr
+          .IFNE FALCON
+          bra.s finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
 error2:   move #2,d0    ;Already opened
-          bra finerr
+          .IFNE FALCON
+          bra.s finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
 error3:   move #3,d0    ;Not opened
-          bra finerr
+          .IFNE FALCON
+          bra.s finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
 error4:   move #4,d0    ;Too small window
-          bra finerr
+          .IFNE FALCON
+          bra.s finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
 error5:   move #5,d0    ;Too large window
-          bra finerr
+          .IFNE FALCON
+          bra.s finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
 error6:   move #6,d0    ;Char set not found
-          bra finerr
+          .IFNE FALCON
+          bra.s finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
 error7:   move #7,d0    ;No more text buffer space
-          bra finerr
-finerr:   move.l adcurwindow(pc),a4  ;reprend l'adresse courante!!!
+          .IFNE FALCON
+          bra.w finerr /* XXX */
+          .ELSE
+          bra.w finerr /* XXX */
+          .ENDC
+finerr:   move.l adcouran,a4  ;reprend l'adresse courante!!!
           rts                 ;fin de la trappe
 
-; TRAP #3,13
-; GETCURWINDOW: RETURN THE NUMBER OF THE CURRENT WINDOW
-getcurwindow: move curwindow(pc),d0
+; GETCOURANTE: RAMENE LE NUMERO DE LA FENETRE COURANTE
+getcurwindow: move courante,d0
           rts
 
 ; INITIALISATION DU CURSEUR: A0 POINTE LA TABLE DE DEFINITION
@@ -1153,76 +1592,116 @@ initcurs: move (a0)+,indcurs(a4)        ;vitesse de clignotement/couleur
 initc1:   move.b (a0)+,tabcurs(a4,d0.w)
           addq #1,d0
           cmpi.w #8,d0
-          blt initc1
+          .IFNE FALCON
+          blt.s initc1 /* XXX */
+          .ELSE
+          blt.w initc1 /* XXX */
+          .ENDC
           move #1,cptcurs(a4)
           clr poscurs(a4)
           clr flgcurs(a4)
           move chrysize(a4),d0
           move d0,fcurseur(a4)
-          subq.w #2,d0
+          /* subq.w #2,d0 */
+          dc.w 0x440,2 /* XXX */
           move d0,dcurseur(a4)
           move #1,curseur(a4)
           rts
 
-; TRAP #3,22
-; CURBAS: Displays a small cursor
-smallcursor:   move.w chrysize(a4),d0
+; CUR BAS: REMET LE CURSEUR EN BAS
+curbas:   move.w chrysize(a4),d0
           move d0,fcurseur(a4)
           subq #2,d0
           move d0,dcurseur(a4)
           rts
 
-; TRAP #3,23
-; CURHAUT: Displays a thick cursor
-largecursor:  move.w chrysize(a4),d0
+; CUR HAUT: GRAND CURSEUR
+curhaut:  move.w chrysize(a4),d0
           move d0,fcurseur(a4)
           lsr #1,d0
           addq #1,d0
           move d0,dcurseur(a4)
           rts
 
-; TRAP #3,31
 ; AUTOBACK ON
-autobackon:  move #1,autoback
+autobon:  move #1,autoback
           rts
 
-; TRAP #3,32
 ; AUTOBACK OFF
-autobackoff: move autoback,oldauto
+autoboff: move autoback,oldauto
           clr autoback
           rts
 
-; TRAP #3,33
 ; OLD AUTO BACK
 ancauto:  move oldauto,autoback
           rts
 
-; CURSOR MANAGEMENT: SHOWS THE FOLLOWING COLOR
-gcurseur: cmp #2,mode         ;pas de flash en COULEURS!
-          bne fincurs1
+; GESTION DU CURSEUR: AFFICHE LA COULEUR SUIVANTE
+gcurseur: 
+		  .IFNE FALCON
+		  movem.l    d0-d7/a0-a6,-(a7)
+          bsr        menu_check
+          .ENDC
+          
+          cmp #2,mode         ;pas de flash en COULEURS!
+          .IFNE FALCON
+          bne.s fincurs1 /* XXX */
+          .ELSE
+          bne.w fincurs1 /* XXX */
+          .ENDC
           tst offcur          ;CUROFF!
-          bne fincurs1
+          .IFNE FALCON
+          bne.s fincurs1 /* XXX */
+          .ELSE
+          bne.w fincurs1 /* XXX */
+          .ENDC
           tst inhibc          ;la routine est en route!
-          bne fincurs1
+          .IFNE FALCON
+          bne.s fincurs1 /* XXX */
+          .ELSE
+          bne.w fincurs1 /* XXX */
+          .ENDC
           movem.l d0/a3-a4,-(sp)
-          move.l adcurwindow(pc),a4  ;pas de curseur sur cette fenetre
+          move.l adcouran,a4  ;pas de curseur sur cette fenetre
           tst curseur(a4)
-          beq fincurs
+          .IFNE FALCON
+          beq.s fincurs /* XXX */
+          .ELSE
+          beq.w fincurs /* XXX */
+          .ENDC
 
-          subq.w #1,cptcurs(a4)
-          bne fincurs
+          /* subq.w #1,cptcurs(a4) */
+          dc.w 0x46c,1,cptcurs /* XXX */
+          .IFNE FALCON
+          bne.s fincurs /* XXX */
+          .ELSE
+          bne.w fincurs /* XXX */
+          .ENDC
           move indcurs(a4),cptcurs(a4)
           move poscurs(a4),d0
           addq #1,d0
           cmpi.w #8,d0
-          blt gcur1
+          .IFNE FALCON
+          blt.s gcur1 /* XXX */
+          .ELSE
+          blt.w gcur1 /* XXX */
+          .ENDC
           clr d0
 gcur1:    move d0,poscurs(a4)
           move.b tabcurs(a4,d0.w),d0        ;couleur affichee en ce moment
+          .IFNE FALCON
+          bsr.s affcurs /* XXX */
+          .ELSE
           bsr affcurs
+          .ENDC
 
-fincurs:  movem.l (sp)+,d0/a3-a4
-fincurs1: rts
+fincurs:  
+          movem.l (sp)+,d0/a3-a4
+fincurs1:
+          .IFNE FALCON
+		  movem.l (a7)+,d0-d7/a0-a6
+		  .ENDC
+          rts
 
 ; AFFICHAGE/EXTINCTION DU CURSEUR
 affcurs:  move #1,inhibc
@@ -1231,7 +1710,7 @@ affcurs:  move #1,inhibc
           move dcurseur(a4),d1
           mulu tlecran,d1
           move.l adecran(a4),a1      ;pointe le decor
-          move.l ecran,d7            ;pointe l'ecran!
+          move.l ecran.l,d7            ;pointe l'ecran! /* XXX */
           sub.l back,d7              ;difference ECRAN/BACK
           add.w d1,a1           ;a1 adresse du premier octet
           move fcurseur(a4),d6
@@ -1247,12 +1726,20 @@ affcurs:  move #1,inhibc
           move tlecran,a0     ;a0 plus ecran
 
           tst.b d0
-          bmi extinct
+          .IFNE FALCON
+          bmi.s extinct /* XXX */
+          .ELSE
+          bmi.w extinct /* XXX */
+          .ENDC
 ; allumage du curseur dans la couleur d0
           bsr couleurs        ;a6 pointe sur la table des couleurs
           bclr #31,d5
           tst flgcurs(a4)
-          beq afcur1
+          .IFNE FALCON
+          beq.s afcur1 /* XXX */
+          .ELSE
+          beq.w afcur1 /* XXX */
+          .ENDC
           bset #31,d5
 afcur1:   move d4,d1          ;nouvelle ligne: init cpt X
           move.l a1,a2
@@ -1260,7 +1747,11 @@ afcur1:   move d4,d1          ;nouvelle ligne: init cpt X
 afcur2:   move d5,d0          ;nouvel octet
           move.l a6,a5
 afcur3:   btst #31,d5
-          bne paspris
+          .IFNE FALCON
+          bne.s paspris /* XXX */
+          .ELSE
+          bne.w paspris /* XXX */
+          .ENDC
           move.b (a2),(a3)+         ;stockage octet sous curseur
 paspris:  move.b (a5),(a2)          ;pokage dans le decor
           move.b (a5),0(a2,d7.l)    ;pokage dans l'ecran
@@ -1268,17 +1759,29 @@ paspris:  move.b (a5),(a2)          ;pokage dans le decor
           addq #2,a5
           dbra d0,afcur3      ;autre plan?
           bchg #0,d2
-          bne afcur4
+          .IFNE FALCON
+          bne.s afcur4 /* XXX */
+          .ELSE
+          bne.w afcur4 /* XXX */
+          .ENDC
           sub.w d3,a2
 afcur4:   subq #1,a2
           dbra d1,afcur2      ;autre octet en largeur?
           add.w a0,a1
           dbra d6,afcur1      ;autre ligne?
           move #1,flgcurs(a4)
-          bra fincur
+          .IFNE FALCON
+          bra.s fincur /* XXX */
+          .ELSE
+          bra.w fincur /* XXX */
+          .ENDC
 ; extinction du curseur
 extinct:  tst flgcurs(a4)     ;si deja eteint: on ne fait rien!
-          beq fincur
+          .IFNE FALCON
+          beq.s fincur /* XXX */
+          .ELSE
+          beq.w fincur /* XXX */
+          .ENDC
 excur1:   move d4,d1
           move.l a1,a2
           move a2,d2
@@ -1288,7 +1791,11 @@ excur3:   move.b (a3),(a2)          ;poke dans le decor
           addq #2,a2
           dbra d0,excur3
           bchg #0,d2
-          bne excur4
+          .IFNE FALCON
+          bne.s excur4 /* XXX */
+          .ELSE
+          bne.w excur4 /* XXX */
+          .ENDC
           sub.w d3,a2
 excur4:   subq #1,a2
           dbra d1,excur2
@@ -1301,7 +1808,7 @@ fincur:   movem.l (sp)+,d0-d7/a0-a6
           rts
 ;-----------------------------------------------------------------------------
 ;
-;
+;                           
 ;
 ;-----------------------------------------------------------------------------
 
@@ -1309,9 +1816,17 @@ fincur:   movem.l (sp)+,d0-d7/a0-a6
 adresse:  move d0,d6
           move d1,d7
           tst freelle         ;si fenetre entiere: pas de marge
-          bne ad1
+          .IFNE FALCON
+          bne.s ad1 /* XXX */
+          .ELSE
+          bne.w ad1 /* XXX */
+          .ENDC
           tst bordure(a4)     ;si bordure: ajouter 1 aux marges texte
-          beq ad1
+          .IFNE FALCON
+          beq.s ad1 /* XXX */
+          .ELSE
+          beq.w ad1 /* XXX */
+          .ENDC
           addq #1,d6
           addq #1,d7
 ad1:      mulu txreel(a4),d7
@@ -1320,7 +1835,7 @@ ad1:      mulu txreel(a4),d7
           move.l copie(a4),a0
           add.w d7,a0          ;ADRESSE COPIE TEXTE DANS A0
 
-          move freelle(pc),d7
+          move freelle,d7
           add.w startx(a4,d7.w),d0
           add.w starty(a4,d7.w),d1
           move d1,d7
@@ -1339,23 +1854,45 @@ ad1:      mulu txreel(a4),d7
 ; CALCULE L'ADRESSE DANS LA TABLE DES COULEURS (D0->A6)
 couleurs: lea tcouleur,a6
           tst mode
-          beq cbas
+          .IFNE FALCON
+          beq.s cbas /* XXX */
+          .ELSE
+          beq.w cbas /* XXX */
+          .ENDC
           cmp #1,mode
-          beq cmoy
+          .IFNE FALCON
+          beq.s cmoy /* XXX */
+          .ELSE
+          beq.w cmoy /* XXX */
+          .ENDC
           andi.w #$0001,d0
           lsl #6,d0           ;multiplie par 64 (hires)
-          addq.w #6,d0
-          bra crien
+          /* addq.w #6,d0 */
+          dc.w 0x640,6 /* XXX */
+          .IFNE FALCON
+          bra.s crien /* XXX */
+          .ELSE
+          bra.w crien /* XXX */
+          .ENDC
 cmoy:     andi.w #$0003,d0
           lsl #5,d0           ;multiplie par 32 (midres)
-          addq.w #4,d0
-          bra crien
+          /* addq.w #4,d0 */
+          dc.w 0x640,4 /* XXX */
+          .IFNE FALCON
+          bra.s crien /* XXX */
+          .ELSE
+          bra.w crien /* XXX */
+          .ENDC
 cbas:     andi.w #$000f,d0
           lsl #3,d0           ;multiplie par 8 (lowres)
 crien:    add.w d0,a6
           move flags(a4),d0   ;teste si c'est ombre...
           btst #11,d0
-          beq finc
+          .IFNE FALCON
+          beq.s finc /* XXX */
+          .ELSE
+          beq.w finc /* XXX */
+          .ENDC
           add.w #128,a6
 finc:     rts
 
@@ -1364,7 +1901,11 @@ effecran: bsr adresse
           move.l adpaper(a4),a6
           move flags(a4),d4
           btst #10,d4             ;a6 pointe sur la table couleurs
-          beq effac3
+          .IFNE FALCON
+          beq.s effac3 /* XXX */
+          .ELSE
+          beq.w effac3 /* XXX */
+          .ENDC
           move.l adpen(a4),a6     ;INVERSE!
 
 effac3:   movem d0-d3,-(sp)       ;sauve les donnees pour l'effacement copie
@@ -1380,11 +1921,19 @@ effac3:   movem d0-d3,-(sp)       ;sauve les donnees pour l'effacement copie
           move d0,d1
           add.w d4,d1
           btst #0,d0
-          beq effac1
+          .IFNE FALCON
+          beq.s effac1 /* XXX */
+          .ELSE
+          beq.w effac1 /* XXX */
+          .ENDC
           bset #31,d4         ;flag gauche: #31 de d4
           subq #1,d4
 effac1:   btst #0,d1
-          beq effac2
+          .IFNE FALCON
+          beq.s effac2 /* XXX */
+          .ELSE
+          beq.w effac2 /* XXX */
+          .ENDC
           bset #30,d4         ;flag droite: #30 de d4
           subq #1,d4
 effac2:   lsr #1,d4
@@ -1404,7 +1953,11 @@ eff2:     move d4,d5          ;nouvelle ligne ecran: compteur milieu
           move.l a1,a3
 ; effacement octet de gauche
           btst #31,d4
-          beq efmilieu
+          .IFNE FALCON
+          beq.s efmilieu /* XXX */
+          .ELSE
+          beq.w efmilieu /* XXX */
+          .ENDC
           move d1,d0          ;compteur plans
           move.l a6,a2        ;couleurs
 eff3:     move.b (a2),(a3)    ;effacement ecran
@@ -1414,7 +1967,11 @@ eff3:     move.b (a2),(a3)    ;effacement ecran
           subq #1,a3          ;retabli l'adresse
 ; effacement rapide du milieu
 efmilieu: tst d4
-          bmi efdroite
+          .IFNE FALCON
+          bmi.s efdroite /* XXX */
+          .ELSE
+          bmi.w efdroite /* XXX */
+          .ENDC
 eff5:     move d1,d0          ;compteur plans
           move.l a6,a2        ;couleurs
 eff6:     move.w (a2)+,(a3)+
@@ -1422,7 +1979,11 @@ eff6:     move.w (a2)+,(a3)+
           dbra d5,eff5
 ; effacement octet de droite
 efdroite: btst #30,d4
-          beq effin
+          .IFNE FALCON
+          beq.s effin /* XXX */
+          .ELSE
+          beq.w effin /* XXX */
+          .ENDC
           move d1,d0          ;compteur plans
           move.l a6,a2        ;couleurs
 eff7:     move.b (a2),(a3)
@@ -1434,7 +1995,11 @@ effin:    add.w d6,a1
           dbra d2,eff2
 
           dbra d3,eff1        ;encore une ligne?
-          bra sorteff
+          .IFNE FALCON
+          bra.s sorteff /* XXX */
+          .ELSE
+          bra.w sorteff /* XXX */
+          .ENDC
 
 ; effacement rapide: genial
 efrapide: move d3,d0
@@ -1443,17 +2008,33 @@ efrapide: move d3,d0
           lsr #3,d0
           subq #1,d0          ;d0 compteur effacement ecran
           tst mode
-          beq efrbas
+          .IFNE FALCON
+          beq.s efrbas /* XXX */
+          .ELSE
+          beq.w efrbas /* XXX */
+          .ENDC
           cmp #1,mode
-          beq efrmoy
+          .IFNE FALCON
+          beq.s efrmoy /* XXX */
+          .ELSE
+          beq.w efrmoy /* XXX */
+          .ENDC
           move (a6),d6        ;couleurs haute resolution
           swap d6
           move (a6),d6
           move.l d6,d7
-          bra effrap1
+          .IFNE FALCON
+          bra.s effrap1 /* XXX */
+          .ELSE
+          bra.w effrap1 /* XXX */
+          .ENDC
 efrmoy:   move.l (a6),d6      ;couleurs moyenne resolution
           move.l d6,d7
-          bra effrap1
+          .IFNE FALCON
+          bra.s effrap1 /* XXX */
+          .ELSE
+          bra.w effrap1 /* XXX */
+          .ENDC
 efrbas:   move.l (a6)+,d6     ;couleurs basse resolution
           move.l (a6),d7
 
@@ -1470,7 +2051,11 @@ effcopie: subq #1,d3          ;d3 compteur en Y
           move txreel(a4),d4
           mulu tcarcopie,d4   ;d4 plus copie
           tst mode
-          beq efcop3
+          .IFNE FALCON
+          beq.s efcop3 /* XXX */
+          .ELSE
+          beq.w efcop3 /* XXX */
+          .ENDC
 ; eff copie en HI et MID resolution: par MOTS!
           move flags(a4),d0
           andi.w #$ff00,d0
@@ -1481,7 +2066,11 @@ efcop2:   move.w d0,(a2)+
           dbra d5,efcop2
           add.w d4,a0
           dbra d3,efcop1
-          bra fineff
+          .IFNE FALCON
+          bra.s fineff /* XXX */
+          .ELSE
+          bra.w fineff /* XXX */
+          .ENDC
 ; eff copie en LOW resolution: travaille par MOTS LONGS!
 efcop3:   move.l flags(a4),d0
           andi.l #$ffff0000,d0
@@ -1501,9 +2090,17 @@ cligne:   movem.l d0-d7/a0-a6,-(sp)
           clr d0
           moveq #1,d3
           bsr effecran
+          .IFNE FALCON
           bsr.s effcopie
+          .ELSE
+          bsr effcopie
+          .ENDC
           move (sp)+,d1
-          bsr endline         ;met un 255 au bout!
+          .IFNE FALCON
+          bsr.s endline         ;met un 255 au bout! /* XXX */
+          .ELSE
+          bsr.w endline         ;met un 255 au bout! /* XXX */
+          .ENDC
           bsr recopie
           movem.l (sp)+,d0-d7/a0-a6
           rts
@@ -1518,22 +2115,35 @@ clears:   movem.l d0-d7/a0-a6,-(sp)
           bsr effcopie
 ; ecris la ligne de 255 verticale
           clr d1
-clears1:  bsr endline
+clears1:  
+          .IFNE FALCON
+          bsr.s endline /* XXX */
+          .ELSE
+          bsr.w endline /* XXX */
+          .ENDC
           addq #1,d1
           cmp tytext(a4),d1
-          bne clears1
+          .IFNE FALCON
+          bne.s clears1 /* XXX */
+          .ELSE
+          bne.w clears1 /* XXX */
+          .ENDC
           bsr haume
           bsr recopie
           movem.l (sp)+,d0-d7/a0-a6
           rts
 
-; END LINE: MET UN 255 AU BOUT DE LA LIGNE D1 DANS LA COPIE
+; END LINE: MET UN 255 AU BOUT DE LA LIGNE D1 DANS LA COPIE 
 endline:  move d1,-(sp)
           move txtext(a4),d0
           subq #1,d0
           bsr adresse
           tst mode
-          beq endllow
+          .IFNE FALCON
+          beq.s endllow /* XXX */
+          .ELSE
+          beq.w endllow /* XXX */
+          .ENDC
           move.w flags(a4),d1
           andi.w #$ff00,d1
           ori.b #255,d1
@@ -1548,15 +2158,23 @@ endllow:  move.w flags(a4),d1
           move (sp)+,d1
           rts
 
-; TRAP #3,2
 ; LOCATE D0,D1
 locate:   cmp txtext(a4),d0
-          bcc sorti
+          .IFNE FALCON
+          bcc.s sorti /* XXX */
+          .ELSE
+          bcc.w sorti /* XXX */
+          .ENDC
           cmp tytext(a4),d1
-          bcc sorti
+          .IFNE FALCON
+          bcc.s sorti /* XXX */
           bsr.s curxy
+          .ELSE
+          bcc.w sorti /* XXX */
+          bsr curxy
+          .ENDC
           clr d0                  ;pas d'erreur
-          rts
+          rts     
 sorti:    move #1,d0
           rts
 
@@ -1567,32 +2185,36 @@ curxy:    move d0,xcursor(a4)
           move.l a1,adecran(a4)   ;adresses absolues du curseur
           rts
 
-; TRAP #3,17
-; POSCURSOR: RETURN THE CURSOR'S POSITION TO D0.L
+;POSCURSEUR: RAMENE LA POSITION DU CURSEUR EN D0.L
 coordcurs:move xcursor(a4),d0
           swap d0
           move ycursor(a4),d0
           rts
 
-; TRAP #3,35
-; XGRAPHIC: Convert X coord from text to graphic
+; XGRAPHIC: COORD CURS X ---> COORDS GRAPHIC
 xgraphic: cmp txtext(a4),d0             ;ramene -1 si sort
-          bcc cxgr1
+          .IFNE FALCON
+          bcc.s cxgr1 /* XXX */
+          .ELSE
+          bcc.w cxgr1 /* XXX */
+          .ENDC
           add.w startx(a4),d0
           mulu chrxsize(a4),d0
           lsl #3,d0
           rts
 
-; TRAP #3,36
-; YGRAPHIC: Convert Y coord from text to graphic
+; YGRAPHIC: COORD CURS Y ---> COORDS GRAPHIC
 ygraphic: cmp tytext(a4),d0             ;ramene -1 si sort
-          bcc cxgr1
+          .IFNE FALCON
+          bcc.s cxgr1 /* XXX */
+          .ELSE
+          bcc.w cxgr1 /* XXX */
+          .ENDC
           add.w starty(a4),d0
           mulu chrysize(a4),d0
           rts
 
-; TRAP #3,37
-; XTEXT: Converts X coord from graphic to text
+; XTEXT: TRANSFORME UNE POSITION GRAPHIQUE X(d0) EN COORDONNEE CURSEUR
 xtext:    move.w startx(a4),d1
           move.w d1,d2
           add.w txtext(a4),d2
@@ -1601,9 +2223,17 @@ xtext:    move.w startx(a4),d1
           lsl #3,d2
           mulu chrxsize(a4),d2          ;fin graphique de la fenetre
           cmp.w d2,d0
-          bcc cxgr1
+          .IFNE FALCON
+          bcc.s cxgr1 /* XXX */
+          .ELSE
+          bcc.w cxgr1 /* XXX */
+          .ENDC
           sub.w d1,d0
-          bcs cxgr1
+          .IFNE FALCON
+          bcs.s cxgr1 /* XXX */
+          .ELSE
+          bcs.w cxgr1 /* XXX */
+          .ENDC
           lsr #3,d0
           divu chrxsize(a4),d0
           andi.l #$ffff,d0
@@ -1611,17 +2241,24 @@ xtext:    move.w startx(a4),d1
 cxgr1:    moveq #-1,d0
           rts
 
-; TRAP #3,38
-; YTEXT: Converts Y coord from graphic to text
+; YTEXT: TRANSFORME UNE POSITION GRAPHIQUE (Y) EN COORDONNEE CURSEUR
 ytext:    move.w starty(a4),d1
           move.w d1,d2
           add.w tytext(a4),d2
           mulu chrysize(a4),d1          ;debut (0-639) de la fenetre
           mulu chrysize(a4),d2          ;fin graphique de la fenetre
           cmp.w d2,d0
-          bcc cxgr1
+          .IFNE FALCON
+          bcc.s cxgr1 /* XXX */
+          .ELSE
+          bcc.w cxgr1 /* XXX */
+          .ENDC
           sub.w d1,d0
-          bcs cxgr1
+          .IFNE FALCON
+          bcs.s cxgr1 /* XXX */
+          .ELSE
+          bcs.w cxgr1 /* XXX */
+          .ENDC
           divu chrysize(a4),d0
           andi.l #$ffff,d0               ;enleve le reste!
           rts
@@ -1646,11 +2283,19 @@ scrolling:movem.l d0-d6/a0,-(sp)
           move d0,d1
           add.w d4,d1
           btst #0,d0          ;test GAUCHE
-          beq scrll1
+          .IFNE FALCON
+          beq.s scrll1 /* XXX */
+          .ELSE
+          beq.w scrll1 /* XXX */
+          .ENDC
           bset #31,d4         ;flag: demarre sur impair
           subq #1,d4          ;un octet en moins au milieu
 scrll1:   btst #0,d1          ;test DROITE
-          beq scrll2
+          .IFNE FALCON
+          beq.s scrll2 /* XXX */
+          .ELSE
+          beq.w scrll2 /* XXX */
+          .ENDC
           bset #30,d4         ;flag: fin sur pair
           subq #1,d4
 scrll2:   lsr #1,d4           ;travaille par mots: /2
@@ -1670,7 +2315,11 @@ scrl2:    move a4,d4          ;nouvelle ligne: compteur milieu ligne
           lea 0(a3,d3.w),a0
 ; transfert octet de gauche
           btst #31,d4
-          beq scmilieu
+          .IFNE FALCON
+          beq.s scmilieu /* XXX */
+          .ELSE
+          beq.w scmilieu /* XXX */
+          .ENDC
           move a6,d0          ;compteur plans
 scrl3:    move.b (a0),(a3) ;transfert dans l'ecran
           addq #2,a0
@@ -1680,14 +2329,22 @@ scrl3:    move.b (a0),(a3) ;transfert dans l'ecran
           subq #1,a3          ;retablissement au premier plan suivant
 ; transfert rapide du milieu
 scmilieu: tst d4
-          bmi scdroite
+          .IFNE FALCON
+          bmi.s scdroite /* XXX */
+          .ELSE
+          bmi.w scdroite /* XXX */
+          .ENDC
 scrl5:    move a6,d0          ;compteur plans
 scrl6:    move.w (a0)+,(a3)+
           dbra d0,scrl6       ;autre plan?
           dbra d4,scrl5       ;autre mot?
 ; transfert octet de droite
 scdroite: btst #30,d4
-          beq finsc
+          .IFNE FALCON
+          beq.s finsc /* XXX */
+          .ELSE
+          beq.w finsc /* XXX */
+          .ENDC
           move a6,d0
 scrl7:    move.b (a0),(a3)
           addq #2,a0
@@ -1698,7 +2355,11 @@ finsc:    add.w d7,a1
           dbra d1,scrl2       ;autre ligne? fini la hauteur d'un caractere
 
           dbra d5,scrl1       ;autre caractere? fini le scrolling
-          bra scrollcop
+          .IFNE FALCON
+          bra.s scrollcop /* XXX */
+          .ELSE
+          bra.w scrollcop /* XXX */
+          .ENDC
 
 ; SCROLLING RAPIDE: GENIAL!
 scrapide: mulu tlecran,d5
@@ -1706,12 +2367,20 @@ scrapide: mulu tlecran,d5
           lsr #2,d5
           subq #1,d5          ;d5: compteur scroll ecran
           tst d3
-          bmi scrbs
+          .IFNE FALCON
+          bmi.s scrbs /* XXX */
+          .ELSE
+          bmi.w scrbs /* XXX */
+          .ENDC
 ; scrolling rapide vers le haut
           lea 0(a1,d3.w),a3
 scrht1:   move.l (a3)+,(a1)+
           dbra d5,scrht1
-          bra scrollcop
+          .IFNE FALCON
+          bra.s scrollcop /* XXX */
+          .ELSE
+          bra.w scrollcop /* XXX */
+          .ENDC
 ; scrolling rapide vers le bas
 scrbs:    add.w tlecran,a1
           lea 0(a1,d3.w),a3
@@ -1720,19 +2389,27 @@ scrbs1:   move.l -(a3),-(a1)
 
 ; SCROLLING DANS LA COPIE
 scrollcop:movem.l (sp)+,d0-d6/a0  ;recupere les donnees
-          move.l adcurwindow(pc),a4      ;adresse de la fenetre courante
+          move.l adcouran,a4      ;adresse de la fenetre courante
           move txtext(a4),d7
           subq #1,d7              ;d7 indice en X
           subq #1,d5              ;d5 compteur en Y
           tst mode
-          beq scrcop3
+          .IFNE FALCON
+          beq.s scrcop3 /* XXX */
+          .ELSE
+          beq.w scrcop3 /* XXX */
+          .ENDC
 scrcop1:  move d7,d4              ;HI et MID res: mot
           move.l a0,a2
 scrcop2:  move.w 0(a2,d2.w),(a2)+
           dbra d4,scrcop2
           add.w d6,a0
           dbra d5,scrcop1
-          bra finscroll
+          .IFNE FALCON
+          bra.s finscroll /* XXX */
+          .ELSE
+          bra.w finscroll /* XXX */
+          .ENDC
 scrcop3:  move d7,d4              ;LOW res: mot long
           move.l a0,a2
 scrcop4:  move.l 0(a2,d2.w),(a2)+
@@ -1744,8 +2421,13 @@ finscroll:rts
 
 ; SCROLLING VERS LE HAUT A PARTIE DE LA LIGNE D1
 scrollht: movem.l d0-d7/a0-a6,-(sp)
-          tst.w d1            ;une seule ligne: pas de scrolling...
-          beq finscrl
+          /* cmp #0,d1           ;une seule ligne: pas de scrolling... */
+          dc.w 0xc41,0 /* XXX */
+          .IFNE FALCON
+          beq.s finscrl /* XXX */
+          .ELSE
+          beq.w finscrl /* XXX */
+          .ENDC
           move d1,d5          ;nombre de caractere en Y
           clr d0
           clr d1
@@ -1768,7 +2450,11 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
           move tytext(a4),d5
           sub.w d1,d5
           subq #1,d5          ;nombre de caractere a scroller en Y
-          beq finscrl         ;une seule ligne: pas de scroll
+          .IFNE FALCON
+          beq.s finscrl         ;une seule ligne: pas de scroll /* XXX */
+          .ELSE
+          beq.w finscrl         ;une seule ligne: pas de scroll /* XXX */
+          .ENDC
           clr d0
           move tytext(a4),d1
           bsr adresse
@@ -1776,7 +2462,7 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
           mulu tcarcopie,d2   ;tlcopie en d2
           sub.w d2,a0
           sub.w tlecran,a1
-          neg d2              ;decalage copie
+          neg d2              ;decalage copie 
           move d2,d6          ;plus copie|
           move tlecran,d3     ;          |=> explore l'ecran de bas
           move d3,d7          ;          |   en haut
@@ -1786,34 +2472,56 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
 
           bsr scrolling
 
-          bra finscrl
+          .IFNE FALCON
+          bra.s finscrl /* XXX */
+          .ELSE
+          bra.w finscrl /* XXX */
+          .ENDC
 
 ; CURSEUR VERS DROITE
 droite:   move xcursor(a4),d0
-          move freelle(pc),d1
+          move freelle,d1
           addq #1,d0
           cmp txtext(a4,d1.w),d0
-          beq drt1
+          .IFNE FALCON
+          beq.s drt1 /* XXX */
+          .ELSE
+          beq.w drt1 /* XXX */
+          .ENDC
           move ycursor(a4),d1
           bra curxy
-drt1:     bsr.s alaligne        ;scroll vers le haut
-          bra bas
+drt1:     
+          .IFNE FALCON
+          bsr.s alaligne        ;scroll vers le haut
+          bra.s bas /* XXX */
+          .ELSE
+          bsr alaligne        ;scroll vers le haut
+          bra.w bas /* XXX */
+          .ENDC
 
 ; CURSEUR VERS GAUCHE
 gauche:   move xcursor(a4),d0
-          beq gch1
+          .IFNE FALCON
+          beq.s gch1 /* XXX */
+          .ELSE
+          beq.w gch1 /* XXX */
+          .ENDC
           move ycursor(a4),d1
           subq #1,d0
           bra curxy
 gch1:     move txtext(a4),d0
           subq #1,d0
           move d0,xcursor(a4)
-          bra haut
+          bra.w haut /* XXX */
 
 ; CURSEUR VERS LE HAUT
 haut:     move xcursor(a4),d0
           move ycursor(a4),d1
-          beq haut1
+          .IFNE FALCON
+          beq.s haut1 /* XXX */
+          .ELSE
+          beq.w haut1 /* XXX */
+          .ENDC
           subq #1,d1
           bra curxy
 haut1:    tst scrollup(a4)
@@ -1823,15 +2531,23 @@ haut1:    tst scrollup(a4)
           bra curxy
 
 ; CURSEUR VERS LE BAS
-bas:      move freelle(pc),d0
+bas:      move freelle,d0
           move ycursor(a4),d1
           addq #1,d1
           cmp tytext(a4,d0.w),d1
-          beq bas1
+          .IFNE FALCON
+          beq.s bas1 /* XXX */
+          .ELSE
+          beq.w bas1 /* XXX */
+          .ENDC
           move xcursor(a4),d0
           bra curxy
 bas1:     tst scrollup(a4)    ;scrolling autorse?
-          beq bas2
+          .IFNE FALCON
+          beq.s bas2 /* XXX */
+          .ELSE
+          beq.w bas2 /* XXX */
+          .ENDC
           subq #1,d1
           bra scrollht
 bas2:     move xcursor(a4),d0
@@ -1844,13 +2560,23 @@ alaligne: clr d0
           bra curxy
 
 ; RETURN
-return:   bsr.s alaligne
-          bra bas
+return:   
+          .IFNE FALCON
+          bsr.s alaligne
+          bra.s bas /* XXX */
+          .ELSE
+          bsr alaligne
+          bra.w bas /* XXX */
+          .ENDC
 
 ; ARRET CURSEUR/CUROFF
 arretcur: clr.w curseur(a4)
 curoff:   tst offcur
-          bmi cof1
+          .IFNE FALCON
+          bmi.s cof1 /* XXX */
+          .ELSE
+          bmi.w cof1 /* XXX */
+          .ENDC
           move #1,offcur      ;flag CUROFF: n'affiche plus!
           move.l d0,-(sp)
           move.b #$ff,d0
@@ -1861,11 +2587,19 @@ cof1:     rts
 ; MARCHE CURSEUR/CURON
 marchcur: move #1,curseur(a4)
 curon:    tst curseur(a4)     ;si arrete, ne le remet pas!!!
-          beq cof1
+          .IFNE FALCON
+          beq.s cof1 /* XXX */
+          .ELSE
+          beq.w cof1 /* XXX */
+          .ENDC
           clr offcur
           move #1,cptcurs(a4)
           cmp #2,mode         ;si mode 2: reaffiche par les interruptions
-          beq cof1
+          .IFNE FALCON
+          beq.s cof1 /* XXX */
+          .ELSE
+          beq.w cof1 /* XXX */
+          .ENDC
           move.l d0,-(sp)
           move indcurs(a4),d0
           bsr affcurs
@@ -1900,7 +2634,11 @@ ombre:    move pen(a4),d0
 ombreoff: move flags(a4),d0
           bclr #11,d0
           move d0,flags(a4)
-          bra ombre
+          .IFNE FALCON
+          bra.s ombre /* XXX */
+          .ELSE
+          bra.w ombre /* XXX */
+          .ENDC
 
 ; SOULIGNE OFF
 soulon:   move flags(a4),d0
@@ -1914,17 +2652,24 @@ souloff:  move flags(a4),d0
           move d0,flags(a4)
           rts
 
-; TRAP #3,4
 ; PEN
 setpen:   move d0,pen(a4)
           move d0,d7
           tst mode
-          beq penlow
+          .IFNE FALCON
+          beq.s penlow /* XXX */
+          .ELSE
+          beq.w penlow /* XXX */
+          .ENDC
           andi.w #$0003,d7
           lsl #6,d7
           lsl #6,d7
           andi.w #%1100111111111111,flags(a4)
-          bra finpen
+          .IFNE FALCON
+          bra.s finpen /* XXX */
+          .ELSE
+          bra.w finpen /* XXX */
+          .ENDC
 penlow:   andi.w #$fff0,flags(a4)
           andi.w #$000f,d7
 finpen:   or.w d7,flags(a4)
@@ -1932,17 +2677,24 @@ finpen:   or.w d7,flags(a4)
           move.l a6,adpen(a4)
           rts
 
-; TRAP #3,3
 ; PAPER
 setpaper: move d0,paper(a4)
           move d0,d7
           tst mode
-          beq paperlow
+          .IFNE FALCON
+          beq.s paperlow /* XXX */
+          .ELSE
+          beq.w paperlow /* XXX */
+          .ENDC
           andi.w #$0003,d7
           lsl #7,d7
           lsl #7,d7
           andi.w #%0011111111111111,flags(a4)
-          bra finpaper
+          .IFNE FALCON
+          bra.s finpaper /* XXX */
+          .ELSE
+          bra.w finpaper /* XXX */
+          .ENDC
 paperlow: andi.w #$ff0f,flags(a4)
           lsl #4,d7
           andi.w #$00f0,d7
@@ -1953,9 +2705,17 @@ finpaper: or.w d7,flags(a4)
 
 ; WRITING
 wrt1:     clr d0
-          bra wrt
+          .IFNE FALCON
+          bra.s wrt /* XXX */
+          .ELSE
+          bra.w wrt /* XXX */
+          .ENDC
 wrt2:     moveq #1,d0
-          bra wrt
+          .IFNE FALCON
+          bra.s wrt /* XXX */
+          .ELSE
+          bra.w wrt /* XXX */
+          .ENDC
 wrt3:     moveq #2,d0
 wrt:      move d0,writing(a4)
           rts
@@ -1971,17 +2731,31 @@ scrolloff:clr scrollup(a4)
 ; SCREEN: ramene le caractere sous d0/d1 en d0 et flags en d4
 cscreen:  move xcursor(a4),d0
           move ycursor(a4),d1
-          bra screen
-
-; TRAP #3,5
+          .IFNE FALCON
+          bra.s screen /* XXX */
+          .ELSE
+          bra.w screen /* XXX */
+          .ENDC
 tstscreen:cmp txtext(a4),d0
-          bge scrn2
+          .IFNE FALCON
+          bge.s scrn2 /* XXX */
+          .ELSE
+          bge.w scrn2 /* XXX */
+          .ENDC
           cmp tytext(a4),d1
-          bge scrn2
+          .IFNE FALCON
+          bge.s scrn2 /* XXX */
+          .ELSE
+          bge.w scrn2 /* XXX */
+          .ENDC
 screen:   bsr adresse
           clr d0
           tst mode
-          beq scrn1
+          .IFNE FALCON
+          beq.s scrn1 /* XXX */
+          .ELSE
+          beq.w scrn1 /* XXX */
+          .ENDC
           move.w (a0),d4
           move.b d4,d0
           andi.w #$ff00,d4       ;cretin!
@@ -1999,27 +2773,41 @@ scrn1:    move.l (a0),d4
 scrn2:    move #-1,d0         ;erreur: sorti de la fenetre
           rts
 
-; TRAP #3,28
-; GETCHAR: Get address of character set
+; GETCHAR: RAMENE L'ADRESSE D'UN JEU DE CARACTERE
 getchar:  andi.w #$f,d0
           lsl #2,d0
-          lea adjeux(pc),a0
+          lea adjeux,a0
           move.l 0(a0,d0.w),d0  ;prend son adresse
-          beq getch1
+          .IFNE FALCON
+          beq.s getch1 /* XXX */
+          .ELSE
+          beq.w getch1 /* XXX */
+          .ENDC
           subq.l #4,d0          ;pointe le code de reconnaissance!
 getch1:   rts
 
-; TRAP #3,29
-; SET CHAR (xx): INITIALIZE A CHARACTER SET: #=d0/ad=a0
+; SET CHAR (xx): INITIALISE UN JEU DE CARACTERES: #=d0/ad=a0
 setchar:  andi.w #$f,d0
-          beq setchar1        ;pas les jeux systeme!
+          .IFNE FALCON
+          beq.s setchar1        ;pas les jeux systeme! /* XXX */
+          .ELSE
+          beq.w setchar1        ;pas les jeux systeme! /* XXX */
+          .ENDC
           cmpi.w #1,d0
-          beq setchar1
+          .IFNE FALCON
+          beq.s setchar1 /* XXX */
+          .ELSE
+          beq.w setchar1 /* XXX */
+          .ENDC
           lsl #2,d0
-          lea adjeux(pc),a1
+          lea adjeux,a1
           clr.l 0(a1,d0.w)
           cmpi.l #$06071963,(a0)+
-          bne setchar1
+          .IFNE FALCON
+          bne.s setchar1 /* XXX */
+          .ELSE
+          bne.w setchar1 /* XXX */
+          .ENDC
           move.l a0,0(a1,d0.w)
 setchar1: rts
 
@@ -2033,24 +2821,48 @@ delete:   move xcursor(a4),-(sp)
           clr writing(a4)
           bsr cscreen         ;on ne peut relier des lignes
           cmpi.b #255,d0       ;avec DELETE ou BACKSPACE
-          beq depile
+          .IFNE FALCON
+          beq.s depile /* XXX */
+          .ELSE
+          beq.w depile /* XXX */
+          .ENDC
 del0:     bsr droite
           tst xcursor(a4)               ;securite si plus de 255!
-          bne del0a
+          .IFNE FALCON
+          bne.s del0a /* XXX */
+          .ELSE
+          bne.w del0a /* XXX */
+          .ENDC
           tst ycursor(a4)
-          beq del2
+          .IFNE FALCON
+          beq.s del2 /* XXX */
+          .ELSE
+          beq.w del2 /* XXX */
+          .ENDC
 del0a:    bsr cscreen
           cmpi.b #255,d0
-          beq del2
+          .IFNE FALCON
+          beq.s del2 /* XXX */
+          .ELSE
+          beq.w del2 /* XXX */
+          .ENDC
           move d0,-(sp)
           bsr gauche
           cmp d4,d5
-          beq del1
+          .IFNE FALCON
+          beq.s del1 /* XXX */
+          .ELSE
+          beq.w del1 /* XXX */
+          .ENDC
           bsr actualise
           move d4,d5
 del1:     move (sp)+,d0
           bsr chrout
-          bra del0
+          .IFNE FALCON
+          bra.s del0 /* XXX */
+          .ELSE
+          bra.w del0 /* XXX */
+          .ENDC
 del2:     bsr gauche
           move.b #32,d0
           bsr chrout
@@ -2065,13 +2877,25 @@ depile:   move (sp)+,scrollup(a4)
 
 ; BACKSPACE
 backspace:tst xcursor(a4)               ;pas en haut a gauche de l'ecran!
-          bne back1
+          .IFNE FALCON
+          bne.s back1 /* XXX */
+          .ELSE
+          bne.w back1 /* XXX */
+          .ENDC
           tst ycursor(a4)
-          beq back2
+          .IFNE FALCON
+          beq.s back2 /* XXX */
+          .ELSE
+          beq.w back2 /* XXX */
+          .ENDC
 back1:    bsr gauche
           bsr cscreen                   ;on ne peut pas relier deux
           cmpi.b #255,d0                 ;lignes avec BACKSPACES!
+          .IFNE FALCON
           bne delete
+          .ELSE
+          bne.w delete /* XXX */
+          .ENDC
           bsr droite
 back2:    rts
 
@@ -2086,50 +2910,84 @@ finligne: move xcursor(a4),-(sp)
           clr scrollup(a4)
 efl1:     bsr cscreen
           cmpi.b #255,d0
-          beq depile
+          .IFNE FALCON
+          beq.s depile /* XXX */
+          .ELSE
+          beq.w depile /* XXX */
+          .ENDC
           move.b #32,d0
           bsr chrout
-          bra efl1
+          .IFNE FALCON
+          bra.s efl1 /* XXX */
+          .ELSE
+          bra.w efl1 /* XXX */
+          .ENDC
 
-; TRAP #3,14
-; SET CURSOR SIZE
-; inputs:
-;   d0= top
-;   d1= bottom
-;   d2= speed so hires
+; FIXE LA TAILLE DU CURSEUR d0= haut, d1= bas, d2= vitesse si hires
 fixcursor:cmp d0,d1
-          bls fix1
+          .IFNE FALCON
+          bls.s fix1 /* XXX */
+          .ELSE
+          bls.w fix1 /* XXX */
+          .ENDC
           cmp chrysize(a4),d1
-          bhi fix1
+          .IFNE FALCON
+          bhi.s fix1 /* XXX */
+          .ELSE
+          bhi.w fix1 /* XXX */
+          .ENDC
           move d0,dcurseur(a4)
           move d1,fcurseur(a4)
 fix1:     cmpi.w #2,mode                   ;pas de vitesse si LOW/MID res!
-          bne fix2
+          .IFNE FALCON
+          bne.s fix2 /* XXX */
+          .ELSE
+          bne.w fix2 /* XXX */
+          .ENDC
           tst d2
-          beq fix2
+          .IFNE FALCON
+          beq.s fix2 /* XXX */
+          .ELSE
+          beq.w fix2 /* XXX */
+          .ENDC
           andi.w #$ff,d2
           move d2,indcurs(a4)
 fix2:     rts
 
-; TRAP #3,20
-; AUTOINS: Opens a space in the current line and places a character in it
+; AUTOINS: AFFICHE D0 APRES AVOIR INSERE UN CARACTERE
 autoins:  move txtext(a4),d1
           subq #1,d1
           cmp xcursor(a4),d1
-          bne oto1
+          .IFNE FALCON
+          bne.s oto1 /* XXX */
+          .ELSE
+          bne.w oto1 /* XXX */
+          .ENDC
           move tytext(a4),d1
           subq #1,d1
           cmp ycursor(a4),d1
-          beq oto2
+          .IFNE FALCON
+          beq.s oto2 /* XXX */
+          .ELSE
+          beq.w oto2 /* XXX */
+          .ENDC
 ; fait un INSERE!
 oto1:     move d0,-(sp)
+          .IFNE FALCON
           bsr.s insere
+          .ELSE
+          bsr insere
+          .ENDC
           move (sp)+,d0
           bra chrout
 ; tout en bas a droite!
 oto2:     tst scrollup(a4)
           bne chrout          ;si scrolling en route: CHROUT (fait un scroll)
-          bra oto1            ;si non: fait un INSERE!
+          .IFNE FALCON
+          bra.s oto1            ;si non: fait un INSERE! /* XXX */
+          .ELSE
+          bra.w oto1            ;si non: fait un INSERE! /* XXX */
+          .ENDC
 
 ; INSERTION D'UN CARACTERE
 insere:   move xcursor(a4),d2
@@ -2139,11 +2997,15 @@ insere:   move xcursor(a4),d2
           clr writing(a4)
           bsr cscreen
           cmpi.b #255,d0
-          bne.s ins0a
+          bne.s ins0a 
 ; curseur sur la fin d'une ligne
           move #32,d0
           bsr inscroll
-          bra ins5
+          .IFNE FALCON
+          bra.s ins5 /* XXX */
+          .ELSE
+          bra.w ins5 /* XXX */
+          .ENDC
 ; cherche la fin de la ligne
 ins0:     bsr cscreen                   ;trouve la fin de la ligne
           cmpi.b #255,d0
@@ -2153,7 +3015,11 @@ ins0a:    bsr droite
           bne.s ins0
           tst ycursor(a4)
           bne.s ins0
-          bra ins5
+          .IFNE FALCON
+          bra.s ins5 /* XXX */
+          .ELSE
+          bra.w ins5 /* XXX */
+          .ENDC
 ; FIN TROUVEE: fait un scrolling ???
 ins1:     bsr gauche
           bsr cscreen
@@ -2162,7 +3028,11 @@ ins1:     bsr gauche
           move d0,-(sp)
           bsr droite
           move (sp)+,d0
+          .IFNE FALCON
           bsr.s inscroll
+          .ELSE
+          bsr inscroll
+          .ENDC
           bsr gauche
 ; BOUGE LE RESTE DE LA LIGNE
 ins2:     tst xcursor(a4)               ;securite si plus de 255!
@@ -2185,7 +3055,11 @@ ins4:     move (sp)+,d0
           bsr chrout
           bsr gauche
           bsr gauche
-          bra ins2
+          .IFNE FALCON
+          bra.s ins2 /* XXX */
+          .ELSE
+          bra.w ins2 /* XXX */
+          .ENDC
 ; fin de l'insertion: efface le caractere sous le curseur
 ins5:     move (sp)+,d4
           move d4,flags(a4)
@@ -2198,7 +3072,11 @@ ins5:     move (sp)+,d4
 ; SSPGM: INSERCROLL, ecris la lettre, fait un scrolling, remet sur la lettre
 inscroll: move d0,-(sp)
           cmp d4,d5
-          beq insc1
+          .IFNE FALCON
+          beq.s insc1 /* XXX */
+          .ELSE
+          beq.w insc1 /* XXX */
+          .ENDC
           bsr actualise
           move d4,d5
 insc1:    move (sp)+,d6
@@ -2208,17 +3086,29 @@ insc1:    move (sp)+,d6
           move txtext(a4),d2            ;si tout en bas a droite,
           subq #1,d2
           cmp d2,d0
-          bne insc1a
+          .IFNE FALCON
+          bne.s insc1a /* XXX */
+          .ELSE
+          bne.w insc1a /* XXX */
+          .ENDC
           move tytext(a4),d3            ;un simple CHROUT suffit!
           subq #1,d3
           cmp d3,d1
-          beq insc3
+          .IFNE FALCON
+          beq.s insc3 /* XXX */
+          .ELSE
+          beq.w insc3 /* XXX */
+          .ENDC
 insc1a:   move d6,d0
           bsr chrout
           move tytext(a4),d0
           lsr #1,d0
           cmp d0,d1
-          bcc insc2
+          .IFNE FALCON
+          bcc.s insc2 /* XXX */
+          .ELSE
+          bcc.w insc2 /* XXX */
+          .ENDC
 ; LIGNE DU HAUT: fait un scrolling vers le bas
           addq #1,d1
           bsr scrollbs
@@ -2235,25 +3125,44 @@ insc2a:   movem (sp)+,d0-d3
 ; TOUT EN BAS A DROITE!
 insc3:    move d6,d0
           bsr chrout
-          bra insc2a
+          .IFNE FALCON
+          bra.s insc2a /* XXX */
+          .ELSE
+          bra.w insc2a /* XXX */
+          .ENDC
 
-; TRAP #3,21
-; JOIN: join two "lines"
+; JOIN: joint deux "lignes"
 join:     move xcursor(a4),-(sp)
           move ycursor(a4),-(sp)
 join0:    move txtext(a4),d0
           subq #1,d0
           cmp xcursor(a4),d0
-          bne join1
+          .IFNE FALCON
+          bne.s join1 /* XXX */
+          .ELSE
+          bne.w join1 /* XXX */
+          .ENDC
           move tytext(a4),d1
           subq #1,d1
           cmp ycursor(a4),d1
-          beq join5
+          .IFNE FALCON
+          beq.s join5 /* XXX */
+          .ELSE
+          beq.w join5 /* XXX */
+          .ENDC
 join1:    bsr cscreen
           cmpi.b #255,d0
-          beq join2
+          .IFNE FALCON
+          beq.s join2 /* XXX */
+          .ELSE
+          beq.w join2 /* XXX */
+          .ENDC
           bsr droite
-          bra join0
+          .IFNE FALCON
+          bra.s join0 /* XXX */
+          .ELSE
+          bra.w join0 /* XXX */
+          .ENDC
 join2:    move.w #32,d0
           bsr chrout
 join5:    move.w (sp)+,d1
@@ -2263,39 +3172,76 @@ join5:    move.w (sp)+,d1
 
 ; CURSEUR VERS LA DROITE RAPIDE
 qdroite:  bsr droite
+          .IFNE FALCON
           bsr.s tests
-          bne qdroite
+          bne.s qdroite /* XXX */
+          .ELSE
+          bsr tests
+          bne.w qdroite /* XXX */
+          .ENDC
           rts
 
 ; CURSEUR VERS LA GAUCHE RAPIDE
 qgauche:  bsr gauche
+          .IFNE FALCON
           bsr.s tests
-          bne qgauche
+          bne.s qgauche /* XXX */
+          .ELSE
+          bsr tests
+          bne.w qgauche /* XXX */
+          .ENDC
           rts
 
 ; TESTS: ARRET DU CURSEUR?
 tests:    bsr cscreen
           tst.b d0            ;>128
-          bmi staup
+          .IFNE FALCON
+          bmi.s staup /* XXX */
+          .ELSE
+          bmi.w staup /* XXX */
+          .ENDC
           cmpi.b #48,d0        ;<48: stop
-          blt staup
+          .IFNE FALCON
+          blt.s staup /* XXX */
+          .ELSE
+          blt.w staup /* XXX */
+          .ENDC
           cmpi.b #58,d0        ;<58:chiffre
-          blt cont
+          .IFNE FALCON
+          blt.s cont /* XXX */
+          .ELSE
+          blt.w cont /* XXX */
+          .ENDC
           cmpi.b #65,d0        ;<65:stop
-          blt staup
+          .IFNE FALCON
+          blt.s staup /* XXX */
+          .ELSE
+          blt.w staup /* XXX */
+          .ENDC
           cmpi.b #91,d0        ;<91:majuscule
-          blt cont
+          .IFNE FALCON
+          blt.s cont /* XXX */
+          .ELSE
+          blt.w cont /* XXX */
+          .ENDC
           cmpi.b #97,d0        ;<97:stop
-          blt staup
+          .IFNE FALCON
+          blt.s staup /* XXX */
+          .ELSE
+          blt.w staup /* XXX */
+          .ENDC
           cmpi.b #123,d0       ;<123:minuscule
-          blt cont
+          .IFNE FALCON
+          blt.s cont /* XXX */
+          .ELSE
+          blt.w cont /* XXX */
+          .ENDC
 staup:    clr.w d0
           rts
 cont:     move.w #1,d0
           rts
 
-; TRAP #3,11
-; GETBUFFER: FILLS THE BUFFER IN A0, LENGTH D0 CHARACTERS
+; GETBUFFER: REMPLIT LE BUFFER EN A0, LONGUEUR D0 CARACTERES
 getbuffer:move scrollup(a4),-(sp)  ; met un zero a la fin
           clr scrollup(a4)
           move.l a0,a2
@@ -2303,42 +3249,77 @@ getbuffer:move scrollup(a4),-(sp)  ; met un zero a la fin
           move d0,d2
           subq #2,d2
 get2:     tst xcursor(a4)          ;securite en haut a gauche!
-          bne get3
+          .IFNE FALCON
+          bne.s get3 /* XXX */
+          .ELSE
+          bne.w get3 /* XXX */
+          .ENDC
           tst ycursor(a4)
-          beq get5b
+          .IFNE FALCON
+          beq.s get5b /* XXX */
+          .ELSE
+          beq.w get5b /* XXX */
+          .ENDC
 get3:     bsr gauche
           bsr cscreen
           cmpi.b #255,d0
-          bne get2
+          .IFNE FALCON
+          bne.s get2 /* XXX */
+          .ELSE
+          bne.w get2 /* XXX */
+          .ENDC
 get4:     move txtext(a4),d0       ;securite en bas a droite!
           subq #1,d0
           cmp xcursor(a4),d0
-          bne get5a
+          .IFNE FALCON
+          bne.s get5a /* XXX */
+          .ELSE
+          bne.w get5a /* XXX */
+          .ENDC
           move tytext(a4),d0
           subq #1,d0
           cmp ycursor(a4),d0
-          beq get6
+          .IFNE FALCON
+          beq.s get6 /* XXX */
+          .ELSE
+          beq.w get6 /* XXX */
+          .ENDC
 get5a:    bsr droite
 get5b:    bsr cscreen
           cmpi.b #255,d0
-          beq get6
+          .IFNE FALCON
+          beq.s get6 /* XXX */
+          .ELSE
+          beq.w get6 /* XXX */
+          .ENDC
           move.b d0,(a2)+
           cmpi.b #32,d0
-          beq get5c
+          .IFNE FALCON
+          beq.s get5c /* XXX */
+          .ELSE
+          beq.w get5c /* XXX */
+          .ENDC
           move.l a2,a3                  ;dernier NON BLANC!
 get5c:    dbra d2,get4
 get5:     move.l a2,d2
           sub.l a3,d2                   ;nombre de caracteres significatifs
-          bne get6
+          .IFNE FALCON
+          bne.s get6 /* XXX */
+          .ELSE
+          bne.w get6 /* XXX */
+          .ENDC
           move #1,d0
-          bra get7
+          .IFNE FALCON
+          bra.s get7 /* XXX */
+          .ELSE
+          bra.w get7 /* XXX */
+          .ENDC
 get6:     clr d0
 get7:     clr.b (a3)                    ;arrete au dernier NON BLANC!
           move (sp)+,scrollup(a4)
           rts
 
-; TRAP #3,39
-; BOX: BORDER D0, TX/D1, TY/D2
+; BOX: BORDER D0, TX/D1, TY/D2 
 box:      move d1,d4
           move d2,d5
           subq #3,d4
@@ -2379,19 +3360,26 @@ box4:     bsr gauche
           move.b 3(a2),d0     ;ligne gauche
           bsr chrout
           dbra d5,box4
-          rts
+          rts          
 
-; TRAP #3,31
-; TITLE A0: WRITE A STRING ON THE TOP LINE OF A WINDOW
+; TITLE A0: ECRIS UNE CHAINE SUR LA LIGNE DU HAUT D'UNE FENETRE
 title:    tst bordure(a4)
-          beq titlerr         ;pas de tour a cette fenetre!
+          .IFNE FALCON
+          beq.s titlerr         ;pas de tour a cette fenetre! /* XXX */
+          .ELSE
+          beq.w titlerr         ;pas de tour a cette fenetre! /* XXX */
+          .ENDC
           move #8,freelle
           move.w xcursor(a4),-(sp)
           move.w ycursor(a4),-(sp)
           move.l a0,-(sp)
           bsr haume
           move.l (sp)+,a0
+          .IFNE FALCON
           bsr.s centrage        ;affiche la chaine en la centrant
+          .ELSE
+          bsr centrage        ;affiche la chaine en la centrant
+          .ENDC
           clr freelle         ;retour a la normale
           move.w (sp)+,d1
           move.w (sp)+,d0
@@ -2401,52 +3389,86 @@ title5:   clr.l d0
 titlerr:  moveq #1,d0
           rts
 
-; TRAP #3,18
-; CENTRE: WRITE A STRING BY CENTERING IT
+;CENTRAGE: ECRIS UNE CHAINE EN LA CENTRANT
 centrage: move.l a0,a2
           move.l a0,a1
           clr d1
 cent1:    move.b (a1)+,d0
-          beq cent2
+          .IFNE FALCON
+          beq.s cent2 /* XXX */
+          .ELSE
+          beq.w cent2 /* XXX */
+          .ENDC
           cmpi.b #32,d0
-          bcs cent1
+          .IFNE FALCON
+          bcs.s cent1 /* XXX */
+          .ELSE
+          bcs.w cent1 /* XXX */
+          .ENDC
           addq #1,d1
-          bra cent1
+          .IFNE FALCON
+          bra.s cent1 /* XXX */
+          .ELSE
+          bra.w cent1 /* XXX */
+          .ENDC
 cent2:    tst freelle
-          beq cent3
+          .IFNE FALCON
+          beq.s cent3 /* XXX */
+          .ELSE
+          beq.w cent3 /* XXX */
+          .ENDC
           move txreel(a4),d0
-          bra cent4
+          .IFNE FALCON
+          bra.s cent4 /* XXX */
+          .ELSE
+          bra.w cent4 /* XXX */
+          .ENDC
 cent3:    move txtext(a4),d0
 cent4:    sub.w d1,d0
-          bcs prtstring
+          .IFNE FALCON
+          bcs.s prtstring /* XXX */
+          .ELSE
+          bcs.w prtstring /* XXX */
+          .ENDC
           lsr #1,d0
           move ycursor(a4),d1
           bsr curxy
           move.l a2,a0
 
-; TRAP #3,1
-; PRINT STRING: WRITE THE STRING POINTED BY A0
+;PRINT STRING: ECRIS LA CHAINE DE CARACTERES POINTEE PAR A0
 prtstring: move.b (a0)+,d0
-          beq prt1
-          bsr chrout
-          bra prtstring
+          .IFNE FALCON
+          beq.s prt1 /* XXX */
+          bsr.s chrout /* XXX */
+          bra.s prtstring /* XXX */
+          .ELSE
+          beq.w prt1 /* XXX */
+          bsr.w chrout /* XXX */
+          bra.w prtstring /* XXX */
+          .ENDC
 prt1:     rts
 
 ; IMPRESSION D'UN CARACTERE SUR LE DECOR SUPER, INTERCEPTE LES ICONES!!!
 chrdec:   movem.l d0-d7/a0-a6,-(sp)
           clr.l d6
-          bra chr0
-
-; TRAP #3,0
-; PRINTING A CHARACTER ON BOTH SCREENS
+          .IFNE FALCON
+          bra.s chr0 /* XXX */
+          .ELSE
+          bra.w chr0 /* XXX */
+          .ENDC
+; IMPRESSION D'UN CARACTERE SUR LES DEUX ECRANS
 chrout:   movem.l d0-d7/a0-a6,-(sp)
-          move.l ecran,d6
+          move.l ecran.l,d6 /* XXX */
           sub.l back,d6        ;difference entre ecran LOGIQUE et BACK
-chr0:     move.l adcurwindow(pc),a4   ;a4 pointe sur la fenetre courante!
+chr0:     move.l adcouran,a4   ;a4 pointe sur la fenetre courante!
           andi.w #$00ff,d0
 
           cmpi.b #32,d0
-          bcc pascont
+          .IFNE FALCON
+          bcc.s pascont /* XXX */
+          .ELSE
+          bcc.w pascont /* XXX */
+          .ENDC
 ; CARACTERES DE CONTROLE
           tst escape
           bne.s chr5
@@ -2455,25 +3477,41 @@ chr0:     move.l adcurwindow(pc),a4   ;a4 pointe sur la fenetre courante!
           lea controle,a0     ;table des adresse des routines
           add.w d0,a0
           tst.l (a0)
+          .IFNE FALCON
           beq sortie          ;pas implement‚e
+          .ELSE
+          beq.w sortie          ;pas implement‚e /* XXX */
+          .ENDC
           move.l (a0),a1
           move xcursor(a4),d0
           move ycursor(a4),d1
           clr escape
           jsr (a1)
+          .IFNE FALCON
           bra sortie
+          .ELSE
+          bra.w sortie /* XXX */
+          .ENDC
 
 ; AFFICHE UNE ICONE POUR LA PREMIERE FOIS
 chr5:     bsr afficon              ;va afficher!
           clr escape               ;poke dans la copie, si rien a afficher,
 escbis:   move.l adcopie(a4),a0    ;c'est pas grave!!!
           tst mode
-          beq chr6
+          .IFNE FALCON
+          beq.s chr6 /* XXX */
+          .ELSE
+          beq.w chr6 /* XXX */
+          .ENDC
           move.w flags(a4),d1
           clr.b d1
           or.b d0,d1
           move.w d1,(a0)
+          .IFNE FALCON
           bra finaff
+          .ELSE
+          bra.w finaff /* XXX */
+          .ENDC
 chr6:     move.w flags(a4),d1
           swap d1
           clr d1
@@ -2486,12 +3524,20 @@ pascont:  tst escape
           bne.s chr5
           move.l adcopie(a4),a0
           tst mode
-          beq stocklow
+          .IFNE FALCON
+          beq.s stocklow /* XXX */
+          .ELSE
+          beq.w stocklow /* XXX */
+          .ENDC
           move.w flags(a4),d1           ;HI et MID res: copie sur MOT
           clr.b d1
           or.b d0,d1
           move.w d1,(a0)
-          bra affcar
+          .IFNE FALCON
+          bra.s affcar /* XXX */
+          .ELSE
+          bra.w affcar /* XXX */
+          .ENDC
 stocklow: move.w flags(a4),d1           ;LOW res: copie sur MOT LONG!
           swap d1
           clr d1
@@ -2499,7 +3545,8 @@ stocklow: move.w flags(a4),d1           ;LOW res: copie sur MOT LONG!
           move.l d1,(a0)
 
 ; AFFICHAGE DU CARACTERE D0 A L'ECRAN
-affcar:   move.l adjeucar(a4),a0
+affcar:   /* move.l adjeucar(a4),a0 */
+		  dc.w 0x206c,adjeucar /* XXX */
           move.b 4(a0,d0.w),d0  ;charge adresse du caractere a afficher
           mulu chrxsize(a4),d0
           mulu chrysize(a4),d0
@@ -2510,17 +3557,26 @@ affcar:   move.l adjeucar(a4),a0
           move.l adpaper(a4),a6        ;paper en a6
           move flags(a4),d4
           btst #10,d4
-          beq affnorm
+          .IFNE FALCON
+          beq.s affnorm /* XXX */
+          exg a5,a6                ;INVERSE! on echange PAPER et PEN
+          .ELSE
+          beq.w affnorm /* XXX */
           exg a6,a5                ;INVERSE! on echange PAPER et PEN
+          .ENDC
 affnorm:  move.b writing+1(a4),d4  ;writing dans d4.b
           move chrysize(a4),d7
           subq #1,d7           ;compteur en Y
-          move tlecran,a3      ;taille ligne d'ecran
+          move.w tlecran,a3      ;taille ligne d'ecran
           move chrxsize(a4),a4
           subq #1,a4           ;compteur en X: a4/d5
 
           cmpi.w #2,mode
-          bne affmoy
+          .IFNE FALCON
+          bne.s affmoy /* XXX */
+          .ELSE
+          bne.w affmoy /* XXX */
+          .ENDC
 ; HIRES
 affht1:   move.l a1,a2        ;debut ligne
           move a4,d5          ;init nb d'octets
@@ -2528,7 +3584,11 @@ affht2:   move.b (a0)+,d0
           move.b d0,d1
           not.b d1
           tst.b d4
-          bne wrt1ht
+          .IFNE FALCON
+          bne.s wrt1ht /* XXX */
+          .ELSE
+          bne.w wrt1ht /* XXX */
+          .ENDC
 ; writing 0: pokage simple dans l'ecran
           and.w (a5),d0
           and.w (a6),d1
@@ -2539,20 +3599,36 @@ affht2:   move.b (a0)+,d0
 lignesh:  add.w a3,a1           ;passage ligne suivante
           dbra d7,affht1      ;autre ligne?
           bclr #9,d4          ;souligne ?
+          .IFNE FALCON
           beq finaff
-          lea souligne(pc),a0     ;par magouille
+          .ELSE
+          beq.w finaff /* XXX */
+          .ENDC
+          lea souligne,a0     ;par magouille
           sub.w a3,a1           ;reecris la ligne de soulignement!!!
           clr d7
-          bra affht1
+          .IFNE FALCON
+          bra.s affht1 /* XXX */
+          .ELSE
+          bra.w affht1 /* XXX */
+          .ENDC
 wrt1ht:   cmpi.b #1,d4
-          bne wrt2ht
+          .IFNE FALCON
+          bne.s wrt2ht /* XXX */
+          .ELSE
+          bne.w wrt2ht /* XXX */
+          .ENDC
 ; writing 1: transparent
           and.w (a5),d0         ;d0: couleur pen, d1=masque decor
           and.b d1,(a2)
           or.b d0,(a2)
           move.b (a2)+,-1(a2,d6.l)
           dbra d5,affht2
-          bra lignesh
+          .IFNE FALCON
+          bra.s lignesh /* XXX */
+          .ELSE
+          bra.w lignesh /* XXX */
+          .ENDC
 ; writing 2: eor avec l'ecran
 wrt2ht:   and.w (a5),d0
           and.w (a6),d1
@@ -2560,7 +3636,11 @@ wrt2ht:   and.w (a5),d0
           eor.b d0,(a2)
           move.b (a2)+,-1(a2,d6.l)
           dbra d5,affht2
-          bra lignesh
+          .IFNE FALCON
+          bra.s lignesh /* XXX */
+          .ELSE
+          bra.w lignesh /* XXX */
+          .ENDC
 
 ; MIDRES
 affmoy:   cmpi.w #1,mode
@@ -2591,15 +3671,23 @@ octetsm:  subq #4,a5          ;RAZ plans couleur
           dbra d7,affmy1
           bclr #9,d4          ;souligne?
           beq finaff
-          lea souligne(pc),a0     ;souligne par magouille!
+          lea souligne,a0     ;souligne par magouille!
           sub.w a3,a1
           clr d7
-          bra affmy1
+          .IFNE FALCON
+          bra.s affmy1 /* XXX */
+          .ELSE
+          bra.w affmy1 /* XXX */
+          .ENDC
 affmy5:   subq #1,a2
           bchg #0,d2
           bne.s affmy2
           subq #2,a2
-          bra affmy2
+          .IFNE FALCON
+          bra.s affmy2 /* XXX */
+          .ELSE
+          bra.w affmy2 /* XXX */
+          .ENDC
 wrt1my:   cmpi.b #1,d4
           bne.s wrt2my
 ; writing 1: transparent
@@ -2609,7 +3697,11 @@ wrt1my:   cmpi.b #1,d4
           move.b (a2),-1(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          bra octetsm
+          .IFNE FALCON
+          bra.s octetsm /* XXX */
+          .ELSE
+          bra.w octetsm /* XXX */
+          .ENDC
 ; writing 2: eor avec l'ecran
 wrt2my:   and.w (a5)+,d0
           and.w (a6)+,d1
@@ -2618,7 +3710,11 @@ wrt2my:   and.w (a5)+,d0
           move.b (a2),-1(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          bra octetsm
+          .IFNE FALCON
+          bra.s octetsm /* XXX */
+          .ELSE
+          bra.w octetsm /* XXX */
+          .ENDC
 
 ; LOWRES
 affbas:   move.l a1,a2        ;debut ligne
@@ -2646,16 +3742,28 @@ octetsb:  subq #8,a5          ;RAZ plans couleur
           add.w a3,a1
           dbra d7,affbas
           bclr #9,d4          ;souligne?
-          beq finaff
-          lea souligne(pc),a0     ;souligne par magouille!
+          .IFNE FALCON
+          beq.s finaff /* XXX */
+          .ELSE
+          beq.w finaff /* XXX */
+          .ENDC
+          lea souligne,a0     ;souligne par magouille!
           sub.w a3,a1
           clr d7
-          bra affbas
+          .IFNE FALCON
+          bra.s affbas /* XXX */
+          .ELSE
+          bra.w affbas /* XXX */
+          .ENDC
 affbs5:   subq #1,a2
           bchg #0,d2          ;passage a l'octet suivant
           bne.s affbs2
           subq #6,a2
-          bra affbs2
+          .IFNE FALCON
+          bra.s affbs2 /* XXX */
+          .ELSE
+          bra.w affbs2 /* XXX */
+          .ENDC
 wrt1bs:   cmpi.b #1,d4
           bne.s wrt2bs
 ; writing 1: transparent
@@ -2665,7 +3773,11 @@ wrt1bs:   cmpi.b #1,d4
           move.b (a2),0(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          bra octetsb
+          .IFNE FALCON
+          bra.s octetsb /* XXX */
+          .ELSE
+          bra.w octetsb /* XXX */
+          .ENDC
 ; writing 2: eor avec l'ecran
 wrt2bs:   and.w (a5),d0
           and.w (a6),d1
@@ -2674,15 +3786,23 @@ wrt2bs:   and.w (a5),d0
           move.b (a2),0(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          bra octetsb
+          .IFNE FALCON
+          bra.s octetsb /* XXX */
+          .ELSE
+          bra.w octetsb /* XXX */
+          .ENDC
 
 ; MOUVEMENT DU CURSEUR
-finaff:   move.l adcurwindow(pc),a4
+finaff:   move.l adcouran,a4
           move xcursor(a4),d0
-          move freelle(pc),d1
+          move freelle,d1
           addq #1,d0
           cmp txtext(a4,d1.w),d0
-          beq finaff5
+          .IFNE FALCON
+          beq.s finaff5 /* XXX */
+          .ELSE
+          beq.w finaff5 /* XXX */
+          .ENDC
           move d0,xcursor(a4)
           cmpi.w #2,mode
           bne.s finaffl
@@ -2690,15 +3810,26 @@ finaff:   move.l adcurwindow(pc),a4
           clr.l d0
           move chrxsize(a4),d0
           add.l d0,adecran(a4)
-          addq.l #2,adcopie(a4)
-          bra sortie
+          /* addq.l #2,adcopie(a4) */
+          dc.w 0x06ac,0,2,adcopie /* XXX */
+          .IFNE FALCON
+          bra.s sortie /* XXX */
+          .ELSE
+          bra.w sortie /* XXX */
+          .ENDC
 ;curseur vers droite BASSE
 finaffl:  tst mode
           bne.s finaffm
-          addq.l #4,adcopie(a4)
-          bra finaff2
+          /* addq.l #4,adcopie(a4) */
+          dc.w 0x06ac,0,4,adcopie /* XXX */
+          .IFNE FALCON
+          bra.s finaff2 /* XXX */
+          .ELSE
+          bra.w finaff2 /* XXX */
+          .ENDC
 ;curseur vers droite MOYENNE
-finaffm:  addq.l #2,adcopie(a4)
+finaffm:  /* addq.l #2,adcopie(a4) */
+          dc.w 0x06ac,0,2,adcopie /* XXX */
 ;calculs moyenne et basse
 finaff2:  move nbplan,d1
           subq #1,d1
@@ -2716,22 +3847,31 @@ sortie:   movem.l (sp)+,d0-d7/a0-a6
           rts
 finaff5:  bsr alaligne
           bsr bas
-          bra sortie
+          .IFNE FALCON
+          bra.s sortie /* XXX */
+          .ELSE
+          bra.w sortie /* XXX */
+          .ENDC
 ; FINAFF active: DROITE RAPIDE!
 finafact: movem.l d0-d7/a0-a6,-(sp)
+          .IFNE FALCON
           bra finaff
+          .ELSE
+          bra.w finaff /* XXX */
+          .ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         GESTION GENIALE DES ICONES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; TRAP #3,26
-; Set address of ICONS
-; inputs:
-;   a0 = Address of ICON BANK
+; CHANGEMENT DU JEU D'ICONE (a0)
 newicon:  clr.l adicon
           cmpi.l #$28091960,(a0)+
-          bne newic
+          .IFNE FALCON
+          bne.s newic /* XXX */
+          .ELSE
+          bne.w newic /* XXX */
+          .ENDC
           move.l a0,adicon
 newic:    rts
 
@@ -2739,11 +3879,15 @@ newic:    rts
 cescape:  move #1,escape
           move d2,d0
           addq.l #4,sp
+          .IFNE FALCON
           bra escbis
+          .ELSE
+          bra.w escbis /* XXX */
+          .ENDC
 
 ; PUT DROIT: met le code CURDROITE
 putdroit: moveq #9,d0
-          move.l adcopie(a4),a0
+          move.l adcopie(a4),a0 
           tst mode
           beq.s pd1
           move.w flags(a4),d1
@@ -2761,22 +3905,42 @@ pd1:      move.w flags(a4),d1
 ; AFFICHAGE D'UNE ICONE DANS LES ECRANS (icone 1->31)
 afficon:  movem.l d0-d7/a0-a6,-(sp)
           tst.l adicon
+          .IFNE FALCON
           beq finicon
+          .ELSE
+          beq.w finicon /* XXX */
+          .ENDC
           subq #1,d0          ;pas d'icone zero!
           andi.w #$ff,d0
-          move.l adicon(pc),a0
+          move.l adicon,a0
           cmp (a0)+,d0        ;compare au nombre d'icones
+          .IFNE FALCON
           bcc finicon         ;pas assez d'icones
+          .ELSE
+          bcc.w finicon         ;pas assez d'icones /* XXX */
+          .ENDC
 ; ok: affiche l'icone!
           cmpi.w #2,mode
-          beq buggic
+          .IFNE FALCON
+          beq.s buggic /* XXX */
+          .ELSE
+          beq.w buggic /* XXX */
+          .ENDC
           movem.l d0-d7/a0-a6,-(sp)
           move xcursor(a4),-(sp)
           move ycursor(a4),-(sp)
           bsr bas
+          .IFNE FALCON
           bsr.s putdroit
+          .ELSE
+          bsr putdroit
+          .ENDC
           bsr gauche
+          .IFNE FALCON
           bsr.s putdroit
+          .ELSE
+          bsr putdroit
+          .ENDC
           move (sp)+,d1
           move (sp)+,d0
           bsr curxy
@@ -2789,59 +3953,86 @@ buggic:   mulu #42*2,d0       ;84 octets par icone
           move.w ycursor(a4),d1
           add.w startyr(a4),d1
           tst freelle         ;si fenetre entiere: pas de marge
-          bne affica
+          .IFNE FALCON
+          bne.s affica /* XXX */
+          .ELSE
+          bne.w affica /* XXX */
+          .ENDC
           tst bordure(a4)     ;si bordure: ajouter 1 aux marges texte
-          beq affica
+          .IFNE FALCON
+          beq.s affica /* XXX */
+          .ELSE
+          beq.w affica /* XXX */
+          .ENDC
           addq #1,d0
           addq #1,d1
 affica:   mulu chrxsize(a4),d0
           lsl #3,d0             ;coord 0---> 639 (339)
           mulu chrysize(a4),d1  ;coord 0---> 399 (199)
-          lea buficon(pc),a2      ;buffer de sauvegarde, qui ne sert a rien!
+          lea buficon,a2      ;buffer de sauvegarde, qui ne sert a rien!
           move paper(a4),d2
           move pen(a4),d3
 ; inverse?
           move flags(a4),d4
           btst #10,d4
-          beq affic0
+          .IFNE FALCON
+          beq.s affic0 /* XXX */
+          .ELSE
+          beq.w affic0 /* XXX */
+          .ENDC
           exg d2,d3
 affic0:   move d2,6(a0)
           move d3,8(a0)
 ; shade?
           btst #11,d4
-          beq affic3
-          lea bufshade(pc),a3
+          .IFNE FALCON
+          beq.s affic3 /* XXX */
+          .ELSE
+          beq.w affic3 /* XXX */
+          .ENDC
+          lea bufshade,a3
           moveq #41,d2
 affic1:   move.w (a0)+,(a3)+  ;recopie l'icone
           dbra d2,affic1
-          lea bufshade(pc),a3
+          lea bufshade,a3
           lea 12(a3),a3
           moveq #15,d2
 affic2:   and.w #$aaaa,(a3)
           addq.l #4,a3
           dbra d2,affic2
-          lea bufshade(pc),a0
+          lea bufshade,a0
 
 affic3:   tst.l d6            ;un seul ecran
-          beq affic4
+          .IFNE FALCON
+          beq.s affic4 /* XXX */
+          .ELSE
+          beq.w affic4 /* XXX */
+          .ENDC
 ; affiche l'icone dans l'ecran
           movem.l d0/d1/a0/a2,-(sp)
           dc.w $a00d          ;DRAW SPRITE LIGNE A
           movem.l (sp)+,d0/d1/a0/a2
 ; affiche l'icone dans le decor
-affic4:   move.l ecran,-(sp)
-          move.l back,ecran
+affic4:   move.l ecran.l,-(sp) /* XXX */
+          move.l back,ecran.l /* XXX */
           dc.w $a00d          ;DRAW SPRITE LIGNE A
-          move.l (sp)+,ecran
+          move.l (sp)+,ecran.l /* XXX */
 
 ; pas d'erreur d'iconage
 finicon:  movem.l (sp)+,d0-d7/a0-a6
           rts
 
 ; RECOPIE RAPIDE DU DECOR VERS L'ECRAN
-recopie:  move #249,d7
+recopie:  
+          .IFNE FALCON
+          move.l     falcon_screensize(pc),d7
+          asr.l      #7,d7
+          andi.l     #$0000FFFF,d7
+          .ELSE
+          move #249,d7
+          .ENDC
           move.l back,a0
-          move.l ecran,a1
+          move.l ecran.l,a1 /* XXX */
 rec:      move.l (a0)+,(a1)+
           move.l (a0)+,(a1)+
           move.l (a0)+,(a1)+
@@ -2881,9 +4072,18 @@ rec:      move.l (a0)+,(a1)+
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-		  .IFEQ COMPILER
-pair:     dc.l 0
+
+	.IFNE FALCON
+
+	include "3d_menu.s"
+
+	.ELSE
+	
+	.IFEQ COMPILER
+pair:     ds.l 1
 bufcopie:
-          .ENDC
+    .ENDC
+
+	.ENDC
+	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          end

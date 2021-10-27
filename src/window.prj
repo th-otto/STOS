@@ -2,5 +2,6 @@ stos\windo102.bin
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]
+.S[-DFALCON=0]
 =
 window.s
