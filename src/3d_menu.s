@@ -90,14 +90,31 @@ fmenu_item:
 fmenu_item1:
 		rts
 
-
 set_titles_on:
 		move.w     #-1,titles_are_on
 		rts
 
+	.IFNE COMPILER
+install_vbl: /* FIXME: unused */
+		lea.l      gooldvbl+2(pc),a0
+		move.l     $70.l,(a0)
+		lea.l      menu_check(pc),a1
+		move.l     a1,$70.l
+		rts
+	.ENDC
+
 set_titles_off:
 		move.w     #0,titles_are_on
 		rts
+
+	.IFNE COMPILER
+restore_vbl: /* FIXME: unused */
+		move.l     gooldvbl+2(pc),a0
+		/* movea.l    #$70.l,a1 */
+		dc.w 0x227c,0,$70
+		move.l     a0,(a1)
+		rts
+	.ENDC
 
 titles_are_on: dc.w 0
 in_menu_check: dc.w 0
@@ -109,12 +126,16 @@ menu_check:
 		tst.w      in_menu_check
 		bne.s      menu_check1
 		movem.l    d0-d7/a0-a6,-(a7)
+		.IFNE COMPILER
+		bsr.w      do_menu_check /* XXX */
+		.ELSE
 		bsr.s      do_menu_check
+		.ENDC
 		movem.l    (a7)+,d0-d7/a0-a6
 menu_check1:
 		rts
 
-x1311e:
+gooldvbl:
 		jmp        0.l
 
 
@@ -129,14 +150,22 @@ do_menu_check:
 do_menu_check_1:
 		bsr        checkmouse
 		cmp.w      mn_y2(a1),d1
+		.IFNE COMPILER
+		bcc.w      do_menu_check_4 /* XXX */
+		.ELSE
 		bcc.s      do_menu_check_4
+		.ENDC
 		bsr        check_mouse_title
 		movem.l    d1-d3/a2,-(a7)
 		lea.l      menuinfo+tit_sizeof(pc),a2
 		moveq.l    #0,d3
 		move.w     d0,d3
 		subq.w     #1,d3
+		.IFNE COMPILER
+		bmi.w      do_menu_check_2 /* XXX */
+		.ELSE
 		bmi.s      do_menu_check_2
+		.ENDC
 		mulu.w     #MENU_SIZE,d3
 		adda.l     d3,a2
 		move.w     ent_state(a2),d1
@@ -178,9 +207,17 @@ do_menu_check_6:
 		bcs.s      do_menu_check_7
 		tst.w      d2
 		beq.s      do_menu_check_7
+		.IFNE COMPILER
+		bsr.w      st_mouse_off /* XXX */
+		.ELSE
 		bsr.s      st_mouse_off
+		.ENDC
 		bsr        restore_dropdown
+		.IFNE COMPILER
+		bsr.w      st_mouse_on /* XXX */
+		.ELSE
 		bsr.s      st_mouse_on
+		.ENDC
 		bsr        find_entry
 		tst.w      d0
 		beq.s      do_menu_check_8
@@ -216,14 +253,22 @@ selected_item: dc.w  0
 
 st_mouse_off:
 		movem.l    d0-d7/a0-a6,-(a7)
+		.IFNE COMPILER
+		dc.w 0x203c,0,S_st_mouse_off /* XXX */
+		.ELSE
 		moveq.l    #S_st_mouse_off,d0
+		.ENDC
 		trap       #5
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
 st_mouse_on:
 		movem.l    d0-d7/a0-a6,-(a7)
+		.IFNE COMPILER
+		dc.w 0x203c,0,S_st_mouse_on /* XXX */
+		.ELSE
 		moveq.l    #S_st_mouse_on,d0
+		.ENDC
 		trap       #5
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
@@ -299,6 +344,13 @@ check_mouse_title_5:
 		movem.l    (a7)+,d2-d7/a0-a6
 		rts
 
+	.IFNE COMPILER
+check_mouse_title_6: /* FIXME: unused */
+		dc.w 0x203c,0,1
+		exg        d1,d0
+		movem.l    (a7)+,d2-d7/a0-a6
+		rts
+	.ENDC
 
 save_entry_coords:
 		bsr        clear_entry_coords
@@ -373,6 +425,14 @@ find_entry_5:
 		exg        d1,d0
 		movem.l    (a7)+,d2-d7/a0-a6
 		rts
+
+	.IFNE COMPILER /* FIXME: unused */
+find_entry_6:
+		dc.w 0x203c,0,1
+		exg        d1,d0
+		movem.l    (a7)+,d2-d7/a0-a6
+		rts
+	.ENDC
 
 clear_entry_coords:
 		movem.l    d0-d7/a0-a6,-(a7)
@@ -576,14 +636,24 @@ fmenu_clear2:
 fmenu_on:
 		movem.l    d0-d7/a0-a6,-(a7)
 		lea.l      menuparams(pc),a1
+		.IFEQ COMPILER /* BUG? check missing in compiler */
 		/* move.w     0(a1),d0 */
 		dc.w 0x3029,0 /* XXX */
 		btst       #0,d0
 		beq.s      fmenu_on3
-		cmpi.w     #0x8003,(a1)
+		.ENDC
+		cmpi.w     #0x8003,mn_state(a1)
+		.IFNE COMPILER
+		beq.w      fmenu_on2 /* XXX */
+		.ELSE
 		beq.s      fmenu_on2
+		.ENDC
 		cmpi.w     #3,(a1)
+		.IFNE COMPILER
+		beq.w      fmenu_on1 /* XXX */
+		.ELSE
 		beq.s      fmenu_on1
+		.ENDC
 		bsr        draw_title_line
 		bsr        save_title_coords
 		/* move.w     0(a1),d1 */
@@ -607,10 +677,12 @@ fmenu_on2:
 		movem.l    (a7)+,d0-d7/a0-a6
 		clr.l      d0
 		rts
+		.IFEQ COMPILER /* BUG? check missing in compiler */
 fmenu_on3:
 		movem.l    (a7)+,d0-d7/a0-a6
 		moveq.l    #-1,d0
 		rts
+		.ENDC
 
 
 *
@@ -619,12 +691,20 @@ fmenu_on3:
 fmenu_kill:
 		lea.l      menuparams(pc),a1
 		tst.w      mn_state(a1)
-		beq.s      fmenu_kill1
+		.IFNE COMPILER
+		beq.w      fmenu_kill2 /* XXX */
+		.ELSE
+		beq.s      fmenu_kill2
+		.ENDC
+fmenu_kill1:
+		.IFNE 0 /* BUG: check missing */
+		tst.w      in_menu_check
+		bne.s      fmenu_kill1
+		.ENDC
 		bsr        set_titles_off
 		lea.l      menuparams(pc),a1
-		/* move.w     #0,mn_state(a1) */
-		dc.w 0x337c,0,0 /* XXX */
-fmenu_kill1:
+		move.w     #0,mn_state+menuparams-menuparams(a1) /* XXX */
+fmenu_kill2:
 		rts
 
 *
@@ -633,7 +713,11 @@ fmenu_kill1:
 fmenu_freeze:
 		lea.l      menuparams(pc),a1
 		tst.w      mn_state(a1)
+		.IFNE COMPILER
+		beq.w      fmenu_freeze2 /* XXX */
+		.ELSE
 		beq.s      fmenu_freeze2
+		.ENDC
 fmenu_freeze1:
 		tst.w      in_menu_check
 		bne.s      fmenu_freeze1
@@ -657,7 +741,11 @@ fmenu_freeze2:
 fmenustr:
 		cmpi.w     #MAX_TITLE+1,d1
 		bcs.s      fmenustr1
+		.IFNE COMPILER
+		.dc.w 0x203c,-1,-2 /* XXX */
+		.ELSE
 		moveq.l    #-2,d0
+		.ENDC
 		rts
 fmenustr1:
 		lea.l      menuparams(pc),a1
@@ -688,7 +776,11 @@ fmenustr1:
 		adda.l     d3,a1
 		cmpi.w     #MAX_ENTRY,d2
 		bcs.s      fmenustr2
+		.IFNE COMPILER
+		.dc.w 0x203c,-1,-2 /* XXX */
+		.ELSE
 		moveq.l    #-2,d0
+		.ENDC
 		rts
 fmenustr2:
 		adda.l     d3,a2
@@ -758,7 +850,11 @@ fmenustr6:
 		clr.l      d0
 		rts
 fmenustr7:
+		.IFNE COMPILER
+		dc.w 0x203c,-1,-1 /* XXX */
+		.ELSE
 		moveq.l    #-1,d0
+		.ENDC
 		rts
 
 fmenustr_maxlen: dc.w       0
@@ -827,9 +923,17 @@ fmenustr_off:
 		lea.l      menuinfo+tit_sizeof(pc),a2
 		lea.l      menuparams(pc),a3
 		subq.w     #1,d1
+		.IFNE COMPILER
+		bmi.w      fmenustr_off1 /* XXX */
+		.ELSE
 		bmi.s      fmenustr_off1
+		.ENDC
 		tst.w      d2
+		.IFNE COMPILER
+		beq.w      fmenustr_off2 /* XXX */
+		.ELSE
 		beq.s      fmenustr_off2
+		.ENDC
 		lea.l      menuinfo+tit_sizeof+ENT_SIZE(pc),a2
 		andi.l     #0x000000FF,d2
 		subq.w     #1,d2
@@ -877,9 +981,17 @@ fmenu_check_item:
 		lea.l      menuinfo+tit_sizeof(pc),a2
 		lea.l      menuparams(pc),a3
 		subq.w     #1,d1
+		.IFNE COMPILER
+		bmi.w      fmenu_check_item1 /* XXX */
+		.ELSE
 		bmi.s      fmenu_check_item1
+		.ENDC
 		tst.w      d2
+		.IFNE COMPILER
+		beq.w      fmenu_check_item1 /* XXX */
+		.ELSE
 		beq.s      fmenu_check_item1
+		.ENDC
 		move.w     d3,d7
 		lea.l      menuinfo+tit_sizeof+ENT_SIZE(pc),a2
 		andi.l     #0x000000FF,d2
@@ -933,9 +1045,17 @@ fmenustr_on:
 		lea.l      menuinfo+tit_sizeof(pc),a2
 		lea.l      menuparams(pc),a3
 		subq.w     #1,d1
+		.IFNE COMPILER
+		bmi.w      fmenustr_on1 /* XXX */
+		.ELSE
 		bmi.s      fmenustr_on1
+		.ENDC
 		tst.w      d2
+		.IFNE COMPILER
+		beq.w      fmenustr_on2 /* XXX */
+		.ELSE
 		beq.s      fmenustr_on2
+		.ENDC
 		lea.l      menuinfo+tit_sizeof+ENT_SIZE(pc),a2
 		andi.l     #255,d2
 		subq.w     #1,d2
@@ -1006,7 +1126,11 @@ form_alert1:
 		bsr        checkmouse
 		tst.w      d2
 		beq.s      form_alert1
+		.IFNE COMPILER
+		bsr.w      check_alert_button /* XXX */
+		.ELSE
 		bsr.s      check_alert_button
+		.ENDC
 		tst.l      d1
 		beq.s      form_alert1
 		bsr        st_mouse_off
@@ -1014,7 +1138,11 @@ form_alert1:
 		bsr        st_mouse_on
 		bra.s      form_alert3
 form_alert2:
+		.IFNE COMPILER
+		dc.w 0x203c,-1,-1 /* XXX */
+		.ELSE
 		moveq.l    #-1,d0
+		.ENDC
 form_alert3:
 		rts
 
@@ -1051,7 +1179,11 @@ check_alert_button_5:
 		neg.w      d1
 		move.w     num_alert_buttons(pc),d6
 		add.w      d6,d1
+		.IFNE COMPILER
+		dc.w 0x203c,-1,-1 /* XXX */
+		.ELSE
 		moveq.l    #-1,d0
+		.ENDC
 		exg        d1,d0
 		movem.l    (a7)+,d2-d7/a0-a6
 		rts
@@ -1061,7 +1193,11 @@ check_alert_button_5:
 init_alert_params:
 		lea.l      alert_colors(pc),a1
 		cmpi.w     #16,nbplan
+		.IFNE COMPILER
+		beq.w      init_alert_params1 /* XXX */
+		.ELSE
 		beq.s      init_alert_params1
+		.ENDC
 		move.w     d1,(a1)+
 		move.w     d2,(a1)+
 		move.w     d3,(a1)+
@@ -1131,7 +1267,11 @@ init_alert_str_2:
 
 init_alert_icon:
 		movem.l    d0-d6/a0-a6,-(a7)
+		.IFNE COMPILER
+		.dc.w 0x2e3c,-1,-1 /* XXX */
+		.ELSE
 		moveq.l    #-1,d7
+		.ENDC
 		lea.l      alert_icon(pc),a1
 		clr.w      (a1)
 		movea.l    alert_str(pc),a0
@@ -1155,7 +1295,11 @@ init_alert_icon2:
 
 parse_alert_strings:
 		movem.l    d0-d6/a0-a6,-(a7)
+		.IFNE COMPILER
+		.dc.w 0x2e3c,-1,-1 /* XXX */
+		.ELSE
 		moveq.l    #-1,d7
+		.ENDC
 		movea.l    alert_str(pc),a0
 		move.w     (a0)+,d6
 		move.l     (a0)+,d0
@@ -1200,7 +1344,11 @@ parse_alert_buttons:
 		movem.l    d0-d6/a0-a6,-(a7)
 		lea.l      num_alert_buttons(pc),a2
 		clr.w      (a2)
+		.IFNE COMPILER
+		.dc.w 0x2e3c,-1,-1 /* XXX */
+		.ELSE
 		moveq.l    #-1,d7
+		.ENDC
 		movea.l    alert_str(pc),a0
 		move.w     (a0)+,d6
 		lea.l      num_alert_buttons(pc),a2
@@ -1650,7 +1798,11 @@ draw_alert_box:
 		move.w     4(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
+		.IFNE COMPILER
+		bsr.w      draw_alert_strings /* XXX */
+		.ELSE
 		bsr.s      draw_alert_strings
+		.ENDC
 		bsr        draw_alert_icon
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
@@ -1700,6 +1852,10 @@ draw_alert_icon:
 		move.w     alert_icon(pc),d0
 		tst.w      d0
 		beq        draw_alert_icon1
+		.IFNE COMPILER /* BUG: missing in interpreter; FIXME: implement it */
+		cmp.w #16,nbplan
+		beq draw_alert_icon1
+		.ENDC
 		lea.l      alert_icon_fontsave(pc),a5
 		move.w     sysfont(pc),d0
 		move.l     fonthdr(pc),d1
@@ -1859,11 +2015,23 @@ save_screen:
 		lea.l      alert_pos(pc),a0
 		movea.l    lineavars(pc),a2
 		movea.l    physic(pc),a3
+		.IFNE COMPILER
+		move.l screenbuf(pc),a4
+		.ELSE
 		lea.l      screenbuf,a4
+		.ENDC
 		cmpi.l     #32000,falcon_screensize
+		.IFNE COMPILER
+		beq.w      save_screen_fast /* XXX */
+		.ELSE
 		beq.s      save_screen_fast
+		.ENDC
 		cmpi.w     #16,LA_PLANES(a2)
+		.IFNE COMPILER
+		beq.w      save_screen_hi /* XXX */
+		.ELSE
 		beq.s      save_screen_hi
+		.ENDC
 		/* move.w     0(a0),d0 */
 		dc.w 0x3028,0 /* XXX */
 		move.w     2(a0),d1
@@ -1958,11 +2126,23 @@ restore_screen:
 		lea.l      alert_pos(pc),a0
 		movea.l    lineavars(pc),a2
 		movea.l    physic(pc),a3
+		.IFNE COMPILER
+		move.l screenbuf(pc),a4
+		.ELSE
 		lea.l      screenbuf,a4
+		.ENDC
 		cmpi.l     #32000,falcon_screensize
+		.IFNE COMPILER
+		beq.w      restore_screen_fast /* XXX */
+		.ELSE
 		beq.s      restore_screen_fast
+		.ENDC
 		cmpi.w     #16,LA_PLANES(a2)
+		.IFNE COMPILER
+		beq.w      restore_screen_hi /* XXX */
+		.ELSE
 		beq.s      restore_screen_hi
+		.ENDC
 		/* move.w     0(a0),d0 */
 		dc.w 0x3028,0 /* XXX */
 		move.w     2(a0),d1
@@ -2056,16 +2236,26 @@ redraw_titles:
 		movem.l    d0-d7/a0-a6,-(a7)
 		lea.l      menuparams(pc),a1
 		cmpi.w     #0x8003,(a1)
+		.IFNE COMPILER
+		beq.w      redraw_titles1 /* XXX */
+		.ELSE
 		beq.s      redraw_titles1
+		.ENDC
 		cmpi.w     #3,mn_state(a1)
+		.IFNE COMPILER
+		beq.w      redraw_titles1 /* XXX */
+		.ELSE
 		beq.s      redraw_titles1
+		.ENDC
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 redraw_titles1:
 		tst.w      in_menu_check
 		bne.s      redraw_titles1
 		bsr        set_titles_off
+		.IFEQ COMPILER /* BUG: missing in compiler */
 		bsr        save_linea_clip
+		.ENDC
 		lea.l      fillpattern(pc),a5
 		move.l     #-1,(a5)
 		movea.l    lineavars(pc),a0
@@ -2105,9 +2295,15 @@ redraw_titles1:
 		move.w     4(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
+		.IFNE COMPILER
+		bsr.w      draw_title_lines /* XXX */
+		.ELSE
 		bsr.s      draw_title_lines
+		.ENDC
 		bsr        draw_title_strings
+		.IFEQ COMPILER /* BUG: missing in compiler */
 		bsr        restore_linea_clip
+		.ENDC
 		bsr        set_titles_on
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
@@ -2180,11 +2376,17 @@ draw_title_line:
 		movem.l    d0-d7/a0-a6,-(a7)
 		lea.l      menuparams(pc),a1
 		tst.w      (a1)
+		.IFNE COMPILER
+		bne.w      draw_title_line1 /* XXX */
+		.ELSE
 		bne.s      draw_title_line1
+		.ENDC
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 draw_title_line1:
+		.IFEQ COMPILER /* BUG: missing in compiler */
 		bsr        save_linea_clip
+		.ENDC
 		lea.l      fillpattern(pc),a5
 		move.l     #-1,(a5)
 		movea.l    lineavars(pc),a0
@@ -2225,8 +2427,14 @@ draw_title_line1:
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		bsr        draw_title_lines
+		.IFNE COMPILER
+		bsr.w      draw_title_strings /* XXX */
+		.ELSE
 		bsr.s      draw_title_strings
+		.ENDC
+		.IFEQ COMPILER /* BUG: missing in compiler */
 		bsr        restore_linea_clip
+		.ENDC
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -2354,7 +2562,11 @@ draw_dropdown:
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		movem.l    (a7)+,d0-d7/a0-a6
+		.IFNE COMPILER
+		bsr.w      draw_dropdown_strings /* XXX */
+		.ELSE
 		bsr.s      draw_dropdown_strings
+		.ENDC
 		rts
 draw_dropdown1:
 		movem.l    (a7)+,d0-d7/a0-a6
@@ -2441,7 +2653,11 @@ draw_dropdown_strings7:
 		bsr        linea_textblit
 		dbf        d7,draw_dropdown_strings7
 		movem.l    (a7)+,d5/a0-a4
+		.IFNE COMPILER
+		bsr.w      draw_dropdown_line /* XXX */
+		.ELSE
 		bsr.s      draw_dropdown_line
+		.ENDC
 		bsr        save_entry_coords
 		lea.l      ENT_SIZE(a1),a1
 		addq.w     #1,d5
@@ -2480,7 +2696,11 @@ draw_dropdown_line:
 		movem.l    d0-d7/a0-a6,-(a7)
 		addq.w     #1,d5
 		cmp.w      tit_entcount(a4),d5
+		.IFNE COMPILER
+		beq.w      draw_dropdown_line1 /* XXX */
+		.ELSE
 		beq.s      draw_dropdown_line1
+		.ENDC
 		move.w     fontheight(pc),d5
 		asr.w      #1,d5
 		lea.l      menuparams(pc),a3
@@ -2509,6 +2729,7 @@ draw_dropdown_line1:
 		rts
 
 
+		.IFEQ COMPILER /* BUG: missing in compiler */
 save_linea_clip:
 		movem.l    d0-d7/a0-a6,-(a7)
 		movea.l    lineavars(pc),a0
@@ -2533,6 +2754,7 @@ restore_linea_clip:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 la_cliprect: ds.w 6
+		.ENDC
 
 
 restore_dropdown:
@@ -2552,11 +2774,23 @@ restore_dropdown2:
 		clr.w      tit_state(a0)
 		movea.l    lineavars(pc),a2
 		movea.l    physic(pc),a3
+		.IFNE COMPILER
+		move.l screenbuf(pc),a4
+		.ELSE
 		lea.l      screenbuf,a4
+		.ENDC
 		cmpi.l     #32000,falcon_screensize
+		.IFNE COMPILER
+		beq.w      restore_dropdown_fast /* XXX */
+		.ELSE
 		beq.s      restore_dropdown_fast
+		.ENDC
 		cmpi.w     #16,LA_PLANES(a2)
+		.IFNE COMPILER
+		beq.w      restore_dropdown_hi /* XXX */
+		.ELSE
 		beq.s      restore_dropdown_hi
+		.ENDC
 		move.w     tit_x1(a0),d0
 		move.w     tit_y1(a0),d1
 		bsr        calc_screenaddr
@@ -2607,8 +2841,8 @@ restore_dropdown_hi:
 		moveq.l    #0,d1
 		moveq.l    #0,d5
 		moveq.l    #0,d6
-		move.w     (a2),d6
-		move.w     -2(a2),d5
+		move.w     LA_PLANES(a2),d6
+		move.w     V_BYTES_LIN(a2),d5
 		move.w     2(a0),d0
 		asl.w      #1,d0
 		move.w     4(a0),d1
@@ -2618,10 +2852,13 @@ restore_dropdown_hi:
 		moveq.l    #0,d0
 		moveq.l    #0,d1
 		moveq.l    #0,d5
-		move.w     -2(a2),d5
+		move.w     V_BYTES_LIN(a2),d5
 		move.w     6(a0),d0
 		move.w     4(a0),d1
 		asl.w      #1,d0
+		.IFNE COMPILER
+		move.w     4(a0),d1 /* FIXME: unneeded */
+		.ENDC
 		mulu.w     d1,d5
 		add.l      d0,d5
 		adda.l     d5,a6
@@ -2636,7 +2873,7 @@ restore_dropdown_hi2:
 		bcc.s      restore_dropdown_hi2
 		movem.l    (a7)+,d0-d7/a0-a3/a5-a6
 		moveq.l    #0,d6
-		move.w     -2(a2),d6
+		move.w     V_BYTES_LIN(a2),d6
 		adda.l     d6,a5
 		adda.l     d6,a6
 		dbf        d7,restore_dropdown_hi1
@@ -2648,18 +2885,34 @@ restore_dropdown_hi2:
 save_dropdown:
 		movem.l    d0-d7/a0-a6,-(a7)
 		subq.w     #1,d0
+		.IFNE COMPILER
+		bmi.w      save_dropdown3 /* XXX */
+		.ELSE
 		bmi.s      save_dropdown3
+		.ENDC
 		andi.l     #255,d0
 		lea.l      menuinfo(pc),a0
 		mulu.w     #MENU_SIZE,d0
 		adda.l     d0,a0
 		movea.l    lineavars(pc),a2
 		movea.l    physic(pc),a3
+		.IFNE COMPILER
+		move.l screenbuf(pc),a4
+		.ELSE
 		lea.l      screenbuf,a4
+		.ENDC
 		cmpi.l     #32000,falcon_screensize
+		.IFNE COMPILER
+		beq.w      save_dropdown_fast /* XXX */
+		.ELSE
 		beq.s      save_dropdown_fast
+		.ENDC
 		cmpi.w     #16,LA_PLANES(a2)
+		.IFNE COMPILER
+		beq.w      save_dropdown_hi /* XXX */
+		.ELSE
 		beq.s      save_dropdown_hi
+		.ENDC
 		move.w     2(a0),d0
 		move.w     4(a0),d1
 		bsr        calc_screenaddr
@@ -2711,8 +2964,8 @@ save_dropdown_hi:
 		moveq.l    #0,d1
 		moveq.l    #0,d5
 		moveq.l    #0,d6
-		move.w     (a2),d6
-		move.w     -2(a2),d5
+		move.w     LA_PLANES(a2),d6
+		move.w     V_BYTES_LIN(a2),d5
 		move.w     2(a0),d0
 		asl.w      #1,d0
 		move.w     4(a0),d1
@@ -2722,10 +2975,13 @@ save_dropdown_hi:
 		moveq.l    #0,d0
 		moveq.l    #0,d1
 		moveq.l    #0,d5
-		move.w     -2(a2),d5
+		move.w     V_BYTES_LIN(a2),d5
 		move.w     6(a0),d0
 		move.w     4(a0),d1
 		asl.w      #1,d0
+		.IFNE COMPILER /* FIXME: unneeded */
+		move.w     4(a0),d1
+		.ENDC
 		mulu.w     d1,d5
 		add.l      d0,d5
 		adda.l     d5,a6
@@ -2740,7 +2996,7 @@ save_dropdown_hi2:
 		bcc.s      save_dropdown_hi2
 		movem.l    (a7)+,d0-d7/a0-a3/a5-a6
 		moveq.l    #0,d6
-		move.w     -2(a2),d6
+		move.w     V_BYTES_LIN(a2),d6
 		adda.l     d6,a5
 		adda.l     d6,a6
 		dbf        d7,save_dropdown_hi1
@@ -2786,7 +3042,11 @@ fillrect:
 		movea.l    lineavars(pc),a0
 		/* cmpi.w     #16,LA_PLANES(a0) */
 		dc.w 0xc68,16,LA_PLANES /* XXX */
+		.IFNE COMPILER
+		beq.w      fillrect_hi /* XXX */
+		.ELSE
 		beq.s      fillrect_hi
+		.ENDC
 		cmpi.w     #1,LA_PLANES(a0)
 		beq.s      fillrect3
 		cmpi.w     #8,LA_PLANES(a0)
@@ -2825,7 +3085,11 @@ fillrect_hi:
 		move.w     2(a4),d5
 		move.w     4(a4),d6
 		move.w     6(a4),d7
+		.IFNE COMPILER
+		bra.w      fillrect_hi2 /* XXX */
+		.ELSE
 		bra.s      fillrect_hi2
+		.ENDC
 		cmp.w      d3,d6
 		bcc.s      fillrect_hi1
 		exg        d3,d6
@@ -2857,7 +3121,11 @@ linea_drawline:
 		movem.l    d0-d7/a0-a6,-(a7)
 		movea.l    lineavars(pc),a0
 		cmpi.w     #16,nbplan
+		.IFNE COMPILER
+		beq.w      drawline_hi /* XXX */
+		.ELSE
 		beq.s      drawline_hi
+		.ENDC
 		bsr        linea_setcolor
 		move.w     d1,LA_X1(a0)
 		move.w     d2,LA_Y1(a0)
@@ -2900,9 +3168,17 @@ drawline_hi1:
 		exg        d5,d7
 drawline_hi2:
 		cmp.w      d4,d6
+		.IFNE COMPILER
+		beq.w      drawline_hi_ver /* XXX */
+		.ELSE
 		beq.s      drawline_hi_ver
+		.ENDC
 		cmp.w      d5,d7
+		.IFNE COMPILER
+		beq.w      drawline_hi_hor /* XXX */
+		.ELSE
 		beq.s      drawline_hi_hor
+		.ENDC
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -2998,7 +3274,11 @@ linea_fill8planes2:
 linea_textblit:
 		movem.l    d0-d7/a0-a6,-(a7)
 		dc.w 0xa000
+		.IFNE COMPILER
+		cmpi.w     #16,LA_PLANES(a0)
+		.ELSE
 		cmpi.w     #16,nbplan
+		.ENDC
 		beq        linea_textblit_hi
 		move.w     sysfont(pc),d0
 		asl.w      #2,d0
@@ -3044,9 +3324,17 @@ linea_textblit2:
 		move.b     (a2),d0
 		andi.l     #255,d0
 		cmp.w      font_last_ade(a3),d0
+		.IFNE COMPILER
+		bgt.w      linea_textblit6 /* XXX */
+		.ELSE
 		bgt.s      linea_textblit6
+		.ENDC
 		sub.w      font_first_ade(a3),d0
+		.IFNE COMPILER
+		blt.w      linea_textblit6 /* XXX */
+		.ELSE
 		blt.s      linea_textblit6
+		.ENDC
 		move.l     fonthdr(pc),d1
 		add.w      d0,d0
 		movea.l    font_off_table(a3),a4
@@ -3062,7 +3350,11 @@ linea_textblit3:
 		move.w     d1,LA_DELX(a0)
 linea_textblit4:
 		move.l     font_hor_table(a3),d2
+		.IFNE COMPILER
+		beq.w      linea_textblit5 /* XXX */
+		.ELSE
 		beq.s      linea_textblit5
+		.ENDC
 		move.l     fonthdr(pc),d1
 		add.l      d1,d2
 		movea.l    d2,a5
@@ -3074,7 +3366,11 @@ linea_textblit5:
 		lea.l      textblit_coords,a3
 		move.w     (a3),LA_DESTX(a0)
 		move.w     2(a3),LA_DESTY(a0)
+		.IFNE COMPILER
+		bsr.w      inc_coords /* XXX */
+		.ELSE
 		bsr.s      inc_coords
+		.ENDC
 		move.w     #0x8000,LA_XACC_DDA(a0)
 		ALINE      #8
 		movem.l    (a7)+,a0-a6
@@ -3144,9 +3440,17 @@ linea_textblit_hi1:
 		move.b     (a1),d0
 		andi.l     #255,d0
 		cmp.w      font_last_ade(a3),d0
+		.IFNE COMPILER
+		bgt.w      linea_textblit_hi8 /* XXX */
+		.ELSE
 		bgt.s      linea_textblit_hi8
+		.ENDC
 		sub.w      font_first_ade(a3),d0
+		.IFNE COMPILER
+		blt.w      linea_textblit_hi8 /* XXX */
+		.ELSE
 		blt.s      linea_textblit_hi8
+		.ENDC
 		movem.l    d0-d7/a1-a6,-(a7)
 		move.w     #0x5555,d1
 		cmpi.w     #TXT_LIGHT,text_style
@@ -3171,7 +3475,11 @@ linea_textblit_hi4:
 		btst       d3,d2
 		beq.s      linea_textblit_hi5
 		move.w     textfg_color(pc),(a2)+
+		.IFNE COMPILER
+		bra.w      linea_textblit_hi7
+		.ELSE
 		bra.s      linea_textblit_hi7
+		.ENDC
 linea_textblit_hi5:
 		cmpi.w     #MD_TRANS,wrt_mode
 		bne.s      linea_textblit_hi6
@@ -3225,7 +3533,11 @@ fillrect_8planes:
 		asl.w      #1,d7
 		move.w     V_BYTES_LIN(a0),d5
 		lea.l      bitblt,a1
+		.IFNE COMPILER
+		bsr.w      calc_optab /* XXX */
+		.ELSE
 		bsr.s      calc_optab
+		.ENDC
 		/* move.w     0(a4),d1 */
 		dc.w 0x322c,0
 		move.w     2(a4),d2
@@ -3292,19 +3604,35 @@ linea_setcolor:
 		clr.l      LA_FG_1(a0)
 		clr.l      LA_FG_3(a0)
 		btst       #0,d0
+		.IFNE COMPILER
+		beq.w      linea_setcolor1 /* XXX */
+		.ELSE
 		beq.s      linea_setcolor1
+		.ENDC
 		bset       #0,LA_FG_1+1(a0)
 linea_setcolor1:
 		btst       #1,d0
+		.IFNE COMPILER
+		beq.w      linea_setcolor2 /* XXX */
+		.ELSE
 		beq.s      linea_setcolor2
+		.ENDC
 		bset       #0,LA_FG_2+1(a0)
 linea_setcolor2:
 		btst       #2,d0
+		.IFNE COMPILER
+		beq.w      linea_setcolor3 /* XXX */
+		.ELSE
 		beq.s      linea_setcolor3
+		.ENDC
 		bset       #0,LA_FG_3+1(a0)
 linea_setcolor3:
 		btst       #3,d0
+		.IFNE COMPILER
+		beq.w      linea_setcolor4 /* XXX */
+		.ELSE
 		beq.s      linea_setcolor4
+		.ENDC
 		bset       #0,LA_FG_4+1(a0)
 linea_setcolor4:
 		move.l     (a7)+,d0
@@ -3313,10 +3641,18 @@ linea_setcolor4:
 set_fontheight:
 		lea.l      mch_cookie(pc),a0
 		cmpi.l     #0x00030000,(a0)
+		.IFNE COMPILER
+		bne.w      set_fontheight1 /* XXX */
+		.ELSE
 		bne.s      set_fontheight1
+		.ENDC
 		lea.l      vdo_cookie(pc),a0
 		cmpi.l     #0x00030000,(a0)
+		.IFNE COMPILER
+		bne.w      set_fontheight1 /* XXX */
+		.ELSE
 		bne.s      set_fontheight1
+		.ENDC
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
@@ -3324,7 +3660,11 @@ set_fontheight:
 		lea.l      falconmode(pc),a1
 		move.w     d0,(a1)
 		btst       #7,d0
+		.IFNE COMPILER
+		beq.w      set_fontheight3 /* ST-compatible? */ /* XXX */
+		.ELSE
 		beq.s      set_fontheight3 /* ST-compatible? */
+		.ENDC
 set_fontheight1:
 		move.w     #4,-(a7) /* yes, use Getrez */
 		trap       #14
@@ -3344,7 +3684,11 @@ set_fontheight2:
 		rts
 set_fontheight3:
 		btst       #4,d0 /* VGA mode? */
+		.IFNE COMPILER
+		beq.w      set_fontheight6 /* XXX */
+		.ELSE
 		beq.s      set_fontheight6
+		.ENDC
 		btst       #8,d0  /* interlace? */
 		bne.s      set_fontheight5
 		lea.l      fontheight(pc),a1
@@ -3380,6 +3724,9 @@ fillpattern:
 		dc.w $ffff
 		dc.w $5555
 		dc.w $aaaa
+.ifne COMPILER
+scratchbuf: ds.w SCRATCHBUF_SIZE
+.else
 		dc.w $0000
 		dc.w $0000
 		dc.w $0000
@@ -3422,6 +3769,7 @@ fillpattern:
 		dc.w $0000
 		dc.w $0000
 		dc.w $0000
+	.ENDC
 
 alert_icon_font:
 		dc.w 1 /* id */
@@ -3489,9 +3837,10 @@ alert_icon_dattable:
 		dc.w $0000,$0000,$0002,$4000,$0008,$0800,$0100,$0080,$8000,$0001,$ffff,$ffff,$7ecd,$fb7e
 		dc.w $0000,$0000,$0001,$8000,$0007,$f000,$00ff,$ff00,$ffff,$ffff,$7fff,$fffe,$7ccc,$f33c
 
+	.IFEQ COMPILER
 	.bss
-
 scratchbuf: ds.w SCRATCHBUF_SIZE /* 157c4 */
+	.ENDC
 
 bitblt: ds.b 78 /* 15fc4 */
 physic: ds.l 1 /* 16012 */
@@ -3536,8 +3885,8 @@ entry_coords: ds.w 4*(MAX_ENTRY+9)
 	.IFEQ COMPILER
 pair:     ds.l 2
 bufcopie: ds.b 32064
+screenbuf: ds.b 122884
+	.ELSE
+	ds.b 80
     .ENDC
 	
-screenbuf: ds.b 122884
-
-

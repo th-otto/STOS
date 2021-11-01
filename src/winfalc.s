@@ -165,6 +165,7 @@ tcarcopie: dc.w 0
 autoback:  dc.w 0
 oldauto:   dc.w 0
 nbjeux:    dc.w 0
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; table des tours de fenetre 16 tours differents!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -496,7 +497,11 @@ initrap:  move.l #entrappe,-(sp)        ;setexec
 		trap       #14
 		addq.l     #6,a7
 		tst.l      d0
+		.IFNE COMPILER
+		beq.w      cold1 /* XXX */
+		.ELSE
 		beq.s      cold1
+		.ENDC
 		lea.l      cookievalue(pc),a1
 		lea.l      mch_cookie(pc),a0
 		move.l     (a1),(a0)
@@ -508,7 +513,11 @@ cold1:
 		trap       #14
 		addq.l     #6,a7
 		tst.l      d0
+		.IFNE COMPILER
+		beq.w      cold2 /* XXX */
+		.ELSE
 		beq.s      cold2
+		.ENDC
 		lea.l      cookievalue(pc),a1
 		lea.l      vdo_cookie(pc),a0
 		move.l     (a1),(a0)
@@ -531,7 +540,11 @@ getcookie:
 		move.l     (a1),d3
 		move.l     (a0),d0
 		tst.l      d0
+		.IFNE COMPILER
+		beq.w      getcookie3 /* XXX */
+		.ELSE
 		beq.s      getcookie3
+		.ENDC
 		movea.l    d0,a0
 		clr.l      d4
 getcookie1:
@@ -539,15 +552,31 @@ getcookie1:
 		move.l     (a0)+,d1
 		/* tst.l      d0 */
 		dc.w 0xb0bc,0,0 /* XXX */
+		.IFNE COMPILER
+		beq.w      getcookie3 /* XXX */
+		.ELSE
 		beq.s      getcookie3
+		.ENDC
 		cmp.l      d3,d0
+		.IFNE COMPILER
+		beq.w      getcookie2 /* XXX */
+		.ELSE
 		beq.s      getcookie2
+		.ENDC
 		addq.w     #1,d4
+		.IFNE COMPILER
+		bra.w      getcookie1 /* XXX */
+		.ELSE
 		bra.s      getcookie1
+		.ENDC
 getcookie2:
 		/* cmpa.l     #0,a5 */
 		dc.w 0xbbfc,0,0 /* XXX */
+		.IFNE COMPILER
+		beq.w      getcookie3
+		.ELSE
 		beq.s      getcookie3
+		.ENDC
 		move.l     d1,(a5)
 getcookie3:
 	.ENDC
@@ -584,6 +613,9 @@ PaArr:    rts
 		.IFEQ COMPILER
 		.dc.b "FALCON 030 STOS Window 4.6",0
 		.even
+		.ELSE
+* will be set by extension, not by this library!
+screenbuf: dc.l 0
 		.ENDC
 		.ENDC
 
@@ -641,13 +673,13 @@ hard0:    move #cartour,d0
           bsr outprt
           dbra d1,hard0
 hard1:    moveq #13,d0         ;retour a la ligne
-		  .IFNE FALCON
+		  .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
           .ENDC
           moveq #10,d0
-		  .IFNE FALCON
+		  .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
@@ -656,7 +688,7 @@ hard1:    moveq #13,d0         ;retour a la ligne
           tst d5
           beq.s hard2
           move #cartour,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
@@ -670,7 +702,7 @@ hard2:    move d2,d0
           bcc.s hard3
 hard2a:   move.b #32,d0
 hard3:
-		  .IFNE FALCON
+		  .IFNE (FALCON=1)&(COMPILER=0)
 		  bsr.s outprt
 		  .ELSE
 		  bsr outprt
@@ -681,26 +713,26 @@ hard3:
           tst d5
           beq.s hard4
           move #cartour,d0
-		  .IFNE FALCON
+		  .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
           .ENDC
 hard4:    addq #1,d3
           cmp tytext(a4),d3
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s hard1 /* XXX */
           .ELSE
           blt.w hard1 /* XXX */
           .ENDC
           moveq #13,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
           .ENDC
           moveq #10,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
@@ -710,20 +742,20 @@ hard4:    addq #1,d3
           move txreel(a4),d1
           subq #1,d1
 hard5:    move #cartour,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
           .ENDC
           dbra d1,hard5
 hard6:    moveq #13,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
           .ENDC
           moveq #10,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s outprt
           .ELSE
           bsr outprt
@@ -809,7 +841,11 @@ initpr:   clr.b (a0)+
           move nbjeux,d0      ;premier jeu de caracteres accessible!
           .IFNE FALCON
 		move.l #32000,falcon_screensize
+          .IFNE COMPILER
+		bsr.w  initmenu /* XXX */
+		  .ELSE
 		bsr.s  initmenu
+		  .ENDC
           .ENDC
           rts
 
@@ -831,10 +867,18 @@ initmenu:
 		move.l     d0,(a1)
 		lea.l      mch_cookie(pc),a0
 		cmpi.l     #0x00030000,(a0)
+		.IFNE COMPILER
+		bne.w      initmenu2
+		.ELSE
 		bne.s      initmenu2
+		.ENDC
 		lea.l      vdo_cookie(pc),a0
 		cmpi.l     #0x00030000,(a0)
+		.IFNE COMPILER
+		bne.w      initmenu2 /* XXX */
+		.ELSE
 		bne.s      initmenu2
+		.ENDC
 		move.w     #-1,-(a7)
 		move.w     #0x0058,-(a7) /* VsetMode */
 		trap       #14
@@ -842,7 +886,11 @@ initmenu:
 		lea.l      falconmode(pc),a0
 		move.w     d0,(a0)
 		btst       #7,d0 /* ST-compatible mode? */
+		.IFNE COMPILER
+		beq.w      initmenu1 /* XXX */
+		.ELSE
 		beq.s      initmenu1
+		.ENDC
 		move.l     #32000,d0
 		lea.l      falcon_screensize(pc),a0
 		move.l     d0,(a0)
@@ -915,7 +963,7 @@ initwind: andi.w #15,d0
           andi.w #$000f,d1
           move d1,bordure(a4)
           tst d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s pasbord /* XXX */
           .ELSE
           beq.w pasbord /* XXX */
@@ -982,7 +1030,7 @@ pasbord:  swap d1             ;reprend la taille car en Y
           clr escape
 ; affiche le tour de la fenetre
           move bordure(a4),d0
-          IFNE FALCON
+          IFNE (FALCON=1)&(COMPILER=0)
           beq.s ouvre /* XXX */
           bsr.s afftour
           .ELSE
@@ -1000,8 +1048,8 @@ ouvre:    bsr clears
           bra actzero
 
 ; BORDER
-border:   .IFNE FALCON
-          bsr.s afftour
+border:   .IFNE (FALCON=1)&(COMPILER=0)
+          bsr.s afftour /* XXX */
           .ELSE
           bsr afftour
           .ENDC
@@ -1014,7 +1062,7 @@ border:   .IFNE FALCON
 afftour:  move bordure(a4),d1
           beq tourerr         ;fenetre sans bordure!!!
           andi.w #$f,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s afftour1 /* XXX */
           .ELSE
           bne.w afftour1 /* XXX */
@@ -1085,33 +1133,33 @@ tourerr:  moveq #1,d0
 
 ; ACTIVATION MULTIPLE (A0 ---> TABLE)
 actcache: move.w (a0)+,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s actch2 /* XXX */
           .ELSE
           bmi.w actch2 /* XXX */
           .ENDC
           move.l a0,-(sp)
           move #1,tempinit
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s windon2
           .ELSE
           bsr windon2
           .ENDC
           tst d0              ;une erreur: recopie et arrete!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s actch3 /* XXX */
           .ELSE
           bne.w actch3 /* XXX */
           .ENDC
           tst d1              ;peut on dessiner?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s actch1 /* XXX */
           .ELSE
           bne.w actch1 /* XXX */
           .ENDC
           bsr windaff         ;oui !!!
 actch1:   move.l (sp)+,a0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s actcache /* XXX */
           .ELSE
           bra.w actcache /* XXX */
@@ -1126,7 +1174,7 @@ actch3:   move.l d0,(sp)      ;une erreur: la sauve, recopie!
 
 ; ACTIVATION RAPIDE D'UNE FENETRE
 qwindon:  move #1,tempinit
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s windon2 /* XXX */
           .ELSE
           bra.w windon2 /* XXX */
@@ -1138,7 +1186,7 @@ windon2:  andi.w #$000f,d0
           btst d0,d7
           beq error3          ;--->pas ouverte!
           cmp courante,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s dejaact         ;banane! Elle est deja activee! /* XXX */
           .ELSE
           beq.w dejaact         ;banane! Elle est deja activee! /* XXX */
@@ -1147,7 +1195,7 @@ windon2:  andi.w #$000f,d0
 actzero:  move d0,courante
           lea priofen,a1       ;adresse de la table des priorte
           move.b 0(a1,d0.w),d2 ;ancienne priorte
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s wdon0 /* XXX */
           .ELSE
           bne.w wdon0 /* XXX */
@@ -1155,13 +1203,13 @@ actzero:  move d0,courante
           move #nbfenetre+1,d2
 wdon0:    move #nbfenetre-1,d1
 wdon1:    move.b 0(a1,d1.w),d3
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s wdon2 /* XXX */
           .ELSE
           beq.w wdon2 /* XXX */
           .ENDC
           cmp.b d3,d2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bls.s wdon2 /* XXX */
           .ELSE
           bls.w wdon2 /* XXX */
@@ -1178,7 +1226,7 @@ wdon2:    dbra d1,wdon1
 
 ; Affiche la fenetre telle qu'elle est stockee! SUPER!
           tst tempinit
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s finwindon       ;pas de dessin: la fenetre est vide! /* XXX */
           bsr.s windaff         ;va la dessiner dans le decor
           .ELSE
@@ -1228,7 +1276,7 @@ wdon4:    tst mode
           move.w (a2)+,d4     ;HI et MID resolution
           move.b d4,d0
           clr.b d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s wdon5 /* XXX */
           .ELSE
           bra.w wdon5 /* XXX */
@@ -1239,19 +1287,19 @@ actlow:   move.l (a2)+,d4
 wdon5:    cmpi.b #32,d0        ;caractere different de 32/255
           bne.s wdon5c
           cmp d4,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s wdon5c /* XXX */
           .ELSE
           bne.w wdon5c /* XXX */
           .ENDC
 wdon5b:   bsr finafact
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s wdon7 /* XXX */
           .ELSE
           bra.w wdon7 /* XXX */
           .ENDC
 wdon5c:   cmp d7,d4           ;est-ce actualis‚?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s wdon6           ;oui: c'est bon directement! /* XXX */
           .ELSE
           beq.w wdon6           ;oui: c'est bon directement! /* XXX */
@@ -1261,14 +1309,14 @@ wdon5c:   cmp d7,d4           ;est-ce actualis‚?
 wdon6:    bsr chrdec
 wdon7:    addq #1,d2
           cmp d5,d2           ;fin de la ligne?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcs.s wdon4 /* XXX */
           .ELSE
           bcs.w wdon4 /* XXX */
           .ENDC
           addq #1,d3
           cmp d6,d3           ;fin de la page?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcs.s wdon3 /* XXX */
           .ELSE
           bcs.w wdon3 /* XXX */
@@ -1292,14 +1340,14 @@ windm1:   move.l flagfen,d6
           moveq #nbfenetre-1,d1
 windm2:   addq #1,d0
           cmp.b (a0)+,d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s windm4 /* XXX */
           .ELSE
           beq.w windm4 /* XXX */
           .ENDC
           dbra d1,windm2
 windm3:   subq #1,d7          ;on bouge la fenetre activee=> la premiere
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s windm1          ;====> la derniere a etre affichee! /* XXX */
           .ELSE
           bne.w windm1          ;====> la derniere a etre affichee! /* XXX */
@@ -1308,7 +1356,7 @@ windm3:   subq #1,d7          ;on bouge la fenetre activee=> la premiere
           move.l a4,adcouran
           rts                 ;====> rien a faire a la fin!!!
 windm4:   btst d0,d6          ;pas ouverte!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s windm3 /* XXX */
           .ELSE
           beq.w windm3 /* XXX */
@@ -1320,7 +1368,7 @@ windm4:   btst d0,d6          ;pas ouverte!
           move.l a4,adcouran
           bsr windaff         ;va afficher la fenetre!
           move (sp)+,d7       ;recupere la priorite
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s windm3          ;suivante! /* XXX */
           .ELSE
           bra.w windm3          ;suivante! /* XXX */
@@ -1358,7 +1406,7 @@ windmov:  move d0,d2
 actualise:movem d0-d7,-(sp)
           move d4,flags(a4)
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s actulow /* XXX */
           .ELSE
           beq.w actulow /* XXX */
@@ -1368,7 +1416,7 @@ actualise:movem d0-d7,-(sp)
           move d4,d5
           lsr #2,d4          ;d4 paper
           andi.w #$0003,d5      ;d5 pen
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s actua /* XXX */
           .ELSE
           bra.w actua /* XXX */
@@ -1387,7 +1435,7 @@ actua:    move d4,d0
 ; EFFACEMENT RAPIDE DE LA FENETRE COURANTE
 effenvite:move #1,rapeflag
           move courante,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s effenbis /* XXX */
           .ELSE
           bra.w effenbis /* XXX */
@@ -1397,7 +1445,7 @@ effenetre:clr rapeflag
 effenbis: andi.w #$000f,d0
           move.l flagfen,d7
           btst d0,d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq error3          ;--->pas ouverte! /* XXX */
           .ELSE
           beq.w error3          ;--->pas ouverte! /* XXX */
@@ -1420,13 +1468,13 @@ vide0:    lea tfenetre,a4
           move #nbfenetre-1,d3
           move.l flagfen,d7
 vide1:    btst d3,d7            ;fenetre en route? BUG BUG BUG BUG BUG BUG
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s vide3 /* XXX */
           .ELSE
           beq.w vide3 /* XXX */
           .ENDC
           cmp.l copie(a4),a3
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s vide3             ;pas egal: essaie la suivante /* XXX */
           .ELSE
           bne.w vide3             ;pas egal: essaie la suivante /* XXX */
@@ -1444,7 +1492,7 @@ vide2:    move.w (a3)+,(a2)+    ;transfere les copies
           bsr adresse
           move.l a0,adcopie(a4)
           move.l a1,adecran(a4) ;les adresses sont retablies
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s vide0             ;reexplore toute la table /* XXX */
           .ELSE
           bra.w vide0             ;reexplore toute la table /* XXX */
@@ -1452,7 +1500,7 @@ vide2:    move.w (a3)+,(a2)+    ;transfere les copies
 vide3:    add.l #lfenetre,a4      ;fenetre suivante
           addq #1,d3
           cmpi.w #nbfenetre,d3
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s vide1 /* XXX */
           .ELSE
           bne.w vide1 /* XXX */
@@ -1464,13 +1512,13 @@ vide3:    add.l #lfenetre,a4      ;fenetre suivante
           clr.b 0(a0,d1.w)    ;efface la fenetre de la prioritable
           move #nbfenetre-1,d1
 refait1:  tst.b 0(a0,d1.w)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s refait2 /* XXX */
           .ELSE
           beq.w refait2 /* XXX */
           .ENDC
           cmp.b 0(a0,d1.w),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bge.s refait2 /* XXX */
           .ELSE
           bge.w refait2 /* XXX */
@@ -1480,7 +1528,7 @@ refait1:  tst.b 0(a0,d1.w)
 refait2:  dbra d1,refait1
 ; reaffiche tout l'ecran (sauf si effacement rapide)
           tst rapeflag
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s pasrap /* XXX */
           .ELSE
           bne.w pasrap /* XXX */
@@ -1490,7 +1538,7 @@ refait2:  dbra d1,refait1
 ; trouve la fenetre courante
 pasrap:   move tempinit,d0
           cmp courante,d0     ;la fenetre courante n'est pas celle
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s finieff         ;qui vient d'etre effacee: on change rien! /* XXX */
           .ELSE
           bne.w finieff         ;qui vient d'etre effacee: on change rien! /* XXX */
@@ -1499,14 +1547,14 @@ pasrap:   move tempinit,d0
           lea priofen,a0
           clr d0
 trouv1:   cmp.b #1,(a0)+
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s trouv2          ;active la fenetre de poids le plus fort! /* XXX */
           .ELSE
           beq.w trouv2          ;active la fenetre de poids le plus fort! /* XXX */
           .ENDC
           addq #1,d0
           cmpi.w #nbfenetre,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s trouv1 /* XXX */
           .ELSE
           blt.w trouv1 /* XXX */
@@ -1523,14 +1571,14 @@ trouv3:   cmp.b #2,(a0)+      ;on peut activer la # deux!!!
           beq actzero
           addq #1,d0
           cmpi.w #nbfenetre,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s trouv3 /* XXX */
           .ELSE
           blt.w trouv3 /* XXX */
           .ENDC
 ; (peu probable): la fenetre 15 est la seule: active le fond!
           clr d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra windon
           .ELSE
           bra.w windon /* XXX */
@@ -1538,43 +1586,43 @@ trouv3:   cmp.b #2,(a0)+      ;on peut activer la # deux!!!
           
 ; ERREURS FENETRES
 error1:   move #1,d0    ;Out of range
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
           .ENDC
 error2:   move #2,d0    ;Already opened
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
           .ENDC
 error3:   move #3,d0    ;Not opened
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
           .ENDC
 error4:   move #4,d0    ;Too small window
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
           .ENDC
 error5:   move #5,d0    ;Too large window
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
           .ENDC
 error6:   move #6,d0    ;Char set not found
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
           .ENDC
 error7:   move #7,d0    ;No more text buffer space
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.w finerr /* XXX */
           .ELSE
           bra.w finerr /* XXX */
@@ -1592,7 +1640,7 @@ initcurs: move (a0)+,indcurs(a4)        ;vitesse de clignotement/couleur
 initc1:   move.b (a0)+,tabcurs(a4,d0.w)
           addq #1,d0
           cmpi.w #8,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s initc1 /* XXX */
           .ELSE
           blt.w initc1 /* XXX */
@@ -1640,23 +1688,30 @@ ancauto:  move oldauto,autoback
 gcurseur: 
 		  .IFNE FALCON
 		  movem.l    d0-d7/a0-a6,-(a7)
+		  .IFNE COMPILER
+          cmp #2,mode         ;pas de flash en COULEURS! BUG
           bsr        menu_check
+          .ELSE
+          bsr        menu_check
+          cmp #2,mode         ;pas de flash en COULEURS!
+          .ENDC
+          .ELSE
+          cmp #2,mode         ;pas de flash en COULEURS!
           .ENDC
           
-          cmp #2,mode         ;pas de flash en COULEURS!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s fincurs1 /* XXX */
           .ELSE
           bne.w fincurs1 /* XXX */
           .ENDC
           tst offcur          ;CUROFF!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s fincurs1 /* XXX */
           .ELSE
           bne.w fincurs1 /* XXX */
           .ENDC
           tst inhibc          ;la routine est en route!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s fincurs1 /* XXX */
           .ELSE
           bne.w fincurs1 /* XXX */
@@ -1664,7 +1719,7 @@ gcurseur:
           movem.l d0/a3-a4,-(sp)
           move.l adcouran,a4  ;pas de curseur sur cette fenetre
           tst curseur(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s fincurs /* XXX */
           .ELSE
           beq.w fincurs /* XXX */
@@ -1672,7 +1727,7 @@ gcurseur:
 
           /* subq.w #1,cptcurs(a4) */
           dc.w 0x46c,1,cptcurs /* XXX */
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s fincurs /* XXX */
           .ELSE
           bne.w fincurs /* XXX */
@@ -1681,7 +1736,7 @@ gcurseur:
           move poscurs(a4),d0
           addq #1,d0
           cmpi.w #8,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s gcur1 /* XXX */
           .ELSE
           blt.w gcur1 /* XXX */
@@ -1689,7 +1744,7 @@ gcurseur:
           clr d0
 gcur1:    move d0,poscurs(a4)
           move.b tabcurs(a4,d0.w),d0        ;couleur affichee en ce moment
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s affcurs /* XXX */
           .ELSE
           bsr affcurs
@@ -1726,7 +1781,7 @@ affcurs:  move #1,inhibc
           move tlecran,a0     ;a0 plus ecran
 
           tst.b d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s extinct /* XXX */
           .ELSE
           bmi.w extinct /* XXX */
@@ -1735,7 +1790,7 @@ affcurs:  move #1,inhibc
           bsr couleurs        ;a6 pointe sur la table des couleurs
           bclr #31,d5
           tst flgcurs(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s afcur1 /* XXX */
           .ELSE
           beq.w afcur1 /* XXX */
@@ -1747,7 +1802,7 @@ afcur1:   move d4,d1          ;nouvelle ligne: init cpt X
 afcur2:   move d5,d0          ;nouvel octet
           move.l a6,a5
 afcur3:   btst #31,d5
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s paspris /* XXX */
           .ELSE
           bne.w paspris /* XXX */
@@ -1759,7 +1814,7 @@ paspris:  move.b (a5),(a2)          ;pokage dans le decor
           addq #2,a5
           dbra d0,afcur3      ;autre plan?
           bchg #0,d2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s afcur4 /* XXX */
           .ELSE
           bne.w afcur4 /* XXX */
@@ -1770,14 +1825,14 @@ afcur4:   subq #1,a2
           add.w a0,a1
           dbra d6,afcur1      ;autre ligne?
           move #1,flgcurs(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s fincur /* XXX */
           .ELSE
           bra.w fincur /* XXX */
           .ENDC
 ; extinction du curseur
 extinct:  tst flgcurs(a4)     ;si deja eteint: on ne fait rien!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s fincur /* XXX */
           .ELSE
           beq.w fincur /* XXX */
@@ -1791,7 +1846,7 @@ excur3:   move.b (a3),(a2)          ;poke dans le decor
           addq #2,a2
           dbra d0,excur3
           bchg #0,d2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s excur4 /* XXX */
           .ELSE
           bne.w excur4 /* XXX */
@@ -1816,13 +1871,13 @@ fincur:   movem.l (sp)+,d0-d7/a0-a6
 adresse:  move d0,d6
           move d1,d7
           tst freelle         ;si fenetre entiere: pas de marge
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s ad1 /* XXX */
           .ELSE
           bne.w ad1 /* XXX */
           .ENDC
           tst bordure(a4)     ;si bordure: ajouter 1 aux marges texte
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s ad1 /* XXX */
           .ELSE
           beq.w ad1 /* XXX */
@@ -1854,13 +1909,13 @@ ad1:      mulu txreel(a4),d7
 ; CALCULE L'ADRESSE DANS LA TABLE DES COULEURS (D0->A6)
 couleurs: lea tcouleur,a6
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s cbas /* XXX */
           .ELSE
           beq.w cbas /* XXX */
           .ENDC
           cmp #1,mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s cmoy /* XXX */
           .ELSE
           beq.w cmoy /* XXX */
@@ -1869,7 +1924,7 @@ couleurs: lea tcouleur,a6
           lsl #6,d0           ;multiplie par 64 (hires)
           /* addq.w #6,d0 */
           dc.w 0x640,6 /* XXX */
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s crien /* XXX */
           .ELSE
           bra.w crien /* XXX */
@@ -1878,7 +1933,7 @@ cmoy:     andi.w #$0003,d0
           lsl #5,d0           ;multiplie par 32 (midres)
           /* addq.w #4,d0 */
           dc.w 0x640,4 /* XXX */
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s crien /* XXX */
           .ELSE
           bra.w crien /* XXX */
@@ -1888,7 +1943,7 @@ cbas:     andi.w #$000f,d0
 crien:    add.w d0,a6
           move flags(a4),d0   ;teste si c'est ombre...
           btst #11,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s finc /* XXX */
           .ELSE
           beq.w finc /* XXX */
@@ -1901,7 +1956,7 @@ effecran: bsr adresse
           move.l adpaper(a4),a6
           move flags(a4),d4
           btst #10,d4             ;a6 pointe sur la table couleurs
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s effac3 /* XXX */
           .ELSE
           beq.w effac3 /* XXX */
@@ -1921,7 +1976,7 @@ effac3:   movem d0-d3,-(sp)       ;sauve les donnees pour l'effacement copie
           move d0,d1
           add.w d4,d1
           btst #0,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s effac1 /* XXX */
           .ELSE
           beq.w effac1 /* XXX */
@@ -1929,7 +1984,7 @@ effac3:   movem d0-d3,-(sp)       ;sauve les donnees pour l'effacement copie
           bset #31,d4         ;flag gauche: #31 de d4
           subq #1,d4
 effac1:   btst #0,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s effac2 /* XXX */
           .ELSE
           beq.w effac2 /* XXX */
@@ -1953,7 +2008,7 @@ eff2:     move d4,d5          ;nouvelle ligne ecran: compteur milieu
           move.l a1,a3
 ; effacement octet de gauche
           btst #31,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s efmilieu /* XXX */
           .ELSE
           beq.w efmilieu /* XXX */
@@ -1967,7 +2022,7 @@ eff3:     move.b (a2),(a3)    ;effacement ecran
           subq #1,a3          ;retabli l'adresse
 ; effacement rapide du milieu
 efmilieu: tst d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s efdroite /* XXX */
           .ELSE
           bmi.w efdroite /* XXX */
@@ -1979,7 +2034,7 @@ eff6:     move.w (a2)+,(a3)+
           dbra d5,eff5
 ; effacement octet de droite
 efdroite: btst #30,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s effin /* XXX */
           .ELSE
           beq.w effin /* XXX */
@@ -1995,7 +2050,7 @@ effin:    add.w d6,a1
           dbra d2,eff2
 
           dbra d3,eff1        ;encore une ligne?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s sorteff /* XXX */
           .ELSE
           bra.w sorteff /* XXX */
@@ -2008,13 +2063,13 @@ efrapide: move d3,d0
           lsr #3,d0
           subq #1,d0          ;d0 compteur effacement ecran
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s efrbas /* XXX */
           .ELSE
           beq.w efrbas /* XXX */
           .ENDC
           cmp #1,mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s efrmoy /* XXX */
           .ELSE
           beq.w efrmoy /* XXX */
@@ -2023,14 +2078,14 @@ efrapide: move d3,d0
           swap d6
           move (a6),d6
           move.l d6,d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s effrap1 /* XXX */
           .ELSE
           bra.w effrap1 /* XXX */
           .ENDC
 efrmoy:   move.l (a6),d6      ;couleurs moyenne resolution
           move.l d6,d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s effrap1 /* XXX */
           .ELSE
           bra.w effrap1 /* XXX */
@@ -2051,7 +2106,7 @@ effcopie: subq #1,d3          ;d3 compteur en Y
           move txreel(a4),d4
           mulu tcarcopie,d4   ;d4 plus copie
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s efcop3 /* XXX */
           .ELSE
           beq.w efcop3 /* XXX */
@@ -2066,7 +2121,7 @@ efcop2:   move.w d0,(a2)+
           dbra d5,efcop2
           add.w d4,a0
           dbra d3,efcop1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s fineff /* XXX */
           .ELSE
           bra.w fineff /* XXX */
@@ -2090,13 +2145,13 @@ cligne:   movem.l d0-d7/a0-a6,-(sp)
           clr d0
           moveq #1,d3
           bsr effecran
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s effcopie
           .ELSE
           bsr effcopie
           .ENDC
           move (sp)+,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s endline         ;met un 255 au bout! /* XXX */
           .ELSE
           bsr.w endline         ;met un 255 au bout! /* XXX */
@@ -2116,14 +2171,14 @@ clears:   movem.l d0-d7/a0-a6,-(sp)
 ; ecris la ligne de 255 verticale
           clr d1
 clears1:  
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s endline /* XXX */
           .ELSE
           bsr.w endline /* XXX */
           .ENDC
           addq #1,d1
           cmp tytext(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s clears1 /* XXX */
           .ELSE
           bne.w clears1 /* XXX */
@@ -2139,7 +2194,7 @@ endline:  move d1,-(sp)
           subq #1,d0
           bsr adresse
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s endllow /* XXX */
           .ELSE
           beq.w endllow /* XXX */
@@ -2160,13 +2215,13 @@ endllow:  move.w flags(a4),d1
 
 ; LOCATE D0,D1
 locate:   cmp txtext(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s sorti /* XXX */
           .ELSE
           bcc.w sorti /* XXX */
           .ENDC
           cmp tytext(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s sorti /* XXX */
           bsr.s curxy
           .ELSE
@@ -2193,7 +2248,7 @@ coordcurs:move xcursor(a4),d0
 
 ; XGRAPHIC: COORD CURS X ---> COORDS GRAPHIC
 xgraphic: cmp txtext(a4),d0             ;ramene -1 si sort
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s cxgr1 /* XXX */
           .ELSE
           bcc.w cxgr1 /* XXX */
@@ -2205,7 +2260,7 @@ xgraphic: cmp txtext(a4),d0             ;ramene -1 si sort
 
 ; YGRAPHIC: COORD CURS Y ---> COORDS GRAPHIC
 ygraphic: cmp tytext(a4),d0             ;ramene -1 si sort
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s cxgr1 /* XXX */
           .ELSE
           bcc.w cxgr1 /* XXX */
@@ -2223,13 +2278,13 @@ xtext:    move.w startx(a4),d1
           lsl #3,d2
           mulu chrxsize(a4),d2          ;fin graphique de la fenetre
           cmp.w d2,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s cxgr1 /* XXX */
           .ELSE
           bcc.w cxgr1 /* XXX */
           .ENDC
           sub.w d1,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcs.s cxgr1 /* XXX */
           .ELSE
           bcs.w cxgr1 /* XXX */
@@ -2248,13 +2303,13 @@ ytext:    move.w starty(a4),d1
           mulu chrysize(a4),d1          ;debut (0-639) de la fenetre
           mulu chrysize(a4),d2          ;fin graphique de la fenetre
           cmp.w d2,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s cxgr1 /* XXX */
           .ELSE
           bcc.w cxgr1 /* XXX */
           .ENDC
           sub.w d1,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcs.s cxgr1 /* XXX */
           .ELSE
           bcs.w cxgr1 /* XXX */
@@ -2283,7 +2338,7 @@ scrolling:movem.l d0-d6/a0,-(sp)
           move d0,d1
           add.w d4,d1
           btst #0,d0          ;test GAUCHE
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s scrll1 /* XXX */
           .ELSE
           beq.w scrll1 /* XXX */
@@ -2291,7 +2346,7 @@ scrolling:movem.l d0-d6/a0,-(sp)
           bset #31,d4         ;flag: demarre sur impair
           subq #1,d4          ;un octet en moins au milieu
 scrll1:   btst #0,d1          ;test DROITE
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s scrll2 /* XXX */
           .ELSE
           beq.w scrll2 /* XXX */
@@ -2315,7 +2370,7 @@ scrl2:    move a4,d4          ;nouvelle ligne: compteur milieu ligne
           lea 0(a3,d3.w),a0
 ; transfert octet de gauche
           btst #31,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s scmilieu /* XXX */
           .ELSE
           beq.w scmilieu /* XXX */
@@ -2329,7 +2384,7 @@ scrl3:    move.b (a0),(a3) ;transfert dans l'ecran
           subq #1,a3          ;retablissement au premier plan suivant
 ; transfert rapide du milieu
 scmilieu: tst d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s scdroite /* XXX */
           .ELSE
           bmi.w scdroite /* XXX */
@@ -2340,7 +2395,7 @@ scrl6:    move.w (a0)+,(a3)+
           dbra d4,scrl5       ;autre mot?
 ; transfert octet de droite
 scdroite: btst #30,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s finsc /* XXX */
           .ELSE
           beq.w finsc /* XXX */
@@ -2355,7 +2410,7 @@ finsc:    add.w d7,a1
           dbra d1,scrl2       ;autre ligne? fini la hauteur d'un caractere
 
           dbra d5,scrl1       ;autre caractere? fini le scrolling
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s scrollcop /* XXX */
           .ELSE
           bra.w scrollcop /* XXX */
@@ -2367,7 +2422,7 @@ scrapide: mulu tlecran,d5
           lsr #2,d5
           subq #1,d5          ;d5: compteur scroll ecran
           tst d3
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s scrbs /* XXX */
           .ELSE
           bmi.w scrbs /* XXX */
@@ -2376,7 +2431,7 @@ scrapide: mulu tlecran,d5
           lea 0(a1,d3.w),a3
 scrht1:   move.l (a3)+,(a1)+
           dbra d5,scrht1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s scrollcop /* XXX */
           .ELSE
           bra.w scrollcop /* XXX */
@@ -2394,7 +2449,7 @@ scrollcop:movem.l (sp)+,d0-d6/a0  ;recupere les donnees
           subq #1,d7              ;d7 indice en X
           subq #1,d5              ;d5 compteur en Y
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s scrcop3 /* XXX */
           .ELSE
           beq.w scrcop3 /* XXX */
@@ -2405,7 +2460,7 @@ scrcop2:  move.w 0(a2,d2.w),(a2)+
           dbra d4,scrcop2
           add.w d6,a0
           dbra d5,scrcop1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finscroll /* XXX */
           .ELSE
           bra.w finscroll /* XXX */
@@ -2423,7 +2478,7 @@ finscroll:rts
 scrollht: movem.l d0-d7/a0-a6,-(sp)
           /* cmp #0,d1           ;une seule ligne: pas de scrolling... */
           dc.w 0xc41,0 /* XXX */
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s finscrl /* XXX */
           .ELSE
           beq.w finscrl /* XXX */
@@ -2450,7 +2505,7 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
           move tytext(a4),d5
           sub.w d1,d5
           subq #1,d5          ;nombre de caractere a scroller en Y
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s finscrl         ;une seule ligne: pas de scroll /* XXX */
           .ELSE
           beq.w finscrl         ;une seule ligne: pas de scroll /* XXX */
@@ -2472,7 +2527,7 @@ scrollbs: movem.l d0-d7/a0-a6,-(sp)
 
           bsr scrolling
 
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finscrl /* XXX */
           .ELSE
           bra.w finscrl /* XXX */
@@ -2483,7 +2538,7 @@ droite:   move xcursor(a4),d0
           move freelle,d1
           addq #1,d0
           cmp txtext(a4,d1.w),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s drt1 /* XXX */
           .ELSE
           beq.w drt1 /* XXX */
@@ -2491,7 +2546,7 @@ droite:   move xcursor(a4),d0
           move ycursor(a4),d1
           bra curxy
 drt1:     
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s alaligne        ;scroll vers le haut
           bra.s bas /* XXX */
           .ELSE
@@ -2501,7 +2556,7 @@ drt1:
 
 ; CURSEUR VERS GAUCHE
 gauche:   move xcursor(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s gch1 /* XXX */
           .ELSE
           beq.w gch1 /* XXX */
@@ -2517,7 +2572,7 @@ gch1:     move txtext(a4),d0
 ; CURSEUR VERS LE HAUT
 haut:     move xcursor(a4),d0
           move ycursor(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s haut1 /* XXX */
           .ELSE
           beq.w haut1 /* XXX */
@@ -2535,7 +2590,7 @@ bas:      move freelle,d0
           move ycursor(a4),d1
           addq #1,d1
           cmp tytext(a4,d0.w),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s bas1 /* XXX */
           .ELSE
           beq.w bas1 /* XXX */
@@ -2543,7 +2598,7 @@ bas:      move freelle,d0
           move xcursor(a4),d0
           bra curxy
 bas1:     tst scrollup(a4)    ;scrolling autorse?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s bas2 /* XXX */
           .ELSE
           beq.w bas2 /* XXX */
@@ -2561,7 +2616,7 @@ alaligne: clr d0
 
 ; RETURN
 return:   
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s alaligne
           bra.s bas /* XXX */
           .ELSE
@@ -2572,7 +2627,7 @@ return:
 ; ARRET CURSEUR/CUROFF
 arretcur: clr.w curseur(a4)
 curoff:   tst offcur
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s cof1 /* XXX */
           .ELSE
           bmi.w cof1 /* XXX */
@@ -2587,7 +2642,7 @@ cof1:     rts
 ; MARCHE CURSEUR/CURON
 marchcur: move #1,curseur(a4)
 curon:    tst curseur(a4)     ;si arrete, ne le remet pas!!!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s cof1 /* XXX */
           .ELSE
           beq.w cof1 /* XXX */
@@ -2595,7 +2650,7 @@ curon:    tst curseur(a4)     ;si arrete, ne le remet pas!!!
           clr offcur
           move #1,cptcurs(a4)
           cmp #2,mode         ;si mode 2: reaffiche par les interruptions
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s cof1 /* XXX */
           .ELSE
           beq.w cof1 /* XXX */
@@ -2634,7 +2689,7 @@ ombre:    move pen(a4),d0
 ombreoff: move flags(a4),d0
           bclr #11,d0
           move d0,flags(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s ombre /* XXX */
           .ELSE
           bra.w ombre /* XXX */
@@ -2656,7 +2711,7 @@ souloff:  move flags(a4),d0
 setpen:   move d0,pen(a4)
           move d0,d7
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s penlow /* XXX */
           .ELSE
           beq.w penlow /* XXX */
@@ -2665,7 +2720,7 @@ setpen:   move d0,pen(a4)
           lsl #6,d7
           lsl #6,d7
           andi.w #%1100111111111111,flags(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finpen /* XXX */
           .ELSE
           bra.w finpen /* XXX */
@@ -2681,7 +2736,7 @@ finpen:   or.w d7,flags(a4)
 setpaper: move d0,paper(a4)
           move d0,d7
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s paperlow /* XXX */
           .ELSE
           beq.w paperlow /* XXX */
@@ -2690,7 +2745,7 @@ setpaper: move d0,paper(a4)
           lsl #7,d7
           lsl #7,d7
           andi.w #%0011111111111111,flags(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finpaper /* XXX */
           .ELSE
           bra.w finpaper /* XXX */
@@ -2705,13 +2760,13 @@ finpaper: or.w d7,flags(a4)
 
 ; WRITING
 wrt1:     clr d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s wrt /* XXX */
           .ELSE
           bra.w wrt /* XXX */
           .ENDC
 wrt2:     moveq #1,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s wrt /* XXX */
           .ELSE
           bra.w wrt /* XXX */
@@ -2731,19 +2786,19 @@ scrolloff:clr scrollup(a4)
 ; SCREEN: ramene le caractere sous d0/d1 en d0 et flags en d4
 cscreen:  move xcursor(a4),d0
           move ycursor(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s screen /* XXX */
           .ELSE
           bra.w screen /* XXX */
           .ENDC
 tstscreen:cmp txtext(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bge.s scrn2 /* XXX */
           .ELSE
           bge.w scrn2 /* XXX */
           .ENDC
           cmp tytext(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bge.s scrn2 /* XXX */
           .ELSE
           bge.w scrn2 /* XXX */
@@ -2751,7 +2806,7 @@ tstscreen:cmp txtext(a4),d0
 screen:   bsr adresse
           clr d0
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s scrn1 /* XXX */
           .ELSE
           beq.w scrn1 /* XXX */
@@ -2778,7 +2833,7 @@ getchar:  andi.w #$f,d0
           lsl #2,d0
           lea adjeux,a0
           move.l 0(a0,d0.w),d0  ;prend son adresse
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s getch1 /* XXX */
           .ELSE
           beq.w getch1 /* XXX */
@@ -2788,13 +2843,13 @@ getch1:   rts
 
 ; SET CHAR (xx): INITIALISE UN JEU DE CARACTERES: #=d0/ad=a0
 setchar:  andi.w #$f,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s setchar1        ;pas les jeux systeme! /* XXX */
           .ELSE
           beq.w setchar1        ;pas les jeux systeme! /* XXX */
           .ENDC
           cmpi.w #1,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s setchar1 /* XXX */
           .ELSE
           beq.w setchar1 /* XXX */
@@ -2803,7 +2858,7 @@ setchar:  andi.w #$f,d0
           lea adjeux,a1
           clr.l 0(a1,d0.w)
           cmpi.l #$06071963,(a0)+
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s setchar1 /* XXX */
           .ELSE
           bne.w setchar1 /* XXX */
@@ -2821,27 +2876,27 @@ delete:   move xcursor(a4),-(sp)
           clr writing(a4)
           bsr cscreen         ;on ne peut relier des lignes
           cmpi.b #255,d0       ;avec DELETE ou BACKSPACE
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s depile /* XXX */
           .ELSE
           beq.w depile /* XXX */
           .ENDC
 del0:     bsr droite
           tst xcursor(a4)               ;securite si plus de 255!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s del0a /* XXX */
           .ELSE
           bne.w del0a /* XXX */
           .ENDC
           tst ycursor(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s del2 /* XXX */
           .ELSE
           beq.w del2 /* XXX */
           .ENDC
 del0a:    bsr cscreen
           cmpi.b #255,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s del2 /* XXX */
           .ELSE
           beq.w del2 /* XXX */
@@ -2849,7 +2904,7 @@ del0a:    bsr cscreen
           move d0,-(sp)
           bsr gauche
           cmp d4,d5
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s del1 /* XXX */
           .ELSE
           beq.w del1 /* XXX */
@@ -2858,7 +2913,7 @@ del0a:    bsr cscreen
           move d4,d5
 del1:     move (sp)+,d0
           bsr chrout
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s del0 /* XXX */
           .ELSE
           bra.w del0 /* XXX */
@@ -2877,13 +2932,13 @@ depile:   move (sp)+,scrollup(a4)
 
 ; BACKSPACE
 backspace:tst xcursor(a4)               ;pas en haut a gauche de l'ecran!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s back1 /* XXX */
           .ELSE
           bne.w back1 /* XXX */
           .ENDC
           tst ycursor(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s back2 /* XXX */
           .ELSE
           beq.w back2 /* XXX */
@@ -2891,7 +2946,7 @@ backspace:tst xcursor(a4)               ;pas en haut a gauche de l'ecran!
 back1:    bsr gauche
           bsr cscreen                   ;on ne peut pas relier deux
           cmpi.b #255,d0                 ;lignes avec BACKSPACES!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne delete
           .ELSE
           bne.w delete /* XXX */
@@ -2910,14 +2965,14 @@ finligne: move xcursor(a4),-(sp)
           clr scrollup(a4)
 efl1:     bsr cscreen
           cmpi.b #255,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s depile /* XXX */
           .ELSE
           beq.w depile /* XXX */
           .ENDC
           move.b #32,d0
           bsr chrout
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s efl1 /* XXX */
           .ELSE
           bra.w efl1 /* XXX */
@@ -2925,13 +2980,13 @@ efl1:     bsr cscreen
 
 ; FIXE LA TAILLE DU CURSEUR d0= haut, d1= bas, d2= vitesse si hires
 fixcursor:cmp d0,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bls.s fix1 /* XXX */
           .ELSE
           bls.w fix1 /* XXX */
           .ENDC
           cmp chrysize(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bhi.s fix1 /* XXX */
           .ELSE
           bhi.w fix1 /* XXX */
@@ -2939,13 +2994,13 @@ fixcursor:cmp d0,d1
           move d0,dcurseur(a4)
           move d1,fcurseur(a4)
 fix1:     cmpi.w #2,mode                   ;pas de vitesse si LOW/MID res!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s fix2 /* XXX */
           .ELSE
           bne.w fix2 /* XXX */
           .ENDC
           tst d2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s fix2 /* XXX */
           .ELSE
           beq.w fix2 /* XXX */
@@ -2958,7 +3013,7 @@ fix2:     rts
 autoins:  move txtext(a4),d1
           subq #1,d1
           cmp xcursor(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s oto1 /* XXX */
           .ELSE
           bne.w oto1 /* XXX */
@@ -2966,14 +3021,14 @@ autoins:  move txtext(a4),d1
           move tytext(a4),d1
           subq #1,d1
           cmp ycursor(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s oto2 /* XXX */
           .ELSE
           beq.w oto2 /* XXX */
           .ENDC
 ; fait un INSERE!
 oto1:     move d0,-(sp)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s insere
           .ELSE
           bsr insere
@@ -2983,7 +3038,7 @@ oto1:     move d0,-(sp)
 ; tout en bas a droite!
 oto2:     tst scrollup(a4)
           bne chrout          ;si scrolling en route: CHROUT (fait un scroll)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s oto1            ;si non: fait un INSERE! /* XXX */
           .ELSE
           bra.w oto1            ;si non: fait un INSERE! /* XXX */
@@ -3001,7 +3056,7 @@ insere:   move xcursor(a4),d2
 ; curseur sur la fin d'une ligne
           move #32,d0
           bsr inscroll
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s ins5 /* XXX */
           .ELSE
           bra.w ins5 /* XXX */
@@ -3015,7 +3070,7 @@ ins0a:    bsr droite
           bne.s ins0
           tst ycursor(a4)
           bne.s ins0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s ins5 /* XXX */
           .ELSE
           bra.w ins5 /* XXX */
@@ -3028,7 +3083,7 @@ ins1:     bsr gauche
           move d0,-(sp)
           bsr droite
           move (sp)+,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s inscroll
           .ELSE
           bsr inscroll
@@ -3055,7 +3110,7 @@ ins4:     move (sp)+,d0
           bsr chrout
           bsr gauche
           bsr gauche
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s ins2 /* XXX */
           .ELSE
           bra.w ins2 /* XXX */
@@ -3072,7 +3127,7 @@ ins5:     move (sp)+,d4
 ; SSPGM: INSERCROLL, ecris la lettre, fait un scrolling, remet sur la lettre
 inscroll: move d0,-(sp)
           cmp d4,d5
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s insc1 /* XXX */
           .ELSE
           beq.w insc1 /* XXX */
@@ -3086,7 +3141,7 @@ insc1:    move (sp)+,d6
           move txtext(a4),d2            ;si tout en bas a droite,
           subq #1,d2
           cmp d2,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s insc1a /* XXX */
           .ELSE
           bne.w insc1a /* XXX */
@@ -3094,7 +3149,7 @@ insc1:    move (sp)+,d6
           move tytext(a4),d3            ;un simple CHROUT suffit!
           subq #1,d3
           cmp d3,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s insc3 /* XXX */
           .ELSE
           beq.w insc3 /* XXX */
@@ -3104,7 +3159,7 @@ insc1a:   move d6,d0
           move tytext(a4),d0
           lsr #1,d0
           cmp d0,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s insc2 /* XXX */
           .ELSE
           bcc.w insc2 /* XXX */
@@ -3125,7 +3180,7 @@ insc2a:   movem (sp)+,d0-d3
 ; TOUT EN BAS A DROITE!
 insc3:    move d6,d0
           bsr chrout
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s insc2a /* XXX */
           .ELSE
           bra.w insc2a /* XXX */
@@ -3137,7 +3192,7 @@ join:     move xcursor(a4),-(sp)
 join0:    move txtext(a4),d0
           subq #1,d0
           cmp xcursor(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s join1 /* XXX */
           .ELSE
           bne.w join1 /* XXX */
@@ -3145,20 +3200,20 @@ join0:    move txtext(a4),d0
           move tytext(a4),d1
           subq #1,d1
           cmp ycursor(a4),d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s join5 /* XXX */
           .ELSE
           beq.w join5 /* XXX */
           .ENDC
 join1:    bsr cscreen
           cmpi.b #255,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s join2 /* XXX */
           .ELSE
           beq.w join2 /* XXX */
           .ENDC
           bsr droite
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s join0 /* XXX */
           .ELSE
           bra.w join0 /* XXX */
@@ -3172,7 +3227,7 @@ join5:    move.w (sp)+,d1
 
 ; CURSEUR VERS LA DROITE RAPIDE
 qdroite:  bsr droite
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s tests
           bne.s qdroite /* XXX */
           .ELSE
@@ -3183,7 +3238,7 @@ qdroite:  bsr droite
 
 ; CURSEUR VERS LA GAUCHE RAPIDE
 qgauche:  bsr gauche
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s tests
           bne.s qgauche /* XXX */
           .ELSE
@@ -3195,43 +3250,43 @@ qgauche:  bsr gauche
 ; TESTS: ARRET DU CURSEUR?
 tests:    bsr cscreen
           tst.b d0            ;>128
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bmi.s staup /* XXX */
           .ELSE
           bmi.w staup /* XXX */
           .ENDC
           cmpi.b #48,d0        ;<48: stop
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s staup /* XXX */
           .ELSE
           blt.w staup /* XXX */
           .ENDC
           cmpi.b #58,d0        ;<58:chiffre
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s cont /* XXX */
           .ELSE
           blt.w cont /* XXX */
           .ENDC
           cmpi.b #65,d0        ;<65:stop
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s staup /* XXX */
           .ELSE
           blt.w staup /* XXX */
           .ENDC
           cmpi.b #91,d0        ;<91:majuscule
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s cont /* XXX */
           .ELSE
           blt.w cont /* XXX */
           .ENDC
           cmpi.b #97,d0        ;<97:stop
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s staup /* XXX */
           .ELSE
           blt.w staup /* XXX */
           .ENDC
           cmpi.b #123,d0       ;<123:minuscule
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           blt.s cont /* XXX */
           .ELSE
           blt.w cont /* XXX */
@@ -3249,13 +3304,13 @@ getbuffer:move scrollup(a4),-(sp)  ; met un zero a la fin
           move d0,d2
           subq #2,d2
 get2:     tst xcursor(a4)          ;securite en haut a gauche!
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s get3 /* XXX */
           .ELSE
           bne.w get3 /* XXX */
           .ENDC
           tst ycursor(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s get5b /* XXX */
           .ELSE
           beq.w get5b /* XXX */
@@ -3263,7 +3318,7 @@ get2:     tst xcursor(a4)          ;securite en haut a gauche!
 get3:     bsr gauche
           bsr cscreen
           cmpi.b #255,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s get2 /* XXX */
           .ELSE
           bne.w get2 /* XXX */
@@ -3271,7 +3326,7 @@ get3:     bsr gauche
 get4:     move txtext(a4),d0       ;securite en bas a droite!
           subq #1,d0
           cmp xcursor(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s get5a /* XXX */
           .ELSE
           bne.w get5a /* XXX */
@@ -3279,7 +3334,7 @@ get4:     move txtext(a4),d0       ;securite en bas a droite!
           move tytext(a4),d0
           subq #1,d0
           cmp ycursor(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s get6 /* XXX */
           .ELSE
           beq.w get6 /* XXX */
@@ -3287,14 +3342,14 @@ get4:     move txtext(a4),d0       ;securite en bas a droite!
 get5a:    bsr droite
 get5b:    bsr cscreen
           cmpi.b #255,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s get6 /* XXX */
           .ELSE
           beq.w get6 /* XXX */
           .ENDC
           move.b d0,(a2)+
           cmpi.b #32,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s get5c /* XXX */
           .ELSE
           beq.w get5c /* XXX */
@@ -3303,13 +3358,13 @@ get5b:    bsr cscreen
 get5c:    dbra d2,get4
 get5:     move.l a2,d2
           sub.l a3,d2                   ;nombre de caracteres significatifs
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s get6 /* XXX */
           .ELSE
           bne.w get6 /* XXX */
           .ENDC
           move #1,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s get7 /* XXX */
           .ELSE
           bra.w get7 /* XXX */
@@ -3364,7 +3419,7 @@ box4:     bsr gauche
 
 ; TITLE A0: ECRIS UNE CHAINE SUR LA LIGNE DU HAUT D'UNE FENETRE
 title:    tst bordure(a4)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s titlerr         ;pas de tour a cette fenetre! /* XXX */
           .ELSE
           beq.w titlerr         ;pas de tour a cette fenetre! /* XXX */
@@ -3375,7 +3430,7 @@ title:    tst bordure(a4)
           move.l a0,-(sp)
           bsr haume
           move.l (sp)+,a0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s centrage        ;affiche la chaine en la centrant
           .ELSE
           bsr centrage        ;affiche la chaine en la centrant
@@ -3394,38 +3449,38 @@ centrage: move.l a0,a2
           move.l a0,a1
           clr d1
 cent1:    move.b (a1)+,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s cent2 /* XXX */
           .ELSE
           beq.w cent2 /* XXX */
           .ENDC
           cmpi.b #32,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcs.s cent1 /* XXX */
           .ELSE
           bcs.w cent1 /* XXX */
           .ENDC
           addq #1,d1
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s cent1 /* XXX */
           .ELSE
           bra.w cent1 /* XXX */
           .ENDC
 cent2:    tst freelle
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s cent3 /* XXX */
           .ELSE
           beq.w cent3 /* XXX */
           .ENDC
           move txreel(a4),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s cent4 /* XXX */
           .ELSE
           bra.w cent4 /* XXX */
           .ENDC
 cent3:    move txtext(a4),d0
 cent4:    sub.w d1,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcs.s prtstring /* XXX */
           .ELSE
           bcs.w prtstring /* XXX */
@@ -3437,7 +3492,7 @@ cent4:    sub.w d1,d0
 
 ;PRINT STRING: ECRIS LA CHAINE DE CARACTERES POINTEE PAR A0
 prtstring: move.b (a0)+,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s prt1 /* XXX */
           bsr.s chrout /* XXX */
           bra.s prtstring /* XXX */
@@ -3451,7 +3506,7 @@ prt1:     rts
 ; IMPRESSION D'UN CARACTERE SUR LE DECOR SUPER, INTERCEPTE LES ICONES!!!
 chrdec:   movem.l d0-d7/a0-a6,-(sp)
           clr.l d6
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s chr0 /* XXX */
           .ELSE
           bra.w chr0 /* XXX */
@@ -3464,7 +3519,7 @@ chr0:     move.l adcouran,a4   ;a4 pointe sur la fenetre courante!
           andi.w #$00ff,d0
 
           cmpi.b #32,d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc.s pascont /* XXX */
           .ELSE
           bcc.w pascont /* XXX */
@@ -3477,7 +3532,7 @@ chr0:     move.l adcouran,a4   ;a4 pointe sur la fenetre courante!
           lea controle,a0     ;table des adresse des routines
           add.w d0,a0
           tst.l (a0)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq sortie          ;pas implement‚e
           .ELSE
           beq.w sortie          ;pas implement‚e /* XXX */
@@ -3487,7 +3542,7 @@ chr0:     move.l adcouran,a4   ;a4 pointe sur la fenetre courante!
           move ycursor(a4),d1
           clr escape
           jsr (a1)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra sortie
           .ELSE
           bra.w sortie /* XXX */
@@ -3498,7 +3553,7 @@ chr5:     bsr afficon              ;va afficher!
           clr escape               ;poke dans la copie, si rien a afficher,
 escbis:   move.l adcopie(a4),a0    ;c'est pas grave!!!
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s chr6 /* XXX */
           .ELSE
           beq.w chr6 /* XXX */
@@ -3507,7 +3562,7 @@ escbis:   move.l adcopie(a4),a0    ;c'est pas grave!!!
           clr.b d1
           or.b d0,d1
           move.w d1,(a0)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra finaff
           .ELSE
           bra.w finaff /* XXX */
@@ -3524,7 +3579,7 @@ pascont:  tst escape
           bne.s chr5
           move.l adcopie(a4),a0
           tst mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s stocklow /* XXX */
           .ELSE
           beq.w stocklow /* XXX */
@@ -3533,7 +3588,7 @@ pascont:  tst escape
           clr.b d1
           or.b d0,d1
           move.w d1,(a0)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s affcar /* XXX */
           .ELSE
           bra.w affcar /* XXX */
@@ -3557,11 +3612,14 @@ affcar:   /* move.l adjeucar(a4),a0 */
           move.l adpaper(a4),a6        ;paper en a6
           move flags(a4),d4
           btst #10,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s affnorm /* XXX */
-          exg a5,a6                ;INVERSE! on echange PAPER et PEN
           .ELSE
           beq.w affnorm /* XXX */
+          .ENDC
+          .IFNE (FALCON=1)&(COMPILER=0)
+          exg a5,a6                ;INVERSE! on echange PAPER et PEN
+          .ELSE
           exg a6,a5                ;INVERSE! on echange PAPER et PEN
           .ENDC
 affnorm:  move.b writing+1(a4),d4  ;writing dans d4.b
@@ -3572,7 +3630,7 @@ affnorm:  move.b writing+1(a4),d4  ;writing dans d4.b
           subq #1,a4           ;compteur en X: a4/d5
 
           cmpi.w #2,mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s affmoy /* XXX */
           .ELSE
           bne.w affmoy /* XXX */
@@ -3584,7 +3642,7 @@ affht2:   move.b (a0)+,d0
           move.b d0,d1
           not.b d1
           tst.b d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s wrt1ht /* XXX */
           .ELSE
           bne.w wrt1ht /* XXX */
@@ -3599,7 +3657,7 @@ affht2:   move.b (a0)+,d0
 lignesh:  add.w a3,a1           ;passage ligne suivante
           dbra d7,affht1      ;autre ligne?
           bclr #9,d4          ;souligne ?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq finaff
           .ELSE
           beq.w finaff /* XXX */
@@ -3607,13 +3665,13 @@ lignesh:  add.w a3,a1           ;passage ligne suivante
           lea souligne,a0     ;par magouille
           sub.w a3,a1           ;reecris la ligne de soulignement!!!
           clr d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s affht1 /* XXX */
           .ELSE
           bra.w affht1 /* XXX */
           .ENDC
 wrt1ht:   cmpi.b #1,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s wrt2ht /* XXX */
           .ELSE
           bne.w wrt2ht /* XXX */
@@ -3624,7 +3682,7 @@ wrt1ht:   cmpi.b #1,d4
           or.b d0,(a2)
           move.b (a2)+,-1(a2,d6.l)
           dbra d5,affht2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s lignesh /* XXX */
           .ELSE
           bra.w lignesh /* XXX */
@@ -3636,7 +3694,7 @@ wrt2ht:   and.w (a5),d0
           eor.b d0,(a2)
           move.b (a2)+,-1(a2,d6.l)
           dbra d5,affht2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s lignesh /* XXX */
           .ELSE
           bra.w lignesh /* XXX */
@@ -3674,7 +3732,7 @@ octetsm:  subq #4,a5          ;RAZ plans couleur
           lea souligne,a0     ;souligne par magouille!
           sub.w a3,a1
           clr d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s affmy1 /* XXX */
           .ELSE
           bra.w affmy1 /* XXX */
@@ -3683,7 +3741,7 @@ affmy5:   subq #1,a2
           bchg #0,d2
           bne.s affmy2
           subq #2,a2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s affmy2 /* XXX */
           .ELSE
           bra.w affmy2 /* XXX */
@@ -3697,7 +3755,7 @@ wrt1my:   cmpi.b #1,d4
           move.b (a2),-1(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s octetsm /* XXX */
           .ELSE
           bra.w octetsm /* XXX */
@@ -3710,7 +3768,7 @@ wrt2my:   and.w (a5)+,d0
           move.b (a2),-1(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s octetsm /* XXX */
           .ELSE
           bra.w octetsm /* XXX */
@@ -3742,7 +3800,7 @@ octetsb:  subq #8,a5          ;RAZ plans couleur
           add.w a3,a1
           dbra d7,affbas
           bclr #9,d4          ;souligne?
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s finaff /* XXX */
           .ELSE
           beq.w finaff /* XXX */
@@ -3750,7 +3808,7 @@ octetsb:  subq #8,a5          ;RAZ plans couleur
           lea souligne,a0     ;souligne par magouille!
           sub.w a3,a1
           clr d7
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s affbas /* XXX */
           .ELSE
           bra.w affbas /* XXX */
@@ -3759,7 +3817,7 @@ affbs5:   subq #1,a2
           bchg #0,d2          ;passage a l'octet suivant
           bne.s affbs2
           subq #6,a2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s affbs2 /* XXX */
           .ELSE
           bra.w affbs2 /* XXX */
@@ -3773,7 +3831,7 @@ wrt1bs:   cmpi.b #1,d4
           move.b (a2),0(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s octetsb /* XXX */
           .ELSE
           bra.w octetsb /* XXX */
@@ -3786,7 +3844,7 @@ wrt2bs:   and.w (a5),d0
           move.b (a2),0(a2,d6.l)
           addq #2,a2
           dbra d5,affht2
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s octetsb /* XXX */
           .ELSE
           bra.w octetsb /* XXX */
@@ -3798,7 +3856,7 @@ finaff:   move.l adcouran,a4
           move freelle,d1
           addq #1,d0
           cmp txtext(a4,d1.w),d0
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s finaff5 /* XXX */
           .ELSE
           beq.w finaff5 /* XXX */
@@ -3812,7 +3870,7 @@ finaff:   move.l adcouran,a4
           add.l d0,adecran(a4)
           /* addq.l #2,adcopie(a4) */
           dc.w 0x06ac,0,2,adcopie /* XXX */
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s sortie /* XXX */
           .ELSE
           bra.w sortie /* XXX */
@@ -3822,7 +3880,7 @@ finaffl:  tst mode
           bne.s finaffm
           /* addq.l #4,adcopie(a4) */
           dc.w 0x06ac,0,4,adcopie /* XXX */
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s finaff2 /* XXX */
           .ELSE
           bra.w finaff2 /* XXX */
@@ -3847,14 +3905,14 @@ sortie:   movem.l (sp)+,d0-d7/a0-a6
           rts
 finaff5:  bsr alaligne
           bsr bas
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra.s sortie /* XXX */
           .ELSE
           bra.w sortie /* XXX */
           .ENDC
 ; FINAFF active: DROITE RAPIDE!
 finafact: movem.l d0-d7/a0-a6,-(sp)
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra finaff
           .ELSE
           bra.w finaff /* XXX */
@@ -3867,7 +3925,7 @@ finafact: movem.l d0-d7/a0-a6,-(sp)
 ; CHANGEMENT DU JEU D'ICONE (a0)
 newicon:  clr.l adicon
           cmpi.l #$28091960,(a0)+
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s newic /* XXX */
           .ELSE
           bne.w newic /* XXX */
@@ -3879,7 +3937,7 @@ newic:    rts
 cescape:  move #1,escape
           move d2,d0
           addq.l #4,sp
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bra escbis
           .ELSE
           bra.w escbis /* XXX */
@@ -3905,7 +3963,7 @@ pd1:      move.w flags(a4),d1
 ; AFFICHAGE D'UNE ICONE DANS LES ECRANS (icone 1->31)
 afficon:  movem.l d0-d7/a0-a6,-(sp)
           tst.l adicon
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq finicon
           .ELSE
           beq.w finicon /* XXX */
@@ -3914,14 +3972,14 @@ afficon:  movem.l d0-d7/a0-a6,-(sp)
           andi.w #$ff,d0
           move.l adicon,a0
           cmp (a0)+,d0        ;compare au nombre d'icones
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bcc finicon         ;pas assez d'icones
           .ELSE
           bcc.w finicon         ;pas assez d'icones /* XXX */
           .ENDC
 ; ok: affiche l'icone!
           cmpi.w #2,mode
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s buggic /* XXX */
           .ELSE
           beq.w buggic /* XXX */
@@ -3930,13 +3988,13 @@ afficon:  movem.l d0-d7/a0-a6,-(sp)
           move xcursor(a4),-(sp)
           move ycursor(a4),-(sp)
           bsr bas
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s putdroit
           .ELSE
           bsr putdroit
           .ENDC
           bsr gauche
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bsr.s putdroit
           .ELSE
           bsr putdroit
@@ -3953,13 +4011,13 @@ buggic:   mulu #42*2,d0       ;84 octets par icone
           move.w ycursor(a4),d1
           add.w startyr(a4),d1
           tst freelle         ;si fenetre entiere: pas de marge
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           bne.s affica /* XXX */
           .ELSE
           bne.w affica /* XXX */
           .ENDC
           tst bordure(a4)     ;si bordure: ajouter 1 aux marges texte
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s affica /* XXX */
           .ELSE
           beq.w affica /* XXX */
@@ -3975,7 +4033,7 @@ affica:   mulu chrxsize(a4),d0
 ; inverse?
           move flags(a4),d4
           btst #10,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s affic0 /* XXX */
           .ELSE
           beq.w affic0 /* XXX */
@@ -3985,7 +4043,7 @@ affic0:   move d2,6(a0)
           move d3,8(a0)
 ; shade?
           btst #11,d4
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s affic3 /* XXX */
           .ELSE
           beq.w affic3 /* XXX */
@@ -4003,7 +4061,7 @@ affic2:   and.w #$aaaa,(a3)
           lea bufshade,a0
 
 affic3:   tst.l d6            ;un seul ecran
-          .IFNE FALCON
+          .IFNE (FALCON=1)&(COMPILER=0)
           beq.s affic4 /* XXX */
           .ELSE
           beq.w affic4 /* XXX */
@@ -4028,6 +4086,9 @@ recopie:
           move.l     falcon_screensize(pc),d7
           asr.l      #7,d7
           andi.l     #$0000FFFF,d7
+          .IFNE COMPILER
+          move #249,d7 /* BUG: leftover code */
+          .ENDC
           .ELSE
           move #249,d7
           .ENDC

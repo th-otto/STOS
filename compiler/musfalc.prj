@@ -5,4 +5,4 @@ compiler\musfalc.lib
 .S[-DFALCON=1]
 .S[-I..\src]
 =
-musfalc.s
+music.s

@@ -3,6 +3,11 @@
 ;                             GESTION DES FENETRES                           ;
 ;                                  1/11/1989                                          ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	.include "sprites.inc"
+	
+	.text
+
           bra debut
 
 		  .IFNE COMPILER
@@ -17,24 +22,24 @@
 even
 ttrappe:  dc.l chrout,1         ;0
           dc.l prtstring,1      ;1
-          dc.l laucate,1        ;2
+          dc.l locate,1         ;2
           dc.l setpaper,0       ;3
           dc.l setpen,0         ;4
           dc.l tstscreen,0      ;5
           dc.l initwind,1       ;6
 		  .IFNE COMPILER
-          dc.l arretint,0       ;7
+          dc.l stopinter,0      ;7
           .ELSE
-          dc.l arretint,1       ;7
+          dc.l stopinter,1      ;7
           .ENDC
           dc.l windon,1         ;8
           dc.l effenetre,1      ;9
           dc.l initmode,1       ;10
           dc.l getbuffer,1      ;11
           dc.l hardcopy,0       ;12
-          dc.l gcourante,0      ;13
+          dc.l getcurwindow,0   ;13
           dc.l fixcursor,1      ;14
-          dc.l departint,0      ;15
+          dc.l startinter,0     ;15
           dc.l qwindon,1        ;16
           dc.l coordcurs,0      ;17
           dc.l centrage,1       ;18
@@ -60,7 +65,33 @@ ttrappe:  dc.l chrout,1         ;0
           dc.l ytext,0          ;38
           dc.l box,1            ;39
           dc.l update,0         ;40
-        
+          .IFNE FALCON
+          dc.l fmenu_select,0   ;41
+          dc.l fmenu_item,0     ;42
+          dc.l fmenu_init,0     ;43
+          dc.l fmenu_on,0       ;44
+          dc.l fmenu_kill,0     ;45
+          dc.l fmenu_freeze,0   ;46
+          dc.l fmenustr,0       ;47
+          dc.l fmenustr_off,0   ;48
+          dc.l fmenustr_on,0    ;49
+          dc.l fmenu_check_item,0 ;50
+          dc.l fmenu_height,0   ;51
+          dc.l form_alert,0     ;52
+
+mch_cookie: dc.l 0 /* 101b2 */
+vdo_cookie:	dc.l 0 /* 101b6 */
+snd_cookie: dc.l 0 /* 101ba */
+cookieid: dc.l 0 /* 101be */
+cookievalue: dc.l 0 /* 101c2 */
+lineavars: dc.l 0 /* 101c6 */
+lineasave: ds.l 16 /* 101ca */
+
+falconmode: dc.w 0 /* 1020a */
+falcon_screensize: dc.l 0 /* 1020c */
+
+          .ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; TABLE DES COULEURS (ET HACHURES)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,15 +141,20 @@ initres:  dc.w 4,40,200,160,4,2           ;basse resolution
           dc.w 1,80,400,80,2,5            ;haute resolution
           dc.b $ff,$ff,1,1,1,0,0,0
 
-;fond TOTAL utilise par INITMODE
+;TOTAL background used by INITMODE
 ftotal:   dc.w 0,1,0,0,40,25,1,0
           dc.w 0,2,0,0,80,25,1,0
           dc.w 0,3,0,0,80,25,1,0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; donnees propres au mode de resolution
+; data specific to the resolution mode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ecran      = $44e
+	.IFNE FALCON
+  dc.w 0
+  dc.w 0
+  dc.w 0
+	.ENDC
 back:      dc.l 0
 mode:      dc.w 0
 nbplan:    dc.w 0
@@ -343,9 +379,24 @@ Debout: moveq #1,d0
           move.w #$1a,-(sp)
           trap #1             ;SETDTA
           addq.l #6,sp
-          clr d7              ;compteur numero du jeu de caracteres
-          clr.l d6            ;taille totale des jeux de caracteres
+
+	.IFNE FALCON
+		move.w     mch_cookie(pc),d6
+		cmpi.l     #3,d6
+		bne.s      initfalc1
+		lea.l      screenbuf+122880,a6
+		bra.s      initfalc2
+initfalc1:
+		lea.l      screenbuf,a6
+		adda.l     #$00008000,a6
+initfalc2:
+	.ENDC
+
+          clr d7              ;character set number counter
+          clr.l d6            ;total size of character sets
+	.IFEQ FALCON
           lea bufcopie+maxcopie+64,a6      ;debut des jeux de caracteres par defaut
+    .ENDC
 debut1:   move.b #"0",numjeux ;*.CR0/*.CR1/....
           add.b d7,numjeux
           clr.w -(sp)
@@ -354,25 +405,45 @@ debut1:   move.b #"0",numjeux ;*.CR0/*.CR1/....
           trap #1
           addq.l #8,sp
           tst d0
+          .IFNE FALCON
+          bne debut4
+          .ELSE
           bne.w debut4 /* XXX */
+          .ENDC
           clr.w -(sp)
           pea dta+30
           move.w #$3d,-(sp)
           trap #1
           addq.l #8,sp
           move d0,d5          ;handle en D5
+          .IFNE FALCON
+          bmi debut1          ;erreur! /* XXX */
+          .ELSE
           bmi.w debut1          ;erreur! /* XXX */
+          .ENDC
           move.l a6,-(sp)     ;adresse de chargement
           move.l dta+26,-(sp) ;taille du fichier
           move.w d5,-(sp)
           move.w #$3f,-(sp)
           trap #1
+          .IFNE FALCON
+          lea 12(sp),sp
+          .ELSE
           /* add.l #12,sp */
           dc.w 0xdffc,0,12 /* XXX */
+          .ENDC
           tst.l d0
+          .IFNE FALCON
+          bmi debut3 /* XXX */
+          .ELSE
           bmi.w debut3 /* XXX */
+          .ENDC
           cmp.l #$06071963,(a6)         ;code de reconnaissance
+          .IFNE FALCON
+          bne debut3 /* XXX */
+          .ELSE
           bne.w debut3 /* XXX */
+          .ENDC
           add.l d0,d6                   ;taille totale
           subq.l #4,d0                  ;taille des caracteres (moins code)
           lea adjeux,a0
@@ -389,8 +460,8 @@ debut3:   move.w d5,-(sp)
           cmpi.w #16,d7
           bcs debut1
 
-debut4:   move d7,nbjeux       ;premier jeux de caracteres libre!
-          move.l a6,a0         ;transmet l'adresse de FIN du programme!
+debut4:   move d7,nbjeux       ;first free character game!
+          move.l a6,a0         ;transmits the END address of the program!
           rts
 ;          move.l (sp)+,d0     ;recupere la longueur du PGM
 ;          add.l #maxcopie,d0  ;plus taille du buffer
@@ -412,9 +483,107 @@ initrap:  move.l #entrappe,-(sp)        ;setexec
           move.w #5,-(sp)               ;initialisation de la
           trap #13                      ;trappe 3
           addq.l #8,sp
+
+	.IFNE FALCON
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      mch_cookie(pc),a0
+		clr.l      (a0)+
+		clr.l      (a0)+ /* vdo_cookie */
+		move.l     #1,(a0)+ /* snd_cookie */
+		lea.l      cookieid(pc),a1
+		move.l     #$5F4D4348,(a1) /* "_MCH" */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		.IFNE COMPILER
+		beq.w      cold1 /* XXX */
+		.ELSE
+		beq.s      cold1
+		.ENDC
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid(pc),a1
+		move.l     #$5F56444F,(a1) /* "_VDO" */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		.IFNE COMPILER
+		beq.w      cold2 /* XXX */
+		.ELSE
+		beq.s      cold2
+		.ENDC
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+cold2:
+		dc.w       0xa000
+		move.l     a0,lineavars
+		move.w     #16-1,d7
+		lea.l      lineasave,a0
+cold3:
+		move.l     (a2)+,(a0)+
+		dbf        d7,cold3
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+getcookie:
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		.IFNE COMPILER
+		beq.w      getcookie3 /* XXX */
+		.ELSE
+		beq.s      getcookie3
+		.ENDC
+		movea.l    d0,a0
+		clr.l      d4
+getcookie1:
+		move.l     (a0)+,d0
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		.IFNE COMPILER
+		beq.w      getcookie3 /* XXX */
+		.ELSE
+		beq.s      getcookie3
+		.ENDC
+		cmp.l      d3,d0
+		.IFNE COMPILER
+		beq.w      getcookie2 /* XXX */
+		.ELSE
+		beq.s      getcookie2
+		.ENDC
+		addq.w     #1,d4
+		.IFNE COMPILER
+		bra.w      getcookie1 /* XXX */
+		.ELSE
+		bra.s      getcookie1
+		.ENDC
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		.IFNE COMPILER
+		beq.w      getcookie3
+		.ELSE
+		beq.s      getcookie3
+		.ENDC
+		move.l     d1,(a5)
+getcookie3:
+	.ENDC
           rts
+
 ; DEPART DES INTERRUPTIONS
-departint:move #-1,offcur               ;empeche l'affichage du curseur
+startinter:move #-1,offcur               ;empeche l'affichage du curseur
           clr inhibc
           move.l ecran.l,a0 /* XXX */
           sub.l  #$8000,a0               ;par defaut: decor=ecran-$8000
@@ -427,7 +596,7 @@ departint:move #-1,offcur               ;empeche l'affichage du curseur
           .ENDC
           rts
 ; ARRET DES INTERRUPTIONS
-arretint:
+stopinter:
 		  .IFNE COMPILER
           tst.w FlgDep
 	      beq.s PaArr
@@ -435,6 +604,19 @@ arretint:
           move.l $456.l,a0 /* XXX */
           move.l anc456,4(a0)
 PaArr:    rts
+
+*
+* this string is checked by the extension
+* and must stay here, just before the trap entry
+*
+		.IFNE FALCON
+		.IFEQ COMPILER
+		.dc.b "FALCON 030 STOS Window 4.6",0
+		.even
+		.ELSE
+x11556: dc.l 0
+		.ENDC
+		.ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ENTREE DE LA TRAPPE
@@ -1130,7 +1312,7 @@ finerr:   move.l adcouran,a4  ;reprend l'adresse courante!!!
           rts                 ;fin de la trappe
 
 ; GETCOURANTE: RAMENE LE NUMERO DE LA FENETRE COURANTE
-gcourante: move courante,d0
+getcurwindow: move courante,d0
           rts
 
 ; INITIALISATION DU CURSEUR: A0 POINTE LA TABLE DE DEFINITION
@@ -1534,7 +1716,7 @@ endllow:  move.w flags(a4),d1
           rts
 
 ; LOCATE D0,D1
-laucate:  cmp txtext(a4),d0
+locate:   cmp txtext(a4),d0
           bcc.w sorti /* XXX */
           cmp tytext(a4),d1
           bcc.w sorti /* XXX */
