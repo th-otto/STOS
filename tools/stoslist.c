@@ -417,7 +417,8 @@ static struct extension const external_extensions[] = {
 	{ 'A', 0x81, 0, "pack" },
 
 	/* STOS Compiler: 5 commands */
-	{ 'C', 0x80, 0, "compad" },
+	{ 'C', 0x80, 0, "run" },
+	{ 'C', 0x81, 0, "compad" },
 	{ 'C', 0x82, 0, "comptest off" },
 	{ 'C', 0x84, 0, "comptest on" },
 	{ 'C', 0x86, 0, "comptest always" },
