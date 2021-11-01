@@ -2,6 +2,7 @@ compiler\windo102.lib
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]
+.S[-DFALCON=0]
 .S[-I..\src]
 =
 window.s

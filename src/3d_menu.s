@@ -1006,7 +1006,7 @@ form_alert1:
 		bsr        checkmouse
 		tst.w      d2
 		beq.s      form_alert1
-		bsr.s      x139e0
+		bsr.s      check_alert_button
 		tst.l      d1
 		beq.s      form_alert1
 		bsr        st_mouse_off
@@ -1018,36 +1018,36 @@ form_alert2:
 form_alert3:
 		rts
 
-x139e0:
+check_alert_button:
 		movem.l    d2-d7/a0-a6,-(a7)
 		move.w     d0,d2
 		move.w     d1,d3
 		lea.l      alert_buttons(pc),a1
 		move.w     num_alert_buttons(pc),d1
 		subq.w     #1,d1
-x139e0_1:
+check_alert_button_1:
 		tst.w      (a1)
-		bne.s      x139e0_3
-x139e0_2:
+		bne.s      check_alert_button_3
+check_alert_button_2:
 		lea.l      46(a1),a1
-		dbf        d1,x139e0_1
+		dbf        d1,check_alert_button_1
 		clr.l      d0
 		clr.l      d1
 		movem.l    (a7)+,d2-d7/a0-a6
 		rts
-x139e0_3:
+check_alert_button_3:
 		cmp.w      (a1),d2
-		bcs.s      x139e0_2
+		bcs.s      check_alert_button_2
 		cmp.w      4(a1),d2
-		beq.s      x139e0_4
-		bcc.s      x139e0_2
-x139e0_4:
+		beq.s      check_alert_button_4
+		bcc.s      check_alert_button_2
+check_alert_button_4:
 		cmp.w      2(a1),d3
-		bcs.s      x139e0_2
+		bcs.s      check_alert_button_2
 		cmp.w      6(a1),d3
-		beq.s      x139e0_5
-		bcc.s      x139e0_2
-x139e0_5:
+		beq.s      check_alert_button_5
+		bcc.s      check_alert_button_2
+check_alert_button_5:
 		neg.w      d1
 		move.w     num_alert_buttons(pc),d6
 		add.w      d6,d1
@@ -2105,12 +2105,76 @@ redraw_titles1:
 		move.w     4(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
+		bsr.s      draw_title_lines
 		bsr        draw_title_strings
 		bsr        restore_linea_clip
 		bsr        set_titles_on
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
+draw_title_lines:
+		movea.l    lineavars(pc),a0
+		cmpi.w     #1,LA_PLANES(a0)
+		beq        draw_title_lines_2
+		cmpi.w     #16,LA_PLANES(a0)
+		beq        draw_title_lines_2
+		/* move.w     0(a4),d1 */
+		dc.w 0x322c,0 /* XXX */
+		move.w     4(a4),d3
+		addq.w     #6,d1
+		subq.w     #6,d3
+		move.w     2(a4),d4
+		move.w     6(a4),d2
+		sub.w      d4,d2
+		addq.w     #1,d2
+		cmpi.w     #12,d2
+		beq.s      draw_title_lines_1
+		asr.w      #1,d2
+		addq.w     #5,d2
+		move.w     d2,d4
+		move.w     mn_leftcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #1,d2
+		subq.w     #1,d4
+		move.w     mn_rightcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #4,d2
+		subq.w     #4,d4
+		move.w     mn_leftcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #1,d2
+		subq.w     #1,d4
+		move.w     mn_rightcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #4,d2
+		subq.w     #4,d4
+		move.w     mn_leftcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #1,d2
+		subq.w     #1,d4
+		move.w     mn_rightcolor(a1),d0
+		bsr        linea_drawline
+		bra.s      draw_title_lines_2
+draw_title_lines_1:
+		asr.w      #1,d2
+		addq.w     #2,d2
+		move.w     d2,d4
+		move.w     mn_leftcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #1,d2
+		subq.w     #1,d4
+		move.w     mn_rightcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #3,d2
+		subq.w     #3,d4
+		move.w     mn_leftcolor(a1),d0
+		bsr        linea_drawline
+		subq.w     #1,d2
+		subq.w     #1,d4
+		move.w     mn_rightcolor(a1),d0
+		bsr        linea_drawline
+draw_title_lines_2:
+		rts
 
 draw_title_line:
 		movem.l    d0-d7/a0-a6,-(a7)
@@ -2160,22 +2224,32 @@ draw_title_line1:
 		move.w     4(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
+		bsr        draw_title_lines
 		bsr.s      draw_title_strings
 		bsr        restore_linea_clip
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
 draw_title_strings:
+		moveq.l    #1,d6
+		movea.l    lineavars(pc),a0
+		move.w     LA_PLANES(a0),d4
+		cmpi.w     #1,d4
+		beq.s      draw_title_strings0
+		moveq.l    #7,d6
+draw_title_strings0:
 		lea.l      menuparams(pc),a0
 		lea.l      menuinfo+tit_sizeof(pc),a1
 		lea.l      textblit_str(pc),a2
 		lea.l      textblit_coords,a3
 		moveq.l    #0,d5
 draw_title_strings1:
+		move.w     d6,wrt_mode
+draw_title_strings11:
 		movem.l    d5/a0-a3,-(a7)
 		move.w     mn_fillcolor(a0),textbg_color
 		move.w     mn_leftcolor(a0),textfg_color
-		move.w     #MD_TRANS,wrt_mode
+		/* move.w     #MD_TRANS,wrt_mode */
 		move.w     #0,text_style
 		/* move.l     0(a1),0(a3) */
 		dc.w 0x2769,0,0
@@ -2186,13 +2260,17 @@ draw_title_strings1:
 draw_title_strings2:
 		bsr        linea_textblit
 		dbf        d7,draw_title_strings2
+		cmpi.w     #1,d4
+		beq.s      draw_title_strings21
+		eori.w     #6,wrt_mode
+draw_title_strings21:
 		move.w     mn_textcolor(a0),textfg_color
 		tst.w      ent_state(a1)
 		bne.s      draw_title_strings3
 		move.w     mn_rightcolor(a0),textfg_color
 		bsr.s      set_title_style
 draw_title_strings3:
-		move.w     #MD_TRANS,wrt_mode
+		/* move.w     #MD_TRANS,wrt_mode */
 		/* move.l     0(a1),0(a3) */
 		dc.w 0x2769,0,0
 		/* subq.w     #1,0(a3) */
@@ -2205,10 +2283,11 @@ draw_title_strings4:
 		bsr        linea_textblit
 		dbf        d7,draw_title_strings4
 		movem.l    (a7)+,d5/a0-a3
+		move.w     d6,wrt_mode
 		lea.l      MENU_SIZE(a1),a1
 		addq.w     #1,d5
 		cmp.w      num_titles,d5
-		bne        draw_title_strings1
+		bne        draw_title_strings11
 		move.w     #0,text_style
 		rts
 
