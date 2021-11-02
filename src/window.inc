@@ -61,3 +61,34 @@ W_form_alert       = 52
 *
 * special escape characters
 *
+C_wordleft         = 1
+C_wordright        = 2
+C_curleft          = 3
+C_scrollht         = 4
+C_scrollbs         = 5
+C_return           = 6
+C_delete           = 7
+C_backspace        = 8
+C_curright         = 9
+C_curdown          = 10
+C_curup            = 11
+C_clearscreen      = 12
+C_linestart        = 13
+C_wrtreplace       = 14
+C_wrttransparent   = 15
+C_wrtxor           = 16
+C_curon            = 17
+C_normal           = 18
+C_shadowoff        = 19
+C_curoff           = 20
+C_inverse          = 21
+C_shadowon         = 22
+C_scrollon         = 23
+C_clreol           = 24
+C_scrolloff        = 25
+C_delete           = 26
+C_escape           = 27
+C_insert           = 28
+C_underlineoff     = 29
+C_home             = 30
+C_underlineon      = 31

@@ -121,7 +121,8 @@ trackerinit:
 		move.w     #-1,playing_flag
 		move.w     #-1,sound_init_flag
 		move.w     #0,pause_flag
-		moveq.l     #-1,d0
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
 		rts
 trackerinit1:
 		move.w     #0,sound_init_flag
@@ -247,6 +248,7 @@ trackersongprev1:
 trackersongnext:
 		tst.w      sound_init_flag
 		beq.s      trackersongnext1
+		moveq.l    #43,d0 /* XXX FIXME: unused */
 		bsr        song_next
 trackersongnext1:
 		rts
@@ -444,7 +446,8 @@ trackerpattinfo:
 		subq.w     #1,d0
 		rts
 trackerpattinfo1:
-		moveq.l     #-1,d0
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
 		rts
 
 
@@ -456,7 +459,8 @@ trackertempo:
 		move.w     Tempo(pc),d0   /* Tempo & Speed */
 		rts
 trackertempo1:
-		moveq.l     #0,d0
+		/* moveq.l     #0,d0 */
+		dc.w 0x203c,0,0 /* XXX */
 		rts
 
 	.IFEQ COMPILER
@@ -614,8 +618,10 @@ Init_Module:
 		beq.s      Format_Digital
 		cmp.l      #0x3643484E,d3           ; "6CHN"
 		beq.s      Format_Ok
-        cmp.l      #0x464C5436,d3           ; "FLT6"
-        beq.s      Format_Ok
+		.IFNE 0 /* XXX */
+        cmp.l     #"FLT6",d3
+        beq.s     Format_Ok
+        .ENDC
 
 ; Formats 8 voices
 		moveq.l    #8,d1
@@ -1017,7 +1023,7 @@ dspinter1:
 		move.w     2(a6),d0
 		beq        dspinter10
 		movea.l    dsp_voice(pc),a5
-		move.l     Voice_Sample_Length(a5),d0
+		move.l     Voice_Sample_Length+dsp_voice-dsp_voice(a5),d0 /* XXX */
 		add.l      d0,dsp_voice
 		tst.l      Voice_Sample_Start(a5)
 		bne.s      dspinter4

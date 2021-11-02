@@ -7,6 +7,8 @@
 	.include "file.inc"
 	.include "tokens.inc"
 	.include "window.inc"
+	.include "sprites.inc"
+	.include "music.inc"
 	.include "float.inc"
 
 	.text
@@ -2284,12 +2286,12 @@ savect:   lea vectors+4,a6   ;pile deja stockee
           move.l #critic,$404
           move.l #illinst,$10
           move.l #dbyzero,$14
-          moveq #30,d0        ;init INTERRUPTIONS TRAPPE #5
+          moveq #S_startinter,d0        ;init INTERRUPTIONS TRAPPE #5
           lea interflg,a0     ;flag DOIT ACTUALISER
           trap #5
           moveq #W_startinter,d7        ;init INTERRUPTIONS TRAPPE #3
           trap #3
-          moveq #7,d0         ;init INTERRUPTIONS TRAPPE #7
+          moveq #M_startinter,d0         ;init INTERRUPTIONS TRAPPE #7
           trap #7
           move.l adk,a0
           move 8(a0),ancdb8   ;empeche le CLICK!
@@ -2299,11 +2301,11 @@ critic:   rts                   ;critical error pointe sur RTS
 
 ; LOADVECT: RESET VECTORS, STOP INTERRUPTS
 loadvect: move.l anc400,$400
-          moveq #8,d0         ;arret interruptions de la trappe #7
+          moveq #M_stopinter,d0         ;arret interruptions de la trappe #7
           trap #7
           moveq #W_stopinter,d7         ;arret interruptions de la trappe #3
           trap #3
-          moveq #31,d0        ;arret interruptions de la trappe #5
+          moveq #S_stopinter,d0        ;arret interruptions de la trappe #5
           trap #5
 ; enleve la workstation
           move.l $84,otrp1   ;met la fausse trappe
@@ -2407,10 +2409,10 @@ red0:     move d0,foncon
           jsr modebis         ;va tout terminer: couleurs, tfonction, etc...
           jsr zonecran        ;tant pis si c'est fait deux fois!
           jsr pokeamb
-          moveq #17,d0
+          moveq #S_show,d0
           clr.l d1
           trap #5             ;remet la souris: SHOW ON
-          moveq #0,d0
+          moveq #M_initsound,d0
           trap #7             ;arret de la musique
           move.b #6,$484      ;init pas de clic, repetition....CLAVIER
           clr.b bip           ;BIP des touches
@@ -2467,7 +2469,7 @@ ev1:      move (a2)+,d4
           addi.w #400,d4
           addi.w #400,d5
 ev3:      move d6,d1
-          move #25,d0
+          move #S_setzone,d0
           trap #5
           addq #1,d6
           bra.s envz
@@ -2552,7 +2554,7 @@ k0:       move.w #-1,-(sp)    ;test des shifts et capslock
           bne.s k1
           tst mnd+12
           bne.s k1
-          move #21,d0         ;test des touches de la souris
+          move #S_mousekey,d0         ;test des touches de la souris
           trap #5
           btst #1,d0
           beq.s k1
@@ -2567,7 +2569,7 @@ k2:       tst inputflg        ;si INPUT, plus de souris!!!
           bne.s k3
           tst mnd+12
           bne.s k3
-          move #21,d0
+          move #S_mousekey,d0
           trap #5
           btst #0,d0
           beq.s k3
@@ -2575,7 +2577,7 @@ k2:       tst inputflg        ;si INPUT, plus de souris!!!
           bne.s k4
           move #1,mousflg
           clr d1
-          move #26,d0         ;recherche les zones
+          move #S_zone,d0         ;recherche les zones
           trap #5
           tst d1              ;pas dans une zone!
           beq clck1		;Essaie de positionner quand meme!
@@ -2675,7 +2677,7 @@ af5:      move.l a1,a2
           clr d3
           tst mode
           beq.s af6
-          move.b #21,(a5)+    ;inverse ON
+          move.b #C_inverse,(a5)+    ;inverse ON
           move.l a3,a0
 af5a:     move.b (a0)+,(a5)+  ;poke le nom
           bne.s af5a
@@ -2693,7 +2695,7 @@ af7:      cmp d2,d3           ;bourre de #32--->10 caracteres
           addq #1,d3
           bra.s af7
 
-af8:      move.b #18,(a5)+    ;blanc normal entre les touches
+af8:      move.b #C_normal,(a5)+    ;blanc normal entre les touches
           move.b #32,(a5)+
           addq #1,d1          ;touche suivante
           add.w #40,a1
@@ -4224,7 +4226,7 @@ flashcur: cmpi.w #2,mode
           beq.s amb7
           lea fd,a0
           moveq #2,d1
-          moveq #40,d0        ;flashinit couleur #2
+          moveq #S_flash,d0        ;flashinit couleur #2
           trap #5
 amb7:     rts
 
@@ -4986,9 +4988,9 @@ pokpal1:  move.w (a3)+,(a0)+
           dbra d0,pokpal1
           bsr setpalet        ;envoie la palette au XBIOS
           bsr waitvbl         ;attend le balayage
-          moveq #23,d0
+          moveq #S_backtoscreen,d0
           trap #5             ;DEC TO EC
-          moveq #29,d0
+          moveq #S_drawsprites,d0
           trap #5             ;SPREAFF
 picldfin: rts
 
@@ -6664,13 +6666,13 @@ norminv:  tst d1
           bne.s fsinv
 fsnorm:   movem.l d0/d7/a0,-(sp)
           moveq #W_chrout,d7
-          moveq #18,d0
+          moveq #C_normal,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
 fsinv:    movem.l d0/d7/a0,-(sp)
           moveq #W_chrout,d7
-          moveq #21,d0
+          moveq #C_inverse,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
@@ -6678,7 +6680,7 @@ fsinv:    movem.l d0/d7/a0,-(sp)
 ; memorise le curseur
 memocurs: movem.l d0/d7/a0,-(sp)
           moveq #W_chrout,d7
-          moveq #20,d0
+          moveq #C_curoff,d0
           trap #3
           moveq #W_coordcurs,d7
           trap #3
@@ -6694,7 +6696,7 @@ remetcurs:movem.l d0/d7/a0,-(sp)
           moveq #W_locate,d7
           trap #3
           moveq #W_chrout,d7
-          moveq #17,d0
+          moveq #C_curon,d0
           trap #3
           movem.l (sp)+,d0/d7/a0
           rts
@@ -7001,7 +7003,7 @@ fs3c:     clr.l (a0)+
           beq.s fs4
           jmp winderr
 fs4:      moveq #W_chrout,d7
-          moveq #20,d0        ;arret curs
+          moveq #C_curoff,d0        ;arret curs
           trap #3
           moveq #25,d0        ;scroll off
           trap #3
@@ -7064,7 +7066,7 @@ fswait:   tst.b interflg
           trap #3             ;efface la fenetre
           bsr ufz1            ;remet tout en route!
           jmp braik           ;et fait le break
-fs9:      moveq #20,d0        ;trouve la zone de la souris
+fs9:      moveq #S_mouse,d0        ;trouve la zone de la souris
           trap #5
           clr d2
           lea defloat+16,a0	;fsmouse
@@ -7230,7 +7232,7 @@ fs19s:    cmp.w #12,d1
           bcc fswait
           move.b d0,0(a1,d1.w)
           addq #1,d1
- 	clr.b 0(a1,d1.w)
+          clr.b 0(a1,d1.w)
           move d1,fsd+18
           moveq #W_chrout,d7
           trap #3
@@ -7239,7 +7241,7 @@ fs19s:    cmp.w #12,d1
 ; TESTS DE LA SOURIS
 fs19z:    tst fsd+6         ;pas de choix si rien en inverse!
           bmi fswait
-          moveq #21,d0
+          moveq #S_mousekey,d0
           trap #5             ;mousekey
           tst d0
           bne.s fs20
@@ -7488,7 +7490,7 @@ clickfen: subi.w #10,d1            ;d1: numero fenetre de 1->4
           bsr chge4           ;activation rapide de la fenetre
           bra boucle
 ; Clique dans la fenetre courante
-clck1:    moveq #20,d0
+clck1:    moveq #S_mouse,d0
           trap #5
 	move.l d1,d2
 	moveq #W_xtext,d7
@@ -7778,7 +7780,7 @@ rep2:     move d4,d5
 
 ;EFFACE LA LIGNE OU SE TROUVE LE CURSEUR
 lignen:   movem d4-d5,-(sp)
-          move #18,d0         ;retour a la normale
+          move #C_normal,d0         ;retour a la normale
           move.w #W_chrout,d7
           trap #3
           bsr helprg2         ;reaffiche la ligne
@@ -7882,7 +7884,7 @@ hlp3:     clr d0
           addi.w #49,d0
           move.w #W_chrout,d7
           trap #3             ;affiche prg edited #, centre.
-          move #21,d0
+          move #C_inverse,d0
           move.w #W_chrout,d7
           trap #3
           bsr helprg2         ;affiche la ligne en inverse
@@ -7944,12 +7946,12 @@ hlp6:     cmp.b #$4b,d1       ;gauche?
 ;backspace
 hlp16:    tst d3
           beq hlp5
-          move #3,d0
+          move #C_curleft,d0
           move.w #W_chrout,d7
           trap #3
           move #32,d0
           trap #3
-          move #3,d0
+          move #C_curleft,d0
           trap #3
           subq #1,d3
           move.b #32,-(a3)
@@ -11500,12 +11502,12 @@ rtin1:    cmp.b #8,d0
           beq.s rtin0
           subq #1,d2
           clr.b 0(a1,d2.w)
-          moveq #3,d0
+          moveq #C_curleft,d0
           move.w #W_chrout,d7
           trap #3
           moveq #32,d0
           trap #3
-          moveq #3,d0
+          moveq #C_curleft,d0
           trap #3
           bra.s rtin0
 ; code ascii normal
@@ -12836,18 +12838,18 @@ stopall:  cmpi.w #1,runonly      ;si c'est le premier appel pour un RUN ONLY
           beq stpall2         ;on ne fait RIEN!
           movem.l d0-d7/a0-a6,-(sp)
           clr.l d2
-          moveq #10,d0
+          moveq #S_movesonoff,d0
           trap #5             ;move off
-          moveq #13,d0
+          moveq #S_animsonoff,d0
           trap #5             ;anim off
-          moveq #7,d0
+          moveq #S_spritesonoff,d0
           trap #5             ;sprite off
-          moveq #16,d0
+          moveq #S_actualise,d0
           trap #5             ;actualise
           moveq #1,d1
-          moveq #19,d0
+          moveq #S_chgmouse,d0
           trap #5             ;mouse par default
-          moveq #0,d0
+          moveq #M_initsound,d0
           trap #7             ;music off
           move nbjeux,d6
 stpall1:  lea merreur,a0      ;pointe un message <>06071963
@@ -12875,7 +12877,7 @@ movedata: moveq #1,d3         ;Banque #1: SPRITES
           bne.s mvd1
           lea merreur,a1      ;pointe un message fixe, <> de 19861987
 mvd1:     move.l a1,a0
-          moveq #1,d0         ;chgbank
+          moveq #S_chgbank,d0         ;chgbank
           trap #5
           moveq #0,d5
           bra.s mvd5
@@ -14162,7 +14164,7 @@ backinst: cmp.b #$f1,(a6)+
           bsr adscreen
 backbis:  move.l d3,adback
           move.l d3,a0
-          moveq #27,d0        ;change screen sprites
+          moveq #S_chgscreen,d0        ;change screen sprites
           trap #5
           move.l d3,a0
           moveq #W_setback,d7        ;change back fenetres
@@ -14185,7 +14187,7 @@ setmode:  bsr expentier
           bra modebis
 
 ; Entree pour default
-maude:    moveq #28,d0
+maude:    moveq #S_stopmouse,d0
           trap #5             ;stop mouse!
           bsr waitvbl
           move.l adback,a0
@@ -14212,7 +14214,7 @@ maude2:   move.l d1,(a0)+
           rts
 ;INITIALISATION DES TRAPPES (entree pour REDESSIN)
 modebis:  movem.l d0-d7/a0-a6,-(sp)
-          clr d0
+          moveq #S_initmode,d0
           trap #5             ;initmode sprites
           moveq #W_initmode,d7
           trap #3             ;initmode fenetres
@@ -14240,10 +14242,10 @@ md03:     jsr curseur         ;met (ou non) le curseur
           bra.s md04a
 md04:     moveq #12,d0        ;menu DEUX lignes
 md04a:    jsr defaut
-          move #20,d0
+          move #C_curoff,d0
           move.w #W_chrout,d7
           trap #3             ;arret du curseur
-          move #25,d0
+          move #C_scrolloff,d0
           trap #3             ;scrolloff
           jsr affbarre        ;va afficher la barre
           tst mnd+10
@@ -14262,10 +14264,10 @@ md05:     tst foncon          ;pas de touche de fonction: on reste comme ca!
           trap #3             ;arret du plein ecran
           move #8,d0
           jsr defaut          ;creation de la fenetre de fonction
-          move #20,d0
+          move #C_curoff,d0
           move.w #W_chrout,d7
           trap #3             ;arret du curseur
-          moveq #25,d0
+          moveq #C_scrolloff,d0
           trap #3             ;scrolloff
           clr.w d0
           jsr affonc
@@ -14517,7 +14519,7 @@ colorf:   bsr fentier
           rts
 
 ; =XMOUSE fonction
-xmouse:   move #20,d0         ;MOUSE -> d0 et d1
+xmouse:   move #S_mouse,d0         ;MOUSE -> d0 et d1
           trap #5
           clr.l d3
           move.w d0,d3
@@ -14525,7 +14527,7 @@ xmouse:   move #20,d0         ;MOUSE -> d0 et d1
           rts
 
 ; =YMOUSE fonction
-ymouse:   move #20,d0
+ymouse:   move #S_mouse,d0
           trap #5
           clr.l d3
           move.w d1,d3
@@ -14539,7 +14541,7 @@ xminst:   cmp.b #$f1,(a6)+
           move.l d3,d1
           bmi foncall
           moveq #-1,d2
-          moveq #44,d0
+          moveq #S_movemouse,d0
           trap #5
           rts
 
@@ -14550,12 +14552,12 @@ yminst:   cmp.b #$f1,(a6)+
           move.l d3,d2
           bmi foncall
           moveq #-1,d1
-          moveq #44,d0
+          moveq #S_movemouse,d0
           trap #5
           rts
 
 ; MOUSE KEY= fonction
-mousekey: move #21,d0
+mousekey: move #S_mousekey,d0
           trap #5
           clr.l d3
           move.b d0,d3
@@ -14610,10 +14612,10 @@ jtrue:    clr.b d2
           rts
 
 ; SHOW / SHOW ON
-show:     moveq #17,d2
+show:     moveq #S_show,d2
           bra.s hid0
 ; HIDE / HIDE ON
-hide:     moveq #18,d2
+hide:     moveq #S_hide,d2
 hid0:     moveq #-1,d1
           bsr finie
           beq.s hid1
@@ -14631,7 +14633,7 @@ chgmouse: bsr expentier
           beq foncall
           bmi foncall
           move.l d3,d1
-          move #19,d0
+          move #S_chgmouse,d0
           trap #5
           rts
 
@@ -14661,7 +14663,7 @@ limouse:  bsr finie
           movem (sp)+,d1-d2
           bra.s limous2
 limous1:  clr.l d3
-limous2:  move #32,d0         ;LIMOUSE
+limous2:  move #S_limitmouse,d0         ;LIMOUSE
           trap #5
           rts
 
@@ -14724,7 +14726,7 @@ scrfonc:  move.w parenth,-(sp)
           movem.l (sp)+,a1/d1/d2/d3/d4
 ; Appel de la trappe
           move.l a0,-(sp)
-          moveq #51,d0
+          moveq #S_getblock,d0
           trap #5
           move.l d0,a0          ;Ramene la fin de la chaine
           move.l (sp)+,a1       ;Debut de la chaine
@@ -14752,7 +14754,7 @@ scrinst:  lea bufcalc,a3
           move.l (sp)+,a2     ;recupere l'adresse de l'ecran
           movem.l (sp)+,d1-d2 ;recupere X/Y
 ; Appel de la trappe
-          moveq #52,d0
+          moveq #S_putblock,d0
           trap #5
           tst d0
           beq.s st1
@@ -14807,7 +14809,7 @@ scc3:     addq.l #1,a6        ;dernier parametres
           bne pascc1          ;Pas de screen copy
 
 scc20:    move.l (sp)+,a0     ;recupere la premiere adresse
-          move #33,d0         ;screen copy
+          move #S_scrcopy,d0         ;screen copy
           trap #5
           rts
 
@@ -14969,7 +14971,7 @@ scr:      bsr expentier
           move.l (a0),d7
           move.l adlogic,a0     ;Travaille dans l'ecran logique
           move.l a0,a1
-          moveq #33,d0          ;SCREEN COPY
+          moveq #S_scrcopy,d0          ;SCREEN COPY
           trap #5
           rts
 scr1:     moveq #86,d0          ;Scrolling non defini
@@ -15008,16 +15010,16 @@ sync:     bsr onoff
           bne.s sy1
 ; Interruptions arretees
           moveq #0,d1
-          moveq #48,d0
+          moveq #S_intersynconoff,d0
           trap #5
           rts
 ; Interruptions en route
 sy1:      moveq #1,d1
-          moveq #48,d0
+          moveq #S_intersynconoff,d0
           trap #5
           rts
 ; Un cran d'interruptions
-sy2:      moveq #49,d0
+sy2:      moveq #S_inter,d0
           trap #5
           rts
 
@@ -15036,12 +15038,12 @@ upd1:     move #1,actualise   ;update on
           trap #3
           rts
 upd2:     bcs syntax
-          moveq #16,d0        ;actualise!
+          moveq #S_actualise,d0        ;actualise!
           trap #5
 upd3:     rts
 
 ; REDRAW: redessine les sprites en l'etat!
-redraw:   moveq #47,d0
+redraw:   moveq #S_redraw,d0
           trap #5
           rts
 
@@ -15057,9 +15059,9 @@ spr05:    move d2,-(sp)
           beq.s spr1
           bsr expentier       ;sprite on/off xx
           move.l d3,d1
-          moveq #8,d0
+          moveq #S_spritenonoff,d0
           bra.s spr2
-spr1:     moveq #7,d0         ;sprite on/off
+spr1:     moveq #S_spritesonoff,d0         ;sprite on/off
 spr2:     move (sp)+,d2
           trap #5
           tst d0
@@ -15077,7 +15079,7 @@ spr5:     bcs syntax
           bra.s spr7
 spr6:     exg d1,d4           /* d1 = spritenum, d2 = x, d3 = y, d4 = imagenum */
           exg d2,d3
-spr7:     moveq #9,d0         ;SPRNXYA
+spr7:     moveq #S_sprite,d0         ;SPRNXYA
           trap #5
           tst d0
           bne spriterr
@@ -15098,9 +15100,9 @@ mv3:      move d2,-(sp)
           beq.s mv4
           bsr expentier
           move.l d3,d1
-          moveq #11,d0
+          moveq #S_movenonoff,d0
           bra.s mv5
-mv4:      moveq #10,d0
+mv4:      moveq #S_movesonoff,d0
 mv5:      move (sp)+,d2
           trap #5
           tst d0
@@ -15126,7 +15128,7 @@ mx1:      bsr expentier
           lea buffer,a0
           move.l (sp)+,d1     ;numero du sprite
           move (sp)+,d2       ;en X ou en Y
-          move #12,d0
+          move #S_moveinit,d0
           trap #5
           tst d0
           bne mouverr
@@ -15136,9 +15138,9 @@ mx1:      bsr expentier
 movon:    bsr fentier
           tst.l d3
           beq foncall
-	bmi foncall
+          bmi foncall
           move.l d3,d1
-          moveq #45,d0
+          moveq #S_moveon,d0
           trap #5
           move.l d0,d3
           clr.b d2
@@ -15159,9 +15161,9 @@ an3:      move d2,-(sp)
           beq.s an4
           bsr expentier
           move.l d3,d1
-          moveq #14,d0
+          moveq #S_animnonoff,d0
           bra.s an5
-an4:      moveq #13,d0
+an4:      moveq #S_animsonoff,d0
 an5:      move (sp)+,d2
           trap #5
           tst d0
@@ -15183,7 +15185,7 @@ an10:     clr -(sp)
           lea buffer,a0
           move.l (sp)+,d1     ;numero du sprite
           move (sp)+,d2       ;en X ou en Y
-          move #15,d0
+          move #S_animinit,d0
           trap #5
           tst d0
           bne animerr
@@ -15195,44 +15197,44 @@ collide:  cmp.b #"(",(a6)+
           bsr getentier
           cmp.w #3,d0
           bne syntax
-	tst.l d1
-	bmi foncall
+          tst.l d1
+          bmi foncall
           cmp.l xmax,d2       ;TX
           bcc foncall
           cmp.l ymax,d3       ;TY
           bcc foncall
-          moveq #5,d0         ;trap #5, fonction #5: BOUM
+          moveq #S_collide,d0         ;trap #5, fonction #5: BOUM
           trap #5
           clr.b d2
           move.l d0,d3
           rts
 
 ; FREEZE: arrete tout!
-freeze:   moveq #4,d0
+freeze:   moveq #M_freeze,d0
           trap #7             ;music freeze
 fz1:      moveq #1,d2
-          moveq #10,d0
+          moveq #S_movesonoff,d0
           trap #5             ;move freeze
-          moveq #13,d0
+          moveq #S_animsonoff,d0
           trap #5             ;anim freeze
           rts
 
 ; UNFREEZE: remet tout en route
-unfreeze: moveq #5,d0         ;unfreeze music
+unfreeze: moveq #M_unfreeze,d0         ;unfreeze music
           trap #7
 ufz1:     moveq #2,d2         ;ON!
-          moveq #10,d0
+          moveq #S_movesonoff,d0
           trap #5             ;move on
-          moveq #13,d0
+          moveq #S_animsonoff,d0
           trap #5             ;anim on
           rts
 
 ; =XSPRITE (xx)
 xsprite:  bsr fentier
-	tst.l d3
+          tst.l d3
           bmi foncall
           move.l d3,d1
-          moveq #6,d0
+          moveq #S_posprite,d0
           trap #5
           move d0,d3
           ext.l d3
@@ -15244,7 +15246,7 @@ ysprite:  bsr fentier
           tst.l d3
           bmi foncall
           move.l d3,d1
-          moveq #6,d0
+          moveq #S_posprite,d0
           trap #5
           move d1,d3
           ext.l d3
@@ -15256,7 +15258,7 @@ dtct:     bsr fentier
           tst.l d3
           bmi foncall
           move.l d3,d1        ;Demande a la trappe
-          moveq #6,d0
+          moveq #S_posprite,d0
           trap #5
           cmp.w xmax+2,d0     ;Si sort de l'ecran---> -1
           bcc.s dtc1
@@ -15265,7 +15267,7 @@ dtct:     bsr fentier
           move.l laptsin,a2
           move.w d0,(a2)      ;poke X
           move.w d1,2(a2)     ;poke Y
-          moveq #28,d0        ;stopmouse
+          moveq #S_stopmouse,d0        ;stopmouse
           trap #5
           move.l adback,$44e
           dc.w $a002          ;LIGNE A: GET PIXEL
@@ -15273,7 +15275,7 @@ dtct:     bsr fentier
           moveq #0,d3
           move.w d0,d3
           clr.b d2
-          move #41,d0         ;MOUSEBETE: remet la souris
+          move #S_restartmouse,d0         ;MOUSEBETE: remet la souris
           trap #5
           rts
 dtc1:     moveq #-1,d3        ;Ramene -1 si sprite en dehors de l'ecran
@@ -15294,11 +15296,11 @@ reszone:  tst runflg
           moveq #1,d3
           moveq #0,d4
           moveq #1,d5
-          moveq #25,d0
+          moveq #S_setzone,d0
           trap #5
           rts
 ; reset toutes les zones
-inizone:  moveq #36,d0           ;entree de l'editeur
+inizone:  moveq #S_initzones,d0           ;entree de l'editeur
           trap #5
           rts
 
@@ -15309,7 +15311,7 @@ zone:     tst runflg
           tst.l d3
           bmi foncall
           move.l d3,d1
-          moveq #26,d0
+          moveq #S_zone,d0
           trap #5
           clr.l d3
           move d1,d3
@@ -15346,7 +15348,7 @@ setzone:  tst runflg
           addi.l #640,d3
           addi.l #400,d4
           addi.l #400,d5
-          moveq #25,d0
+          moveq #S_setzone,d0
           trap #5
           tst d0
           bne foncall
@@ -15359,7 +15361,7 @@ priority: bsr onoff
           clr d1
           bra.s pn1
 pn:       moveq #1,d1
-pn1:      moveq #4,d0
+pn1:      moveq #S_priority,d0
           trap #5
           rts
 
@@ -15384,14 +15386,14 @@ ls1:      bsr mentiers
           move.l d1,d4
           move.l (sp)+,d1
           move.l (sp)+,d3
-ls10:     moveq #2,d0         ;la trappe veut: d1=X1/d2=X2/d3=Y1/d4=Y2
+ls10:     moveq #S_chglimit,d0         ;la trappe veut: d1=X1/d2=X2/d3=Y1/d4=Y2
           trap #5
           rts
 
 ; PUT SPRITE xx
 putspr:   bsr expentier
           move.l d3,d1
-          moveq #35,d0
+          moveq #S_putsprite,d0
           trap #5
           rts
 
@@ -15406,7 +15408,7 @@ getspr:   bsr mentiers
           bra.s gs2
 gs1:      exg d1,d4
           exg d2,d3
-gs2:      moveq #37,d0
+gs2:      moveq #S_getsprite,d0
           trap #5
           tst d0
           bne foncall
@@ -15459,20 +15461,20 @@ rdc3:     exg d1,d4
 ; DEUX ADRESSES D'ECRAN
           cmp.w #5,d0
           bne.s rdc4
-          move #38,d0
+          move #S_reduce,d0
           trap #5
           rts
 ; UNE SEULE ADRESSE D'ECRAN: decor automatique!
 rdc4:     tst autoback
           beq.s rdc5
           move d1,-(sp)
-          moveq #28,d0
+          moveq #S_stopmouse,d0
           trap #5             ;stop mouse
           move (sp)+,d1
           move.l adback,a1
           bra.s rdc6
 rdc5:     move.l adlogic,a1
-rdc6:     moveq #38,d0
+rdc6:     moveq #S_reduce,d0
           trap #5
           bra abis        ;remet les ecrans et les sprites
 
@@ -15553,20 +15555,20 @@ zm2:      exg d1,d4
           cmp.w #5,d0
           bne.s zm3
 ; ecran de destination CHOISI!
-          moveq #42,d0        ;fonction ZOOM de la trappe
+          moveq #S_zoom,d0        ;fonction ZOOM de la trappe
           trap #5
           rts
 ; ecran de destination par defaut!
 zm3:      tst autoback
           beq.s zm4
           move d1,-(sp)       ;arrete la souris
-          moveq #28,d0
+          moveq #S_stopmouse,d0
           trap #5
           move (sp)+,d1
           move.l adback,a1              ;travaille dans BACK
           bra.s zm5
 zm4:      move.l adlogic,a1
-zm5:      moveq #42,d0                  ;appel de ZOOM
+zm5:      moveq #S_zoom,d0                  ;appel de ZOOM
           trap #5
           bra abis                  ;remet les ecrans, les sprites
 
@@ -15594,7 +15596,7 @@ app5:     move.l d1,-(sp)
           beq foncall
           cmp.l #80,d1
           bhi foncall
-          moveq #43,d0
+          moveq #S_appear,d0
           trap #5
           rts
 
@@ -15648,7 +15650,7 @@ g6:       move.w (a0)+,(a1)+  ;copie dans le back
 ; Envoie!
           move.w d1,d2        ;FLAG
           move.w (sp)+,d1     ;vitesse
-          moveq #53,d0        ;Fonction FADE
+          moveq #S_fade,d0        ;Fonction FADE
           trap #5             ;debut
           rts
 
@@ -15656,7 +15658,7 @@ g6:       move.w (a0)+,(a1)+  ;copie dans le back
 flash:    bsr onoff
           bmi.s fh1
           bne syntax
-          moveq #39,d0         ;flash off
+          moveq #S_initflash,d0         ;flash off
           trap #5
           rts
 fh1:      bcs syntax
@@ -15668,7 +15670,7 @@ fh1:      bcs syntax
           bsr chverbuf
           move.l (sp)+,d1
           lea buffer,a0
-          moveq #40,d0
+          moveq #S_flash,d0
           trap #5
           tst d0
           bne illflash
@@ -15680,7 +15682,7 @@ colshift: bsr onoff
           bne syntax
 ; SHIFT OFF
           moveq #0,d1
-          moveq #46,d0
+          moveq #S_shifton,d0
           trap #5
           rts
 ; SHIFT vitesse [,couleur de debut]
@@ -15699,14 +15701,14 @@ cft2:     cmp.l #$10000,d2
           cmp.l d0,d1
           bcc foncall
           exg d1,d2
-          moveq #46,d0
+          moveq #S_shifton,d0
           trap #5
           rts
 
 ; APPEL DE FONCTION VDI, AVEC GESTION DE L'AUTOBACK
 avdi:     tst autoback
           beq.s atb1
-          moveq #28,d0        ;arrete la souris
+          moveq #S_stopmouse,d0        ;arrete la souris
           trap #5
           move.l adback,$44e  ;ecran logique = decor!
 atb1:     bsr vdi             ;APPEL VDI
@@ -15717,15 +15719,15 @@ abis:     tst autoback
           move.l a1,$44e      ;remet LOGIC en LOGIC
           move.l adback,a0    ;adresse du decor= origine!
           clr.l d5            ;recopie totale
-          moveq #33,d0
+          moveq #S_scrcopy,d0
           trap #5             ;SCREEN COPY
-          moveq #29,d0
+          moveq #S_drawsprites,d0
           trap #5             ;SPREAFF
 atb2:     rts
 ; FIRST CALL AUTO BACK MANAGEMENT (for extensions, etc.)
 abck:     tst autoback
           beq.s atb2
-          moveq #28,d0
+          moveq #S_stopmouse,d0
           trap #5
           move.l adback,$44e
           rts
@@ -15845,7 +15847,7 @@ pl1a:     move.l laintin,a0
           move.w d1,ygraph
           tst autoback        ;si AUTOBACK: plotte dans le decor d'abord
           beq.s pl2
-          moveq #28,d0        ;stopmouse
+          moveq #S_stopmouse,d0        ;stopmouse
           trap #5
           move.l adback,$44e
           dc.w $a001          ;LIGNE A: PUT PIXEL
@@ -15853,7 +15855,7 @@ pl1a:     move.l laintin,a0
 pl2:      dc.w $a001          ;LIGNE A: PUT PIXEL
 pl3:      tst autoback
           beq.s pl4
-          moveq #29,d0        ;spreaff
+          moveq #S_drawsprites,d0        ;spreaff
           trap #5
 pl4:      rts
 
@@ -15874,7 +15876,7 @@ pointbis: cmp.w #2,d0           ;entree pour paint
           move.w d2,ygraph
           tst autoback        ;si autoback: prend dans le decor
           beq.s pt1
-          moveq #28,d0        ;stopmouse
+          moveq #S_stopmouse,d0        ;stopmouse
           trap #5
           move.l adback,$44e
 pt1:      dc.w $a002          ;LIGNE A: GET PIXEL
@@ -15884,7 +15886,7 @@ pt1:      dc.w $a002          ;LIGNE A: GET PIXEL
           clr.b d2
           tst autoback
           beq.s pt2
-          move #41,d0         ;MOUSEBETE: remet la souris
+          move #S_restartmouse,d0         ;MOUSEBETE: remet la souris
           trap #5
 pt2:      rts
 
@@ -15924,7 +15926,7 @@ dw2:      addq.l #1,a6
           move #-1,32(a0)               ;LSTLIN= -1!
           tst autoback
           beq.s dw3
-          moveq #28,d0
+          moveq #S_stopmouse,d0
           trap #5
           move.l adback,$44e
           dc.w $a003
@@ -16908,7 +16910,7 @@ entrint:  andi.b #$7f,interflg
 it:       tst actualise                 ;dessin des sprites automatiques?
           beq.s menutest
           movem.l d0-d1/a0,-(sp)        ;sauve juste ce qu'il faut!
-          move #16,d0
+          move #S_actualise,d0
           trap #5
           movem.l (sp)+,d0-d1/a0
           bclr #1,interflg
@@ -17070,9 +17072,9 @@ mt21:     moveq #1,d3         ;DY text
           moveq #W_initwind,d7
           trap #3
           moveq #W_chrout,d7
-          moveq #25,d0
+          moveq #C_scrolloff,d0
           trap #3              ;scroll off!
-          moveq #20,d0
+          moveq #C_curoff,d0
           trap #3              ;arret du curseur!
 ; affiche le texte
           clr d2
@@ -17259,18 +17261,18 @@ ac1:      move.w 0(a0,d3.w),d2    ;taille de la chaine!
 ac2:      move.b #32,(a0)+    ;que des 32
           dbra d0,ac2
           clr.b (a0)+
-          moveq #31,d0
+          moveq #C_underlineon,d0
           move.w #W_chrout,d7              ;souligne
           trap #3
           lea buffer,a0
           moveq #W_prtstring,d7
           trap #3             ;affiche la ligne du bas, soulignee
-          moveq #29,d0
+          moveq #C_underlineoff,d0
           move.w #W_chrout,d7              ;desouligne
           trap #3
           bra ac4
 ; une seule ligne dans la barre
-ac3:      moveq #31,d0
+ac3:      moveq #C_underlineon,d0
           move.w #W_chrout,d7              ;souligne
           trap #3
 ac4:      move (sp)+,d0
@@ -17352,9 +17354,9 @@ qreactive:move mnd+32,d0
 ; SSPGM: MET SHADE/PEN/PAPER/INVERSE, retour A3 pointe la chaine!!!
 menuinv:  tst.b (a3)+
           bne.s mi0
-          moveq #22,d0
+          moveq #C_shadowon,d0
           bra.s mi1
-mi0:      moveq #19,d0
+mi0:      moveq #C_shadowoff,d0
 mi1:      move.w #W_chrout,d7
           trap #3             ;SHADE ON/OFF
 mi2:      clr d0
@@ -17367,9 +17369,9 @@ mi2:      clr d0
           trap #3
           tst d2
           beq.s mi3
-          moveq #21,d0        ;inverse on
+          moveq #C_inverse,d0        ;inverse on
           bra.s mi4
-mi3:      moveq #18,d0        ;inverse off
+mi3:      moveq #C_normal,d0        ;inverse off
 mi4:      moveq #W_chrout,d7
           trap #3
           rts
@@ -17678,10 +17680,10 @@ ab9:      moveq #15,d0
           move mnd+28,d0     ;set pen
           moveq #W_setpen,d7
           trap #3
-          moveq #18,d0            ;pas en inverse!
+          moveq #C_normal,d0            ;pas en inverse!
           moveq #W_chrout,d7
           trap #3
-          moveq #12,d0        ;cls
+          moveq #C_clearscreen,d0        ;cls
           moveq #W_chrout,d7
           trap #3
 ; souligne la ligne du menu, sur toute la largeur
@@ -17694,7 +17696,7 @@ ab9:      moveq #15,d0
 ab9a:     move.b #32,(a0)+
           dbra d0,ab9a
           clr.b (a0)
-          moveq #31,d0        ;SOULIGNE
+          moveq #C_underlineon,d0        ;SOULIGNE
           move.w #W_chrout,d7
           trap #3
           tst mnd+10
@@ -17706,7 +17708,7 @@ ab9a:     move.b #32,(a0)+
 ab9b:     lea buffer,a0
           moveq #W_prtstring,d7
           trap #3
-          moveq #29,d0        ;DESOULIGNE
+          moveq #C_underlineoff,d0        ;DESOULIGNE
           move.w #W_chrout,d7
           trap #3
 ; affiche tous les choix
@@ -18046,7 +18048,7 @@ curs:     bsr onoff
 cursoff:  clr cursflg
           cmpi.w #2,mode
           beq curs0
-          moveq #39,d0        ;arrete les flash
+          moveq #S_initflash,d0        ;arrete les flash
           trap #5
           bsr setpalet        ;remet les couleurs
 curs0:    moveq #20,d0        ;code arret cur
@@ -18057,9 +18059,9 @@ curson:   move #1,cursflg
           beq.s curs2
           lea fd,a0     ;fait flasher la couleur #2
           moveq #2,d1
-          moveq #40,d0
+          moveq #S_flash,d0
           trap #5
-curs2:    moveq #17,d0
+curs2:    moveq #C_curon,d0
 curs1:    moveq #W_chrout,d7
           trap #3
           rts
@@ -18194,7 +18196,7 @@ cls0:     bsr expentier       ;Premier param ---> ECRAN
 ; Appel de la trappe
 cls1:     move.l (sp)+,d5
           move.l (sp)+,a0
-          moveq #50,d0
+          moveq #S_cls,d0
           trap #5
           rts
 
@@ -18237,7 +18239,7 @@ writing:  bsr expentier
           beq foncall
           cmp.l #4,d3
           bcc foncall
-          addi.w #13,d3
+          addi.w #C_wrtreplace-1,d3
           move d3,d0
           moveq #W_chrout,d7
           trap #3

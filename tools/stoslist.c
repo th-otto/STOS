@@ -899,6 +899,53 @@ static struct extension const external_extensions[] = {
 	{ 'U', 0x91, 0, "_form alert" },
 	{ 'U', 0x92, 0, "_fmenu cmds" },
 
+	/* Falcon gfx3 */
+	{ 'V', 0x80, 0, "_falc pen" },
+	{ 'V', 0x81, 0, "_falc xcurs" },
+	{ 'V', 0x82, 0, "_falc paper" },
+	{ 'V', 0x83, 0, "_falc ycurs" },
+	{ 'V', 0x84, 0, "_falc locate" },
+	{ 'V', 0x85, 0, "_stos charwidth" },
+	{ 'V', 0x86, 0, "_falc print" },
+	{ 'V', 0x87, 0, "_stos charheight" },
+	{ 'V', 0x88, 0, "_stosfont" },
+	{ 'V', 0x89, 0, "_falc multipen status" },
+	{ 'V', 0x8a, 0, "_falc multipen off" },
+	{ 'V', 0x8b, 0, "_charset addr" },
+	{ 'V', 0x8c, 0, "_falc multipen on" },
+	{ 'V', 0x8d, 0, "_tc rgb" },
+	{ 'V', 0x8e, 0, "_falc ink" },
+	/* 0x8f unused */
+	{ 'V', 0x90, 0, "_falc draw mode" },
+	{ 'V', 0x91, 0, "_get pixel" },
+	{ 'V', 0x92, 0, "_def linepattern" },
+	/* 0x93 unused */
+	{ 'V', 0x94, 0, "_def stipple" },
+	/* 0x95 unused */
+	{ 'V', 0x96, 0, "_falc plot" },
+	/* 0x97 unused */
+	{ 'V', 0x98, 0, "_falc line" },
+	/* 0x99 unused */
+	{ 'V', 0x9a, 0, "_falc box" },
+	/* 0x9b unused */
+	{ 'V', 0x9c, 0, "_falc bar" },
+	/* 0x9d unused */
+	{ 'V', 0x9e, 0, "_falc polyline" },
+	/* 0x9f unused */
+	{ 'V', 0xa0, 0, "_falc centre" },
+	/* 0xa1 unused */
+	{ 'V', 0xa2, 0, "_falc polyfill" },
+	/* 0xa3 unused */
+	{ 'V', 0xa4, 0, "_falc contourfill" },
+	/* 0xa5 unused */
+	{ 'V', 0xa6, 0, "_falc circle" },
+	/* 0xa7 unused */
+	{ 'V', 0xa8, 0, "_falc ellipse" },
+	/* 0xa9 unused */
+	{ 'V', 0xaa, 0, "_falc earc" },
+	/* 0xab unused */
+	{ 'V', 0xac, 0, "_falc arc" },
+
 	/* Control: 61 commands */
 	{ 'W', 0x80, EXTIF_CONTROL, "switch on" },
 	{ 'W', 0x81, EXTIF_CONTROL, "case" },
@@ -963,53 +1010,6 @@ static struct extension const external_extensions[] = {
 	{ 'W', 0xbc, EXTIF_CONTROL, "set map" },
 	{ 'W', 0xbd, EXTIF_CONTROL, "klatu" },
 	{ 'W', 0xbe, EXTIF_CONTROL, "image offset" },
-
-	/* Falcon gfx3 */
-	{ 'V', 0x80, 0, "_falc pen" },
-	{ 'V', 0x81, 0, "_falc xcurs" },
-	{ 'V', 0x82, 0, "_falc paper" },
-	{ 'V', 0x83, 0, "_falc ycurs" },
-	{ 'V', 0x84, 0, "_falc locate" },
-	{ 'V', 0x85, 0, "_stos charwidth" },
-	{ 'V', 0x86, 0, "_falc print" },
-	{ 'V', 0x87, 0, "_stos charheight" },
-	{ 'V', 0x88, 0, "_stosfont" },
-	{ 'V', 0x89, 0, "_falc multipen status" },
-	{ 'V', 0x8a, 0, "_falc multipen off" },
-	{ 'V', 0x8b, 0, "_charset addr" },
-	{ 'V', 0x8c, 0, "_falc multipen on" },
-	{ 'V', 0x8d, 0, "_tc rgb" },
-	{ 'V', 0x8e, 0, "_falc ink" },
-	/* 0x8f unused */
-	{ 'V', 0x90, 0, "_falc draw mode" },
-	{ 'V', 0x91, 0, "_get pixel" },
-	{ 'V', 0x92, 0, "_def linepattern" },
-	/* 0x93 unused */
-	{ 'V', 0x94, 0, "_def stipple" },
-	/* 0x95 unused */
-	{ 'V', 0x96, 0, "_falc plot" },
-	/* 0x97 unused */
-	{ 'V', 0x98, 0, "_falc line" },
-	/* 0x99 unused */
-	{ 'V', 0x9a, 0, "_falc box" },
-	/* 0x9b unused */
-	{ 'V', 0x9c, 0, "_falc bar" },
-	/* 0x9d unused */
-	{ 'V', 0x9e, 0, "_falc polyline" },
-	/* 0x9f unused */
-	{ 'V', 0xa0, 0, "_falc centre" },
-	/* 0xa1 unused */
-	{ 'V', 0xa2, 0, "_falc polyfill" },
-	/* 0xa3 unused */
-	{ 'V', 0xa4, 0, "_falc contourfill" },
-	/* 0xa5 unused */
-	{ 'V', 0xa6, 0, "_falc circle" },
-	/* 0xa7 unused */
-	{ 'V', 0xa8, 0, "_falc ellipse" },
-	/* 0xa9 unused */
-	{ 'V', 0xaa, 0, "_falc earc" },
-	/* 0xab unused */
-	{ 'V', 0xac, 0, "_falc arc" },
 
 	/* Falcon sys_ctrl extension */
 	{ 'W', 0x80, EXTIF_SYSCTRL, "coldboot" },

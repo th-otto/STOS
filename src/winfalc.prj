@@ -4,4 +4,4 @@ stos\winfalc.bin
 .S[-DCOMPILER=0]
 .S[-DFALCON=1]
 =
-winfalc.s
+window.s
