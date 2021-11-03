@@ -708,6 +708,7 @@ form_alert:
 		clr.l      d2
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
+		/* FIXME: dead code */
 		moveq.l    #0,d3
 		clr.l      d2
 		movea.l    returnpc(pc),a0
