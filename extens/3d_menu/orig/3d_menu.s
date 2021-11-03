@@ -58,11 +58,16 @@ welcome:
 	.even
 
 table: dc.l 0
+returnpc: dc.l 0
+
+x101b4: dc.w 0
 
 mch_cookie: dc.l 0
 vdo_cookie: dc.l 0
 snd_cookie: dc.l 0
-mode: dc.w 0
+cookieid: dc.l 0
+cookievalue: dc.l 0
+mode: dc.l 0
 
 load:
 		lea.l      finprg(pc),a0
@@ -70,26 +75,55 @@ load:
 		rts
 
 cold:
-		lea        table(pc),a1
-		move.l     a0,(a1)
+		move.l     a0,table
 		move.w     #4,-(a7) /* Getrez */
 		trap       #14
 		addq.l     #2,a7
-		andi.w     #3,d0 /* BUG: should not be masked */
+		andi.l     #3,d0 /* BUG: should not be masked */
+		swap       d0
 		lea.l      mode(pc),a0
-		move.w     d0,(a0)
-		move.l     #0x5F4D4348,d3 /* '_MCH' */
-		bsr        getcookie
+		move.l     d0,(a0)
 		lea.l      mch_cookie(pc),a0
-		move.l     d0,(a0)
-		move.l     #0x5F56444F,d3 /* '_VDO' */
-		bsr        getcookie
+		clr.l      (a0)+
+		clr.l      (a0)+ /* vdo_cookie */
+		move.l     #1,(a0)+ /* snd_cookie */
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F4D4348,(a1) /* '_MCH' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold1
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F56444F,(a1) /* '_VDO' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold2
+		lea.l      cookievalue(pc),a1
 		lea.l      vdo_cookie(pc),a0
-		move.l     d0,(a0)
-		move.l     #0x5F534E44,d3 /* '_SND' */
-		bsr        getcookie
+		move.l     (a1),(a0)
+cold2:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F534E44,(a1) /* '_SND' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold3
+		lea.l      cookievalue(pc),a1
 		lea.l      snd_cookie(pc),a0
-		move.l     d0,(a0)
+		move.l     (a1),(a0)
+cold3:
+		move.l     a1,(a0)
 		ALINE      #0
 		lea.l      lineavars(pc),a1
 		move.l     a0,(a1)
@@ -144,26 +178,57 @@ windowlib_id_end:
 warm:
 		rts
 
-getjar:
-		move.l     0x000005A0,d0
+x10318: /* FIXME: unused */
+		movem.l    a0-a6,-(a7)
+		lea.l      x13c7e(pc),a0
+		move.w     #1,(a0)
+		lea.l      x13c80(pc),a0
+		move.w     #0,(a0)
+		lea.l      x13c82(pc),a0
+		move.w     #-1,(a0)
+		lea.l      x13c84(pc),a0
+		lea.l      x13c8a(pc),a1
+		move.l     #-1,(a1)
+		move.l     a1,(a0)
+		lea.l      x13c88(pc),a0
+		move.w     #0,(a0)
+		moveq.l    #S_f57,d0
+		trap       #5
+		moveq.l    #S_multipen_off,d0
+		trap       #5
+		movem.l    (a7)+,a0-a6
 		rts
+
+* BUG: clobbers lots of registers it shouldn't
+* FIXME: rewrite
 getcookie:
-		pea        getjar(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
 		tst.l      d0
 		beq.s      getcookie3
 		movea.l    d0,a0
+		clr.l      d4
 getcookie1:
-		move.l     (a0)+,d1
-		beq.s      getcookie3
 		move.l     (a0)+,d0
-		cmp.l      d3,d1
-		bne.s      getcookie1
-		rts
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.s      getcookie3
+		cmp.l      d3,d0
+		beq.s      getcookie2
+		addq.w     #1,d4
+		bra.s      getcookie1
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.s      getcookie3
+		move.l     d1,(a5)
 getcookie3:
-		moveq      #0,d0
 		rts
 
 getinteger:
@@ -180,8 +245,25 @@ getstring:
 		bge.s      typemismatch
 		jmp        (a0)
 
+addrofbank: /* FIXME: unused */
+		movem.l    a0-a2,-(a7)
+		movea.l    table(pc),a0
+		movea.l    sys_addrofbank(a0),a0
+		jsr        (a0)
+		movem.l    (a7)+,a0-a2
+		rts
+
+malloc: /* FIXME: unused */
+		movea.l    table(pc),a0
+		movea.l    sys_demand(a0),a0
+		jsr        (a0)
+		rts
+	
 dummy:
+		move.l     (a7)+,returnpc
 		bra.s      syntax
+		clr.l      d0
+		bra.s      goerror
 
 syntax:
 		moveq.l    #E_syntax,d0
@@ -201,7 +283,8 @@ diskerror:
 
 goerror:
 		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     mode(pc),d0
+		lea.l      mode(pc),a0
+		move.w     (a0),d0
 		cmpi.w     #2,d0
 		beq.s      goerror1
 		move.w     d0,-(a7)
@@ -225,12 +308,15 @@ windowlib_err:
 		bra.s      printerr
 fmenu_err:
 		moveq.l    #1,d0
+		bra.s      printerr
+		nop /* XXX */
 
 printerr:
 		movem.l    d0-d7/a0-a6,-(a7)
 		tst.w      d0
 		beq.s      printerr1
-		move.w     mode(pc),d0
+		lea.l      mode(pc),a0
+		move.w     (a0),d0
 		cmpi.w     #2,d0
 		beq.s      printerr1
 		move.w     d0,-(a7)
@@ -248,7 +334,8 @@ printerr1:
 		lea.l      errormsgs(pc),a2
 		lsl.w      #1,d0
 printerr2:
-		tst.b     (a2)+
+		/* tst.b     (a2)+ */
+		dc.w 0x0c1a,0 /* XXX */
 		bne.s      printerr2
 		subq.w     #1,d0
 		bpl.s      printerr2
@@ -276,43 +363,53 @@ errormsgs:
 * Syntax    :-   _fmenu init COL1,COL2,COL3,COL4
 *
 fmenu_init:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #4,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     d3,d1
+		lea.l      menucolors+6(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d3,d0
+		lea.l      menucolors+4(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d3,d5
+		lea.l      menucolors+2(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d1,d4
-		move.l     d3,d1
-		move.l     d0,d3
-		move.l     d5,d2
+		lea.l      menucolors(pc),a0
+		move.w     d3,(a0)
 		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      menucolors(pc),a0
+		movem.w    (a0)+,d1-d4
 		moveq.l    #W_fmenu_init,d7
 		trap       #3
 		movem.l    (a7)+,d0-d7/a0-a6
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+menucolors: ds.w 4
 
 *
 * Syntax    :-   MN=_fmenu select
 *
 fmenu_select:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		moveq.l    #W_fmenu_select,d7
 		trap       #3
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 *
 * Syntax    :-   _fmenu on
 *
 fmenu_on:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		movem.l    d1-d7/a0-a6,-(a7)
 		moveq.l    #W_fmenu_on,d7
@@ -320,204 +417,309 @@ fmenu_on:
 		movem.l    (a7)+,d1-d7/a0-a6
 		tst.l      d0
 		bne        fmenu_err
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 *
 * Syntax    :-   ITEM=_fmenu item
 *
 fmenu_item:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		moveq.l    #W_fmenu_item,d7
 		trap       #3
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 *
 * Syntax    :-   _fmenu$ TITLE,TITLE$
 *                _fmenu$ TITLE,ITEM,ITEM$
 *
 fmenustr:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #3,d0
 		beq.s      fmenustr1
-		cmp.w      #1,d0
-		bne        syntax
+		cmp.w      #2,d0
+		beq.s      fmenustr2
+		bra        syntax
 fmenustr1:
 		bsr        getstring
-		move.l     d3,a2
+		lea.l      fmenustr_str(pc),a0
+		move.l     d3,(a0)
 		bsr        getinteger
-		move.l     d3,d1 /* d1 = title */
-		clr.l      d2
-		tst.w      d0
-		beq.s      fmenustr2
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustr_item(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d1,d2 /* d2 = item */
-		move.l     d3,d1 /* d1 = title */
-fmenustr2:
-		movea.l    a2,a0
-		move.l     a1,-(a7)
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustr_title(pc),a0
+		move.w     d3,(a0)
+		movea.l    fmenustr_str(pc),a0
+		move.w     fmenustr_title(pc),d1
+		move.w     fmenustr_item(pc),d2
 		moveq.l    #W_fmenustr,d7
 		trap       #3
 		tst.l      d0
 		beq.s      fmenustr3
-		addq.l     #1,d0
+		cmpi.l     #-1,d0
 		beq        fmenu_err
-		addq.l     #1,d0
+		cmpi.l     #-2,d0
+		beq        subscripterror
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenustr2:
+		bsr        getstring
+		lea.l      fmenustr_str(pc),a0
+		move.l     d3,(a0)
+		bsr        getinteger
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustr_title(pc),a0
+		move.w     d3,(a0)
+		clr.w      fmenustr_item-fmenustr_title(a0)
+		movea.l    fmenustr_str(pc),a0
+		move.w     fmenustr_title(pc),d1
+		move.w     fmenustr_item(pc),d2
+		moveq.l    #W_fmenustr,d7
+		trap       #3
+		tst.l      d0
+		beq.s      fmenustr3
+		cmpi.l     #-1,d0
+		beq        fmenu_err
+		cmpi.l     #-2,d0
 		beq        subscripterror
 fmenustr3:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenustr_str: dc.l 0
+fmenustr_title: dc.w 0
+fmenustr_item: dc.w 0
 
 *
 * Syntax    :-   _fmenu$ off TITLE
 *                _fmenu$ off TITLE,ITEM
 *
 fmenustr_off:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
 		beq.s      fmenustr_off1
 		cmp.w      #1,d0
-		bne        syntax
+		beq.s      fmenustr_off2
+		bra        syntax
 fmenustr_off1:
 		bsr        getinteger
-		move.l     d3,d1
-		clr.l      d2
-		tst.w      d0
-		beq.s      fmenustr_off2
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustroff_item(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d1,d2
-		move.l     d3,d1
-fmenustr_off2:
-        move.l     a1,-(a7)
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustroff_title(pc),a0
+		move.w     d3,(a0)
+		move.w     fmenustroff_title(pc),d1
+		move.w     fmenustroff_item(pc),d2
 		moveq.l    #W_fmenustr_off,d7
 		trap       #3
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenustr_off2:
+		bsr        getinteger
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustroff_title(pc),a0
+		move.w     d3,(a0)
+		clr.w      fmenustroff_item-fmenustroff_title(a0)
+		move.w     fmenustroff_title(pc),d1
+		move.w     fmenustroff_item(pc),d2
+		moveq.l    #W_fmenustr_off,d7
+		trap       #3
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenustroff_title: dc.w 0
+fmenustroff_item: dc.w 0
 
 *
 * Syntax    :-   H=_fmenu height
 *
 fmenu_height:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		moveq.l    #W_fmenu_height,d7
 		trap       #3
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 *
 * Syntax    :-   _fmenu$ on TITLE
 *                _fmenu$ on TITLE,ITEM
 *
 fmenustr_on:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
 		beq.s      fmenustr_on1
 		cmp.w      #1,d0
-		bne        syntax
+		beq.s      fmenustr_on2
+		bra        syntax
 fmenustr_on1:
 		bsr        getinteger
-		move.l     d3,d1
-		clr.l      d2
-		tst.w      d0
-		beq.s      fmenustr_on2
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustron_item(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d1,d2
-		move.l     d3,d1
-fmenustr_on2:
-        move.l     a1,-(a7)
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustron_title(pc),a0
+		move.w     d3,(a0)
+		move.w     fmenustron_title(pc),d1
+		move.w     fmenustron_item(pc),d2
 		moveq.l    #W_fmenustr_on,d7
 		trap       #3
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenustr_on2:
+		bsr        getinteger
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenustron_title(pc),a0
+		move.w     d3,(a0)
+		clr.w      2(a0)
+		move.w     fmenustron_title(pc),d1
+		move.w     fmenustron_item(pc),d2
+		moveq.l    #W_fmenustr_on,d7
+		trap       #3
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenustron_title: dc.w 0
+fmenustron_item: dc.w 0
 
 *
 * Syntax    :-   _fmenu kill
 *
 fmenu_kill:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		moveq.l    #W_fmenu_kill,d7
 		trap       #3
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 *
 * Syntax    :-   _fmenu freeze
 *
 fmenu_freeze:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		moveq.l    #W_fmenu_freeze,d7
 		trap       #3
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 *
 * Syntax    :-   _fmenu uncheck item TITLE,ITEM
 *
 fmenu_uncheck_item:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
-		bne        syntax
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
+		beq.s      fmenu_uncheck_item1
+		bra        syntax
+fmenu_uncheck_item1:
 		bsr        getinteger
-		move.w     d3,d0
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenu_unchk_item(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     a1,-(a7)
-		move.w     d3,d1
-		move.w     d0,d2
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenu_unchk_title(pc),a0
+		move.w     d3,(a0)
+		move.w     fmenu_unchk_title(pc),d1
+		move.w     fmenu_unchk_item(pc),d2
 		moveq.l    #0,d3
 		moveq.l    #W_fmenu_check_item,d7
 		trap       #3
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenu_unchk_title: dc.w 0
+fmenu_unchk_item: dc.w 0
 
 *
 * Syntax    :-   _fmenu check item TITLE,ITEM
 *
 fmenu_check_item:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
-		bne        syntax
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
+		beq.s      fmenu_check_item1
+		bra        syntax
+fmenu_check_item1:
 		bsr        getinteger
-		move.w     d3,d0
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenu_chk_item(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     a1,-(a7)
-		move.w     d3,d1
-		move.w     d0,d2
+		andi.l     #31,d3 /* FIXME: should be handled by trap */
+		lea.l      fmenu_chk_title(pc),a0
+		move.w     d3,(a0)
+		move.w     fmenu_chk_title(pc),d1
+		move.w     fmenu_chk_item(pc),d2
 		moveq.l    #-1,d3
 		moveq.l    #W_fmenu_check_item,d7
 		trap       #3
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fmenu_chk_title: dc.w 0
+fmenu_chk_item: dc.w 0
 
 *
 * Syntax    :-   BTN=_form alert(COL1,COL2,COL3,COL4,ALERT$)
 *
 form_alert:
-		move.l     (a7)+,a1
-		subq.w     #5,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #5,d0
 		bne        syntax
 		bsr        getstring
-		move.l     d3,a2
+		lea.l      form_alert_params+8(pc),a0
+		move.l     d3,(a0)
 		bsr        getinteger
-		move.l     d3,d1
+		lea.l      form_alert_params+6(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d3,d0
+		lea.l      form_alert_params+4(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d3,d5
+		lea.l      form_alert_params+2(pc),a0
+		move.w     d3,(a0)
 		bsr        getinteger
-		move.l     d1,d4
-		move.l     d3,d1
-		move.l     d0,d3
-		move.l     d5,d2
-		move.l     a2,a0
+		lea.l      form_alert_params(pc),a0
+		move.w     d3,(a0)
 		movem.l    d1-d7/a1-a6,-(a7)
+		lea.l      form_alert_params(pc),a1
+		movem.w    (a1)+,d1-d4
+		movea.l    (a1)+,a0
 		moveq.l    #W_form_alert,d7
 		trap       #3
 		movem.l    (a7)+,d1-d7/a1-a6
 		move.l     d0,d3
 		clr.l      d2
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+		/* FIXME: dead code */
+		moveq.l    #0,d3
+		clr.l      d2
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+form_alert_params: ds.w 4
+	ds.l 1
 
 fmenu_cmds:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		movem.l    d1-d7/a0-a6,-(a7)
 		lea.l      fmenu_hlp(pc),a0
@@ -547,7 +749,8 @@ fmenu_cmds3:
 		bne.s      fmenu_cmds3
 fmenu_cmds4:
 		movem.l    (a7)+,d1-d7/a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 		.data
 

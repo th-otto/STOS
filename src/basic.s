@@ -8450,7 +8450,7 @@ ef1:      move d0,-(sp)
           addq.l #1,a6
           bra.s ef1
 
-; appel de la .EXT fonction/instruction
+; call of the .EXT function / instruction
 ef4:      move.l extchr,a0
           move.l adext,a1
           clr d1
@@ -10860,7 +10860,7 @@ fdr2:     tst.w (a0)
           bne.s fdr1
           rts
 
-; SUPER FIND: CHERCHE UN TOKEN DANS LA SUITE DU PROGRAMME a partir de a0!
+; SUPER FIND: LOOKING FOR A TOKEN IN THE CONTINUATION OF THE PROGRAM from a0!
 supfind:  bsr ftoken
           bne.s sf5
           tst runflg          ;si en mode DIRECT, ne cherche pas plus loin!
@@ -10874,7 +10874,7 @@ supfind:  bsr ftoken
           bra supfind
 sf5:      rts
 
-; FIND TOKEN: CHERCHE UN TOKEN DANS LA LIGNE ACTUELLE
+; FIND TOKEN: LOOKING FOR A TOKEN IN THE CURRENT LINE
 ftoken:   move.l a0,a1        ;ramene l'adresse juste en a1
           move.b (a0)+,d2     ;ramene l'adresse juste apres en a0!
           beq.s ft8           ;fin de la ligne
