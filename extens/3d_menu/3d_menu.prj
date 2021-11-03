@@ -1,0 +1,7 @@
+stos\3d_menu.exu
+.L[-S=0]
+.S[-S]
+.S[-DCOMPILER=0]
+.S[-I..\..\src]
+=
+3d_menu.s

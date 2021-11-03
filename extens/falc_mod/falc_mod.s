@@ -244,7 +244,7 @@ cold4:
 
 check_musiclib:
 	movem.l    d0-d6/a0-a6,-(a7)
-	movea.l    $0000009C.l,a1 /* XXX */
+	movea.l    $0000009C.l,a1 ; vector for trap #7 /* XXX */
 	suba.l     #musiclib_id_end-musiclib_id,a1
 	lea.l      musiclib_id(pc),a0
 	moveq.l    #musiclib_id_end-musiclib_id-1,d7
@@ -579,7 +579,7 @@ printerr:
 	move.w     d0,-(a7)
 	move.l     #-1,-(a7)
 	move.l     #-1,-(a7)
-	move.w     #5,-(a7) /* setscreen */
+	move.w     #5,-(a7) /* Setscreen */
 	trap       #14
 	lea.l      12(a7),a7
 	moveq.l    #S_initmode,d0
@@ -608,16 +608,16 @@ errormsgs:
 	.dc.b "Command/Function not supported by sound hardware",0
 	.dc.b "Bank data is not a JoinedTrackerBank module.",0
 	.dc.b "Bank data is not a JoinedTrackerBank module.",0
-	.dc.b 13,10,21
+	.dc.b 13,10,C_inverse
 	.dc.b " Extension ERROR - the 'MUSIC101.BIN' file version in the STOS folder is ",13,10
 	.dc.b " incompatible with the Falcon 030 DSP Tracker Extension v2.85.           ",13,10
 	.dc.b " Please re-boot your system with the version 2.85 'MUSIC101.BIN' file in ",13,10
-	.dc.b " the STOS folder.                                                        ",18,13,10,0
-	.dc.b 13,10,21
+	.dc.b " the STOS folder.                                                        ",C_normal,13,10,0
+	.dc.b 13,10,C_inverse
 	.dc.b " Extension ERROR - the 'MUSIC101.BIN' file version in the STOS folder is ",13,10
 	.dc.b " incompatible with the Falcon 030 DSP Tracker Extension v2.85.           ",13,10
 	.dc.b " Please re-boot your system with the version 2.85 'MUSIC101.BIN' file in ",13,10
-	.dc.b " the STOS folder.                                                        ",18,13,10,0
+	.dc.b " the STOS folder.                                                        ",C_normal,13,10,0
 	.even
 
 * Syntax    : _tracker reset

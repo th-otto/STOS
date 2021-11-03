@@ -1,0 +1,8 @@
+compiler\3d_menu.ecu
+.L[-S=0]
+.S[-S]
+.S[-DCOMPILER=1]
+.S[-I..\..\src]
+.S[-I..\..\compiler]
+=
+compiler.s
