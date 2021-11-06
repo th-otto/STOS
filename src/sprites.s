@@ -1,4 +1,6 @@
 	.include "adapt.inc"
+	.include "linea.inc"
+	.include "window.inc"
 
 	.text
 
@@ -15,10 +17,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           dc.b "Sprite 2.4"
 even
-;-----------------------------> copie des vecteurs d'interruption
+;-----------------------------> copy of interrupt vectors
 ancient1: dc.l 0
 ancient2: dc.l 0
-;-----------------------------> fonctions de la trappe
+;-----------------------------> trap functions
 trappe:   dc.l initmode       ;0
           dc.l chgbank        ;1
           dc.l chglimit       ;2
@@ -73,13 +75,54 @@ trappe:   dc.l initmode       ;0
           dc.l getblock       ;51
           dc.l putblock       ;52
           dc.l fade           ;53
+          .IFNE FALCON
+          dc.l set_mouse_stat ;54
+          dc.l getdxmouse     ;55
+          dc.l falc_initmode  ;56
+          dc.l falc_initfont  ;57
+          dc.l falc_print     ;58
+          dc.l falc_printchr  ;59
+		  dc.l multipen_status ;60
+	      dc.l multipen_off   ;61
+		  dc.l multipen_on    ;62
+          dc.l falc_pen       ;63
+          dc.l falc_paper     ;64
+		  dc.l falc_locate    ;65
+          dc.l falc_xcurs     ;66
+          dc.l falc_ycurs     ;67
+          dc.l stosfont       ;68
+	      dc.l charwidth      ;69
+          dc.l charheight     ;70
+          dc.l st_mouse       ;71
+          dc.l st_mouse_color ;72
+          dc.l st_mouse_on    ;73
+          dc.l st_mouse_off   ;74
+          dc.l st_mouse_stat  ;75
+          dc.l fileselect     ;76
+          dc.l falc_centre    ;77
+          dc.l limit_st_mouse ;78
+		  .ENDC
+
+	.IFNE FALCON
+mch_cookie: ds.l 1
+vdo_cookie: ds.l 1
+snd_cookie: ds.l 1
+cookieid: ds.l 1
+cookievalue: ds.l 1 /* 10162 */
+     ds.b 64 /* unused */
+lineavars: ds.l 1 /* 101a6 */
+lineafuncs: ds.l 16 /* 101aa */
+falconmode: ds.w 1 /* 101ea */
+falcon_screensize: ds.l 1
+mouse_stat: ds.l 1
+	.ENDC
 
 ; adaptation 520/1040
 advect:   dc.l 0
 admouse:  dc.l 0
-;------animeur/deplaceur------
-nbanimes  =   15              ;quinze sprites geres par interruption
-intersync:dc.w 0              ;chaine avec les interruptions?
+;------animator/displacer-----
+nbanimes  =   15              ;fifteen managed sprites per interrupt
+intersync:dc.w 0              ;chain with interrupts?
 animflg:  dc.w 0              ;flag: routine d'interruption en route?
 tablact:  ds.b nbanimes*8     ;table d'actualisation
 actimage  =   2
@@ -103,7 +146,7 @@ mvtpdeb   =   20              ;position de sprite au debut
 doitact:  dc.w 0              ;doit actualiser, par defaut!
 doitactad:dc.l 0              ;adresse du doit actualiser/ctrl-c
 mouvxy:   dc.w 0              ;flag: mvt en X ou en Y
-;---------souris--------------
+;---------mouse---------------
 intmouse: dc.w 0              ;flag: peut-on gerer la souris?
 showon:   dc.w 0              ;compteur hide/show
 xmouse:   dc.w 0
@@ -115,7 +158,7 @@ mymouse:  dc.w 0
 buttons:  dc.w 0
 form:     dc.w 0
 oldform:  dc.w 0
-;---------flasheur------------
+;---------flasher-------------
 nbflash:  dc.w 0
 flcpt     = 2
 flpos     = 4
@@ -128,13 +171,13 @@ shiftcpt: dc.w 0
 shiftind: dc.w 0
 shiftad:  dc.l 0
 shiftnb:  dc.w 0
-;---------fadeur -------------
+;---------fader---------------
 fadeflg:  dc.w 0
 fadevit:  dc.w 0
 fadecpt:  dc.w 0
 ;---------sprites-------------
-nbsprite  =   17             ;souris/15 sprites normaux/icones
-ecran     =   $44e           ;pointe sur v_bas_ad
+nbsprite  =   17             ;mouse / 15 normal sprites / icons
+v_bas_ad  =   $44e           ;points to v_bas_ad
 backg:    dc.l 0
 dessins1: dc.l 0             ;drawing address
 dessins2: dc.l picture       ;adresse des dessins de la souris
@@ -183,6 +226,7 @@ zzycpt    = 10
 zpligne   = 12
 ;-------- cls ----------
 plans:    dc.l 0,0
+
 ;-------- appear: table des parametres qui ne plantent pas! ----------
 tappear:  dc.w 22223,11,89,101,121,131,159,69
           dc.w 13,77,103,119,133,161,43,53                  ;16
@@ -250,14 +294,23 @@ x_max:    dc.w      320,640,640         ;   X max+1  for each resolution
 y_max:    dc.w      200,200,400         ;   Y max+1  for each resolution
 sp0:      dc.w      0
 sp2:      dc.w      0
-sp4:      dc.w      0
-sp6:      dc.w      0
+sp4:      dc.w      0                   ; number of planes
+sp6:      dc.w      0                   ; bytes per line
 sp8:      dc.l      0
-b_pline:  dc.w      $A0,$A0,$50         ; bytes per line
+b_pline:  dc.w      160,160,80          ; bytes per line per resolution
 col_len:  dc.w      4,2,1               ; number of bits to encode 1 color
 b_pb:     dc.w      8,4,2               ; v_plane*2
 tab_x:    ds.w      640                 ; maximum contenance of table
 params:   ds.w      5
+
+	.IFNE FALCON /* WTF; just duplicate from above */
+fx_max:    dc.w      320,640,640         ;   X max+1  for each resolution
+fy_max:    dc.w      200,200,400         ;   Y max+1  for each resolution
+fb_pline:  dc.w      160,160,80         ; bytes per line
+fcol_len:  dc.w      4,2,1               ; number of bits to encode 1 color
+fb_pb:     dc.w      8,4,2               ; v_plane*2
+	.ENDC
+
 ;                                Sacre YOUYOU!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 debut:
@@ -936,7 +989,7 @@ bssd2:    move.w (a2)+,d4
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                     Balance le buffer dans l'ecran                         ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-balance:  move.l ecran,a2
+balance:  move.l v_bas_ad,a2
           tst sortie
           bne.s retourbal
 balbis:   move.l buffer(pc),a1       ;a1=adresse du buffer
@@ -1312,7 +1365,7 @@ putspr1:  move d1,d2          ;Y
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 puticon:    addi.w #640,d1
           addi.w #400,d2
-icone0:   clr intmouse
+puticon0:   clr intmouse
           move #1,iconflg
           clr.w d0            ;TURN ON the icon!
           bsr genicone        ;va faire tous les calculs!!!
@@ -1768,7 +1821,7 @@ sproff1:  move d4,d0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Recopie de l'ecran dans le decor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-screentoback:  move.l ecran,a0
+screentoback:  move.l v_bas_ad,a0
           move.l backg(pc),a1
 ec0:      move #8007,d0       ;recopie la palette!
 ec1:      move.l (a0)+,(a1)+
@@ -1780,7 +1833,7 @@ ec1:      move.l (a0)+,(a1)+
 ;         Recopie du decor dans l'ecran
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 backtoscreen:  move.l backg(pc),a0
-          move.l ecran,a1
+          move.l v_bas_ad,a1
           bra ec0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2679,14 +2732,11 @@ chgb1:    moveq #1,d0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Initialisation des interruptions et de la trappe #5
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-super:    move.l d0,-(sp)
+initrap:  pea  routrap(pc)
           move.w #38,-(sp)
           trap #14
           addq.l #6,sp
           rts
-;initialisation de la trappe
-initrap:  move.l #routrap,d0
-          bra super
 ; branche la trappe
 routrap:  move.l #entrappe,$94          ;trappe #5
           rts
@@ -2873,7 +2923,7 @@ mousekey: move.l admouse(pc),a0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         REDRAW: updating AND redisplay WITHOUT burrs!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-redraw:   move.l ecran,d0
+redraw:   move.l v_bas_ad,d0
           cmp.l backg(pc),d0
           beq.s rapact0
           bsr actualise
@@ -3592,13 +3642,13 @@ actad:    subq #1,d1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 moveon:   moveq #0,d0
           andi.w #$f,d1
-          beq.s mouvon1
+          beq.s moveon1
           bsr actad
           bsr ssmouve
           lea 22(a5),a5
           swap d0
           bsr ssmouve
-mouvon1:  rts
+moveon1:  rts
 ; sous programme
 ssmouve:  tst.w (a5)
           beq.s ssmouve1
@@ -3762,7 +3812,7 @@ ecrint:   move.l doitactad(pc),a4
           clr.w fadeflg                 ;interdit les appels en boucle
 ; fade
           lea $ffff8240+30,a0
-          move.l ecran,a1
+          move.l v_bas_ad,a1
           lea 32030(a1),a1
           moveq #15,d4
 ; boucle de fade

@@ -162,7 +162,7 @@ Action    :-   Format 1
                N = 3       is the ST's 8x16 system font [in ROM]
                N = 4 to 15 points to  a  STOS  memory  bank  which holds a
                            converted  GEM  font  loaded  by  the   command
-                           'gemtext load' thus it  is  possible to display 
+                           'gemfont load' thus it  is  possible to display 
                            many different/custom fonts on the same screen.
                Format 2
                ~~~~~~~~

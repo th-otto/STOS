@@ -106,7 +106,7 @@ cold:
 		lea.l      x13c88(pc),a0
 		move.w     #0,(a0)
 		movem.l    d0-d7/a0-a6,-(a7)
-		moveq.l    #S_f57,d0
+		moveq.l    #S_falc_initfont,d0
 		trap       #5
 		moveq.l    #S_multipen_off,d0
 		trap       #5

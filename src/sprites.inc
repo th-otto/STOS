@@ -58,12 +58,12 @@ S_fade            = 53
 *
 * added by falcon extension
 *
-S_f54             = 54
-
-S_f56             = 56
-S_f57             = 57
+S_set_mouse_stat  = 54
+S_getdxmouse      = 55
+S_falc_initmode   = 56
+S_falc_initfont   = 57
 S_falc_print      = 58
-
+S_falc_printchr   = 59
 S_multipen_status = 60
 S_multipen_off    = 61
 S_multipen_on     = 62

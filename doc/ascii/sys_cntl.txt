@@ -118,6 +118,9 @@ STOS library files contain routines vital to the support of this  feature.
 If  you  are  running  an  ST(e) and never  intend  using  the  3D  effect 
 fileselector then the patched library files need not be installed.
 
+*THO: above statement is wrong. The patched sprite libraries also contain
+vital code for other extensions.
+
 **************************************************************************
 *          The System Control Extension v0.9 command reference           *
 **************************************************************************

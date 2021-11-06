@@ -1,7 +1,8 @@
 stos\sprit101.bin
 .L[-S=0]
 .S[-S]
+.S[-2]
 .S[-DCOMPILER=0]
-.S[-DFALCON=0]
+.S[-DFALCON=1]
 =
-sprites.s
+sprifalc.s

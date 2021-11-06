@@ -4136,7 +4136,7 @@ rec:      move.l (a0)+,(a1)+
 
 	.IFNE FALCON
 
-	include "3d_menu.s"
+	include "..\orig\3d_menu.s"
 
 	.ELSE
 	

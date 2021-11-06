@@ -462,7 +462,7 @@ fmenu_init:
 		clr.w      text_double-fonthdr(a3)
 		clr.w      textblit_coords-fonthdr(a3)
 		clr.w      textblit_coords+2-fonthdr(a3)
-		clr.w      save_clip_flap-fonthdr(a3)
+		clr.w      save_clip_flag-fonthdr(a3)
 		clr.w      x1603c-fonthdr(a3)
 		clr.l      x1603e-fonthdr(a3)
 		movem.l    d0-d7/a0-a6,-(a7)
@@ -3139,7 +3139,7 @@ linea_drawline:
 		move.w     #-1,LA_LN_MASK(a0)
 		move.w     #MD_REPLACE,LA_WRT_MODE(a0)
 		move.w     #1,LA_CLIP(a0)
-		dc.w 0xa003
+		dc.w 0xa003 /* draw_line */
 		movem.l    (a7)+,d0-d7/a0-a6
 		cmpi.w     #8,nbplan
 		bne.s      linea_drawline1
@@ -3263,7 +3263,7 @@ linea_fill8planes2:
 		move.w     #2,(a1)+ /* d_nxpl */
 		move.l     #0,(a1)+ /* p_addr */
 		lea.l      bitblt,a6
-		dc.w 0xa007
+		dc.w 0xa007 /* bit_blt */
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -3273,7 +3273,7 @@ linea_fill8planes2:
 *
 linea_textblit:
 		movem.l    d0-d7/a0-a6,-(a7)
-		dc.w 0xa000
+		dc.w 0xa000 /* linea_init */
 		.IFNE COMPILER
 		cmpi.w     #16,LA_PLANES(a0)
 		.ELSE
@@ -3317,7 +3317,7 @@ linea_textblit2:
 		lea.l      scratchbuf,a6
 		move.l     a6,LA_SCRTCHP(a0)
 		move.w     #SCRATCHBUF_SIZE,LA_SCRPT2(a0)
-		lea.l      save_clip_flap,a6
+		lea.l      save_clip_flag,a6
 		move.w     LA_CLIP(a0),(a6)
 		move.w     #0,LA_CLIP(a0)
 		movea.l    textblit_str(pc),a2
@@ -3372,10 +3372,10 @@ linea_textblit5:
 		bsr.s      inc_coords
 		.ENDC
 		move.w     #0x8000,LA_XACC_DDA(a0)
-		ALINE      #8
+		dc.w 0xa008 /* text_blt */
 		movem.l    (a7)+,a0-a6
 linea_textblit6:
-		lea.l      save_clip_flap,a6
+		lea.l      save_clip_flag,a6
 		move.w     (a6),LA_CLIP(a0)
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
@@ -3418,7 +3418,7 @@ linea_textblit_hi:
 		addq.l     #2,a7
 		movea.l    d0,a2
 		movem.l    a2-a6,-(a7)
-		ALINE      #0
+		dc.w 0xa000 /* linea_init */
 		movem.l    (a7)+,a2-a6
 		move.w     sysfont(pc),d0
 		asl.w      #2,d0
@@ -3505,13 +3505,11 @@ linea_textblit_hi8:
 
 linea_fillrect:
 		movem.l    d0-d7/a0-a6,-(a7)
-		/* move.w     0(a4),LA_X1(a0) */
-		dc.w 0x316c,0,LA_X1
+		move.w     ZERO(a4),LA_X1(a0)
 		move.w     2(a4),LA_Y1(a0)
 		move.w     4(a4),LA_X2(a0)
 		move.w     6(a4),LA_Y2(a0)
-		/* move.w     0(a4),LA_XMN_CLIP(a0) */
-		dc.w 0x316c,0,LA_XMN_CLIP
+		move.w     ZERO(a4),LA_XMN_CLIP(a0)
 		move.w     2(a4),LA_YMN_CLIP(a0)
 		move.w     4(a4),LA_XMX_CLIP(a0)
 		move.w     6(a4),LA_YMX_CLIP(a0)
@@ -3521,15 +3519,14 @@ linea_fillrect:
 		move.w     #1,LA_PATMSK(a0)
 		move.w     #0,LA_MULTIFILL(a0)
 		move.w     #1,LA_CLIP(a0)
-		ALINE      #5
+		dc.w 0xa005 /* filled_rect */
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
 
 fillrect_8planes:
 		movem.l    d0-d7/a0-a6,-(a7)
-		/* move.w     LA_PLANES(a0),d7 */
-		dc.w 0x3e28,0 /* XXX */
+		move.w     ZERO(a0),d7 /* XXX LA_PLANES */
 		asl.w      #1,d7
 		move.w     V_BYTES_LIN(a0),d5
 		lea.l      bitblt,a1
@@ -3538,8 +3535,7 @@ fillrect_8planes:
 		.ELSE
 		bsr.s      calc_optab
 		.ENDC
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     ZERO(a4),d1
 		move.w     2(a4),d2
 		move.w     4(a4),d3
 		move.w     6(a4),d4
@@ -3573,7 +3569,7 @@ fillrect_8planes:
 		move.w     #2,(a1)+ /* d_nxpl */
 		move.l     #0,(a1)+ /* p_addr */
 		lea.l      bitblt,a6
-		dc.w 0xa007
+		dc.w 0xa007 /* bit_blt */
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -3659,11 +3655,11 @@ set_fontheight:
 		addq.l     #4,a7
 		lea.l      falconmode(pc),a1
 		move.w     d0,(a1)
-		btst       #7,d0
+		btst       #7,d0 /* ST-compatible? */
 		.IFNE COMPILER
-		beq.w      set_fontheight3 /* ST-compatible? */ /* XXX */
+		beq.w      set_fontheight3 /* XXX */
 		.ELSE
-		beq.s      set_fontheight3 /* ST-compatible? */
+		beq.s      set_fontheight3
 		.ENDC
 set_fontheight1:
 		move.w     #4,-(a7) /* yes, use Getrez */
@@ -3692,7 +3688,6 @@ set_fontheight3:
 		btst       #8,d0  /* interlace? */
 		bne.s      set_fontheight5
 		lea.l      fontheight(pc),a1
-set_fontheight4:
 		move.w     #16,(a1)
 		lea.l      sysfont(pc),a1
 		move.w     #2,(a1)
@@ -3858,7 +3853,7 @@ wrt_mode: ds.w 1 /* 16030 */
 text_rotation: ds.w 1
 text_double: ds.w 1
 textblit_coords: ds.w 2 /* 16036 */
-save_clip_flap: ds.w 1
+save_clip_flag: ds.w 1
 x1603c: ds.w 1
 x1603e: ds.l 1
 alert_colors: ds.w 4
@@ -3880,6 +3875,8 @@ menuinfo: ds.b MAX_TITLE*(MAX_ENTRY*ENT_SIZE+tit_sizeof)
 title_coords: ds.w 4*(MAX_TITLE+4)
 
 entry_coords: ds.w 4*(MAX_ENTRY+9)
+
+ZERO equ 0
 
 /* 16a76 */
 	.IFEQ COMPILER

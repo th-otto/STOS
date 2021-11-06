@@ -26,10 +26,10 @@ mn_x1: ds.w 1
 mn_y1: ds.w 1
 mn_x2: ds.w 1
 mn_y2: ds.w 1
-mn_fillcolor: ds.w 1 /* 10 */
-mn_leftcolor: ds.w 1 /* 12 */
-mn_rightcolor: ds.w 1 /* 14 */
-mn_textcolor: ds.w 1 /* 16 */
+mn_fillcolor: ds.w 1
+mn_leftcolor: ds.w 1
+mn_rightcolor: ds.w 1
+mn_textcolor: ds.w 1
 mn_sizeof:
 
 	.OFFSET 0
@@ -205,7 +205,7 @@ do_menu_check_8:
 		rts
 
 last_title: dc.w       0
-        dc.w       0 /* unused */
+        dc.w       0 ; unused
 selected_title: dc.w  0
 selected_item: dc.w  0
 
@@ -393,7 +393,7 @@ fmenu_init:
 		clr.w      text_double-fonthdr(a3)
 		clr.w      textblit_coords-fonthdr(a3)
 		clr.w      textblit_coords+2-fonthdr(a3)
-		clr.w      save_clip_flap-fonthdr(a3)
+		clr.w      save_clip_flag-fonthdr(a3)
 		clr.w      x1603c-fonthdr(a3)
 		clr.l      x1603e-fonthdr(a3)
 		movem.l    d0-d7/a0-a6,-(a7)
@@ -890,7 +890,6 @@ fmenu_height:
 		move.w     mn_y2(a0),d0
 		sub.w      d1,d0
 		addq.w     #1,d0
-		andi.l     #255,d0 /* what for? */
 fmenu_height1:
 		rts
 
@@ -2033,8 +2032,7 @@ redraw_titles1:
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		move.w     mn_rightcolor(a1),d0
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     6(a4),d2
 		move.w     4(a4),d3
 		move.w     6(a4),d4
@@ -2140,23 +2138,19 @@ draw_title_line1:
 		move.w     mn_leftcolor(a1),d0
 		movea.l    a1,a4
 		addq.l     #2,a4
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     6(a4),d2
-		/* move.w     0(a4),d3 */
-		dc.w 0x362c,0
+		move.w     0(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		move.w     mn_leftcolor(a1),d0
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     2(a4),d2
 		move.w     4(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		move.w     mn_rightcolor(a1),d0
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     6(a4),d2
 		move.w     4(a4),d3
 		move.w     6(a4),d4
@@ -2196,8 +2190,7 @@ draw_title_strings11:
 		move.w     mn_leftcolor(a0),textfg_color
 		/* move.w     #MD_TRANS,wrt_mode */
 		move.w     #0,text_style
-		/* move.l     0(a1),0(a3) */
-		dc.w 0x2769,0,0
+		move.l     0(a1),0(a3)
 		move.w     ent_namelen(a1),d7
 		subq.w     #1,d7
 		lea.l      ent_name(a1),a4
@@ -2216,10 +2209,8 @@ draw_title_strings21:
 		bsr.s      set_title_style
 draw_title_strings3:
 		/* move.w     #MD_TRANS,wrt_mode */
-		/* move.l     0(a1),0(a3) */
-		dc.w 0x2769,0,0
-		/* subq.w     #1,0(a3) */
-		dc.w 0x536b,0
+		move.l     0(a1),0(a3)
+		subq.w     #1,0(a3)
 		move.w     ent_namelen(a1),d7
 		subq.w     #1,d7
 		lea.l      ent_name(a1),a4
@@ -2271,23 +2262,19 @@ draw_dropdown:
 		bsr        linea_setcolor
 		bsr        fillrect
 		move.w     mn_leftcolor(a3),d0
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     6(a4),d2
-		/* move.w     0(a4),d3 */
-		dc.w 0x362c,0
+		move.w     0(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		move.w     mn_leftcolor(a3),d0
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     2(a4),d2
 		move.w     4(a4),d3
 		move.w     2(a4),d4
 		bsr        linea_drawline
 		move.w     mn_rightcolor(a3),d0
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     6(a4),d2
 		move.w     4(a4),d3
 		move.w     6(a4),d4
@@ -2764,8 +2751,7 @@ fillrect_hi:
 		moveq.l    #0,d5
 		moveq.l    #0,d6
 		moveq.l    #0,d7
-		/* move.w     0(a4),d3 */
-		dc.w 0x362c,0
+		move.w     0(a4),d3
 		move.w     2(a4),d5
 		move.w     4(a4),d6
 		move.w     6(a4),d7
@@ -2815,7 +2801,7 @@ linea_drawline:
 		move.w     #-1,LA_LN_MASK(a0)
 		move.w     #MD_REPLACE,LA_WRT_MODE(a0)
 		move.w     #1,LA_CLIP(a0)
-		dc.w 0xa003
+		dc.w 0xa003 /* draw_line */
 		movem.l    (a7)+,d0-d7/a0-a6
 		cmpi.w     #8,nbplan
 		bne.s      linea_drawline1
@@ -2928,7 +2914,7 @@ linea_fill8planes2:
 		move.w     #2,(a1)+ /* d_nxpl */
 		move.l     #0,(a1)+ /* p_addr */
 		lea.l      bitblt,a6
-		dc.w 0xa007
+		dc.w 0xa007 /* bit_blt */
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -2938,7 +2924,7 @@ linea_fill8planes2:
 *
 linea_textblit:
 		movem.l    d0-d7/a0-a6,-(a7)
-		dc.w 0xa000
+		dc.w 0xa000 /* linea_init */
 		cmpi.w     #16,LA_PLANES(a0)
 		beq        linea_textblit_hi
 		move.w     sysfont(pc),d0
@@ -2978,7 +2964,7 @@ linea_textblit2:
 		lea.l      scratchbuf,a6
 		move.l     a6,LA_SCRTCHP(a0)
 		move.w     #SCRATCHBUF_SIZE,LA_SCRPT2(a0)
-		lea.l      save_clip_flap,a6
+		lea.l      save_clip_flag,a6
 		move.w     LA_CLIP(a0),(a6)
 		move.w     #0,LA_CLIP(a0)
 		movea.l    textblit_str(pc),a2
@@ -3017,10 +3003,10 @@ linea_textblit5:
 		move.w     2(a3),LA_DESTY(a0)
 		bsr.s      inc_coords
 		move.w     #0x8000,LA_XACC_DDA(a0)
-		ALINE      #8
+		dc.w 0xa008 /* text_blt */
 		movem.l    (a7)+,a0-a6
 linea_textblit6:
-		lea.l      save_clip_flap,a6
+		lea.l      save_clip_flag,a6
 		move.w     (a6),LA_CLIP(a0)
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
@@ -3063,7 +3049,7 @@ linea_textblit_hi:
 		addq.l     #2,a7
 		movea.l    d0,a2
 		movem.l    a2-a6,-(a7)
-		ALINE      #0
+		dc.w 0xa000 /* linea_init */
 		movem.l    (a7)+,a2-a6
 		move.w     sysfont(pc),d0
 		asl.w      #2,d0
@@ -3094,8 +3080,7 @@ linea_textblit_hi1:
 		beq.s      linea_textblit_hi2
 		move.w     #-1,d1
 linea_textblit_hi2:
-		/* move.w     0(a5),d4 */
-		dc.w 0x382d,0
+		move.w     0(a5),d4
 		asl.w      #1,d4
 		move.w     2(a5),d5
 		mulu.w     V_BYTES_LIN(a0),d5
@@ -3138,13 +3123,11 @@ linea_textblit_hi8:
 
 linea_fillrect:
 		movem.l    d0-d7/a0-a6,-(a7)
-		/* move.w     0(a4),LA_X1(a0) */
-		dc.w 0x316c,0,LA_X1
+		move.w     0(a4),LA_X1(a0)
 		move.w     2(a4),LA_Y1(a0)
 		move.w     4(a4),LA_X2(a0)
 		move.w     6(a4),LA_Y2(a0)
-		/* move.w     0(a4),LA_XMN_CLIP(a0) */
-		dc.w 0x316c,0,LA_XMN_CLIP
+		move.w     0(a4),LA_XMN_CLIP(a0)
 		move.w     2(a4),LA_YMN_CLIP(a0)
 		move.w     4(a4),LA_XMX_CLIP(a0)
 		move.w     6(a4),LA_YMX_CLIP(a0)
@@ -3154,7 +3137,7 @@ linea_fillrect:
 		move.w     #1,LA_PATMSK(a0)
 		move.w     #0,LA_MULTIFILL(a0)
 		move.w     #1,LA_CLIP(a0)
-		ALINE      #5
+		dc.w 0xa005 /* filled_rect */
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -3166,8 +3149,7 @@ fillrect_8planes:
 		move.w     V_BYTES_LIN(a0),d5
 		lea.l      bitblt,a1
 		bsr.s      calc_optab
-		/* move.w     0(a4),d1 */
-		dc.w 0x322c,0
+		move.w     0(a4),d1
 		move.w     2(a4),d2
 		move.w     4(a4),d3
 		move.w     6(a4),d4
@@ -3199,7 +3181,7 @@ fillrect_8planes:
 		move.w     #2,(a1)+ /* d_nxpl */
 		move.l     #0,(a1)+ /* p_addr */
 		lea.l      bitblt,a6
-		dc.w 0xa007
+		dc.w 0xa007 /* bit_blt */
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -3433,38 +3415,38 @@ alert_icon_dattable:
 
 	.IFEQ COMPILER
 	.bss
-scratchbuf: ds.w SCRATCHBUF_SIZE /* 157c4 */
+scratchbuf: ds.w SCRATCHBUF_SIZE
 	.ENDC
 
-bitblt: ds.b 78 /* 15fc4 */
-physic: ds.l 1 /* 16012 */
-logic: ds.l 1 /* 16016 */
-num_titles: ds.w 1 /* 1601a */
+bitblt: ds.b 78
+physic: ds.l 1
+logic: ds.l 1
+num_titles: ds.w 1
             ds.w 1
-fontheight: ds.w 1 /* 1601e */
-textblit_str: ds.l 1 /* 16020 */
-fonthdr: ds.l 1 /* 16024 */
-sysfont: ds.w 1 /* 16028 */
-text_style: ds.w 1 /* 1602a */
+fontheight: ds.w 1
+textblit_str: ds.l 1
+fonthdr: ds.l 1
+sysfont: ds.w 1
+text_style: ds.w 1
 textfg_color: ds.w 1
 textbg_color: ds.w 1
-wrt_mode: ds.w 1 /* 16030 */
+wrt_mode: ds.w 1
 text_rotation: ds.w 1
 text_double: ds.w 1
-textblit_coords: ds.w 2 /* 16036 */
-save_clip_flap: ds.w 1
+textblit_coords: ds.w 2
+save_clip_flag: ds.w 1
 x1603c: ds.w 1
 x1603e: ds.l 1
 alert_colors: ds.w 4
      ds.w 1
-alert_str: ds.l 1 /* 1604c */
-alert_icon: ds.w 1 /* 16050 */
-num_alert_buttons: ds.w 1 /* 16052 */
+alert_str: ds.l 1
+alert_icon: ds.w 1
+num_alert_buttons: ds.w 1
 alert_pos: ds.w 6 ; coordinates of the three buttons
 
-alert_strings: ds.b MAX_ALERT_STR*ALERT_STR_SIZE /* 16060 */
+alert_strings: ds.b MAX_ALERT_STR*ALERT_STR_SIZE
 
-alert_buttons: ds.b 46*MAX_ALERT_BUT /* 1616a */
+alert_buttons: ds.b 46*MAX_ALERT_BUT
 
 menuparams: ds.b mn_sizeof
 
@@ -3475,7 +3457,6 @@ title_coords: ds.w 4*(MAX_TITLE+4)
 
 entry_coords: ds.w 4*(MAX_ENTRY+9)
 
-/* 16a76 */
 	.IFEQ COMPILER
 pair:     ds.l 2
 bufcopie: ds.b 32064
