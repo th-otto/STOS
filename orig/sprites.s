@@ -1,4 +1,12 @@
 	.include "adapt.inc"
+	.include "linea.inc"
+	.include "window.inc"
+
+	.IFNE FALCON
+MAX_ZONES = 512
+	.ELSE
+MAX_ZONES = 128
+	.ENDC
 
 	.text
 
@@ -16,13 +24,18 @@
           .IFNE COMPILER
           dc.b "Sprite 101"
           .ELSE
+          .IFNE FALCON
+          dc.b "Sprite 3.3"
+          .ELSE
           dc.b "Sprite 2.4"
           .ENDC
-even
-;-----------------------------> copie des vecteurs d'interruption
+          .ENDC
+			even
+
+;-----------------------------> copy of interrupt vectors
 ancient1: dc.l 0
 ancient2: dc.l 0
-;-----------------------------> fonctions de la trappe
+;-----------------------------> trap functions
 trappe:   dc.l initmode       ;0
           dc.l chgbank        ;1
           dc.l chglimit       ;2
@@ -77,13 +90,54 @@ trappe:   dc.l initmode       ;0
           dc.l getblock       ;51
           dc.l putblock       ;52
           dc.l fade           ;53
+          .IFNE FALCON
+          dc.l set_mouse_stat ;54
+          dc.l getdxmouse     ;55
+          dc.l falc_initmode  ;56
+          dc.l falc_initfont  ;57
+          dc.l falc_print     ;58
+          dc.l falc_printchr  ;59
+		  dc.l multipen_status ;60
+	      dc.l multipen_off   ;61
+		  dc.l multipen_on    ;62
+          dc.l falc_pen       ;63
+          dc.l falc_paper     ;64
+		  dc.l falc_locate    ;65
+          dc.l falc_xcurs     ;66
+          dc.l falc_ycurs     ;67
+          dc.l stosfont       ;68
+	      dc.l charwidth      ;69
+          dc.l charheight     ;70
+          dc.l st_mouse       ;71
+          dc.l st_mouse_color ;72
+          dc.l st_mouse_on    ;73
+          dc.l st_mouse_off   ;74
+          dc.l st_mouse_stat  ;75
+          dc.l fileselect     ;76
+          dc.l falc_centre    ;77
+          dc.l limit_st_mouse ;78
+		  .ENDC
+
+	.IFNE FALCON
+mch_cookie: ds.l 1
+vdo_cookie: ds.l 1
+snd_cookie: ds.l 1
+cookieid: ds.l 1
+cookievalue: ds.l 1 /* 10162 */
+x10166:    ds.b 64 /* unused */
+lineavars: ds.l 1 /* 101a6 */
+lineafuncs: ds.l 16 /* 101aa */
+falconmode: ds.w 1 /* 101ea */
+falcon_screensize: ds.l 1
+mouse_stat: ds.l 1
+	.ENDC
 
 ; adaptation 520/1040
 advect:   dc.l 0
 admouse:  dc.l 0
-;------animeur/deplaceur------
-nbanimes  =   15              ;quinze sprites geres par interruption
-intersync:dc.w 0              ;chaine avec les interruptions?
+;------animator/displacer-----
+nbanimes  =   15              ;fifteen managed sprites per interrupt
+intersync:dc.w 0              ;chain with interrupts?
 animflg:  dc.w 0              ;flag: routine d'interruption en route?
 tablact:  ds.b nbanimes*8     ;table d'actualisation
 actimage  =   2
@@ -107,7 +161,7 @@ mvtpdeb   =   20              ;position de sprite au debut
 doitact:  dc.w 0              ;doit actualiser, par defaut!
 doitactad:dc.l 0              ;adresse du doit actualiser/ctrl-c
 mouvxy:   dc.w 0              ;flag: mvt en X ou en Y
-;---------souris--------------
+;---------mouse---------------
 intmouse: dc.w 0              ;flag: peut-on gerer la souris?
 showon:   dc.w 0              ;compteur hide/show
 xmouse:   dc.w 0
@@ -119,7 +173,7 @@ mymouse:  dc.w 0
 buttons:  dc.w 0
 form:     dc.w 0
 oldform:  dc.w 0
-;---------flasheur------------
+;---------flasher-------------
 nbflash:  dc.w 0
 flcpt     = 2
 flpos     = 4
@@ -132,13 +186,13 @@ shiftcpt: dc.w 0
 shiftind: dc.w 0
 shiftad:  dc.l 0
 shiftnb:  dc.w 0
-;---------fadeur -------------
+;---------fader---------------
 fadeflg:  dc.w 0
 fadevit:  dc.w 0
 fadecpt:  dc.w 0
 ;---------sprites-------------
-nbsprite  =   17             ;souris/15 sprites normaux/icones
-ecran     =   $44e           ;pointe sur v_bas_ad
+nbsprite  =   17             ;mouse / 15 normal sprites / icons
+v_bas_ad  =   $44e           ;points to v_bas_ad
 backg:    dc.l 0
 dessins1: dc.l 0             ;drawing address
 dessins2: dc.l picture       ;adresse des dessins de la souris
@@ -187,6 +241,7 @@ zzycpt    = 10
 zpligne   = 12
 ;-------- cls ----------
 plans:    dc.l 0,0
+
 ;-------- appear: table des parametres qui ne plantent pas! ----------
 tappear:  dc.w 22223,11,89,101,121,131,159,69
           dc.w 13,77,103,119,133,161,43,53                  ;16
@@ -254,14 +309,23 @@ x_max:    dc.w      320,640,640         ;   X max+1  for each resolution
 y_max:    dc.w      200,200,400         ;   Y max+1  for each resolution
 sp0:      dc.w      0
 sp2:      dc.w      0
-sp4:      dc.w      0
-sp6:      dc.w      0
+sp4:      dc.w      0                   ; number of planes
+sp6:      dc.w      0                   ; bytes per line
 sp8:      dc.l      0
-b_pline:  dc.w      $A0,$A0,$50         ; bytes per line
+b_pline:  dc.w      160,160,80          ; bytes per line per resolution
 col_len:  dc.w      4,2,1               ; number of bits to encode 1 color
 b_pb:     dc.w      8,4,2               ; v_plane*2
 tab_x:    ds.w      640                 ; maximum contenance of table
 params:   ds.w      5
+
+	.IFNE FALCON /* WTF; just duplicate from above */
+fx_max:    dc.w      320,640,640         ;   X max+1  for each resolution
+fy_max:    dc.w      200,200,400         ;   Y max+1  for each resolution
+fb_pline:  dc.w      160,160,80         ; bytes per line
+fcol_len:  dc.w      4,2,1               ; number of bits to encode 1 color
+fb_pb:     dc.w      8,4,2               ; v_plane*2
+	.ENDC
+
 ;                                Sacre YOUYOU!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 debut:
@@ -278,8 +342,12 @@ debut:
 ; Fait de la PLACE pour les BUFFERS
         move.l a0,a6
         move.l a0,tzones              ;zones de test
-        /* add.l #128*4*2,a0 */
-        .dc.w 0xd1fc,0,128*4*2 /* XXX */
+        .IFNE COMPILER
+        .dc.w 0xd1fc,0,128*4*2 /* XXX BUG */
+        .ELSE
+        /* add.l #MAX_ZONES*4*2,a0 */
+        .dc.w 0xd1fc,0,MAX_ZONES*4*2 /* XXX */
+        .ENDC
         move.l a0,buffer              ;buffer des sprites
         move.w d0,sizebuf             ;Taille en MOTS du buffer
         lsl.w #1,d0                   ;---> en octets
@@ -355,7 +423,7 @@ debut1a:  lea finspr,a0
           add.l d7,a0
           move.l a0,a1
           move.l a0,tzones              ;zones de test
-          /* add.l #128*4*2,a0 */
+          /* add.l #128*4*2,a0 */ /* BUG: should be MAX_ZONES */
           dc.w 0xd1fc,0,128*4*2 /* XXX */
           addi.l #128*4*2,d7
           move.l a0,buffer              ;buffer des sprites
@@ -946,23 +1014,23 @@ bssd2:    move.w (a2)+,d4
           rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                     Balance le buffer dans l'ecran                         ;
+;                     Balance the buffer in the screen                       ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-balance:  move.l ecran.l,a2 /* XXX */
+balance:  move.l v_bas_ad.l,a2 /* XXX */
           tst sortie
           bne.s retourbal
-balbis:   move.l buffer(pc),a1       ;a1=adresse du buffer
+balbis:   move.l buffer(pc),a1       ;a1=buffer address
           move txbuf(pc),d6
-          mulu nbplan(pc),d6      ;d6=nombre de mots en X
-          move tybuf(pc),d7       ;d7=taille en Y
+          mulu nbplan(pc),d6      ;d6=number of words in X
+          move tybuf(pc),d7       ;d7=size in Y
           subq #1,d7
           move xbuf(pc),d1
           move ybuf(pc),d2
-          bsr adecran         ;A2=adresse dans l'ecran ou le decor (icone)
+          bsr adecran         ;A2=address in screen or decor (icon)
           mulu nbplan(pc),d3
           sub d6,d3
-          asl #1,d3           ;d5=addition … a0 pour ligne suivante
-          subq #1,d6          ;DBRA s'arrete a - 1!
+          asl #1,d3           ;d5=addition ... a0 for next line
+          subq #1,d6          ;DBRA stops at - 1
 
 lbal1:    move d6,d0
 lbal2:    move.w (a1)+,(a2)+
@@ -1705,10 +1773,79 @@ chgs1:    move.l a0,backg
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 initmode: clr intmouse        ;interdiction des interruptions
           clr animflg
+
+		.IFNE FALCON
+* copy x_max/y_max
+		lea.l      fx_max(pc),a0
+		lea.l      x_max(pc),a1
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+* copy b_pline/col_len/b_bp
+		lea.l      b_pline(pc),a1
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		move.w     (a0)+,(a1)+
+		lea.l      mousebuf(pc),a0
+		move.w     #$FFDF,8(a0) /* fgcolor */
+		lea.l      mouseptr(pc),a0
+		lea.l      mouse_data(pc),a1
+		move.l     a1,(a0)
+		movea.l    mouseptr(pc),a1
+		move.l     #1,6(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #1,6(a1)
+		moveq.l    #1,d1
+		bsr        st_mouse
+		movem.l    a0-a6,-(a7)
+		move.l     #32000,d0
+		lea.l      vdo_cookie(pc),a0
+		cmpi.l     #0x00030000,(a0)
+		bne.w      initmode_f2
+		lea.l      mch_cookie(pc),a0
+		cmpi.l     #0x00030000,(a0)
+		bne.w      initmode_f2
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		lea.l      falconmode(pc),a0
+		move.w     d0,(a0)
+		btst       #7,d0 /* ST-compatible? */
+		beq.w      initmode_f1
+		move.l     #32000,d0
+		bra.s      initmode_f2
+initmode_f1:
+		move.w     d0,-(a7)
+		move.w     #91,-(a7) /* VgetSize */
+		trap       #14
+		addq.l     #4,a7
+initmode_f2:
+		lea.l      falcon_screensize(pc),a0
+		move.l     d0,(a0)
+		movem.l    (a7)+,a0-a6
+		.ENDC
+
           move.w #4,-(sp)     ;getrez
           trap #14
           addq.l #2,sp
           move d0,mode
+          .IFNE FALCON
+		addq.w     #1,d0
+		move.w     d0,falcon_font
+		bsr        falc_initfont
+		clr.w      pen_status
+		subq.w     #1,d0
+		  .ENDC
           beq.s ibasse
           cmpi.w #1,d0
           beq.s imoyen
@@ -1785,7 +1922,7 @@ sproff1:  move d4,d0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Recopie de l'ecran dans le decor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-screentoback:  move.l ecran.l,a0 /* XXX */
+screentoback:  move.l v_bas_ad.l,a0 /* XXX */
           move.l backg(pc),a1
 ec0:      move #8007,d0       ;recopie la palette!
 ec1:      move.l (a0)+,(a1)+
@@ -1797,7 +1934,7 @@ ec1:      move.l (a0)+,(a1)+
 ;         Recopie du decor dans l'ecran
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 backtoscreen:  move.l backg(pc),a0
-          move.l ecran.l,a1 /* XXX */
+          move.l v_bas_ad.l,a1 /* XXX */
           bra.w ec0 /* XXX */
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1806,8 +1943,18 @@ backtoscreen:  move.l backg(pc),a0
 scrcopy:  tst d5
           bne.w scc2 /* XXX */
 
-; RECOPIE TOTALE, ULTRA RAPIDE!
-          move #500,d0       ;recopie la palette!
+; FULL RECOPY, ULTRA FAST!
+		.IFNE FALCON
+		move.w     mouse_stat(pc),d1
+		tst.w      d1
+		beq.s      scc0
+		bsr        st_mouse_off
+scc0:
+		move.l     falcon_screensize(pc),d0
+		asr.l      #6,d0
+		.ELSE
+          move #(32000/64),d0       ;copy the screen! BUG: missing -1 for dbra
+		.ENDC
 scc1:     move.l (a0)+,(a1)+
           move.l (a0)+,(a1)+
           move.l (a0)+,(a1)+
@@ -1826,6 +1973,12 @@ scc1:     move.l (a0)+,(a1)+
           move.l (a0)+,(a1)+
           move.l (a0)+,(a1)+
           dbra d0,scc1
+        .IFNE FALCON
+		tst.w      d1
+		beq.s      sscf1
+		bsr        st_mouse_on
+		.ENDC
+sscf1:
           bra scc20
 
 ; RECOPIE PARTIELLE
@@ -2700,12 +2853,74 @@ super:    move.l d0,-(sp)
           move.w #38,-(sp)
           trap #14
           addq.l #6,sp
+        .IFNE FALCON
+		dc.w 0xa000 /* linea_init */
+		move.l     a0,lineavars
+		move.w     #16-1,d7
+		lea.l      lineafuncs,a0
+super1:
+		move.l     (a2)+,(a0)+
+		dbf        d7,super1
+		.ENDC
           rts
 ;initialisation de la trappe
 initrap:  move.l #routrap,d0
           bra.w super /* XXX */
 ; branche la trappe
 routrap:  move.l #entrappe,$94.l          ;trappe #5 /* XXX */
+		.IFNE FALCON
+		lea.l      mch_cookie(pc),a0
+		clr.l      (a0)+
+		clr.l      (a0)+
+		move.l     #1,(a0)+
+		lea.l      cookieid(pc),a1
+		move.l     #$5F4D4348,(a1) /* "_MCH" */
+		bsr.w      getcookie /* XXX */
+		tst.l      d0
+		beq.w      routrap1 /* XXX */
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+routrap1:
+		lea.l      cookieid(pc),a1
+		move.l     #$5F56444F,(a1) /* "_VDO" */
+		bsr.w      getcookie /* XXX */
+		tst.l      d0
+		beq.w      routrap2
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+routrap2:
+		rts
+getcookie:
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		beq.w      getcookie3
+		movea.l    d0,a0
+		clr.l      d4
+getcookie1:
+		move.l     (a0)+,d0
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.w      getcookie3
+		cmp.l      d3,d0
+		beq.w      getcookie2
+		addq.w     #1,d4
+		bra.w      getcookie1
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.w      getcookie3
+		move.l     d1,(a5)
+getcookie3:
+		.ENDC
           rts
 ;INITIALISATION DES INTERRUPTIONS: A0=DOITACT
 startinter:clr intmouse                  ;aucune interruption
@@ -2817,6 +3032,17 @@ sourint10:move.l (sp)+,a1
           move.w (sp)+,d0
           rts
 
+*
+* this string is checked by the extension
+* and must stay here, just before the trap entry
+*
+	.IFNE FALCON
+	.IFEQ COMPILER
+	.dc.b "FALCON 030 STOS Sprite 5.8",0,0
+	.even
+	.ENDC
+	.ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Entree de la trappe
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2828,6 +3054,102 @@ entrappe: movem.l d2-d7/a1-a6,-(sp)
           jsr (a6)
           movem.l (sp)+,d2-d7/a1-a6
           rte
+
+	.IFNE FALCON
+falc_initmode:
+		movem.l    a0-a6,-(a7)
+		move.l     #32000,d0
+		lea.l      vdo_cookie(pc),a0
+		cmpi.l     #0x00030000,(a0)
+		bne.w      falc_initmode2
+		lea.l      mch_cookie(pc),a0
+		cmpi.l     #0x00030000,(a0)
+		bne.w      falc_initmode2
+		move.l     d2,-(a7)
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		move.l     (a7)+,d2
+		lea.l      falconmode(pc),a0
+		move.w     d0,(a0)
+		btst       #7,d0 /* ST-compatible? */
+		beq.w      falc_initmode1
+		move.l     #32000,d0
+		bra.s      falc_initmode2
+falc_initmode1:
+		exg        d2,d0
+falc_initmode2:
+		lea.l      falcon_screensize(pc),a0
+		move.l     d0,(a0)
+		movem.l    (a7)+,a0-a6
+		.IFEQ COMPILER
+		movea.l    lineafuncs,a0
+		jsr        (a0)
+		.ELSE
+		dc.w 0xa000 /* linea_init */
+		.ENDC
+		movea.l    d0,a0 /* FIXME: unneeded */
+		lea.l      x_max(pc),a2
+		move.w     V_REZ_HZ(a0),d1
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,mxmouse
+		/* subq.w     #1,mxmouse */
+		dc.l 0x04790001,mxmouse /* XXX */
+		move.w     DEV_TAB+2(a0),d1
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,mymouse
+		lea.l      b_pline(pc),a2
+		move.w     V_BYTES_LIN(a0),d1
+		.IFEQ COMPILER /* XXX */
+		move.w     d1,sp6
+		.ENDC
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		.IFNE COMPILER
+		move.w     d1,sp6
+		.ENDC
+		move.w     LA_PLANES(a0),d1
+		move.w     d1,nbplan
+		move.w     d1,sp4
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		move.w     d1,(a2)+
+		clr.l      d1
+		move.w     V_REZ_HZ(a0),d1
+		addq.w     #1,d1 /* BUG */
+		asr.l      #4,d1
+		move.w     d1,motligne
+		clr.l      d1
+		move.w     LA_PLANES(a0),d1
+		asl.l      #1,d1
+		move.w     d1,sp2
+		move.w     V_REZ_HZ(a0),d1
+		move.w     DEV_TAB+2(a0),d2
+		asr.w      #1,d1
+		asr.w      #1,d2
+		bsr        movemouse
+		bsr        falc_initfont
+		lea.l      pen_status(pc),a0
+		clr.w      (a0)
+		rts
+
+getdxmouse:
+		.IFNE COMPILER
+		lea.l      x10166(pc),a0 /* ??? */
+		.ELSE
+		lea.l      dxmouse(pc),a0
+		.ENDC
+		rts
+	.ENDC
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         Show mouse: d1=parametre (0=raz, <>0 moins un)
@@ -2897,7 +3219,7 @@ mousekey: move.l admouse(pc),a0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         REDRAW: updating AND redisplay WITHOUT burrs!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-redraw:   move.l ecran.l,d0 /* XXX */
+redraw:   move.l v_bas_ad.l,d0 /* XXX */
           cmp.l backg(pc),d0
           beq.s rapact0
           bsr actualise
@@ -3154,6 +3476,105 @@ limous2:  clr intmouse
           move #1,intmouse
           rts
 
+		.IFNE FALCON
+limit_st_mouse:
+		tst.w      d5
+		beq        limit_st_mouse7
+		move.w     mouse_stat(pc),d5
+		tst.w      d5
+		beq.s      limit_st_mouse1
+		bsr        st_mouse_off
+limit_st_mouse1:
+		movem.l    d1-d4/a0-a6,-(a7)
+		dc.w 0xa000 /* linea_init */
+		movea.l    d0,a0
+		move.w     V_REZ_HZ(a0),d5
+		subq.w     #1,d5
+		move.w     DEV_TAB+2(a0),d6
+		movem.l    (a7)+,d1-d4/a0-a6
+		tst.w      d1
+		bpl.w      limit_st_mouse2 /* XXX */
+		moveq.l    #0,d1
+limit_st_mouse2:
+		tst.w      d2
+		bpl.w      limit_st_mouse3 /* XXX */
+		moveq.l    #0,d2
+limit_st_mouse3:
+		cmp.w      d5,d3
+		bcs.w      limit_st_mouse4 /* XXX */
+		move.w     d5,d3
+limit_st_mouse4:
+		cmp.w      d6,d4
+		bcs.w      limit_st_mouse5 /* XXX */
+		move.w     d6,d4
+limit_st_mouse5:
+		lea.l      fdxmouse(pc),a0
+		move.w     d1,(a0)+
+		move.w     d2,(a0)+
+		move.w     d3,(a0)+
+		move.w     d4,(a0)+
+		sub.w      d1,d3
+		sub.w      d2,d4
+		.IFNE COMPILER
+		lea.l      dxmouse,a0 /* XXX */
+		.ELSE
+		lea.l      dxmouse(pc),a0
+		.ENDC
+		move.w     d1,(a0)+
+		move.w     d2,(a0)+
+		move.w     d3,(a0)+
+		move.w     d4,(a0)+
+		lea.l      fdxmouse(pc),a0
+		movem.w    (a0)+,d1-d4
+		sub.w      d1,d3
+		asr.w      #1,d3
+		add.w      d3,d1
+		sub.w      d2,d4
+		asr.w      #1,d4
+		add.w      d4,d2
+		bsr.w      movemouse
+		move.w     mouse_stat(pc),d5
+		tst.w      d5 /* XXX */
+		beq.s      limit_st_mouse6
+		bsr        st_mouse_on
+limit_st_mouse6:
+		rts
+
+fdxmouse: ds.w 4
+
+limit_st_mouse7:
+		move.w     mouse_stat(pc),d5
+		tst.w      d5
+		beq.s      limit_st_mouse8
+		bsr        st_mouse_off
+limit_st_mouse8:
+		movem.l    d1-d4/a0-a6,-(a7)
+		.IFNE COMPILER
+		lea.l      dxmouse,a0 /* XXX */
+		.ELSE
+		lea.l      dxmouse(pc),a0
+		.ENDC
+		clr.l      (a0)
+		movea.l    lineafuncs,a0
+		jsr        (a0)
+		movea.l    d0,a0
+		move.w     V_REZ_HZ(a0),d1
+		subq.w     #1,d1
+		move.w     d1,mxmouse
+		move.w     DEV_TAB+2(a0),d2
+		move.w     d2,mymouse
+		asr.w      #1,d1
+		asr.w      #1,d2
+		bsr.w      movemouse /* XXX */
+		movem.l    (a7)+,d1-d4/a0-a6
+		move.w     mouse_stat(pc),d5
+		tst.w      d5
+		beq.s      limit_st_mouse9
+		bsr        st_mouse_on
+limit_st_mouse9:
+		rts
+		.ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         CHANGE LES COORDONNEES DE LA SOURIS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3173,20 +3594,35 @@ chgc2:    move #1,intmouse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         RAZ ZONE: initialisation table zoneur
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-initzones:  move #127,d0
+initzones:  move #MAX_ZONES-1,d0
+          .IFNE FALCON
+          lea falcon_zones,a0
+          .ELSE
           move.l tzones(pc),a0
+          .ENDC
 rz1:      clr.l (a0)+
           clr.l (a0)+
           dbra d0,rz1
           rts
 
+		.IFNE FALCON
+set_mouse_stat:
+		move.w     d1,mouse_stat
+		rts
+		.ENDC
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         SET ZONE: d1-(d2-d3-d4-d5)  -(dx-fx-dy-fy)-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-setzone:  move.l tzones(pc),a0
+setzone:  
+          .IFNE FALCON
+          lea falcon_zones,a0
+          .ELSE
+          move.l tzones(pc),a0
+          .ENDC
           tst d1
           beq.s synt
-          cmpi.w #129,d1
+          cmpi.w #MAX_ZONES+1,d1
           bcc.s synt
           subq #1,d1
           lsl #3,d1
@@ -3209,15 +3645,38 @@ synt:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         ZONE: ramene la zone dans laquelle se trouve le sprite D1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-zone:     cmpi.w #nbsprite,d1
+zone:
+		.IFNE FALCON
+		.IFNE COMPILER
+		tst.w      set_mouse_stat /* XXX BUG */
+		.ELSE
+		tst.w      mouse_stat
+		.ENDC
+		beq.s      zone1
+		bsr        mouse
+		move.l     d0,d2
+		addi.w     #640,d2
+		move.l     d1,d3
+		addi.w     #400,d3
+		clr.l      d0
+		clr.l      d1
+		bra.s      zone2
+		.ENDC
+zone1:
+          cmpi.w #nbsprite,d1
           bcc.s synt
           bsr adspr1          ;adresse du sprite
           tst (a0)
           beq.s z2
           move xinput(a0),d2
           move yinput(a0),d3
+zone2:
+          .IFNE FALCON
+          lea falcon_zones,a1
+          .ELSE
           move.l tzones(pc),a1
-          move #127,d1
+          .ENDC
+          move #MAX_ZONES-1,d1
 z0:       tst (a1)
           bne.s z3
 z1:       addq.l #8,a1
@@ -3236,7 +3695,7 @@ z4:       cmp 4(a1),d3        ;compare DY
           beq.s z5
           bcc.s z1
 z5:       neg d1              ;calcul de la zone
-          addi.w #128,d1
+          addi.w #MAX_ZONES,d1
           clr.l d0
           rts
 
@@ -3779,7 +4238,7 @@ fde1:	  move.w d2,fadeflg
 ;         Entree interruptions d'ecran: animeur/couleurs/souris
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ecrint:   move.l doitactad(pc),a4
-          bset #7,(a4)        ;interruption d'‚cran!
+          bset #7,(a4)        ;screen interruption!
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;         FADEUR
@@ -3793,7 +4252,7 @@ ecrint:   move.l doitactad(pc),a4
           clr.w fadeflg                 ;interdit les appels en boucle
 ; fade
           lea $ff8240+30,a0
-          move.l ecran.l,a1 /* XXX */
+          move.l v_bas_ad.l,a1 /* XXX */
           lea 32030(a1),a1
           moveq #15,d4
 ; boucle de fade
@@ -3972,7 +4431,13 @@ showshow: move.l admouse(pc),a0
           bne.s mst1
           cmp ymouse(pc),d2
           beq.s mst2
-mst1:     move d1,xmouse
+mst1:
+          .IFNE FALCON
+          .IFEQ COMPILER
+          nop /* XXX */
+          .ENDC
+          .ENDC
+          move d1,xmouse
           move d2,ymouse
           addi.w #640,d1
           addi.w #400,d2
@@ -4358,7 +4823,7 @@ appear:   clr intmouse
           lsl #1,d4                     ;d4: passage d'un mot a l'autre
           subq #1,d5                    ;indice nbplans en d5
 
-; affiche le point selectionn‚
+; displays the selected point 
 app1:     move.l a0,a2                  ;adresse fraiches
           move.l a1,a3
           move.l a6,d0                  ;numero du point
@@ -4397,9 +4862,4285 @@ app5:     move.w d1,(a3)+
 appfin:   move #1,intmouse
           rts
 
-; adresse de chargement des sprites
-even
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+		.IFNE FALCON
+
+SCRATCHBUF_SIZE equ 1024
+
+MD_REPLACE = 0
+MD_TRANS   = 1
+
+TXT_LIGHT = 2
+
+MAX_DRIVES = 16
+MAX_FILES  = 1200
+DISP_FILES = 13
+MAX_OBJECTS = (MAX_DRIVES+DISP_FILES+7)
+
+OBJ_DRIVEA   = 1
+OBJ_UPARROW  = OBJ_DRIVEA+MAX_DRIVES /* 17 */
+OBJ_DNARROW  = OBJ_UPARROW+1 /* 18 */
+OBJ_CLOSER   = OBJ_DNARROW+1 /* 19 */
+OBJ_FILENAME = OBJ_CLOSER+1 /* 20 */
+OBJ_OKBUTTON = OBJ_FILENAME+DISP_FILES
+OBJ_CANCELBUTTON = OBJ_OKBUTTON+1
+
+falc_initfont:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     #2,-(a7) /* Physbase */
+		trap       #14
+		addq.l     #2,a7
+		lea.l      physic(pc),a1
+		move.l     d0,(a1)
+		move.w     #3,-(a7) /* Logbase */
+		trap       #14
+		addq.l     #2,a7
+		lea.l      logic(pc),a1
+		move.l     d0,(a1)
+		move.w     falcon_font(pc),d0
+		move.w     #W_getcharset,d7
+		trap       #3
+		movea.l    d0,a0
+		lea.l      fontptr(pc),a1
+		move.l     a0,(a1)
+		lea.l      fontsizes(pc),a1
+		move.l     4(a0),(a1)
+		dc.w 0xa000 /* linea_init */
+		lea.l      lineavars(pc),a1
+		move.l     a0,(a1)
+		move.w     LA_PLANES(a0),d0
+		move.w     V_BYTES_LIN(a0),d1
+		lea.l      falcon_planes(pc),a1
+		move.w     d0,(a1)+
+		move.w     d1,(a1)+ /* falcon_bytes_line */
+		clr.l      d2
+		move.w     fontsizes(pc),d2
+		asl.w      #3,d2
+		lea.l      cell_maxx(pc),a1
+		clr.l      d1
+		move.w     V_REZ_HZ(a0),d1
+		divu.w     d2,d1
+		move.w     d1,(a1)
+		clr.l      d2
+		move.w     fontsizes+2(pc),d2
+		clr.l      d1
+		move.w     DEV_TAB+2(a0),d1
+		addq.w     #1,d1
+		divu.w     d2,d1
+		move.w     d1,cell_maxy-cell_maxx(a1)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_print:
+		bsr        falc_initfont
+		lea.l      pen_status(pc),a1
+		move.w     falc_pencolor(pc),textcolor-pen_status(a1)
+		move.w     (a0)+,d7
+		subq.w     #1,d7
+falc_print1:
+		move.b     (a0)+,d0
+		movem.l    d7/a0,-(a7)
+		bsr.w      falc_printchr /* XXX */
+		movem.l    (a7)+,d7/a0
+		dbf        d7,falc_print1
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_centre:
+		bsr        falc_initfont
+		lea.l      pen_status(pc),a1
+		move.w     falc_pencolor(pc),textcolor-pen_status(a1)
+		lea.l      xcursor(pc),a2
+		move.w     cell_maxx(pc),d1
+		move.w     (a0)+,d7
+		sub.w      d7,d1
+		asr.w      #1,d1
+		move.w     d1,(a2)
+		subq.w     #1,d7
+falc_centre1:
+		move.b     (a0)+,d0
+		movem.l    d7/a0,-(a7)
+		bsr.w      falc_printchr /* XXX */
+		movem.l    (a7)+,d7/a0
+		dbf        d7,falc_centre1
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_printchr:
+		cmpi.w     #16,falcon_planes
+		beq        printchr_hi
+		andi.l     #255,d0
+		cmpi.b     #13,d0
+		beq        printchr_cr
+		cmpi.b     #10,d0
+		beq        printchr_nl
+		cmpi.b     #' ',d0
+		bcs.w      printchr8
+		bsr        get_charaddr
+		bsr        get_screenaddr
+		subq.w     #1,d7
+		move.w     textcolor(pc),d6
+		move.l     falc_papercolor(pc),d4
+		swap       d4
+printchr1:
+		clr.l      d3
+		clr.l      d5
+		movea.l    a2,a5
+printchr2:
+		cmpi.l     #-1,d4
+		beq.s      printchr3
+		clr.b      (a2)
+		btst       d3,d4
+		beq.s      printchr4
+		move.b     #-1,(a2)
+		bra.s      printchr4
+printchr3:
+		move.b     (a1),d0
+		not.b      d0
+		and.b      d0,(a2)
+printchr4:
+		btst       d5,d6
+		beq.s      printchr5
+		move.b     (a1),d0
+		or.b       d0,(a2)
+printchr5:
+		addq.w     #1,d3
+		addq.w     #1,d5
+		cmp.w      falcon_planes(pc),d5
+		bge.s      printchr6
+		addq.l     #2,a2
+		bra.s      printchr2
+printchr6:
+		move.w     pen_status(pc),d0
+		tst.w      d0
+		beq.s      printchr7
+		cmp.w      d6,d4
+		beq.s      printchr7
+		add.w      txtbgcolor(pc),d6
+printchr7:
+		addq.l     #1,a1
+		movea.l    a5,a2
+		adda.w     falcon_bytes_line(pc),a2
+		dbf        d7,printchr1
+		lea.l      xcursor(pc),a4
+		move.w     fontsizes(pc),d1
+		add.w      d1,(a4)
+		move.w     cell_maxx(pc),d1
+		cmp.w      (a4),d1
+		bgt.s      printchr8
+		bsr.s      printchr_cr
+		bra.s      printchr_nl
+printchr8:
+		rts
+printchr_cr:
+		lea.l      xcursor(pc),a4
+		clr.w      (a4)
+		rts
+printchr_nl:
+		lea.l      xcursor(pc),a4
+		addq.w     #1,ycursor-xcursor(a4)
+		move.w     cell_maxy(pc),d1
+		cmp.w      ycursor-xcursor(a4),d1
+		bgt.s      printchr_nl1
+		subq.w     #1,ycursor-xcursor(a4)
+		clr.w      (a4)
+		bsr        scroll_screen
+printchr_nl1:
+		rts
+
+printchr_hi:
+		andi.l     #255,d0
+		cmpi.b     #13,d0
+		beq.s      printchr_hi_cr
+		cmpi.b     #10,d0
+		beq.s      printchr_hi_nl
+		cmpi.b     #' ',d0
+		bcs.w      printchr_hi7
+		bsr        get_charaddr
+		bsr        get_screenaddr
+		move.w     textcolor(pc),d6
+		subq.w     #1,d7
+printchr_hi1:
+		moveq.l    #7,d4
+		clr.l      d5
+		movea.l    a2,a5
+		move.b     (a1),d5
+printchr_hi2:
+		btst       d4,d5
+		beq.s      printchr_hi3
+		move.w     d6,(a5)+
+		bra.s      printchr_hi5
+printchr_hi3:
+		move.l     falc_papercolor(pc),d0
+		cmpi.l     #-1,d0
+		bne.s      printchr_hi4
+		addq.l     #2,a5
+		bra.s      printchr_hi5
+printchr_hi4:
+		move.w     falc_papercolor(pc),(a5)+
+printchr_hi5:
+		dbf        d4,printchr_hi2
+		tst.w      pen_status
+		beq.s      printchr_hi6
+		cmp.w      falc_papercolor(pc),d6
+		beq.s      printchr_hi6
+		add.w      txtbgcolor(pc),d6
+printchr_hi6:
+		addq.l     #1,a1
+		adda.w     falcon_bytes_line(pc),a2
+		dbf        d7,printchr_hi1
+		lea.l      xcursor(pc),a4
+		move.w     fontsizes(pc),d1
+		add.w      d1,(a4)
+		move.w     cell_maxx(pc),d1
+		cmp.w      (a4),d1
+		bgt.s      printchr_hi7
+		bsr.s      printchr_hi_cr
+		bra.s      printchr_hi_nl
+printchr_hi7:
+		rts
+printchr_hi_cr:
+		lea.l      xcursor(pc),a4
+		clr.w      (a4)
+		rts
+printchr_hi_nl:
+		lea.l      xcursor(pc),a4
+		addq.w     #1,ycursor-xcursor(a4)
+		move.w     cell_maxy(pc),d1
+		cmp.w      ycursor-xcursor(a4),d1
+		bgt.s      printchr_hi_nl1
+		subq.w     #1,ycursor-xcursor(a4)
+		clr.w      (a4)
+		bsr.w      scroll_screen /* XXX */
+printchr_hi_nl1:
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+scroll_screen:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		lea.l      bitblt(pc),a1
+		move.w     V_REZ_HZ(a0),(a1)+ /* b_wd */
+		move.w     DEV_TAB+2(a0),d1
+		addq.w     #1,d1
+		sub.w      fontsizes+2(pc),d1
+		move.w     d1,(a1)+ /* b_ht */
+		move.w     falcon_planes(pc),d6
+		move.w     d6,d2
+		asl.w      #1,d2
+		move.w     d6,(a1)+ /* plane_cnt */
+		move.w     #1,(a1)+ /* fg_col */
+		move.w     #0,(a1)+ /* bg_col */
+		move.l     #0x03030303,(a1)+ /* op_tab 4 x S_ONLY */
+		move.w     #0,(a1)+ /* s_xmin */
+		move.w     fontsizes+2(pc),(a1)+ /* s_ymin */
+		move.l     physic(pc),(a1)+ /* s_form */
+		move.w     d2,(a1)+ /* s_nxwd */
+		move.w     falcon_bytes_line(pc),(a1)+ /* s_nxln */
+		move.w     #2,(a1)+ /* s_nxpl */
+		move.w     #0,(a1)+ /* d_xmin */
+		move.w     #0,(a1)+ /* d_ymin */
+		move.l     physic(pc),(a1)+ /* d_form */
+		move.w     d2,(a1)+ /* d_nxwd */
+		move.w     falcon_bytes_line(pc),(a1)+ /* d_nxln */
+		move.w     #2,(a1)+ /* d_nxpl */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt(pc),a6
+		dc.w 0xa007 /* bit_blt */
+		movea.l    lineavars(pc),a0
+		lea.l      bitblt(pc),a1
+		move.w     V_REZ_HZ(a0),(a1)+ /* b_wd */
+		move.w     fontsizes+2(pc),(a1)+ /* b_ht */
+		move.w     falcon_planes(pc),d6
+		move.w     d6,d2
+		asl.w      #1,d2
+		move.w     d6,(a1)+ /* plane_cnt */
+		move.w     #1,(a1)+ /* fg_col */
+		move.w     #0,(a1)+ /* bg_col */
+		move.l     #0,(a1)+ /* op_tab */
+		move.w     DEV_TAB+2(a0),d4
+		addq.w     #1,d4
+		sub.w      fontsizes+2(pc),d4
+		move.w     #0,(a1)+ /* s_xmin */
+		move.w     d4,(a1)+ /* s_ymin */
+		move.l     physic(pc),(a1)+ /* s_form */
+		move.w     d2,(a1)+ /* s_nxwd */
+		move.w     falcon_bytes_line(pc),(a1)+ /* s_nxln */
+		move.w     #2,(a1)+ /* s_nxpl */
+		move.w     #0,(a1)+ /* d_xmin */
+		move.w     d4,(a1)+ /* d_ymin */
+		move.l     physic(pc),(a1)+ /* d_form */
+		move.w     d2,(a1)+ /* d_nxwd */
+		move.w     falcon_bytes_line(pc),(a1)+ /* d_nxln */
+		move.w     #2,(a1)+ /* d_nxpl */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt(pc),a6
+		dc.w 0xa007 /* bit_blt */
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+multipen_status:
+		move.w     pen_status(pc),d0
+		andi.l     #$0000FFFF,d0
+		ext.l      d0
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+multipen_off:
+		lea.l      pen_status(pc),a0
+		clr.w      (a0)
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+multipen_on:
+		lea.l      pen_status(pc),a0
+		move.w     #-1,(a0)
+		cmpi.w     #16,falcon_planes
+		beq.s      multipen_on1
+		lea.l      txtbgcolor(pc),a0
+		andi.l     #255,d2
+		move.w     d2,(a0)
+		bra.s      multipen_on2
+multipen_on1:
+		lsl.w      #6,d2
+		lsl.w      #5,d2
+		lsl.w      #6,d3
+		or.w       d3,d2
+		or.w       d4,d2
+		lea.l      txtbgcolor(pc),a0
+		move.w     d2,(a0)
+multipen_on2:
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+get_charaddr:
+		subi.b     #$20,d0
+		movea.l    fontptr(pc),a1
+		.IFNE COMPILER
+		.dc.w 0xd3fc,0,264 /* XXX */
+		.ELSE
+		lea.l      264(a1),a1
+		.ENDC
+		lea.l      fontsizes(pc),a3
+		move.w     (a3),d5
+		move.w     2(a3),d6
+		mulu.w     d6,d5
+		mulu.w     d5,d0
+		adda.l     d0,a1
+		move.w     2(a3),d7
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+get_screenaddr:
+		cmpi.w     #16,falcon_planes
+		beq.w      get_screenaddr2
+		movea.l    logic(pc),a2
+		move.w     ycursor(pc),d6
+		move.w     fontsizes+2(pc),d5
+		mulu.w     d5,d6
+		mulu.w     falcon_bytes_line(pc),d6
+		adda.l     d6,a2
+		move.w     xcursor(pc),d6
+		btst       #0,d6
+		beq.w      get_screenaddr1
+		subq.w     #1,d6
+		addq.l     #1,a2
+get_screenaddr1:
+		mulu.w     falcon_planes(pc),d6
+		adda.l     d6,a2
+		rts
+get_screenaddr2:
+		movea.l    logic(pc),a2
+		move.w     ycursor(pc),d6
+		move.w     fontsizes+2(pc),d5
+		mulu.w     d5,d6
+		mulu.w     falcon_bytes_line(pc),d6
+		adda.l     d6,a2
+		move.w     xcursor(pc),d6
+		asl.w      #4,d6
+		adda.w     d6,a2
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_pen:
+		lea.l      falc_pencolor(pc),a0
+		andi.l     #$0000FFFF,d1
+		move.w     d1,(a0)
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_paper:
+		lea.l      falc_papercolor(pc),a0
+		swap       d1
+		move.l     d1,(a0)
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_locate:
+		bsr        falc_initfont
+		lea.l      xcursor(pc),a0
+		move.w     cell_maxx(pc),d0
+		swap       d1
+		cmp.w      d0,d1
+		blt.s      falc_locate1
+		move.w     d0,d1
+		subq.w     #1,d1
+falc_locate1:
+		swap       d1
+		move.w     cell_maxy(pc),d0
+		cmp.w      d0,d1
+		blt.s      falc_locate2
+		move.w     d0,d1
+		subq.w     #1,d1
+falc_locate2:
+		move.l     d1,(a0)
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_xcurs:
+		move.w     xcursor(pc),d0
+		andi.l     #255,d0
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+falc_ycurs:
+		move.w     ycursor(pc),d0
+		andi.l     #255,d0
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+stosfont:
+		andi.l     #255,d1
+		lea.l      falcon_font(pc),a0
+		move.w     d1,(a0)
+		bsr        falc_initfont
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+charwidth:
+		move.w     fontsizes(pc),d0
+		andi.l     #255,d0
+		asl.w      #3,d0
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+charheight:
+		move.w     fontsizes+2(pc),d0
+		andi.l     #255,d0
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+st_mouse:
+		.IFNE COMPILER
+		andi.l     #15,d1 /* XXX */
+		.ELSE
+		andi.l     #255,d1
+		.ENDC
+		subq.w     #1,d1
+		bmi.w      st_mouse1
+		cmpi.w     #3,d1
+		bgt.w      st_mouse1
+		lea.l      mouseptr(pc),a0
+		lea.l      mouse_data(pc),a1
+		mulu.w     #74,d1
+		adda.w     d1,a1
+		move.l     a1,(a0)
+		bsr.w      transform_mouse /* XXX */
+st_mouse1:
+		rts
+
+transform_mouse:
+		movea.l    mouseptr(pc),a1
+		lea.l      mousebuf(pc),a2
+		lea.l      10(a1),a1 /* ptr to first mask word */
+		/* adda.l     #((5+16*16)*2),a2 */
+		dc.w 0xd5fc,0,((5+16*16)*2) /* XXX */
+		move.w     #16-1,d6
+transform_mouse1:
+		move.w     #16-1,d7
+		move.w     (a1),d5
+transform_mouse2:
+		btst       d7,d5
+		beq.s      transform_mouse3
+		move.w     #0,(a2)+
+		bra.s      transform_mouse4
+transform_mouse3:
+		move.w     #-1,(a2)+
+transform_mouse4:
+		dbf        d7,transform_mouse2
+		addq.l     #4,a1
+		dbf        d6,transform_mouse1
+		movea.l    mouseptr(pc),a1
+		lea.l      mousebuf(pc),a2
+		lea.l      12(a1),a1 /* ptr to first data word */
+		lea.l      10(a2),a2
+		move.w     -2(a2),d0 /* get fgcolor */
+		move.w     #16-1,d6
+transform_mouse5:
+		move.w     #16-1,d7
+		move.w     (a1),d5
+transform_mouse6:
+		btst       d7,d5
+		bne.s      transform_mouse7
+		move.w     #0,(a2)+
+		bra.s      transform_mouse8
+transform_mouse7:
+		move.w     d0,(a2)+
+transform_mouse8:
+		dbf        d7,transform_mouse6
+		addq.l     #4,a1
+		dbf        d6,transform_mouse5
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+st_mouse_color:
+		andi.l     #$0000FFFF,d1
+		cmpi.w     #16,nbplan
+		bne.s      st_mouse_color3
+		lea.l      mousebuf(pc),a0
+		move.w     d1,8(a0)
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        transform_mouse
+		move.w     mouse_stat(pc),d1
+		tst.w      d1
+		beq.s      st_mouse_color2
+		bsr        st_mouse_off
+		bsr.w      st_mouse_on
+st_mouse_color2:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+st_mouse_color3:
+		lea.l      mouse_data(pc),a0
+		move.w     d1,8(a0)
+		lea.l      mouse_data+1*74(pc),a0
+		move.w     d1,8(a0)
+		lea.l      mouse_data+2*74(pc),a0
+		move.w     d1,8(a0)
+		lea.l      mouse_data+3*74(pc),a0
+		move.w     d1,8(a0)
+		lea.l      cursor_data(pc),a0
+		move.w     d1,8(a0)
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     mouse_stat(pc),d1
+		tst.w      d1
+		beq.s      st_mouse_color4
+		bsr        st_mouse_off
+		bsr.w      st_mouse_on
+st_mouse_color4:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+st_mouse_on:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     st_mouse_is_on(pc),d0
+		tst.w      d0 /* XXX */
+		bne.w      st_mouse_on1 /* XXX */
+		bsr        mouse
+		lea.l      mousepos(pc),a1
+		movem.w    d0-d1,(a1)
+		cmpi.w     #16,nbplan
+		beq.w      st_mouse_on2 /* XXX */
+		movea.l    mouseptr(pc),a0
+		lea.l      mouse_savebuf(pc),a2
+		dc.w 0xa00d /* draw_sprite */
+		lea.l      gooldvbl+2(pc),a0 /* FIXME: self-modifyng */
+		move.l     $00000070.l,(a0) /* XXX */
+		clr.w      mouse_saved_flag
+		lea.l      newvbl(pc),a1
+		move.l     a1,$00000070.l /* XXX */
+		move.w     #-1,d1
+		lea.l      st_mouse_is_on(pc),a0
+		move.w     d1,(a0)
+		bsr        set_mouse_stat
+st_mouse_on1:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+st_mouse_on2:
+		move.w     #2,-(a7)
+		trap       #14
+		addq.l     #2,a7 /* Physbase */
+		lea.l      physic(pc),a1
+		move.l     d0,(a1)
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		move.w     mousepos(pc),d0
+		move.w     mousepos+2(pc),d1
+		bsr        draw_mouse
+		lea.l      gooldvbl+2(pc),a0 /* FIXME: self-modifyng */
+		move.l     $00000070.l,(a0) /* XXX */
+		clr.w      mouse_saved_flag
+		lea.l      newvbl(pc),a1
+		move.l     a1,$00000070.l /* XXX */
+		move.w     #-1,d1
+		lea.l      st_mouse_is_on(pc),a0
+		move.w     d1,(a0)
+		bsr        set_mouse_stat
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+st_mouse_off:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     st_mouse_is_on(pc),d0
+		tst.w      d0 /* XXX */
+		beq.w      st_mouse_off1 /* XXX */
+		cmpi.w     #16,nbplan
+		beq.w      st_mouse_off2 /* XXX */
+		movea.l    gooldvbl+2(pc),a0
+		/* movea.l    #$00000070,a1 */ /* XXX */
+		dc.w 0x227c,0,0x0070
+		move.l     a0,(a1)
+		clr.w      mouse_saved_flag
+		lea.l      st_mouse_is_on(pc),a0
+		move.w     #0,(a0)
+		lea.l      mouse_savebuf(pc),a2
+		dc.w 0xa00c /* undraw_sprite */
+		lea.l      mousepos(pc),a1
+		clr.l      (a1)+
+		clr.l      (a1)+
+		moveq.l    #0,d1
+		bsr        set_mouse_stat
+st_mouse_off1:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+st_mouse_off2:
+		movea.l    gooldvbl+2(pc),a0
+		/* movea.l    #$00000070,a1 */ /* XXX */
+		dc.w 0x227c,0,0x0070
+		move.l     a0,(a1)
+		clr.w      mouse_saved_flag
+		lea.l      st_mouse_is_on(pc),a0
+		move.w     #0,(a0)
+		bsr        undraw_mouse
+		lea.l      mousepos(pc),a1
+		clr.l      (a1)+
+		clr.l      (a1)+
+		moveq.l    #0,d1
+		bsr        set_mouse_stat
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+st_mouse_stat:
+		move.w     mouse_stat(pc),d1
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+newvbl:
+		movem.l    d0-d7/a0-a6,-(a7)
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		bsr        mouse
+		lea.l      mousepos(pc),a1
+		movem.w    d0-d1,4(a1)
+		movem.l    (a1),d0-d1
+		cmp.l      d0,d1
+		beq.w      newvbl2 /* XXX */
+		move.l     d1,(a1)
+		move.l     d0,4(a1)
+		cmpi.w     #16,nbplan
+		beq.w      newvbl1
+		lea.l      mouse_savebuf(pc),a2
+		dc.w 0xa00c /* undraw_sprite */
+		lea.l      mousepos(pc),a1
+		movem.w    (a1),d0-d1
+		movea.l    mouseptr(pc),a0
+		lea.l      mouse_savebuf(pc),a2
+		dc.w 0xa00d /* draw_sprite */
+		bra.w      newvbl2 /* XXX */
+newvbl1:
+		bsr        undraw_mouse
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		move.w     mousepos+4(pc),d0
+		move.w     mousepos+6(pc),d1
+		bsr.w      draw_mouse
+newvbl2:
+		movem.l    (a7)+,d0-d7/a0-a6
+gooldvbl: jmp 0.l
+
+
+mouse_saved_flag: ds.w 1 /* FIXME: unused */
+st_mouse_is_on: ds.w 1
+mousepos: ds.w 4
+
+
+draw_mouse:
+		movem.l    d0-d7/a0-a6,-(a7) /* FIXME: only save really used regs */
+		movea.l    lineavars(pc),a0
+		move.w     DEV_TAB(a0),d3
+		/* addq.w     #1,d3 */
+		dc.w 0x0643,1 /* XXX */
+		andi.l     #$0000FFFF,d3 /* FIXME: unneeded */
+		cmp.w      d0,d3
+		beq        draw_mouse8
+		lea.l      mousebuf(pc),a3
+		lea.l      10(a3),a3
+		lea.l      mouse_savebuf(pc),a2
+		move.w     d0,4(a2) /* xpos */
+		move.w     d1,6(a2) /* ypos */
+		sub.w      d0,d3
+		cmpi.w     #16,d3
+		ble.s      draw_mouse1
+		move.w     #16,d3
+draw_mouse1:
+		move.w     d3,8(a2) /* number of words in x-direction */
+		movea.l    physic(pc),a1
+		moveq.l    #0,d2
+		move.w     sp6(pc),d2
+		mulu.w     d2,d1
+		asl.w      #1,d0
+		adda.l     d1,a1
+		adda.l     d0,a1
+		move.l     a1,(a2) /* screen address */
+		lea.l      10(a2),a2
+		movem.l    d0-d7/a0-a6,-(a7) /* save registers for loop below FIXME: only save really used regs */
+		/* adda.l     #16*16*2,a3 */
+		dc.w 0xd7fc,0,16*16*2 /* XXX */
+		move.w     #16-1,d7 /* BUG: may read below last screen line */
+draw_mouse2:
+		moveq.l    #0,d6
+		movea.l    a1,a6
+draw_mouse3:
+		move.w     (a1),(a2)+
+		move.w     0(a3,d6.w*2),d0 ; FIXME: 68020+ only
+		tst.w      d0
+		bne.s      draw_mouse4
+		move.w     d0,(a1)
+draw_mouse4:
+		addq.w     #2,a1
+		addq.w     #1,d6
+		cmp.w      d3,d6
+		bne.s      draw_mouse3
+		movea.l    a6,a1
+		adda.l     d2,a1
+		lea.l      32(a3),a3
+		dbf        d7,draw_mouse2
+		movem.l    (a7)+,d0-d7/a0-a6
+		move.w     #16-1,d7
+draw_mouse5:
+		moveq.l    #0,d6
+		movea.l    a1,a6
+draw_mouse6:
+		move.w     0(a3,d6.w*2),d0 ; FIXME: 68020+ only
+		tst.w      d0
+		beq.s      draw_mouse7
+		move.w     d0,(a1)
+draw_mouse7:
+		addq.w     #2,a1
+		addq.w     #1,d6
+		cmp.w      d3,d6
+		bne.s      draw_mouse6
+		movea.l    a6,a1
+		adda.l     d2,a1
+		lea.l      32(a3),a3
+		dbf        d7,draw_mouse5
+draw_mouse8:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+undraw_mouse:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      mouse_savebuf(pc),a2
+		movea.l    (a2)+,a1
+		move.w     (a2)+,d0 /* xpos */
+		move.w     (a2)+,d1 /* ypos */
+		move.w     (a2)+,d2 /* number of words in x-direction */
+		moveq.l    #0,d3
+		move.w     sp6(pc),d3
+		move.w     #16-1,d7 /* BUG: may read below last screen line */
+undraw_mouse1:
+		moveq.l    #0,d4
+		movea.l    a1,a6
+undraw_mouse2:
+		move.w     (a2)+,(a1)+
+		addq.w     #1,d4
+		cmp.w      d4,d2
+		bne.s      undraw_mouse2
+		movea.l    a6,a1
+		adda.l     d3,a1
+		dbf        d7,undraw_mouse1
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+* New 3D file selector
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+*
+* Inputs:
+*   D1: background color
+*   D2: button color1
+*   D3: button color2
+*   D4: text color1
+*   D5: text color2
+*   A2: path$
+*   A3: title$
+* Outputs:
+*   A0: filename$
+*
+fileselect:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     mouse_stat(pc),d1
+		move.w     d1,mouse_stat_save
+		tst.w      d1 /* XXX unneeded */
+		beq.s      fileselect1
+		bsr        st_mouse_off
+fileselect1:
+		move.w     #2,-(a7)
+		trap       #14
+		addq.l     #2,a7
+		lea.l      physic(pc),a1
+		move.l     d0,(a1)
+		bsr        set_fontheight
+		movem.l    (a7)+,d0-d7/a0-a6
+		bsr        save_linea_clip
+		clr.l      lastkey
+		clr.w      edit_obj
+		clr.l      fs_entrybox+8
+		bsr        calc_coordinates
+		bsr        calc_objects
+		bsr        init_drives
+		bsr        draw_selector
+		bsr        st_mouse_on
+fileselect2:
+		move.l     lastkey(pc),d0
+		cmpi.w     #13,d0
+		beq.w      fileselect4 /* XXX */
+		bsr        fs_getkey
+		tst.l      lastkey
+		beq.s      fileselect3
+		move.l     lastkey(pc),d0
+		cmpi.w     #13,d0
+		beq.w      fileselect4 /* XXX */
+		bsr        handle_key
+fileselect3:
+		bsr        find_object
+		lea.l      curr_obj(pc),a2
+		move.w     d1,(a2)
+		move.w     curr_obj(pc),d6
+		tst.w      d6
+		beq.w      fileselect2 /* XXX */
+		bsr        handle_obj
+		cmpi.w     #1,d0
+		bne.w      fileselect2 /* XXX */
+		bsr        undraw_cursor
+		cmpi.w     #OBJ_OKBUTTON,d6
+		beq.w      fileselect4 /* XXX */
+		cmpi.w     #OBJ_CANCELBUTTON,d6
+		beq.w      fileselect6 /* XXX */
+		bra.w      fileselect2 /* XXX */
+fileselect4:
+		bsr        undraw_cursor
+		bsr        st_mouse_off
+		move.w     mouse_stat_save(pc),d1
+		tst.w      d1
+		beq.s      fileselect5
+		bsr        st_mouse_on
+fileselect5:
+		bsr.w      restore_linea_clip /* XXX */
+		lea.l      fs_entrybox+8(pc),a0
+		rts
+fileselect6:
+		bsr        undraw_cursor
+		bsr        st_mouse_off
+		move.w     mouse_stat_save(pc),d1
+		tst.w      d1
+		beq.s      fileselect7
+		bsr        st_mouse_on
+fileselect7:
+		bsr.w      restore_linea_clip /* XXX */
+		lea.l      fs_entrybox+8(pc),a0
+		clr.l      (a0)
+		rts
+
+save_linea_clip:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		lea.l      la_cliprect(pc),a1
+		move.w     LA_XMN_CLIP(a0),(a1)+
+		move.w     LA_YMN_CLIP(a0),(a1)+
+		move.w     LA_XMX_CLIP(a0),(a1)+
+		move.w     LA_YMX_CLIP(a0),(a1)+
+		move.w     LA_CLIP(a0),(a1)+
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+restore_linea_clip:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		lea.l      la_cliprect(pc),a1
+		move.w     (a1)+,LA_XMN_CLIP(a0)
+		move.w     (a1)+,LA_YMN_CLIP(a0)
+		move.w     (a1)+,LA_XMX_CLIP(a0)
+		move.w     (a1)+,LA_YMX_CLIP(a0)
+		move.w     (a1)+,LA_CLIP(a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+mouse_stat_save:            dc.l       0
+la_cliprect: ds.w 6
+
+
+set_fontheight:
+		lea.l      mch_cookie(pc),a1
+		cmpi.l     #0x00030000,(a1)
+		bne.s      set_fontheight1
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		lea.l      falconmode(pc),a1
+		move.w     d0,(a1)
+		btst       #7,d0 /* ST-compatible? */
+		beq.s      set_fontheight3
+set_fontheight1:
+		move.w     #4,-(a7) /* yes, use Getrez */
+		trap       #14
+		addq.l     #2,a7
+		cmpi.w     #2,d0    /* highcolor? */
+		blt.s      set_fontheight2
+		lea.l      fontheight(pc),a1 /* yes, use large font */
+		move.w     #16,(a1)
+		lea.l      sysfont(pc),a1
+		move.w     #2,(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #0x00080000,(a1)
+		rts
+set_fontheight2:
+		lea.l      fontheight(pc),a1 /* no, use small font */
+		move.w     #8,(a1)
+		lea.l      sysfont(pc),a1
+		move.w     #1,(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #0x00080004,(a1)
+		rts
+set_fontheight3:
+		btst       #4,d0 /* VGA mode? */
+		beq.w      set_fontheight6 /* XXX */
+		btst       #8,d0 /* interlace? */
+		bne.s      set_fontheight5
+		lea.l      fontheight(pc),a1
+		move.w     #16,(a1)
+		lea.l      sysfont(pc),a1
+		move.w     #2,(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #0x00080000,(a1)
+		rts
+set_fontheight5:
+		lea.l      fontheight(pc),a1
+		move.w     #8,(a1)
+		lea.l      sysfont(pc),a1
+		move.w     #1,(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #0x00080004,(a1)
+		rts
+set_fontheight6:
+		btst       #8,d0
+		bne.s      set_fontheight7
+		lea.l      fontheight(pc),a1
+		move.w     #8,(a1)
+		lea.l      sysfont(pc),a1
+		move.w     #1,(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #0x00080004,(a1)
+		rts
+set_fontheight7:
+		lea.l      fontheight(pc),a1
+		move.w     #16,(a1)
+		lea.l      sysfont(pc),a1
+		move.w     #2,(a1)
+		lea.l      cursor_data(pc),a1
+		move.l     #0x00080000,(a1)
+		rts
+
+handle_key:
+		cmpi.w     #27,d0
+		beq.w      handle_key_1 /* XXX */
+		cmpi.w     #8,d0
+		beq.w      handle_key_5 /* XXX */
+		cmpi.w     #'.',d0
+		beq        handle_key_8
+		bsr        handle_char
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+handle_key_1:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        st_mouse_off
+		lea.l      fs_entrybox+8(pc),a1
+		tst.w      edit_obj
+		beq.w      handle_key_2 /* XXX */
+		lea.l      fs_pathbox+8(pc),a1
+handle_key_2:
+		move.l     #0,(a1)
+		tst.w      edit_obj
+		bne.w      handle_key_3 /* XXX */
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		bra.w      handle_key_4 /* XXX */
+handle_key_3:
+		bsr        draw_path
+handle_key_4:
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+handle_key_5:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        st_mouse_off
+		bsr        edit_strlen
+		lea.l      fs_entrybox+8(pc),a2
+		cmpa.l     a2,a1
+		beq.w      handle_key_7 /* XXX */
+		move.b     #0,-(a1)
+		tst.w      edit_obj
+		bne.w      handle_key_6 /* XXX */
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		bra.w      handle_key_7 /* XXX */
+handle_key_6:
+		bsr        draw_path
+handle_key_7:
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+handle_key_8:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        st_mouse_off
+		bsr        edit_strlen
+		tst.w      d1
+		beq.s      handle_key_10
+		cmpi.w     #12,d1
+		bge.s      handle_key_10
+		cmpi.w     #8,d1
+		.IFNE COMPILER
+		blt.w      handle_key_11 /* XXX */
+		.ELSE
+		blt.s      handle_key_11
+		.ENDC
+		cmpi.w     #9,d1
+		bge.s      handle_key_10
+		move.b     #'.',(a1)+
+		move.b     #0,(a1)
+		tst.w      edit_obj
+		.IFNE COMPILER
+		bne.w      handle_key_9 /* XXX */
+		.ELSE
+		bne.s      handle_key_9
+		.ENDC
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		bra.s      handle_key_10
+handle_key_9:
+		bsr        draw_path
+handle_key_10:
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+handle_key_11:
+		move.b     #' ',(a1)+
+		addq.l     #1,d1
+		cmpi.w     #8,d1
+		blt.w      handle_key_11 /* XXX */
+		move.b     #'.',(a1)+
+		move.b     #0,(a1)
+		tst.w      edit_obj
+		bne.w      handle_key_12 /* XXX */
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		.IFNE COMPILER
+		bra.s      handle_key_13 /* XXX */
+		.ELSE
+		bra.w      handle_key_13 /* XXX */
+		.ENDC
+handle_key_12:
+		bsr        draw_path
+handle_key_13:
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+
+handle_char:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        st_mouse_off
+		cmpi.w     #'0',d0
+		blt.w      handle_char_4 /* XXX */
+		cmpi.w     #'9',d0
+		bgt.w      handle_char_4 /* XXX */
+		bsr        edit_strlen
+		cmpi.w     #12,d1
+		.IFNE COMPILER
+		bge.s      handle_char_3 /* XXX */
+		.ELSE
+		bge.w      handle_char_3 /* XXX */
+		.ENDC
+		cmpi.w     #8,d1
+		bne.w      handle_char_1 /* XXX */
+		move.b     #'.',(a1)+
+handle_char_1:
+		move.b     d0,(a1)+
+		move.b     #0,(a1)
+		tst.w      edit_obj
+		bne.w      handle_char_2 /* XXX */
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		.IFNE COMPILER
+		bra.s      handle_char_3 /* XXX */
+		.ELSE
+		bra.w      handle_char_3 /* XXX */
+		.ENDC
+handle_char_2:
+		bsr        draw_path
+handle_char_3:
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+handle_char_4:
+		cmpi.w     #'_',d0
+		beq.w      handle_char_5 /* XXX */
+		cmpi.w     #'*',d0
+		beq.w      handle_char_5 /* XXX */
+		cmpi.w     #'+',d0
+		beq.w      handle_char_5 /* XXX */
+		cmpi.w     #'-',d0
+		beq.w      handle_char_5 /* XXX */
+		cmpi.w     #'A',d0
+		blt.w      handle_char_8 /* XXX */
+		cmpi.w     #'z',d0
+		bgt.w      handle_char_8 /* XXX */
+		bclr       #5,d0 /* make uppercase */
+handle_char_5:
+		bsr.w      edit_strlen /* XXX */
+		cmpi.w     #12,d1
+		bge.w      handle_char_8 /* XXX */
+		cmpi.w     #8,d1
+		bne.w      handle_char_6 /* XXX */
+		move.b     #'.',(a1)+
+handle_char_6:
+		move.b     d0,(a1)+
+		move.b     #0,(a1)
+		tst.w      edit_obj
+		bne.w      handle_char_7 /* XXX */
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		bra.w      handle_char_8 /* XXX */
+handle_char_7:
+		bsr        draw_path
+handle_char_8:
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		/* moveq.l     #-1,d0 */
+		dc.w 0x203c,-1,-1 /* XXX */
+		rts
+
+
+edit_strlen:
+		clr.l      d1
+		lea.l      fs_entrybox+8(pc),a1
+		tst.w      edit_obj
+		beq.w      edit_strlen_1 /* XXX */
+		lea.l      fs_pathbox+8(pc),a1
+edit_strlen_1:
+		/* tst.b      (a1) */
+		dc.w 0x0c11,0 /* XXX */
+		beq.s      edit_strlen_2
+		addq.l     #1,a1
+		addq.l     #1,d1
+		bra.s      edit_strlen_1
+edit_strlen_2:
+		rts
+
+
+handle_obj:
+		cmpi.w     #OBJ_CLOSER,d6
+		beq        handle_closer
+		cmpi.w     #OBJ_UPARROW,d6
+		beq.w      handle_uparrow /* XXX */
+		cmpi.w     #OBJ_DNARROW,d6
+		beq        handle_downarrow
+		cmpi.w     #OBJ_FILENAME,d6
+		blt.w      handle_obj_1 /* XXX */
+		cmpi.w     #OBJ_FILENAME+DISP_FILES-1,d6
+		bgt.w      handle_obj_1 /* XXX */
+		bsr        handle_filename
+		rts
+handle_obj_1:
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		cmpi.w     #1,d0
+		bne.s      handle_obj_2
+		move.w     curr_obj(pc),d6
+		bsr        handle_drive
+handle_obj_2:
+		rts
+
+* up arrow was clicked
+handle_uparrow:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        find_object
+		cmp.w      d1,d6
+		bne.w      handle_uparrow4 /* XXX */
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		cmpi.w     #1,d0
+		beq.s      handle_uparrow5
+		cmpi.w     #2,d0
+		beq.s      handle_uparrow7
+handle_uparrow4:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+handle_uparrow5:
+		lea.l      first_file(pc),a0
+		move.w     (a0),d0
+		tst.w      d0
+		beq.w      handle_uparrow6 /* XXX */
+		subq.w     #1,d0
+		move.w     d0,(a0)
+		bsr        draw_filenames
+handle_uparrow6:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+handle_uparrow7:
+		lea.l      first_file(pc),a0
+		move.w     (a0),d0
+		tst.w      d0
+		beq.w      handle_uparrow9 /* XXX */
+		subi.w     #13,d0
+		bpl.s      handle_uparrow8
+		moveq.l    #0,d0
+handle_uparrow8:
+		move.w     d0,(a0)
+		bsr        draw_filenames
+handle_uparrow9:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+* down arrow was clicked
+handle_downarrow:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        find_object
+		cmp.w      d1,d6
+		bne.w      handle_downarrow1 /* XXX */
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		cmpi.w     #1,d0
+		beq.s      handle_downarrow2
+		cmpi.w     #2,d0
+		beq.s      handle_downarrow4
+handle_downarrow1:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+handle_downarrow2:
+		lea.l      first_file(pc),a0
+		move.w     (a0),d0
+		move.w     num_files,d1
+		cmpi.w     #DISP_FILES+1,d1
+		blt.s      handle_downarrow3
+		sub.w      d0,d1
+		cmpi.w     #DISP_FILES+1,d1
+		blt.s      handle_downarrow3
+		addq.w     #1,d0
+		move.w     d0,(a0)
+		bsr.w      draw_filenames /* XXX */
+handle_downarrow3:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+handle_downarrow4:
+		lea.l      first_file(pc),a0
+		move.w     (a0),d0
+		move.w     num_files,d1
+		cmpi.w     #14,d1
+		blt.s      handle_downarrow5
+		sub.w      d0,d1
+		cmpi.w     #14,d1
+		blt.s      handle_downarrow5
+		addi.w     #13,d0
+		move.w     d0,(a0)
+		bsr        draw_filenamebox
+handle_downarrow5:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+	
+draw_filenames:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     textbg_color(pc),-(a7)
+		move.w     #0,textbg_color
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_REPLACE,(a1)
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		lea.l      filenames(pc),a1
+		lea.l      fs_filename_coords(pc),a4
+		move.w     first_file(pc),d5
+		asl.w      #4,d5
+		adda.w     d5,a1
+		lea.l      textblit_coords(pc),a5
+		clr.l      d7
+draw_filenames_1:
+		move.w     num_files(pc),d6
+		cmp.w      d7,d6
+		beq.s      draw_filenames_4
+		cmpi.w     #DISP_FILES,d7
+		beq.s      draw_filenames_4
+		move.w     ZERO(a4),ZERO(a5)
+		move.w     2(a4),2(a5)
+		lea.l      textblit_str(pc),a2
+		move.l     a1,(a2)
+draw_filenames_2:
+		movea.l    textblit_str(pc),a3
+		/* tst.b     (a3) */
+		dc.w 0x0c13,0 /* XXX */
+		beq.s      draw_filenames_3
+		bsr        linea_textblit
+		bra.s      draw_filenames_2
+draw_filenames_3:
+		movea.l    textblit_str(pc),a1
+		addq.l     #1,a1
+		.IFNE COMPILER
+		.dc.w 0xd9fc,0,8 /* XXX */
+		.ELSE
+		addq.l     #8,a4
+		.ENDC
+		addq.w     #1,d7
+		bra.s      draw_filenames_1
+draw_filenames_4:
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_TRANS,(a1)
+		lea.l      textbg_color(pc),a0
+		move.w     (a7)+,(a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+handle_drive:
+		movem.l    d0-d7/a0-a6,-(a7)
+		cmpi.w     #OBJ_DRIVEA,d6
+		blt        handle_drive3
+		cmpi.w     #OBJ_DRIVEA+MAX_DRIVES-1,d6
+		bgt        handle_drive3
+		lea.l      fs_drives(pc),a4
+		move.w     d6,d5
+		subq.w     #OBJ_DRIVEA,d5
+		mulu.w     #12,d5
+		cmpi.b     #-1,8(a4,d5.w)
+		beq        handle_drive3
+		cmpi.b     #-1,9(a4,d5.w)
+		bne        handle_drive3
+handle_drive1:
+		bsr        find_object
+		cmp.w      d1,d6
+		bne        handle_drive3
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		cmpi.w     #1,d0
+		bne.s      handle_drive1
+		bsr        st_mouse_off
+		bsr.w      draw_drives
+		bsr        draw_selected_drive
+		bsr        st_mouse_on
+		clr.w      first_file
+		move.w     #-1,selected_file
+		/* subq.w     #1,d1 */
+		dc.w 0x0441,1 /* XXX */
+		move.w     d1,currdrive
+		bsr        set_rootdir
+		.IFNE COMPILER
+		bsr        undraw_cursor /* XXX */
+		.ENDC
+		bsr        clear_pathbox
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		bsr        get_curdir
+		bsr        draw_path
+		clr.l      fs_entrybox+8
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		bsr        draw_filenamebox
+handle_drive2:
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		tst.w      d0
+		bne.s      handle_drive2
+		bra        handle_drive1
+handle_drive3:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+draw_drives:
+		moveq.l    #0,d7
+		lea.l      fs_drives(pc),a4
+draw_drives_1:
+		cmpi.w     #MAX_DRIVES,d7
+		beq.s      draw_drives_3
+		cmpi.b     #-1,8(a4)
+		bne.s      draw_drives_2
+		move.b     #0,8(a4)
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     bg_color(pc),d0
+		move.w     d0,textbg_color
+		move.l     button_color1(pc),d0
+		move.w     d0,textfg_color
+		lea.l      textblit_coords(pc),a5
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		addq.w     #4,d1
+		move.w     fontheight(pc),d5
+		asr.w      #1,d5
+		add.w      d5,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		movem.l    (a7)+,d0-d7/a0-a6
+draw_drives_2:
+		lea.l      12(a4),a4
+		addq.w     #1,d7
+		bra.s      draw_drives_1
+draw_drives_3:
+		rts
+
+draw_selected_drive:
+		lea.l      fs_drives(pc),a4
+		move.w     d6,d5
+		subq.w     #1,d5
+		mulu.w     #12,d5
+		adda.w     d5,a4
+		move.b     #-1,8(a4)
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     bg_color(pc),d0
+		move.w     d0,textbg_color
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      textblit_coords(pc),a5
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		addq.w     #4,d1
+		move.w     fontheight(pc),d5
+		asr.w      #1,d5
+		add.w      d5,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+handle_closer:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     curr_obj(pc),d6
+		cmpi.w     #19,d6
+		bne        handle_closer_7
+		bsr        find_object
+		cmp.w      d1,d6
+		bne        handle_closer_7
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		cmpi.w     #1,d0
+		bne        handle_closer_7
+handle_closer_1:
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		tst.w      d0
+		bne.s      handle_closer_1
+		movem.l    d1-d7/a0-a6,-(a7)
+		move.w     currdrive(pc),d0
+		move.w     d0,-(a7)
+		move.w     #9,-(a7) /* Mediach */
+		trap       #13
+		addq.l     #4,a7
+		movem.l    (a7)+,d1-d7/a0-a6
+		tst.l      d0
+		bne.w      handle_closer_8 /* XXX */
+		lea.l      fs_pathbox+8-8(pc),a4 /* XXX WTF */
+		addq.l     #8,a4
+handle_closer_2:
+		/* tst.b      (a4) */
+		dc.w 0x0c14,0 /* XXX */
+		beq.s      handle_closer_3
+		addq.l     #1,a4
+		bra.s      handle_closer_2
+handle_closer_3:
+		cmpi.b     #':',-1(a4)
+		beq.w      handle_closer_7 /* XXX */
+handle_closer_4:
+		cmpi.b     #'\',(a4)
+		beq.s      handle_closer_5
+		subq.l     #1,a4
+		bra.s      handle_closer_4
+handle_closer_5:
+		cmpi.b     #':',-1(a4)
+		bne.w      handle_closer_6 /* XXX */
+		move.b     #'\',(a4)
+handle_closer_6:
+		move.b     #0,(a4)
+		clr.w      first_file
+		move.w     #-1,selected_file
+		bsr        set_curdir
+		bsr        st_mouse_off
+		.IFNE COMPILER
+		bsr        undraw_cursor /* XXX */
+		.ENDC
+		bsr        clear_pathbox
+		bsr        draw_path
+		bsr        draw_filenamebox
+		clr.l      fs_entrybox+8
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		bsr        st_mouse_on
+handle_closer_7:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+handle_closer_8:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      backslash(pc),a0
+		move.l     a0,-(a7)
+		move.w     #59,-(a7)
+		trap       #1 /* Dsetpath */
+		addq.l     #6,a7
+		movem.l    (a7)+,d0-d7/a0-a6
+		clr.w      first_file
+		move.w     #-1,selected_file
+		bsr        st_mouse_off
+		.IFNE COMPILER
+		bsr        undraw_cursor /* XXX */
+		.ENDC
+		bsr        clear_pathbox
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		bsr        get_curdir
+		bsr        draw_path
+		clr.l      fs_entrybox+8
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		bsr        draw_filenamebox
+		bsr        draw_cursor
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+backslash: dc.b '\',0
+
+handle_filename:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     curr_obj(pc),d6
+		bsr        deselect_filename
+handle_filename_1:
+		bsr        find_object
+		cmp.w      d1,d6
+		bne.w      handle_filename_3 /* XXX */
+		bsr        fs_getkey
+		tst.l      lastkey
+		beq.s      handle_filename_2
+		move.l     lastkey(pc),d0
+		cmpi.w     #13,d0
+		beq.w      handle_filename_4 /* XXX */
+		bsr        handle_key
+handle_filename_2:
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		cmpi.w     #1,d0
+		bne.w      handle_filename_1 /* XXX */
+		bsr.w      select_filename /* XXX */
+		bra.w      handle_filename_4 /* XXX */
+handle_filename_3:
+		move.w     curr_obj(pc),d6
+		bsr        deselect_filename
+handle_filename_4:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+select_filename:
+		movem.l    d0-d7/a0-a6,-(a7)
+select_filename_1:
+		movea.l    admouse(pc),a0
+		move.w     6(a0),d0 /* MOUSE_BT */
+		tst.w      d0
+		bne.s      select_filename_1
+		lea.l      filenames(pc),a1
+		subi.w     #OBJ_FILENAME,d6
+		move.w     first_file(pc),d5
+		add.w      d5,d6
+		cmp.w      selected_file(pc),d6
+		bne.w      select_filename_2 /* XXX */
+		move.l     #13,lastkey
+		bra.w      select_filename_8 /* XXX */
+select_filename_2:
+		move.w     d6,selected_file
+		asl.w      #4,d6
+		adda.w     d6,a1
+		lea.l      fsnamebuf(pc),a2
+select_filename_3:
+		move.b     (a1)+,d0
+		/* tst.b     d0 */
+ 		dc.w 0x0c00,0 /* XXX */
+		beq.s      select_filename_4
+		cmpi.b     #' ',d0
+		beq.s      select_filename_3
+		move.b     d0,(a2)+
+		bra.s      select_filename_3
+select_filename_4:
+		move.b     #0,(a2)+
+		lea.l      fsnamebuf(pc),a1
+		cmpi.b     #'*',(a1)+
+		beq.w      select_filename_9 /* XXX */
+		move.w     curr_obj(pc),d6
+		bsr        deselect_filename
+		lea.l      filenames(pc),a1
+		subi.w     #OBJ_FILENAME,d6
+		move.w     first_file(pc),d5
+		add.w      d5,d6
+		asl.w      #4,d6
+		adda.w     d6,a1
+		lea.l      fs_entrybox+8(pc),a2
+		clr.l      d7
+		move.b     (a1)+,d0
+select_filename_5:
+		cmpi.w     #12,d7
+		beq.s      select_filename_6
+		move.b     (a1)+,d0
+		move.b     d0,(a2)+
+		addq.w     #1,d7
+		bra.s      select_filename_5
+select_filename_6:
+		cmpi.b     #' ',-1(a2)
+		bne.s      select_filename_7
+		subq.l     #1,a2
+		bra.s      select_filename_6
+select_filename_7:
+		move.b     #0,(a2)+
+		bsr        undraw_cursor
+		bsr        draw_entry
+		bsr        draw_cursor
+select_filename_8:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+select_filename_9:
+		lea.l      fs_pathbox(pc),a4
+		addq.l     #8,a4
+select_filename_10:
+		/* tst.b     (a4) */
+		dc.w 0x0c14,0
+		beq.s      select_filename_11
+		addq.l     #1,a4
+		bra.s      select_filename_10
+select_filename_11:
+		move.b     #'\',(a4)+
+select_filename_12:
+		move.b     (a1)+,(a4)+
+		bne.s      select_filename_12
+		clr.l      fs_entrybox+8
+		clr.w      first_file
+		move.w     #-1,selected_file
+		bsr        set_curdir
+		bsr        st_mouse_off
+		bsr        undraw_cursor
+		bsr        clear_pathbox
+		bsr        draw_path
+		bsr        draw_filenamebox
+		bsr        draw_entry
+		bsr        draw_cursor
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+deselect_filename:
+		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        st_mouse_off
+		movea.l    lineavars(pc),a0
+		lea.l      bitblt(pc),a1
+		lea.l      fs_filename_coords(pc),a2
+		subi.w     #OBJ_FILENAME,d6
+		asl.w      #3,d6
+		adda.w     d6,a2
+		move.w     (a2)+,d0
+		move.w     (a2)+,d1
+		move.w     (a2)+,d2
+		move.w     (a2)+,d3
+		move.w     d2,d4
+		sub.w      d0,d4
+		move.w     d3,d5
+		sub.w      d1,d5
+		move.w     d4,(a1)+ /* b_wd */
+		move.w     d5,(a1)+ /* b_ht */
+		move.w     LA_PLANES(a0),d6
+		move.w     d6,d5
+		asl.w      #1,d5
+		move.w     d6,(a1)+ /* plane_cnt */
+		.IFNE COMPILER
+		move.w     #1,(a1)+ /* fg_col */
+		move.w     #0,(a1)+ /* bg_col */
+		.ELSE
+		move.w     #12,(a1)+ /* fg_col */
+		move.w     #10,(a1)+ /* bg_col */
+		.ENDC
+		move.l     #0x0A0A0A0A,(a1)+ /* op_tab 4 * NOT_D */
+		move.w     d0,(a1)+ /* s_xmin */
+		move.w     d1,(a1)+ /* s_ymin */
+		move.l     physic(pc),(a1)+ /* s_form */
+		move.w     d5,(a1)+ /* s_nxwd */
+		move.w     V_BYTES_LIN(a0),(a1)+ /* s_nxln */
+		move.w     #2,(a1)+ /* s_nxpl */
+		move.w     d0,(a1)+ /* d_xmin */
+		move.w     d1,(a1)+ /* d_ymin */
+		move.l     physic(pc),(a1)+ /* d_form */
+		move.w     d5,(a1)+ /* d_nxwd */
+		move.w     V_BYTES_LIN(a0),(a1)+ /* d_nxln */
+		move.w     #2,(a1)+ /* d_nxpl */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt(pc),a6
+		dc.w 0xa007 /* bit_blt */
+		bsr        st_mouse_on
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+calc_coordinates:
+		.IFEQ COMPILER
+		movea.l    lineavars(pc),a0 /* XXX unneeded */
+		.ENDC
+		lea.l      bg_color(pc),a1
+		cmpi.w     #16,nbplan
+		beq.w      calc_coordinates_1 /* XXX */
+		move.w     d1,(a1)+
+		move.w     d2,(a1)+
+		move.w     d3,(a1)+
+		move.w     d4,(a1)+
+		move.w     d5,(a1)+
+		bra.s      calc_coordinates_2
+calc_coordinates_1:
+		move.w     d4,textfg_color
+		move.w     d1,textbg_color
+		move.w     d1,(a1)+ /* bg_color */
+		move.w     d2,(a1)+ /* button_color1 */
+		move.w     d3,(a1)+ /* button_color2 */
+		move.w     d4,(a1)+ /* text_color1 */
+		move.w     d5,(a1)+ /* text_color2 */
+calc_coordinates_2:
+		move.l     a2,(a1)+ /* usertitle */
+		move.l     a3,(a1)+ /* userpath */
+		lea.l      cursor_data(pc),a1
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_TRANS,(a1)
+		bsr        getusermask
+
+* calc the root coordinates
+		movea.l    lineavars(pc),a0
+		move.w     DEV_TAB(a0),d0
+		/* addq.w     #1,d0 */
+		dc.w 0x0640,1 /* XXX */
+		andi.l     #0x0000FFFF,d0
+		move.w     DEV_TAB+2(a0),d1
+		/* addq.w     #1,d1 */
+		dc.w 0x0641,1 /* XXX */
+		andi.l     #0x0000FFFF,d1
+		subi.w     #280,d0
+		asr.w      #1,d0
+		lea.l      fs_root(pc),a1
+		move.w     d0,ZERO(a1)
+		addi.w     #280,d0
+		move.w     d0,4(a1)
+		move.w     fontheight(pc),d5
+		mulu.w     #21,d5
+		sub.w      d5,d1
+		asr.w      #1,d1
+		lea.l      fs_root+2(pc),a1
+		move.w     d1,ZERO(a1)
+		add.w      d5,d1
+		move.w     d1,4(a1)
+
+* calc the drive button coordinates
+		lea.l      fs_root(pc),a1
+		lea.l      fs_drives(pc),a2
+		/* moveq.l     #3,d7 */
+		dc.w 0x2e3c,0,3 /* XXX */
+		move.w     2(a1),d1
+		move.w     4(a1),d0
+		move.w     d0,d6
+		subi.w     #96,d0
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		add.w      d5,d1
+calc_coordinates_3:
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+		addi.w     #16,4(a2)
+		add.w      d5,6(a2)
+		addi.w     #18,d0
+		.IFNE COMPILER
+		.dc.w 0xd5fc,0,12 /* XXX */
+		.ELSE
+		lea.l      12(a2),a2
+		.ENDC
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+		addi.w     #16,4(a2)
+		add.w      d5,6(a2)
+		addi.w     #18,d0
+		.IFNE COMPILER
+		.dc.w 0xd5fc,0,12 /* XXX */
+		.ELSE
+		lea.l      12(a2),a2
+		.ENDC
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+		addi.w     #16,4(a2)
+		add.w      d5,6(a2)
+		addi.w     #18,d0
+		.IFNE COMPILER
+		.dc.w 0xd5fc,0,12 /* XXX */
+		.ELSE
+		lea.l      12(a2),a2
+		.ENDC
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+		addi.w     #16,4(a2)
+		add.w      d5,6(a2)
+		subi.w     #54,d0
+		.IFNE COMPILER
+		.dc.w 0xd5fc,0,12 /* XXX */
+		.ELSE
+		lea.l      12(a2),a2
+		.ENDC
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		add.w      d5,d1
+		/* addq.w     #1,d1 */
+		dc.w 0x0641,1 /* XXX */
+		dbf        d7,calc_coordinates_3
+
+* calc the coordinates of the filename box
+		lea.l      fs_root(pc),a1
+		lea.l      fs_fnbox(pc),a2
+		move.w     fontheight(pc),d5
+		mulu.w     #3,d5
+		move.w     ZERO(a1),d0
+		move.w     2(a1),d1
+		/* addq.w     #8,d0 */
+		dc.w 0x0640,8 /* XXX */
+		add.w      d5,d1
+		move.w     d0,ZERO(a2)
+		move.w     d1,2(a2)
+		addi.w     #128,d0
+		move.w     fontheight(pc),d5
+		mulu.w     #14,d5
+		add.w      d5,d1
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+
+* calc the filename coordinates
+		lea.l      fs_fnbox(pc),a1
+		lea.l      fs_filename_coords(pc),a2
+		move.w     #DISP_FILES-1,d7
+		move.w     ZERO(a1),d0
+		move.w     2(a1),d1
+		/* addq.w     #8,d0 */
+		dc.w 0x0640, 8 /* XXX */
+		move.w     fontheight(pc),d5
+		asr.w      #1,d5
+		add.w      d5,d1
+		move.w     fontheight(pc),d5
+		move.w     d0,d2
+		addi.w     #112,d2
+		move.w     d1,d3
+		add.w      d5,d3
+calc_coordinates_4:
+		move.w     d0,(a2)+
+		move.w     d1,(a2)+
+		move.w     d2,(a2)+
+		move.w     d3,(a2)+
+		add.w      d5,d1
+		add.w      d5,d3
+		dbf        d7,calc_coordinates_4
+
+* calc the closer coordinates
+		lea.l      fs_fnbox(pc),a4
+		move.w     fontheight(pc),d5
+		move.w     ZERO(a4),d0
+		move.w     2(a4),d1
+		move.w     4(a4),d2
+		move.w     2(a4),d3
+		sub.w      d5,d1
+		/* subq.w     #2,d1 */
+		dc.w 0x0441,2 /* XXX */
+		/* subq.w     #1,d3 */
+		dc.w 0x0443,1 /* XXX */
+		addi.w     #17,d2
+		lea.l      fs_closer(pc),a2
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d2,4(a2)
+		move.w     d3,6(a2)
+
+* calc the coordinates of the up arrow
+		lea.l      fs_fnbox(pc),a1
+		lea.l      fs_uparrow(pc),a2
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		move.w     4(a1),d0
+		move.w     2(a1),d1
+		addq.w     #1,d0
+		move.w     d0,ZERO(a2)
+		move.w     d1,2(a2)
+		addi.w     #16,d0
+		add.w      d5,d1
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+
+* calc the coordinates of the down arrow
+		lea.l      fs_fnbox+4(pc),a1
+		lea.l      fs_dnarrow(pc),a2
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		move.w     ZERO(a1),d0
+		move.w     2(a1),d1
+		addq.w     #1,d0
+		sub.w      d5,d1
+		move.w     d0,ZERO(a2)
+		move.w     d1,2(a2)
+		addi.w     #16,d0
+		add.w      d5,d1
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+
+* calc the coordinates of the slider
+		lea.l      fs_uparrow(pc),a1
+		lea.l      fs_slider(pc),a2
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		move.w     ZERO(a1),d0
+		move.w     2(a1),d1
+		add.w      d5,d1
+		move.w     d0,ZERO(a2)
+		move.w     d1,2(a2)
+		addi.w     #16,d0
+		move.w     fontheight(pc),d5
+		mulu.w     #10,d5
+		add.w      d5,d1
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+
+* calc the coordinates of the path box
+		lea.l      edit_coords(pc),a3
+		move.w     #1,d6
+		asl.w      #2,d6 /* WTF */
+		move.w     fontheight(pc),d5
+		mulu.w     #3,d5
+		lea.l      fs_root(pc),a1
+		lea.l      fs_pathbox(pc),a2
+		move.w     ZERO(a1),d0
+		move.w     6(a1),d1
+		/* addq.w     #8,d0 */
+		dc.w 0x0640,8 /* XXX */
+		sub.w      d5,d1
+		/* subq.w     #2,d1 */
+		dc.w 0x0441,2 /* XXX */
+		move.w     d0,ZERO(a2)
+		move.w     d1,2(a2)
+		move.w     d0,0(a3,d6.w)
+		move.w     d1,2(a3,d6.w)
+		addi.w     #264,d0
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		add.w      d5,d1
+		/* addq.w     #4,d1 */
+		dc.w 0x0641,4 /* XXX */
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+
+* calc the coordinates of the entry box
+		lea.l      fs_root(pc),a1
+		lea.l      fs_entrybox(pc),a2
+		lea.l      edit_coords(pc),a3
+		lea.l      fs_fnbox(pc),a4
+		moveq.l    #0,d5
+		asl.w      #2,d5
+		move.w     4(a1),d0
+		move.w     6(a4),d1
+		subi.w     #112,d0
+		sub.w      fontheight(pc),d1
+		/* subq.w     #4,d1 */
+		dc.w 0x0441,4 /* XXX */
+		move.w     d0,d6
+		move.w     d1,d7
+		move.w     d0,ZERO(a2)
+		move.w     d1,2(a2)
+		move.w     d0,0(a3,d5.w)
+		move.w     d1,2(a3,d5.w)
+		addi.w     #104,d0
+		add.w      fontheight(pc),d1
+		/* addq.w     #4,d1 */
+		dc.w 0x0641,4 /* XXX */
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+
+* calc the coordinates of the ok button
+		move.w     d6,d0
+		move.w     d7,d1
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		move.w     fontheight(pc),d5
+		mulu.w     #4,d5
+		add.w      d4,d5
+		sub.w      d5,d1
+		lea.l      fs_okbutton(pc),a2
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+		addi.w     #104,4(a2)
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		add.w      d5,6(a2)
+
+* calc the coordinates of the cancel button
+		add.w      d5,d1
+		/* addq.w     #1,d1 */
+		dc.w 0x0641,1 /* XXX */
+		lea.l      fs_cancelbutton(pc),a2
+		move.w     d0,(a2)
+		move.w     d1,2(a2)
+		move.w     d0,4(a2)
+		move.w     d1,6(a2)
+		addi.w     #104,4(a2)
+		move.w     fontheight(pc),d5
+		mulu.w     #2,d5
+		add.w      d5,6(a2)
+		add.w      d5,d1
+		/* addq.w     #2,d1 */
+		dc.w 0x0641,2 /* XXX */
+		rts
+
+calc_objects:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      fs_drives(pc),a2
+		lea.l      fs_coords(pc),a3
+		move.w     #MAX_DRIVES-1,d7
+calc_objects_1:
+		move.w     ZERO(a2),d0
+		move.w     4(a2),d1
+		move.w     2(a2),d2
+		move.w     6(a2),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+		.IFNE COMPILER
+		.dc.w 0xd5fc,0,12 /* XXX */
+		.ELSE
+		lea.l      12(a2),a2
+		.ENDC
+		dbf        d7,calc_objects_1
+
+		lea.l      fs_uparrow(pc),a2
+		move.w     ZERO(a2),d0
+		move.w     4(a2),d1
+		move.w     2(a2),d2
+		move.w     6(a2),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+
+		lea.l      fs_dnarrow(pc),a2
+		move.w     ZERO(a2),d0
+		move.w     4(a2),d1
+		move.w     2(a2),d2
+		move.w     6(a2),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+
+		lea.l      fs_closer(pc),a2
+		move.w     ZERO(a2),d0
+		move.w     ZERO(a2),d1
+		move.w     2(a2),d2
+		move.w     2(a2),d3
+		addq.w     #8,d1
+		add.w      fontheight(pc),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+
+		lea.l      fs_filename_coords(pc),a2
+		move.w     #DISP_FILES-1,d7
+calc_objects_2:
+		move.w     ZERO(a2),d0
+		move.w     4(a2),d1
+		move.w     2(a2),d2
+		move.w     6(a2),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+		.IFNE COMPILER
+		dc.w 0xd5fc,0,8 /* XXX */
+		.ELSE
+		addq.l     #8,a2
+		.ENDC
+		dbf        d7,calc_objects_2
+
+		lea.l      fs_okbutton(pc),a2
+		move.w     ZERO(a2),d0
+		move.w     4(a2),d1
+		move.w     2(a2),d2
+		move.w     6(a2),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+
+		lea.l      fs_cancelbutton(pc),a2
+		move.w     ZERO(a2),d0
+		move.w     4(a2),d1
+		move.w     2(a2),d2
+		move.w     6(a2),d3
+		move.w     d0,(a3)+
+		move.w     d1,(a3)+
+		move.w     d2,(a3)+
+		move.w     d3,(a3)+
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+draw_selector:
+		movem.l    a0-a6,-(a7)
+		lea.l      fillpattern(pc),a5
+		move.l     #-1,(a5)
+		move.w     bg_color(pc),d0
+		bsr        linea_setcolor
+		lea.l      fs_root(pc),a4
+		bsr        fillrect
+		move.w     button_color1(pc),d0
+		lea.l      fs_root(pc),a4
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color2(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		bsr        linea_drawline
+		move.w     button_color2(pc),d0
+		move.w     4(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     d0,textfg_color
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      fs_root(pc),a1
+		lea.l      textblit_coords(pc),a5
+		move.w     ZERO(a1),d0
+		move.w     2(a1),d1
+		addi.w     #9,d0
+		/* addq.w     #4,d1 */
+		dc.w 0x0641,4 /* XXX */
+		move.w     d0,ZERO(a5)
+		move.w     d1,2(a5)
+		lea.l      textblit_str(pc),a2
+		movea.l    usertitle(pc),a1
+		move.w     (a1)+,d7
+		clr.l      d6
+		move.l     a1,(a2)
+draw_selector_1:
+		cmpi.w     #33,d6
+		beq.s      draw_selector_2
+		cmp.w      d6,d7
+		beq.s      draw_selector_2
+		bsr        linea_textblit
+		addq.w     #1,d6
+		bra.s      draw_selector_1
+draw_selector_2:
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      fs_root(pc),a1
+		lea.l      textblit_coords(pc),a5
+		move.w     ZERO(a1),d0
+		move.w     2(a1),d1
+		/* addq.w     #8,d0 */
+		dc.w 0x0640,8 /* XXX */
+		/* addi.w     #4,d1 */
+		dc.w 0x0641,4 /* XXX */
+		move.w     d0,ZERO(a5)
+		move.w     d1,2(a5)
+		lea.l      textblit_str(pc),a2
+		movea.l    usertitle(pc),a1
+		move.w     (a1)+,d7
+		clr.l      d6
+		move.l     a1,(a2)
+draw_selector_3:
+		cmpi.w     #33,d6
+		beq.s      draw_selector_4
+		cmp.w      d6,d7
+		beq.s      draw_selector_4
+		bsr        linea_textblit
+		addq.w     #1,d6
+		bra.s      draw_selector_3
+draw_selector_4:
+		movem.l    (a7)+,d0-d7/a0-a6
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      fillpattern(pc),a5
+		move.l     #0,(a5)
+		moveq.l    #0,d0
+		bsr        linea_setcolor
+		lea.l      fs_fnbox(pc),a4
+		bsr        fillrect
+		move.w     button_color2(pc),d0
+		lea.l      fs_fnbox(pc),a4
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color2(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     4(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		lea.l      fillpattern(pc),a5
+		move.l     #-1,(a5)
+		lea.l      textblit_coords(pc),a5
+		lea.l      fs_closer(pc),a4
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		addq.w     #3,d1
+		addq.w     #1,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		move.l     button_color1(pc),d0
+		move.w     d0,textfg_color
+		subq.w     #1,d1
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		lea.l      fs_drives(pc),a4
+		/* move.l     #16-1,d7 */
+		dc.w 0x2e3c,0,16-1 /* XXX */
+		move.l     button_color1(pc),d0
+draw_selector_5:
+		move.w     #0,text_style
+		/* tst.b     9(a4) */
+		dc.w 0x0c2c,0,9 /* XXX */
+		bne.s      draw_selector_6
+		move.w     #2,text_style
+draw_selector_6:
+		bsr        draw_frame
+		move.w     button_color1(pc),d1
+		move.w     d1,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addq.w     #5,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		subq.w     #1,d1
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		move.l     button_color1(pc),d1
+		tst.b      8(a4)
+		beq.s      draw_selector_7
+		move.w     text_color1,d1
+draw_selector_7:
+		move.w     d1,textfg_color
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		lea.l      12(a4),a4
+		dbf        d7,draw_selector_5
+		move.w     #0,text_style
+		lea.l      fs_okbutton(pc),a4
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addi.w     #21,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		moveq.l    #6-1,d7
+draw_selector_8:
+		bsr        linea_textblit
+		dbf        d7,draw_selector_8
+		move.l     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addi.w     #20,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		moveq.l    #6-1,d7
+draw_selector_9:
+		bsr        linea_textblit
+		dbf        d7,draw_selector_9
+		lea.l      fs_cancelbutton(pc),a4
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addi.w     #21,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		moveq.l    #7-1,d7
+draw_selector_10:
+		bsr        linea_textblit
+		dbf        d7,draw_selector_10
+		move.l     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addi.w     #20,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		moveq.l    #7-1,d7
+draw_selector_11:
+		bsr        linea_textblit
+		dbf        d7,draw_selector_11
+		lea.l      fs_uparrow(pc),a4
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addq.w     #5,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		move.l     button_color1(pc),d0
+		move.w     d0,textfg_color
+		subq.w     #1,d1
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		lea.l      fs_dnarrow(pc),a4
+		move.l     button_color1(pc),d0
+		bsr        draw_frame
+		move.w     button_color1(pc),d0
+		move.w     d0,textfg_color
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     fontheight(pc),d4
+		asr.w      #1,d4
+		addq.w     #5,d1
+		add.w      d4,d2
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		move.l     button_color1(pc),d0
+		move.w     d0,textfg_color
+		subq.w     #1,d1
+		move.w     d1,ZERO(a5)
+		move.w     d2,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      10(a4),a3
+		move.l     a3,(a2)
+		bsr        linea_textblit
+		lea.l      fs_slider(pc),a4
+		move.l     button_color1(pc),d0
+		bsr.w      draw_frame
+		bsr        undraw_cursor
+		bsr        clear_pathbox
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		bsr        get_curdir
+		bsr        draw_path
+		bsr        draw_entry
+		move.w     text_color1,d0
+		bsr        draw_cursor
+		move.w     d0,textfg_color
+		bsr        draw_filenamebox
+		movem.l    (a7)+,a0-a6
+		rts
+
+
+draw_frame:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		swap       d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		bsr        linea_drawline
+		move.w     4(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		swap       d0
+		tst.b      8(a4)
+		bne.s      draw_frame_1
+		swap       d0
+draw_frame_1:
+		move.w     ZERO(a4),d1
+		addq.w     #1,d1
+		move.w     6(a4),d2
+		subq.w     #1,d2
+		move.w     ZERO(a4),d3
+		addq.w     #1,d3
+		move.w     2(a4),d4
+		addq.w     #1,d4
+		bsr        linea_drawline
+		move.w     ZERO(a4),d1
+		addq.w     #1,d1
+		move.w     2(a4),d2
+		addq.w     #1,d2
+		move.w     4(a4),d3
+		subq.w     #1,d3
+		move.w     2(a4),d4
+		addq.w     #1,d4
+		bsr        linea_drawline
+		swap       d0
+		move.w     ZERO(a4),d1
+		addq.w     #1,d1
+		move.w     6(a4),d2
+		subq.w     #1,d2
+		move.w     4(a4),d3
+		subq.w     #1,d3
+		move.w     6(a4),d4
+		subq.w     #1,d4
+		bsr        linea_drawline
+		move.w     4(a4),d1
+		subq.w     #1,d1
+		move.w     6(a4),d2
+		subq.w     #1,d2
+		move.w     4(a4),d3
+		subq.w     #1,d3
+		move.w     2(a4),d4
+		addq.w     #1,d4
+		bsr        linea_drawline
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+clear_pathbox:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		lea.l      fillpattern(pc),a5
+		move.l     #0,(a5)
+		moveq.l    #0,d0
+		bsr        linea_setcolor
+		lea.l      fs_pathbox(pc),a4
+		bsr.w      fillrect
+		lea.l      fillpattern(pc),a5
+		move.l     #-1,(a5)
+		lea.l      fs_pathbox(pc),a4
+		move.l     button_color1(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		swap       d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		bsr        linea_drawline
+		move.w     4(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+fillrect:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		cmpi.w     #16,ZERO(a0) /* XXX LA_PLANES */
+		beq.w      fillrect_hi /* XXX */
+		cmpi.w     #1,LA_PLANES(a0)
+		beq.s      fillrect3
+		cmpi.w     #8,LA_PLANES(a0)
+		beq.s      fillrect1
+		cmpi.w     #4,LA_PLANES(a0)
+		ble.s      fillrect2
+		bra.s      fillrect4
+fillrect1:
+		bsr        linea_fillrect
+		bsr        fillrect_8planes
+		bra.s      fillrect4
+fillrect2:
+		bsr        linea_fillrect
+		bra.s      fillrect4
+fillrect3:
+		lea.l      fillpattern(pc),a5
+		move.l     #0xAAAA5555,(a5)
+		bsr        linea_fillrect
+		lea.l      fillpattern(pc),a5
+		move.l     #-1,(a5)
+fillrect4:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+fillrect_hi:
+		movea.l    physic(pc),a0
+		moveq.l    #0,d3
+		moveq.l    #0,d5
+		moveq.l    #0,d6
+		moveq.l    #0,d7
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d5
+		move.w     4(a4),d6
+		move.w     6(a4),d7
+		bra.w      fillrect_hi2 /* XXX */
+		cmp.w      d3,d6
+		bcc.s      fillrect_hi1
+		exg        d3,d6
+fillrect_hi1:
+		cmp.w      d5,d7
+		bcc.s      fillrect_hi2
+		exg        d5,d7
+fillrect_hi2:
+		movea.l    lineavars(pc),a1
+		sub.l      d3,d6
+		sub.l      d5,d7
+		mulu.w     V_BYTES_LIN(a1),d5
+		adda.l     d5,a0
+		asl.w      #1,d3
+		adda.w     d3,a0
+fillrect_hi3:
+		movem.l    d3-d7/a0-a6,-(a7)
+fillrect_hi4:
+		move.w     d0,(a0)+
+		dbf        d6,fillrect_hi4
+		movem.l    (a7)+,d3-d7/a0-a6
+		adda.w     V_BYTES_LIN(a1),a0
+		dbf        d7,fillrect_hi3
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+linea_drawline:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		cmpi.w     #16,nbplan
+		beq.w      drawline_hi /* XXX */
+		bsr        linea_setcolor
+		move.w     d1,LA_X1(a0)
+		move.w     d2,LA_Y1(a0)
+		move.w     d3,LA_X2(a0)
+		move.w     d4,LA_Y2(a0)
+		move.w     d1,LA_XMN_CLIP(a0)
+		move.w     d2,LA_YMN_CLIP(a0)
+		move.w     d3,LA_XMX_CLIP(a0)
+		move.w     d4,LA_YMX_CLIP(a0)
+		move.w     #1,LA_LSTLIN(a0)
+		move.w     #-1,LA_LN_MASK(a0)
+		move.w     #MD_REPLACE,LA_WRT_MODE(a0)
+		move.w     #1,LA_CLIP(a0)
+		movea.l    lineafuncs+3*4,a0 /* draw_line */
+		jsr        (a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		cmpi.w     #8,nbplan
+		bne.s      linea_drawline1
+		bsr        linea_fill8planes
+linea_drawline1:
+		rts
+
+drawline_hi:
+		movea.l    physic(pc),a0
+		lea.l      drawline_ccords(pc),a1
+		movem.w    d1-d4,(a1) /* OMG */
+		moveq.l    #0,d4
+		moveq.l    #0,d5
+		moveq.l    #0,d6
+		moveq.l    #0,d7
+		move.w     drawline_ccords(pc),d4
+		move.w     drawline_ccords+2(pc),d5
+		move.w     drawline_ccords+4(pc),d6
+		move.w     drawline_ccords+6(pc),d7
+		cmp.w      d4,d6
+		bcc.s      drawline_hi1
+		exg        d4,d6
+drawline_hi1:
+		cmp.w      d5,d7
+		bcc.s      drawline_hi2
+		exg        d5,d7
+drawline_hi2:
+		cmp.w      d4,d6
+		beq.w      drawline_hi_ver /* XXX */
+		cmp.w      d5,d7
+		beq.w      drawline_hi_hor /* XXX */
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+drawline_hi_ver:
+		movea.l    lineavars(pc),a1
+		sub.w      d5,d7
+		move.w     d5,d2
+		moveq.l    #0,d1
+		move.w     V_BYTES_LIN(a1),d1
+		mulu.w     d1,d2
+		adda.l     d2,a0
+		asl.w      #1,d4
+		adda.l     d4,a0
+drawline_hi_ver1:
+		move.w     d0,(a0)
+		adda.w     d1,a0
+		dbf        d7,drawline_hi_ver1
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+drawline_hi_hor:
+		movea.l    lineavars(pc),a1
+		sub.w      d4,d6
+		move.w     d5,d2
+		mulu.w     V_BYTES_LIN(a1),d2
+		adda.l     d2,a0
+		asl.w      #1,d4
+		adda.l     d4,a0
+drawline_hi_hor1:
+		move.w     d0,(a0)+
+		dbf        d6,drawline_hi_hor1
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+drawline_ccords: ds.w 4
+
+
+linea_fill8planes:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    lineavars(pc),a0
+		move.w     ZERO(a0),d7
+		asl.w      #1,d7
+		move.w     V_BYTES_LIN(a0),d5
+		cmp.w      d1,d3
+		bcc.s      linea_fill8planes1
+		exg        d1,d3
+linea_fill8planes1:
+		cmp.w      d2,d4
+		bcc.s      linea_fill8planes2
+		exg        d2,d4
+linea_fill8planes2:
+		sub.w      d1,d3
+		addq.w     #1,d3
+		sub.w      d2,d4
+		addq.w     #1,d4
+		lea.l      bitblt,a1
+		move.w     d3,(a1)+ /* b_wd */
+		move.w     d4,(a1)+ /* b_ht */
+		move.w     #4,(a1)+ /* plane_cnt */
+		move.w     #12,(a1)+ /* fg_col */
+		move.w     #10,(a1)+ /* bg_col */
+		bsr        calc_optab
+		move.l     d0,(a1)+ /* op_tab */
+		move.w     d1,(a1)+ /* s_xmin */
+		move.w     d2,(a1)+ /* s_ymin */
+		move.l     physic(pc),d6
+		/* addq.l     #8,d6 */
+		dc.w 0x0686,0,8 /* XXX */
+		move.l     d6,(a1)+ /* s_form */
+		move.w     d7,(a1)+ /* s_nxwd */
+		move.w     d5,(a1)+ /* s_nxln */
+		move.w     #2,(a1)+ /* s_nxpl */
+		move.w     d1,(a1)+ /* d_xmin */
+		move.w     d2,(a1)+ /* d_ymin */
+		move.l     physic(pc),d6
+		/* addq.l     #8,d6 */
+		dc.w 0x0686,0,8 /* XXX */
+		move.l     d6,(a1)+ /* d_form */
+		move.w     d7,(a1)+ /* d_nxwd */
+		move.w     d5,(a1)+ /* d_nxln */
+		move.w     #2,(a1)+ /* d_nxpl */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt,a6
+		dc.w 0xa007 /* bit_blt */
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+*
+* draw a single char pointed to by textblit_str
+*
+linea_textblit:
+		movem.l    d0-d7/a0-a6,-(a7)
+		dc.w 0xa000 /* linea_init */
+		cmpi.w     #16,LA_PLANES(a0)
+		beq        linea_textblit_hi
+		move.w     sysfont,d0
+		asl.w      #2,d0
+		movea.l    0(a1,d0.w),a3
+		move.l     fonthdr,d1
+		tst.l      d1
+		.IFNE 0
+		beq.s      linea_textblit1
+		movea.l    fonthdr(pc),a3
+		move.l     a3,d1
+		.ENDC
+linea_textblit1:
+		move.l     font_dat_table(a3),d0
+		add.l      d1,d0
+		move.l     d0,LA_FBASE(a0)
+		move.w     wrt_mode,LA_WRT_MODE(a0)
+		move.w     #-1,LA_DDA_INC(a0)
+		move.w     #1,LA_T_SCLSTS(a0)
+		move.w     font_flags(a3),LA_MONO_STAT(a0)
+		clr.w      LA_SRCY(a0)
+		move.w     font_form_width(a3),LA_FWIDTH(a0)
+		move.w     font_form_height(a3),LA_DELY(a0)
+		move.w     text_style,LA_STYLE(a0)
+		move.w     font_lighten(a3),LA_LITEMASK(a0)
+		move.w     font_skew(a3),LA_SKEWMASK(a0)
+		move.w     font_left_offset(a3),LA_L_OFF(a0)
+		move.w     font_right_offset(a3),LA_R_OFF(a0)
+		move.w     font_thicken(a3),LA_WEIGHT(a0)
+		move.w     text_double,LA_DOUBLE(a0)
+		tst.w      LA_DOUBLE(a0)
+		beq.w      linea_textblit2 /* XXX */
+		asl.w      LA_L_OFF(a0)
+		asl.w      LA_R_OFF(a0)
+linea_textblit2:
+		move.w     text_rotation,LA_CHUP(a0)
+		move.w     textfg_color,LA_TEXTFG(a0)
+		move.w     #0,LA_TEXTBG(a0)
+		lea.l      scratchbuf,a6
+		move.l     a6,LA_SCRTCHP(a0)
+		move.w     #SCRATCHBUF_SIZE,LA_SCRPT2(a0)
+		lea.l      save_clip_flag,a6
+		move.w     LA_CLIP(a0),(a6)
+		move.w     #0,LA_CLIP(a0)
+		movea.l    textblit_str(pc),a2
+		move.b     (a2),d0
+		andi.l     #255,d0
+		cmp.w      font_last_ade(a3),d0
+		bgt.w      linea_textblit6 /* XXX */
+		sub.w      font_first_ade(a3),d0
+		blt.w      linea_textblit6 /* XXX */
+		move.l     fonthdr,d1
+		add.w      d0,d0
+		movea.l    font_off_table(a3),a4
+		adda.l     d1,a4
+		move.w     0(a4,d0.w),LA_SRCX(a0)
+		btst       #3,LA_MONO_STAT+1(a0)
+		beq.w      linea_textblit3 /* XXX */
+		move.w     font_max_cell_width(a3),LA_DELX(a0)
+		bra.w      linea_textblit4 /* XXX */
+linea_textblit3:
+		move.w     2(a4,d0.w),d1
+		sub.w      0(a4,d0.w),d1
+		move.w     d1,LA_DELX(a0)
+linea_textblit4:
+		move.l     font_hor_table(a3),d2
+		beq.w      linea_textblit5 /* XXX */
+		move.l     fonthdr,d1
+		add.l      d1,d2
+		movea.l    d2,a5
+		move.w     LA_DESTX(a0),d1
+		add.w      0(a5,d0.w),d1
+		move.w     d1,LA_DESTX(a0)
+linea_textblit5:
+		movem.l    a0-a6,-(a7)
+		lea.l      textblit_coords,a3
+		move.w     (a3),LA_DESTX(a0)
+		move.w     2(a3),LA_DESTY(a0)
+		bsr.w      inc_coords /* XXX */
+		move.w     #0x8000,LA_XACC_DDA(a0)
+		dc.w 0xa008 /* text_blt */
+		movem.l    (a7)+,a0-a6
+linea_textblit6:
+		lea.l      save_clip_flag,a6
+		move.w     (a6),LA_CLIP(a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+inc_coords:
+		move.w     LA_DELX(a0),d1
+		move.w     LA_DOUBLE(a0),d0
+		or.w       LA_STYLE(a0),d0
+		tst.w      d0
+		beq.w      inc_coords3 /* XXX */
+		add.w      LA_WEIGHT(a0),d1
+		move.w     LA_R_OFF(a0),d2
+		cmpi.w     #20,LA_STYLE(a0)
+		blt.w      inc_coords2 /* XXX */
+		tst.w      LA_DOUBLE(a0)
+		beq.w      inc_coords1 /* XXX */
+		asr.w      #1,d2
+		sub.w      LA_WEIGHT(a0),d1
+inc_coords1:
+		add.w      d2,d1
+inc_coords2:
+		tst.w      LA_DOUBLE(a0)
+		beq.w      inc_coords3 /* XXX */
+		asl.w      #1,d1
+inc_coords3:
+		tst.w      text_rotation
+		beq.w      inc_coords4 /* XXX */
+		cmpi.w     #1800,text_rotation
+		beq.w      inc_coords4 /* XXX */
+		add.w      d1,2(a3)
+		rts
+inc_coords4:
+		add.w      d1,(a3)
+		lea.l      textblit_str(pc),a2
+		addq.l     #1,(a2)
+		rts
+
+linea_textblit_hi:
+		move.w     #2,-(a7) /* Physbase */
+		trap       #14
+		addq.l     #2,a7
+		movea.l    d0,a2
+		movem.l    a2-a6,-(a7)
+		dc.w 0xa000 /* linea_init */
+		movem.l    (a7)+,a2-a6
+		move.w     sysfont,d0
+		asl.w      #2,d0
+		movea.l    0(a1,d0.w),a3
+		move.l     fonthdr,d1
+		tst.l      d1
+		.IFNE 0
+		beq.s      linea_textblit_hi1
+		movea.l    fonthdr(pc),a3
+		move.l     a3,d1
+linea_textblit_hi1:
+		.ENDC
+		move.l     font_dat_table(a3),d0
+		add.l      d1,d0
+		movea.l    d0,a4
+		move.w     font_max_cell_width(a3),d5
+		move.w     font_form_width(a3),d6
+		move.w     font_form_height(a3),d7
+		lea.l      textblit_coords(pc),a5
+		movea.l    textblit_str(pc),a1
+		move.b     (a1),d0
+		andi.l     #255,d0
+		cmp.w      font_last_ade(a3),d0
+		bgt.w      linea_textblit_hi8 /* XXX */
+		sub.w      font_first_ade(a3),d0
+		blt.w      linea_textblit_hi8 /* XXX */
+		movem.l    d0-d7/a1-a6,-(a7)
+		move.w     #0x5555,d1
+		cmpi.w     #TXT_LIGHT,text_style
+		beq.s      linea_textblit_hi2
+		move.w     #-1,d1
+linea_textblit_hi2:
+		move.w     ZERO(a5),d4
+		asl.w      #1,d4
+		move.w     2(a5),d5
+		mulu.w     V_BYTES_LIN(a0),d5
+		adda.l     d5,a2
+		adda.w     d4,a2
+		subq.w     #1,d7
+linea_textblit_hi3:
+		movea.l    a2,a1
+		move.w     font_max_cell_width(a3),d3
+		subq.w     #1,d3
+		move.b     0(a4,d0.w),d2
+		and.b      d1,d2
+linea_textblit_hi4:
+		btst       d3,d2
+		beq.s      linea_textblit_hi5
+		move.w     textfg_color(pc),(a2)
+		bra.w      linea_textblit_hi6 /* XXX */
+linea_textblit_hi5:
+		nop
+linea_textblit_hi6:
+		addq.l     #2,a2
+linea_textblit_hi7:
+		dbf        d3,linea_textblit_hi4
+		rol.w      #1,d1
+		movea.l    a1,a2
+		lea.l      256(a4),a4
+		adda.w     V_BYTES_LIN(a0),a2
+		dbf        d7,linea_textblit_hi3
+		movem.l    (a7)+,d0-d7/a1-a6
+		add.w      d5,(a5)
+		lea.l      textblit_str(pc),a2
+		addq.l     #1,(a2)
+linea_textblit_hi8:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+linea_fillrect:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     ZERO(a4),LA_X1(a0)
+		move.w     2(a4),LA_Y1(a0)
+		move.w     4(a4),LA_X2(a0)
+		move.w     6(a4),LA_Y2(a0)
+		move.w     ZERO(a4),LA_XMN_CLIP(a0)
+		move.w     2(a4),LA_YMN_CLIP(a0)
+		move.w     4(a4),LA_XMX_CLIP(a0)
+		move.w     6(a4),LA_YMX_CLIP(a0)
+		move.w     #MD_REPLACE,LA_WRT_MODE(a0)
+		lea.l      fillpattern(pc),a5
+		move.l     a5,LA_PATPTR(a0)
+		move.w     #1,LA_PATMSK(a0)
+		move.w     #0,LA_MULTIFILL(a0)
+		move.w     #1,LA_CLIP(a0)
+		dc.w 0xa005 /* filled_rect */
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+fillrect_8planes:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     ZERO(a0),d7 /* XXX LA_PLANES */
+		asl.w      #1,d7
+		move.w     V_BYTES_LIN(a0),d5
+		lea.l      bitblt,a1
+		bsr.w      calc_optab
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		sub.w      d1,d3 /* calc width */
+		addq.w     #1,d3
+		sub.w      d2,d4 /* calc height */
+		addq.w     #1,d4
+		move.w     d3,(a1)+ /* b_wd */
+		move.w     d4,(a1)+ /* b_ht */
+		move.w     #4,(a1)+ /* plane_cnt */
+		move.w     #12,(a1)+ /* fg_col */
+		move.w     #10,(a1)+ /* bg_col */
+		move.l     d0,(a1)+ /* op_tab */
+		move.w     d1,(a1)+ /* s_xmin */
+		move.w     d2,(a1)+ /* s_ymin */
+		move.l     physic(pc),d6
+		/* addq.l     #8,d6 */
+		dc.w 0x0686,0,8 /* XXX */
+		move.l     d6,(a1)+ /* s_form */
+		move.w     d7,(a1)+ /* s_nxwd */
+		move.w     d5,(a1)+ /* s_nxln */
+		move.w     #2,(a1)+ /* s_nxpl */
+		move.w     d1,(a1)+ /* d_xmin */
+		move.w     d2,(a1)+ /* d_ymin */
+		move.l     physic(pc),d6
+		/* addq.l     #8,d6 */
+		dc.w 0x0686,0,8 /* XXX */
+		move.l     d6,(a1)+ /* d_form */
+		move.w     d7,(a1)+ /* d_nxwd */
+		move.w     d5,(a1)+ /* d_nxln */
+		move.w     #2,(a1)+ /* d_nxpl */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt,a6
+		dc.w 0xa007 /* bit_blt */
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+calc_optab:
+		move.w     d0,d3
+		moveq.l    #0,d0
+		btst       #4,d3
+		beq.s      calc_optab1
+		ori.l      #0x0F000000,d0
+calc_optab1:
+		btst       #5,d3
+		beq.s      calc_optab2
+		ori.l      #0x000F0000,d0
+calc_optab2:
+		btst       #6,d3
+		beq.s      calc_optab3
+		ori.l      #0x00000F00,d0
+calc_optab3:
+		btst       #7,d3
+		beq.s      calc_optab4
+		ori.l      #0x0000000F,d0
+calc_optab4:
+		rts
+
+
+linea_setcolor:
+		move.l     d0,-(a7)
+		clr.l      LA_FG_1(a0)
+		clr.l      LA_FG_3(a0)
+		btst       #0,d0
+		beq.w      linea_setcolor1 /* XXX */
+		bset       #0,LA_FG_1+1(a0)
+linea_setcolor1:
+		btst       #1,d0
+		beq.w      linea_setcolor2 /* XXX */
+		bset       #0,LA_FG_2+1(a0)
+linea_setcolor2:
+		btst       #2,d0
+		beq.w      linea_setcolor3 /* XXX */
+		bset       #0,LA_FG_3+1(a0)
+linea_setcolor3:
+		btst       #3,d0
+		beq.w      linea_setcolor4 /* XXX */
+		bset       #0,LA_FG_4+1(a0)
+linea_setcolor4:
+		move.l     (a7)+,d0
+		rts
+
+
+find_object:
+		clr.l      d1
+		tst.w      mouse_stat
+		beq.s      find_object_1
+		bsr        mouse
+		move.l     d0,d2
+		move.l     d1,d3
+		clr.l      d0
+		clr.l      d1
+		bra.s      find_object_2
+find_object_1:
+		cmpi.w     #17,d1
+		bcc.s      find_object_9 /* ?? never true */
+        /* ??? that code does not make any sense */
+		.IFNE COMPILER
+		bsr        mousekey /* XXX BUG */
+		.ELSE
+		bsr        adspr1
+		.ENDC
+		tst.w      (a0)
+		beq.s      find_object_5
+		move.w     xinput(a0),d2
+		move.w     yinput(a0),d3
+find_object_2:
+		lea.l      fs_coords(pc),a1
+		move.w     #MAX_OBJECTS-1,d1
+find_object_3:
+		tst.w      (a1)
+		bne.s      find_object_6
+find_object_4:
+		addq.l     #8,a1
+		dbf        d1,find_object_3
+find_object_5:
+		clr.l      d0
+		clr.l      d1
+		rts
+find_object_6:
+		cmp.w      (a1),d2
+		bcs.s      find_object_4
+		cmp.w      2(a1),d2
+		beq.s      find_object_7
+		bcc.s      find_object_4
+find_object_7:
+		cmp.w      4(a1),d3
+		bcs.s      find_object_4
+		cmp.w      6(a1),d3
+		beq.s      find_object_8
+		bcc.s      find_object_4
+find_object_8:
+		neg.w      d1
+		addi.w     #MAX_OBJECTS,d1
+		clr.l      d0
+		rts
+find_object_9:
+		/* moveq.l     #1,d0 */
+		dc.w 0x203c,0,1 /* XXX */
+		rts
+
+
+draw_filenamebox:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     textbg_color(pc),-(a7)
+		move.w     #0,textbg_color
+		bsr        st_mouse_off
+		lea.l      fillpattern(pc),a5
+		move.l     #0,(a5)
+		moveq.l    #0,d0
+		bsr        linea_setcolor
+		lea.l      fs_fnbox(pc),a4
+		bsr        fillrect
+		move.w     button_color2(pc),d0
+		lea.l      fs_fnbox(pc),a4
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color2(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     4(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		lea.l      fillpattern(pc),a5
+		move.l     #-1,(a5)
+		/* FIXME: remainder identical to draw_filenames */
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_REPLACE,(a1)
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		lea.l      filenames(pc),a1
+		lea.l      fs_filename_coords(pc),a4
+		move.w     first_file(pc),d5
+		asl.w      #4,d5
+		adda.w     d5,a1
+		lea.l      textblit_coords(pc),a5
+		clr.l      d7
+draw_filenamebox_1:
+		move.w     num_files(pc),d6
+		cmp.w      d7,d6
+		beq.s      draw_filenamebox_4
+		cmpi.w     #DISP_FILES,d7
+		beq.s      draw_filenamebox_4
+		move.w     ZERO(a4),ZERO(a5)
+		move.w     2(a4),2(a5)
+		lea.l      textblit_str(pc),a2
+		move.l     a1,(a2)
+draw_filenamebox_2:
+		movea.l    textblit_str(pc),a3
+		/* tst.b     (a3) */
+		dc.w 0x0c13,0 /* XXX */
+		beq.s      draw_filenamebox_3
+		bsr        linea_textblit
+		bra.s      draw_filenamebox_2
+draw_filenamebox_3:
+		movea.l    textblit_str(pc),a1
+		addq.l     #1,a1
+		.IFNE COMPILER
+		.dc.w 0xd9fc,0,8 /* XXX */
+		.ELSE
+		addq.l     #8,a4
+		.ENDC
+		addq.w     #1,d7
+		bra.s      draw_filenamebox_1
+draw_filenamebox_4:
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_TRANS,(a1)
+		move.w     #5-1,d7
+draw_filenamebox_5:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     #37,-(a7) /* Vsync */
+		trap       #14
+		addq.l     #2,a7
+		movem.l    (a7)+,d0-d7/a0-a6
+		dbf        d7,draw_filenamebox_5
+		bsr        st_mouse_on
+		lea.l      textbg_color(pc),a0
+		move.w     (a7)+,(a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+draw_entry:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      fillpattern(pc),a5
+		move.l     #0,(a5)
+		moveq.l    #0,d0
+		bsr        linea_setcolor
+		lea.l      fs_entrybox(pc),a4
+		bsr        fillrect
+		move.w     button_color2(pc),d0
+		lea.l      fs_entrybox(pc),a4
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     ZERO(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color2(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     2(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     ZERO(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     6(a4),d4
+		bsr        linea_drawline
+		move.w     button_color1(pc),d0
+		move.w     4(a4),d1
+		move.w     6(a4),d2
+		move.w     4(a4),d3
+		move.w     2(a4),d4
+		bsr        linea_drawline
+		lea.l      fillpattern(pc),a5
+		move.l     #-1,(a5)
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_REPLACE,(a1)
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		move.w     #0,textbg_color
+		lea.l      fs_entrybox(pc),a4
+		move.w     ZERO(a4),d0
+		move.w     2(a4),d1
+		addq.w     #4,d0
+		addq.w     #3,d1
+		lea.l      textblit_coords(pc),a5
+		move.w     d0,ZERO(a5)
+		move.w     d1,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      8(a4),a3
+		move.l     a3,(a2)
+		clr.l      d7
+draw_entry_1:
+		movea.l    textblit_str(pc),a3
+		tst.b      (a3)
+		beq.s      draw_entry_2
+		bsr        linea_textblit
+		bra.s      draw_entry_1
+draw_entry_2:
+		lea.l      edit_coords(pc),a3
+		moveq.l    #0,d6
+		asl.w      #2,d6
+		move.w     textblit_coords(pc),d0
+		move.w     textblit_coords+2(pc),d1
+		move.w     d0,0(a3,d6.w)
+		move.w     d1,2(a3,d6.w)
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_TRANS,(a1)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+draw_path:
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_REPLACE,(a1)
+		move.w     text_color2,d0
+		move.w     d0,textfg_color
+		move.w     #0,textbg_color
+		lea.l      fs_pathbox(pc),a4
+		move.w     ZERO(a4),d0
+		move.w     2(a4),d1
+		addq.w     #4,d0
+		addq.w     #3,d1
+		lea.l      textblit_coords(pc),a5
+		move.w     d0,ZERO(a5)
+		move.w     d1,2(a5)
+		lea.l      textblit_str(pc),a2
+		lea.l      8(a4),a3
+		move.l     a3,(a2)
+		clr.l      d7
+draw_path_1:
+		cmpi.w     #64,d7
+		beq.s      draw_path_6
+		cmpi.w     #32,d7
+		bne.s      draw_path_2
+		move.w     fs_pathbox(pc),d0
+		addq.w     #4,d0
+		move.w     d0,textblit_coords
+		move.w     fontheight(pc),d3
+		add.w      d3,textblit_coords+2
+draw_path_2:
+		movea.l    textblit_str(pc),a3
+		tst.b      (a3)
+		beq.s      draw_path_3
+		bsr        linea_textblit
+		addq.w     #1,d7
+		bra.s      draw_path_1
+draw_path_3:
+		lea.l      usermask(pc),a3
+		move.l     a3,(a2)
+draw_path_4:
+		cmpi.w     #64,d7
+		beq.s      draw_path_6
+		cmpi.w     #32,d7
+		bne.s      draw_path_5
+		move.w     fs_pathbox(pc),d0
+		addq.w     #4,d0
+		move.w     d0,textblit_coords
+		move.w     fontheight(pc),d3
+		add.w      d3,textblit_coords+2
+draw_path_5:
+		movea.l    textblit_str(pc),a3
+		tst.b      (a3)
+		beq.s      draw_path_6
+		bsr        linea_textblit
+		addq.w     #1,d7
+		bra.s      draw_path_4
+draw_path_6:
+		lea.l      edit_coords(pc),a3
+		move.w     #1,d6
+		asl.w      #2,d6
+		move.w     textblit_coords(pc),d0
+		move.w     textblit_coords+2(pc),d1
+		move.w     d0,0(a3,d6.w)
+		move.w     d1,2(a3,d6.w)
+		move.w     text_color1,d0
+		move.w     d0,textfg_color
+		lea.l      wrt_mode(pc),a1
+		move.w     #MD_TRANS,(a1)
+		clr.w      first_file
+		move.w     #-1,selected_file
+		clr.w      num_files
+		bsr        read_dirs
+		bsr        read_files
+		bsr        sort_files
+		rts
+
+
+draw_cursor:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      cursor_flag(pc),a2
+		tst.w      (a2)
+		bne.s      draw_cursor3
+		lea.l      edit_coords(pc),a3
+		move.w     edit_obj(pc),d6
+		asl.w      #2,d6
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		move.w     0(a3,d6.w),d0
+		move.w     2(a3,d6.w),d1
+		cmpi.w     #16,nbplan
+		beq.w      draw_cursor1 /* XXX */
+		lea.l      cursor_data(pc),a0
+		lea.l      cursor_savebuf(pc),a2
+		dc.w 0xa00d /* draw_sprite */
+		lea.l      cursor_flag(pc),a2
+		move.w     #-1,(a2)
+		bra.w      draw_cursor3 /* XXX */
+draw_cursor1:
+		addq.w     #1,d0
+		subq.w     #1,d1
+		lea.l      cursor_savebuf(pc),a2
+		movea.l    physic(pc),a1
+		moveq.l    #0,d2
+		move.l     d2,d3
+		move.w     sp6(pc),d2
+		mulu.w     d2,d1
+		asl.w      #1,d0
+		adda.l     d1,a1
+		adda.l     d0,a1
+		move.l     a1,(a2)+
+		move.w     #10-1,d7
+draw_cursor2:
+		move.w     0(a1,d3.l),(a2)+
+		move.w     #-1,0(a1,d3.l)
+		add.w      d2,d3
+		dbf        d7,draw_cursor2
+		lea.l      cursor_flag(pc),a2
+		move.w     #-1,(a2)
+draw_cursor3:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+undraw_cursor:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      cursor_flag(pc),a2
+		tst.w      (a2)
+		beq.s      undraw_cursor3
+		lea.l      cursor_savebuf(pc),a2
+		cmpi.w     #16,nbplan
+		beq.w      undraw_cursor1 /* XXX */
+		dc.w 0xa00c /* undraw_sprite */
+		lea.l      cursor_flag(pc),a2
+		move.w     #0,(a2)
+		bra.w      undraw_cursor3 /* XXX */
+undraw_cursor1:
+		movea.l    (a2)+,a1
+		moveq.l    #0,d2
+		move.l     d2,d3
+		move.w     sp6(pc),d2
+		move.w     #10-1,d7
+undraw_cursor2:
+		move.w     (a2)+,0(a1,d3.l)
+		add.w      d2,d3
+		dbf        d7,undraw_cursor2
+		lea.l      cursor_flag(pc),a2
+		move.w     #0,(a2)
+undraw_cursor3:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+getusermask:
+		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    userpath(pc),a1
+		lea.l      usermask(pc),a2
+		move.w     (a1)+,d7
+		subq.w     #1,d7
+		cmpi.b     #':',1(a1)
+		bne.w      getusermask_1 /* XXX */
+		move.b     (a1),d0
+		subi.b     #'A',d0
+		andi.l     #255,d0
+		move.w     d0,currdrive
+		bsr        set_rootdir
+		addq.l     #2,a1
+getusermask_1:
+		clr.l      d5
+		move.w     d7,d6
+		movea.l    a1,a0
+getusermask_2:
+		tst.w      d6
+		beq.s      getusermask_3
+		subq.w     #1,d6
+		cmpi.b     #'\',(a0)+
+		bne.s      getusermask_2
+		addq.w     #1,d5
+		bra.s      getusermask_2
+getusermask_3:
+		tst.w      d5
+		beq.w      getusermask_11 /* XXX */
+		cmpi.w     #1,d5
+		beq.w      getusermask_12 /* XXX */
+		move.w     d7,d6
+		movea.l    a1,a0
+getusermask_4:
+		cmpi.b     #'\',(a0)
+		beq.s      getusermask_5
+		addq.l     #1,a0
+		bra.s      getusermask_4
+getusermask_5:
+		movea.l    a0,a3
+		addq.l     #1,a0
+getusermask_6:
+		tst.w      d6
+		beq.s      getusermask_8
+		subq.w     #1,d6
+		cmpi.b     #'\',(a0)
+		bne.s      getusermask_7
+		movea.l    a0,a4
+getusermask_7:
+		addq.l     #1,a0
+		bra.s      getusermask_6
+getusermask_8:
+		lea.l      fs_pathbox+10(pc),a6
+getusermask_9:
+		cmpa.l     a3,a4
+		beq.s      getusermask_10
+		move.b     (a3)+,(a6)+
+		bra.s      getusermask_9
+getusermask_10:
+		move.b     #0,(a6)+
+		move.b     (a3)+,(a2)+
+		bne.s      getusermask_10
+		move.b     #0,(a2)+
+		clr.l      fs_entrybox+8
+		clr.w      first_file
+		move.w     #-1,selected_file
+		bsr        set_curdir
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+getusermask_11:
+		move.b     #'\',(a2)+
+getusermask_12:
+		nop
+getusermask_13:
+		move.b     (a1)+,(a2)+
+		dbf        d7,getusermask_13
+		move.b     #0,(a2)+
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+init_drives:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     #10,-(a7) /* Drvmap */
+		trap       #13
+		addq.l     #2,a7
+		andi.l     #0x0000FFFF,d0
+		move.w     d0,drive_map
+		lea.l      fs_drives(pc),a2
+		clr.l      d5
+		clr.l      d1
+init_drives_1:
+		clr.w      8(a2)
+		btst       d1,d0
+		beq.w      init_drives_2 /* XXX */
+		move.b     #-1,9(a2)
+		addq.w     #1,d5
+init_drives_2:
+		addq.w     #1,d1
+		.IFNE COMPILER
+		dc.w 0xd5fc,0,12 /* XXX */
+		.ELSE
+		lea.l      12(a2),a2
+		.ENDC
+		cmpi.w     #MAX_DRIVES,d1
+		bne.s      init_drives_1
+		move.w     d5,unused_drives
+		move.w     #25,-(a7) /* Dgetdrv */
+		trap       #1
+		addq.l     #2,a7
+		move.w     d0,currdrive
+		addi.b     #'A',d0
+		lea.l      fs_pathbox+8(pc),a0
+		move.b     d0,(a0)+
+		move.b     #':',(a0)+
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     #47,-(a7) /* Fgetdta */
+		trap       #1
+		addq.l     #2,a7
+		lea.l      fsdta,a0
+		move.l     d0,(a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		move.w     drive_map,d5
+		clr.l      d1
+		lea.l      fs_drives(pc),a2
+init_drives_3:
+		clr.w      8(a2) /* BUG: write beyond end of array */
+		cmpi.w     #MAX_DRIVES,d1
+		beq.s      init_drives_6
+		btst       d1,d5
+		beq.s      init_drives_5
+		move.w     #-1,d4
+		cmp.b      10(a2),d0
+		beq.s      init_drives_4
+		andi.w     #255,d4
+init_drives_4:
+		move.w     d4,8(a2)
+init_drives_5:
+		lea.l      12(a2),a2
+		addq.w     #1,d1
+		bra.s      init_drives_3
+init_drives_6:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+set_rootdir:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     currdrive(pc),d0
+		move.w     d0,-(a7)
+		move.w     #14,-(a7) /* Dsetdrv */
+		trap       #1
+		addq.l     #4,a7
+		lea.l      backslash2(pc),a0
+		move.l     a0,-(a7)
+		move.w     #59,-(a7) /* Dsetpath */
+		trap       #1
+		addq.l     #6,a7
+		move.w     currdrive,d0
+		addi.b     #'A',d0
+		lea.l      fs_pathbox+8(pc),a0
+		move.b     d0,(a0)+
+		move.b     #':',(a0)+
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+backslash2: dc.b '\',0
+
+
+get_curdir:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     #0,-(a7)
+		lea.l      fs_pathbox+10(pc),a0
+		move.l     a0,-(a7)
+		move.w     #71,-(a7) /* Dgetpath */
+		trap       #1
+		addq.l     #8,a7
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+set_curdir:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      fs_pathbox+10(pc),a0
+		move.l     a0,-(a7)
+		move.w     #59,-(a7) /* Dsetpath */
+		trap       #1
+		addq.l     #6,a7
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+read_dirs:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      endofdirs(pc),a3
+		lea.l      filenames(pc),a1
+		move.l     a1,(a3)
+		.IFNE COMPILER
+		move.w     #(MAX_FILES*16/4)-1,d7
+		.ELSE
+		move.l     #(MAX_FILES*16/4)-1,d7 /* XXX */
+		.ENDC
+read_dirs_1:
+		move.l     #0,(a1)+
+		dbf        d7,read_dirs_1
+		lea.l      fs_pathbox+8(pc),a0
+		lea.l      fspathbuf(pc),a2
+read_dirs_2:
+		move.b     (a0)+,d0
+		tst.b      d0
+		beq.s      read_dirs_3
+		move.b     d0,(a2)+
+		bra.s      read_dirs_2
+read_dirs_3:
+		move.b     #'\',(a2)+
+		move.b     #'*',(a2)+
+		move.b     #'.',(a2)+
+		move.b     #'*',(a2)+
+		move.b     #0,(a2)+
+		movea.l    fsdta(pc),a1
+		lea.l      filenames(pc),a2
+		movem.l    a0-a6,-(a7)
+		move.w     #-1,-(a7)
+		pea.l      fspathbuf(pc)
+		move.w     #78,-(a7) /* Fsfirst */
+		trap       #1
+		addq.l     #8,a7
+		movem.l    (a7)+,a0-a6
+		tst.w      d0
+		bne.w      read_dirs_6 /* XXX */
+		bsr        format_dirname
+read_dirs_4:
+		cmpi.w     #MAX_FILES,num_files
+		beq.w      read_dirs_5 /* XXX */
+		movem.l    a0-a6,-(a7)
+		move.w     #79,-(a7) /* Fsnext */
+		trap       #1
+		addq.l     #2,a7
+		movem.l    (a7)+,a0-a6
+		tst.w      d0
+		bne.w      read_dirs_5 /* XXX */
+		bsr        format_dirname
+		bra.w      read_dirs_4 /* XXX */
+read_dirs_5:
+		lea.l      endofdirs(pc),a3
+		move.l     a2,(a3)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+read_dirs_6:
+		lea.l      endofdirs(pc),a3
+		move.l     a2,(a3)
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+read_files:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      fs_pathbox+8(pc),a0
+		lea.l      usermask(pc),a1
+		lea.l      fspathbuf(pc),a2
+read_files_1:
+		move.b     (a0)+,d0
+		tst.b      d0
+		beq.s      read_files_2
+		move.b     d0,(a2)+
+		bra.s      read_files_1
+read_files_2:
+		move.b     (a1)+,d0
+		tst.b      d0
+		beq.s      read_files_3
+		move.b     d0,(a2)+
+		bra.s      read_files_2
+read_files_3:
+		move.b     #0,(a2)+
+		movea.l    fsdta(pc),a1
+		movea.l    endofdirs(pc),a2
+		movem.l    a0-a6,-(a7)
+		move.w     #-1,-(a7)
+		pea.l      fspathbuf(pc)
+		move.w     #78,-(a7) /* Fsfirst */
+		trap       #1
+		addq.l     #8,a7
+		movem.l    (a7)+,a0-a6
+		tst.w      d0
+		bne.w      read_files_6 /* XXX */
+		bsr        format_filename
+read_files_4:
+		cmpi.w     #MAX_FILES,num_files
+		.IFNE COMPILER
+		beq.w      read_files_5 /* XXX */
+		.ELSE
+		bge.w      read_files_5 /* XXX */
+		.ENDC
+		movem.l    a0-a6,-(a7)
+		move.w     #79,-(a7) /* Fsnext */
+		trap       #1
+		addq.l     #2,a7
+		movem.l    (a7)+,a0-a6
+		tst.w      d0
+		bne.w      read_files_5 /* XXX */
+		bsr        format_filename
+		bra.w      read_files_4 /* XXX */
+read_files_5:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+read_files_6:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+format_dirname:
+		movem.l    d0/a0-a1/a3-a6,-(a7)
+		movea.l    fsdta(pc),a0
+		cmpi.b     #8,21(a0) /* volume label? */
+		beq.w      format_dirname_1 /* XXX */
+		cmpi.b     #'.',30(a0)
+		beq.w      format_dirname_1 /* XXX */
+		cmpi.b     #16,21(a0) /* directory? */
+		beq.w      format_dirname_2 /* XXX */
+format_dirname_1:
+		movem.l    (a7)+,d0/a0-a1/a3-a6
+		rts
+format_dirname_2:
+		addq.w     #1,num_files
+		movea.l    a2,a4
+		move.b     #'*',(a2)+
+		movea.l    fsdta(pc),a6
+		.IFNE COMPILER
+		dc.w 0xddfc,0,30 /* XXX */
+		.ELSE
+		lea.l      30(a6),a6
+		.ENDC
+		clr.w      d7
+format_dirname_3:
+		move.b     (a6)+,d0
+		beq.w      format_dirname_6 /* XXX */
+		cmpi.b     #'.',d0
+		beq.w      format_dirname_4 /* XXX */
+		move.b     d0,(a2)+
+		addq.w     #1,d7
+		bra.w      format_dirname_3 /* XXX */
+format_dirname_4:
+		cmpi.w     #9,d7
+		beq.w      format_dirname_5 /* XXX */
+		move.b     #' ',(a2)+
+		addq.w     #1,d7
+		bra.w      format_dirname_4 /* XXX */
+format_dirname_5:
+		move.b     (a6)+,d0
+		beq.w      format_dirname_6 /* XXX */
+		move.b     d0,(a2)+
+		addq.w     #1,d7
+		bra.w      format_dirname_5 /* XXX */
+format_dirname_6:
+		cmpi.w     #14,d7
+		beq.w      format_dirname_7 /* XXX */
+		move.b     #' ',(a2)+
+		addq.w     #1,d7
+		bra.w      format_dirname_6 /* XXX */
+format_dirname_7:
+		cmpi.b     #' ',10(a4)
+		beq.s      format_dirname_8
+		move.b     #'.',9(a4)
+format_dirname_8:
+		move.b     #0,(a2)+
+		movem.l    (a7)+,d0/a0-a1/a3-a6
+		rts
+
+
+format_filename:
+		movem.l    d0/a0-a1/a3-a6,-(a7)
+		movea.l    fsdta(pc),a0
+		cmpi.b     #8,21(a0) /* volume label? */
+		beq.w      format_filename_1 /* XXX */
+		cmpi.b     #'.',30(a0)
+		beq.w      format_filename_1 /* XXX */
+		cmpi.b     #16,21(a0) /* directory? */
+		beq.w      format_filename_1 /* XXX */
+		bra.w      format_filename_2 /* XXX */
+format_filename_1:
+		movem.l    (a7)+,d0/a0-a1/a3-a6
+		rts
+format_filename_2:
+		addq.w     #1,num_files
+		movea.l    a2,a4
+		move.b     #' ',(a2)+
+		movea.l    fsdta(pc),a6
+		.IFNE COMPILER
+		dc.w 0xddfc,0,30 /* XXX */
+		.ELSE
+		lea.l      30(a6),a6
+		.ENDC
+		clr.w      d7
+format_filename_3:
+		move.b     (a6)+,d0
+		beq.w      format_filename_6 /* XXX */
+		cmpi.b     #'.',d0
+		beq.w      format_filename_4 /* XXX */
+		move.b     d0,(a2)+
+		addq.w     #1,d7
+		bra.w      format_filename_3 /* XXX */
+format_filename_4:
+		cmpi.w     #9,d7
+		beq.w      format_filename_5 /* XXX */
+		move.b     #' ',(a2)+
+		addq.w     #1,d7
+		bra.w      format_filename_4 /* XXX */
+format_filename_5:
+		move.b     (a6)+,d0
+		beq.w      format_filename_6 /* XXX */
+		move.b     d0,(a2)+
+		addq.w     #1,d7
+		bra.w      format_filename_5 /* XXX */
+format_filename_6:
+		cmpi.w     #14,d7
+		beq.w      format_filename_7 /* XXX */
+		move.b     #' ',(a2)+
+		addq.w     #1,d7
+		bra.w      format_filename_6 /* XXX */
+format_filename_7:
+		cmpi.b     #' ',10(a4)
+		beq.s      format_filename_8
+		move.b     #'.',9(a4)
+format_filename_8:
+		move.b     #0,(a2)+
+		movem.l    (a7)+,d0/a0-a1/a3-a6
+		rts
+
+
+sort_files:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.b     #'*',d3
+		move.b     #7,d4
+		bsr        replace_dirchar
+		clr.l      d0
+		clr.l      d1
+		lea.l      filenames(pc),a0
+		move.w     num_files(pc),d1
+		subq.w     #1,d1
+		tst.w      d1
+		bmi.w      sort_files_2 /* XXX */
+		movea.l    a0,a1
+sort_files_1:
+		bsr.w      comp_filenames /* XXX */
+		bsr        swap_files
+		.IFNE COMPILER
+		dc.w 0xd3fc,0,16 /* XXX */
+		.ELSE
+		lea.l      16(a1),a1
+		.ENDC
+		addq.w     #1,d0
+		dbf        d1,sort_files_1
+sort_files_2:
+		move.b     #7,d3
+		move.b     #'*',d4
+		bsr        replace_dirchar
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+comp_filenames:
+		movem.l    d0-d1/a0-a6,-(a7)
+		clr.l      d2
+		lea.l      cmp_lowest(pc),a2
+		lea.l      cmp_cur(pc),a3
+		move.l     #0x7FFFFFFF,(a2)+
+		move.l     #0x7FFFFFFF,(a2)+
+		move.l     #0x7FFFFFFF,(a2)+
+		move.l     #0x7FFFFFFF,(a2)+
+		move.w     num_files(pc),d1
+comp_filenames_1:
+		cmp.w      d0,d1
+		beq.s      comp_filenames_3
+		move.l     ZERO(a1),ZERO(a3)
+		move.l     4(a1),4(a3)
+		move.l     8(a1),8(a3)
+		move.l     12(a1),12(a3)
+		.IFNE COMPILER
+		dc.w 0xd7fc,0,16 /* XXX */
+		.ELSE
+		lea.l      16(a3),a3
+		.ENDC
+		move.w     #0,ccr
+		subx.l     -(a2),-(a3)
+		subx.l     -(a2),-(a3)
+		subx.l     -(a2),-(a3)
+		subx.l     -(a2),-(a3)
+		bpl.w      comp_filenames_2 /* XXX */
+		move.l     ZERO(a1),ZERO(a2)
+		move.l     4(a1),4(a2)
+		move.l     8(a1),8(a2)
+		move.l     12(a1),12(a2)
+		move.w     d0,d2
+comp_filenames_2:
+		.IFNE COMPILER
+		dc.w 0xd3fc,0,16 /* XXX */
+		dc.w 0xd5fc,0,16 /* XXX */
+		.ELSE
+		lea.l      16(a1),a1
+		lea.l      16(a2),a2
+		.ENDC
+		addq.w     #1,d0
+		bra.s      comp_filenames_1
+comp_filenames_3:
+		movem.l    (a7)+,d0-d1/a0-a6
+		rts
+
+cmp_lowest: ds.l 6
+cmp_cur: ds.l 6
+
+
+swap_files:
+		movem.l    d0-d7/a0-a6,-(a7)
+		tst.w      d2
+		beq.s      swap_files_1
+		asl.w      #4,d0
+		asl.w      #4,d2
+		movem.l    0(a0,d2.w),d3-d6
+		movem.l    0(a0,d0.w),a3-a6
+		movem.l    d3-d6,0(a0,d0.w)
+		movem.l    a3-a6,0(a0,d2.w)
+swap_files_1:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+replace_dirchar:
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     num_files(pc),d1
+		subq.w     #1,d1
+		tst.w      d1
+		bmi.w      replace_dirchar_3 /* XXX */
+		lea.l      filenames(pc),a0
+replace_dirchar_1:
+		cmp.b      (a0),d3
+		bne.s      replace_dirchar_2
+		move.b     d4,(a0)
+replace_dirchar_2:
+		.IFNE COMPILER
+		dc.w 0xd1fc,0,16 /* XXX */
+		.ELSE
+		lea.l      16(a0),a0
+		.ENDC
+		dbf        d1,replace_dirchar_1
+replace_dirchar_3:
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+
+fs_getkey:
+		movem.l    a0-a6,-(a7)
+		move.w     #255,-(a7)
+		move.w     #6,-(a7) /* Crawio */
+		trap       #1
+		addq.l     #4,a7
+		movem.l    (a7)+,a0-a6
+		move.l     d0,lastkey
+		rts
+
+	.data
+
+fontheight: ds.w 1 /* 170e4 */
+lastkey: ds.l 1 /* 170e6 */
+fillpattern: dc.w -1,-1 /* 170ea */
+		.IFNE COMPILER
+        dc.w 0xaaaa,0x5555 /* XXX */
+		.ELSE
+        dc.w 0x5555,0xaaaa
+        .ENDC
+bg_color: dc.w 0
+button_color1: dc.w 0
+button_color2: ds.w 1
+text_color1: ds.w 1
+text_color2: ds.w 1
+usertitle: ds.l 1
+userpath: ds.l 1
+fs_root: ds.w 4
+fs_fnbox: ds.w 4
+fs_filename_coords: ds.w 4*(DISP_FILES+2)
+fs_slider: ds.w 4
+textblit_str: ds.l 1 /* 17194 */
+fs_closer: ds.w 5
+        dc.b 7,0
+fs_okbutton: ds.w 5
+        dc.b '   OK  ',0
+fs_cancelbutton: ds.w 5
+        dc.b ' Cancel',0
+fs_uparrow: ds.w 5
+        dc.b 1,0
+fs_dnarrow: ds.w 5
+        dc.b 2,0
+fs_drives: dc.b 0,0,0,0,0,0,0,0,0,0,'A',0 /* 171e0 */
+        dc.b 0,0,0,0,0,0,0,0,0,0,'B',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'C',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'D',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'E',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'F',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'G',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'H',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'I',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'J',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'K',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'L',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'M',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'N',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'O',0
+        dc.b 0,0,0,0,0,0,0,0,0,0,'P',0
+        
+usermask: ds.b 96 /* 172a0 */
+
+fs_pathbox: ds.w 4
+       dc.w 0,0
+       ds.b 76
+
+fspathbuf: ds.b 264
+
+fsnamebuf: ds.b 32
+        .IFNE COMPILER
+        dc.w 0x42b9
+        dc.l fs_entrybox+8
+        .ENDC
+fs_entrybox: ds.w 4
+             dc.w 0,0
+             ds.b 28
+
+edit_obj: ds.w 1
+edit_coords: ds.w 4
+selected_file: ds.w 1
+first_file: ds.w 1
+drive_map: ds.w 1 /* 174b6 */
+unused_drives: ds.w 1
+currdrive: ds.w 1
+num_files: ds.w 1 /* 174bc */
+fsdta: ds.l 1
+curr_obj: ds.w 1
+fs_coords: ds.w 4*MAX_OBJECTS
+        dc.w 8,8 /* unused? */
+        dc.b '        ',0,0
+fonthdr: ds.l 1 /* 175f2 */
+sysfont: dc.w 1 /* 175f6 */
+text_style: dc.w 0 /* 175f8 */
+textfg_color: dc.w 1 /* 175fa */
+textbg_color: dc.w 0 /* 175fc */
+wrt_mode: ds.w 1 /* 175fe */
+text_rotation: ds.w 1 /* 17600 */
+text_double: ds.w 1 /* 17602 */
+textblit_coords: ds.w 2 /* 17604 */
+save_clip_flag: ds.w 1 /* 17608 */
+     dc.w 0 /* unused? */
+     dc.w 0 /* unused? */
+     dc.w 0 /* unused? */
+     dc.b 'STOS GEM FONT 110553',0 /* unused? */
+     .even
+scratchbuf: ds.w SCRATCHBUF_SIZE /* 17626 */
+
+mouseptr: dc.l mouse_data /* 17e26 */
+mousebuf: dc.w 0,0,1,0,1 /* 17e2a */
+          ds.w 16*16+16*16
+mouse_data: /* 18234 */
+        dc.w 0,0,1,0,1 /* arrow */
+		dc.w $c000,$0000,$e000,$4000,$f000,$6000,$f800,$7000,$fc00,$7800,$fe00,$7c00,$ff00,$7e00,$ff80,$7f00
+		dc.w $ffc0,$7f80,$ffe0,$7c00,$fe00,$6c00,$ef00,$4600,$cf00,$0600,$8780,$0300,$0780,$0300,$0380,$0000
+
+		dc.w 0,0,1,0,1 /* point hand */
+		dc.w $3000,$3000,$7c00,$4c00,$7e00,$6200,$1f80,$1980,$0fc0,$0c40,$3ff8,$32f8,$3ffc,$2904,$7ffc,$6624
+		dc.w $fffe,$93c2,$fffe,$cf42,$7fff,$7c43,$3fff,$2021,$1fff,$1001,$0fff,$0c41,$03ff,$0380,$00ff,$00c0
+
+		dc.w 7,7,1,0,1 /* cross */
+		dc.w $0380,$0000,$0380,$0100,$0380,$0100,$0380,$0100,$0280,$0100,$0280,$0100,$fefe,$0100,$f01e,$7ffc
+		dc.w $fefe,$0100,$0280,$0100,$0280,$0100,$0380,$0100,$0380,$0100,$0380,$0100,$0380,$0000,$0000,$0000
+
+		dc.w 7,7,1,0,1 /* outline cross */
+		dc.w $07c0,$0000,$07c0,$0380,$06c0,$0280,$06c0,$0280,$06c0,$0280,$fefe,$0280,$fefe,$7efc,$c006,$4004
+		dc.w $fefe,$7efc,$fefe,$0280,$06c0,$0280,$06c0,$0280,$06c0,$0280,$07c0,$0380,$07c0,$0000,$0000,$0000
+
+mouse_savebuf: ds.w 5+16*16 /* 1835c */
+
+cursor_flag: dc.w 0
+cursor_data: dc.w 8,4,0,0,1 /* text input cursor */
+		dc.w $01e0,$0000,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0
+		dc.w $0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$0120,$00c0,$01e0,$0000
+
+cursor_savebuf: ds.w 5+16*16
+
+bitblt: ds.b 78 /* 187bc */
+       
+physic: ds.l 1 /* 1880a */
+logic: ds.l 1 /* 1880e */
+falcon_planes: ds.w 1 /* 18812 */
+falcon_bytes_line: ds.w 1 /* 18814 */
+falcon_font: ds.w 1 /* 18816 */
+falc_pencolor: dc.w 8 /* 18818 */
+falc_papercolor: dc.w 3,0 /* 1881a */
+pen_status: ds.w 1 /* 1881e */
+textcolor: ds.w 1 /* 18820 */
+txtbgcolor: ds.w 1 /* 18822 */
+fontptr: ds.l 1 /* 18824 */
+fontsizes: ds.w 2 /* 18828 */
+xcursor: ds.w 1 /* 1882c */
+ycursor: ds.w 1 /* 1882e */
+cell_maxx: ds.w 1 /* 18830 */
+cell_maxy: ds.w 1 /* 18832 */
+
+
+endofdirs: ds.l 1
+filenames: ds.b MAX_FILES*16
+
+	ds.b 256 /* unused? */
+
+falcon_zones: ds.l 2*MAX_ZONES /* 1d438 */
+
+	ds.b 64 /* unused? */
+
+; sprite loading address
 finspr:
+
+	.IFEQ COMPILER
+	ds.b 360 /* unused? */
+	.ENDC
+
+ZERO equ 0
+
+	.ELSE
+
+; sprite loading address
+finspr:
+
+	.ENDC /* FALCON */
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           end

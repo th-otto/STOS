@@ -6,4 +6,4 @@ compiler\sprit101.lib
 .S[-DCOMPILER=1]
 .S[-DFALCON=1]
 =
-..\src\sprifalc.s
+sprites.s

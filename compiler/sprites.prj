@@ -5,4 +5,4 @@ compiler\sprit101.lib
 .S[-DCOMPILER=1]
 .S[-DFALCON=0]
 =
-..\orig\sprites.s
+sprites.s

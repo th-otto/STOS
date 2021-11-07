@@ -5,4 +5,4 @@ stos\sprit101.bin
 .S[-DCOMPILER=0]
 .S[-DFALCON=1]
 =
-sprifalc.s
+sprites.s
