@@ -2,12 +2,6 @@
 		.include "errors.inc"
 		.include "equates.inc"
 
-LA_PLANES equ 0
-V_BYTES_LIN equ -2
-V_REZ_VT equ -4
-DEV_TAB equ -692
-
-
 MAX_STARS = 512
 
 STARS_FLAT     = 1
@@ -70,8 +64,20 @@ l007: /* wipe stars off */
 entry:
         bra.w init
 
+params_offset: dc.l params-entry
+offset_setparams: dc.l setparams-entry
+offset_gostars: dc.l dogostars-entry
+
+
+mch_cookie: dc.l 0
+vdo_cookie: dc.l 0
+snd_cookie: dc.l 0
+cookieid: dc.l 0
+cookievalue: dc.l 0
+
 params:
 
+x10084: dc.l 0
 lineavars:	ds.l 1
 bytes_lin: ds.w 1
 nbplanes: ds.w 1
@@ -206,6 +212,46 @@ bitblt: ds.b 78
 
 init:
 	movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      mch_cookie(pc),a0
+		clr.l      (a0)+
+		clr.l      (a0)+ /* vdo_cookie */
+		move.l     #1,(a0)+ /* snd_cookie */
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F4D4348,(a1) /* '_MCH' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      init1
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+init1:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F56444F,(a1) /* '_VDO' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      init2
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+init2:
+/* FIXME: _SND cookie not used here */
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F534E44,(a1) /* '_SND' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      init3
+		lea.l      cookievalue(pc),a1
+		lea.l      snd_cookie(pc),a0
+		move.l     (a1),(a0)
 init3:
 	move.w     #17,-(a7) /* Random */
 	trap       #14
@@ -219,56 +265,89 @@ init3:
 	lea        exit(pc),a2
 	rts
 
+getcookie:
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		beq.s      getcookie3
+		movea.l    d0,a0
+		clr.l      d4
+getcookie1:
+		move.l     (a0)+,d0
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.s      getcookie3
+		cmp.l      d3,d0
+		beq.s      getcookie2
+		addq.w     #1,d4
+		bra.w      getcookie1 /* XXX */
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.s      getcookie3
+		move.l     d1,(a5)
+getcookie3:
+		rts
+
+
 nrand:
-	movem.l    d1-d2/a0-a2,-(a7)
-	move.w     #17,-(a7)
+	move.w     #$0011,-(a7)
 	trap       #14
 	addq.l     #2,a7
 	andi.l     #$0000FFFF,d0
 	sub.l      d5,d6
 	divu.w     d6,d0
 	swap       d0
-	movem.l    (a7)+,d1-d2/a0-a2
+illtype:
+	nop
+prundefined:
 	rts
 
 nextstar:
-	movem.l    d7/a0,-(a7)
-	lea        params(pc),a0
-	move.l     seed-params(a0),d0
-	mulu.w     rndfac-params(a0),d0
+	move.l     seed(pc),d0
+	mulu.w     rndfac(pc),d0
 	addq.l     #1,d0
 	andi.l     #$0000FFFF,d0
-	move.l     d0,seed-params(a0)
-	movem.w    start_x-params(a0),d6-d7
+	lea        seed(pc),a5
+	move.l     d0,(a5)
+	movem.w    start_x(pc),d6-d7
 	sub.l      d6,d7
 	divu.w     d7,d0
 	swap       d0
 	add.l      d6,d0
-	move.w     d0,curr_x-params(a0)
-	move.l     seed-params(a0),d0
-	movem.w    start_y-params(a0),d6-d7
+	lea        curr_x(pc),a5
+	move.w     d0,(a5)
+	move.l     seed(pc),d0
+	movem.w    start_y(pc),d6-d7
 	sub.l      d6,d7
 	divu.w     d7,d0
 	swap       d0
 	add.l      d6,d0
-	move.w     d0,curr_y-params(a0)
-	move.l     seed-params(a0),d0
-	movem.w    startcolor-params(a0),d6-d7
+	lea        curr_y(pc),a5
+	move.w     d0,(a5)
+	move.l     seed(pc),d0
+	movem.w    startcolor(pc),d6-d7
 	sub.l      d6,d7
 	divu.w     d7,d0
 	swap       d0
 	add.l      d6,d0
-	move.w     d0,curr_color-params(a0)
-	movem.l    (a7)+,d7/a0
+	lea        curr_color(pc),a5
+	move.w     d0,(a5)
 	rts
 
 setpix:
-	move.l     a0,-(a7)
 	movea.l    screenaddr(pc),a0
 	move.w     d0,d4
 	andi.l     #0xFFF0,d4
 	lsr.l      #4,d4
 	mulu.w     nxwd(pc),d4
+	andi.w     #$FFFF,d1
 	mulu.w     bytes_lin(pc),d1
 	adda.l     d1,a0
 	adda.l     d4,a0
@@ -290,7 +369,6 @@ setpix2:
 	and.w      d3,(a0)+
 setpix3:
 	dbf        d0,setpix1
-	move.l     (a7)+,a0
 	rts
 
 isin:
@@ -352,58 +430,68 @@ isin6:
 	rts
 
 
-illfunc:
-illtype:
-	moveq.l    #E_illegalfunc,d0
-	move.l     error(a5),a0
-	jmp (a0)
 setparams:
-	lea.l      params(pc),a0
-	move.w     d0,stars_count-params(a0)
-	move.w     d1,stars_type-params(a0)
-	move.w     d2,start_x-params(a0)
-	move.w     d4,end_x-params(a0)
-	move.w     d3,start_y-params(a0)
-	move.w     d5,end_y-params(a0)
-	move.w     d6,startcolor-params(a0)
-	move.w     d7,endcolor-params(a0)
+	lea.l      x10084(pc),a5
+	lea.l      stars_count(pc),a0
+	move.w     d0,(a0)
+	lea.l      stars_type(pc),a1
+	move.w     d1,(a1)
+	lea.l      start_x(pc),a0
+	move.w     d2,start_x-start_x(a0)
+	move.w     d4,end_x-start_x(a0)
+	move.w     d3,start_y-start_x(a0)
+	move.w     d5,end_y-start_x(a0)
+	move.w     d6,startcolor-start_x(a0)
+	move.w     d7,endcolor-start_x(a0)
 	movem.w    start_x(pc),d6-d7
 	cmp.w      d7,d6
-	bhi.s      illfunc
+	bhi        setparams1
 	movem.w    start_y(pc),d6-d7
 	cmp.w      d7,d6
-	bhi.s      illfunc
+	bhi        setparams1
 	movem.w    startcolor(pc),d6-d7
 	cmp.w      d7,d6
-	bhi.s      illfunc
-	cmpi.w     #MAX_STARS-1,d0
-	bhi.s      illfunc
+	bhi        setparams1
+	move.w     stars_count(pc),d5
+	cmpi.w     #MAX_STARS-1,d5
+	ble.s      setparams2
+setparams1:
+	rts
+setparams2:
     move.l     lineavars(pc),a0
     lea.l      bytes_lin(pc),a1
+    move.l     #32000,screen_size-bytes_lin(a1)
+	move.w     vdo_cookie(pc),d6
+	cmpi.w     #3,d6
+	bne.s      setparams3
 	move.w     V_BYTES_LIN(a0),d0
-	move.w     V_REZ_VT(a0),d1
+	andi.l     #$0000FFFF,d0
+	move.w     DEV_TAB+2(a0),d1
+	/* addq.w     #1,d1 */
+	dc.w 0x0641,1 /* XXX */
+	andi.l     #$0000FFFF,d1
 	mulu.w     d1,d0
 	move.l     d0,screen_size-bytes_lin(a1)
+setparams3:
 	move.w     V_BYTES_LIN(a0),bytes_lin-bytes_lin(a1)
 	move.w     LA_PLANES(a0),d0
 	move.w     d0,nbplanes-bytes_lin(a1)
 	asl.w      #1,d0
 	move.w     d0,nxwd-bytes_lin(a1)
-
 	lea.l      starfield(pc),a2
 	movem.w    start_x(pc),d0-d3
 	move.w     d5,(a2)
-	lea        curr_start_x(pc),a4
-	movem.w    d0-d3,(a4)
+	lea        curr_start_x(pc),a5
+	movem.w    d0-d3,(a5)
 	addq.l     #2,a2
 setstars2:
 	bsr        nextstar
-	lea        stars_type(pc),a0
-	cmpi.w     #2,(a0)
+	lea        stars_type(pc),a5
+	cmpi.w     #2,(a5)
 	bhi        illtype
 	beq.s      setstars5
-	lea        stars_type(pc),a0
-	cmpi.w     #STARS_PARALLAX-1,(a0)
+	lea        stars_type(pc),a5
+	cmpi.w     #STARS_PARALLAX-1,(a5)
 	beq.s      setstars3
 	moveq      #1,d3
 	bra.s      setstars4
@@ -427,30 +515,30 @@ setstars5:
 	lsr.w      #1,d3
 	cmp.w      d1,d3
 	bhi.s      setstars6
-	lea        x106c0(pc),a0
-	move.w     d1,(a0)
+	lea        x106c0(pc),a5
+	move.w     d1,(a5)
 	bra.s      setstars7
 setstars6:
-	lea        x106c0(pc),a0
-	move.w     d3,(a0)
+	lea        x106c0(pc),a5
+	move.w     d3,(a5)
 setstars7:
 	add.w      start_x(pc),d1
 	add.w      start_y(pc),d3
-	lea        zoomx(pc),a0
-	movem.w    d1/d3,(a0)
+	lea        zoomx(pc),a5
+	movem.w    d1/d3,(a5)
 	move.w     x106c0(pc),d0
 	movem.w    startcolor(pc),d1-d2
 	sub.w      d1,d2
 	addq.w     #1,d2
-	lea        curr_end_color(pc),a0
-	move.w     d2,(a0)
+	lea        curr_end_color(pc),a5
+	move.w     d2,(a5)
 	movem.w    start_x(pc),d0-d1
 	add.l      d0,d1
 	lsr.l      #1,d1
 	mulu.w     #512,d2
 	divu.w     d1,d2
-	lea        rndcolor(pc),a0
-	move.w     d2,(a0)
+	lea        rndcolor(pc),a5
+	move.w     d2,(a5)
 setstars8:
 	moveq      #0,d5
 	move.w     #359,d6
@@ -464,7 +552,7 @@ setstars8:
 	mulu.w     rndcolor(pc),d0
 	move.w     d0,(a2)+
 	moveq      #0,d5
-	moveq      #20,d6
+	move.w     #20,d6 /* XXX */
 	bsr        nrand
 	move.w     d0,(a2)+
 	move.w     x106c0(pc),d6
@@ -472,18 +560,14 @@ setstars8:
 	move.w     d0,(a2)+
 	dbf        d7,setstars8
 setstars9:
-	lea        stars_type(pc),a0
-	addq.w     #1,(a0)
+	lea        stars_type(pc),a5
+	addq.w     #1,(a5)
 	rts
 
-
-prundefined:
-	moveq.l    #E_illegalfunc,d0
-	move.l     error(a5),a0
-	jmp (a0)
 dogostars:
-	lea        stars_type(pc),a0
-	tst.w      (a0)
+	lea        stars_type(pc),a5
+	/* tst.w      (a5) */
+	dc.w 0x0c55,0 /* XXX */
 	beq        prundefined
 	lea.l      screenaddr(pc),a0
 	move.l     d3,(a0)
@@ -500,7 +584,7 @@ dogostars:
 	move.l     d0,(a0)
 screen_set:
 	
-	move.w     wipe_on(pc),d0
+	tst.w      wipe_on /* BUG: absolute addr */
 	beq        gostars1
 
 	movem.l    d0-d7/a0-a6,-(a7)
@@ -576,8 +660,8 @@ fastcls2:
 gostars1:
 	lea.l      starfield(pc),a2
 	movem.w    (a2)+,d7
-	lea        stars_type(pc),a0
-	cmpi.w     #STARS_ZOOM,(a0)
+	lea        stars_type(pc),a5
+	cmpi.w     #STARS_ZOOM,(a5)
 	beq        gostars9
 	movem.w    movex(pc),d5-d6
 gostars2:
@@ -672,8 +756,8 @@ gostars13:
 	mulu.w     rndfac(pc),d4
 	addq.w     #1,d4
 	andi.l     #$0000FFFF,d4
-	lea        seed(pc),a0
-	move.w     d4,(a0)
+	lea        seed(pc),a5
+	move.w     d4,(a5)
 	divu.w     x106c0(pc),d4
 	swap       d4
 	move.w     d4,4(a2)
@@ -688,10 +772,12 @@ lib1:
  * SET STARS count,type,sx,sy,ex,ey,sc,ec
  */
 setstars:
-	movem.l    d0-d7/a1-a5,-(a7)
+	lea.l      saveregs1(pc),a0
+	movem.l    d0-d7/a1-a5,(a0)
 	move.l     debut(a5),a0
 	movea.l    0(a0,d1.w),a0
-	lea        setparams-entry(a0),a0 /* a0 -> setparams */
+	move.l offset_setparams-entry(a0),d0
+	add.l d0,a0 /* a0 -> setparams */
 	
 	move.l     (a6)+,d7 /* endcolor */
 	addq.w     #1,d7
@@ -704,8 +790,10 @@ setstars:
 	move.l     (a6)+,d0 /* count */
 	subq.w     #1,d0
 	jsr        (a0)
-	movem.l    (a7)+,d0-d7/a1-a5
+	movem.l    saveregs1(pc),d0-d7/a1-a5
 	rts
+
+saveregs1: ds.l 14
 
 lib2:
 	dc.w 0 /* no library calls */
@@ -717,24 +805,28 @@ lib2:
 lib3:
 	dc.w 0 /* no library calls */
 gostars:
-	movem.l    d0-d7/a1-a5,-(a7)
+	lea.l      saveregs2(pc),a0
+	movem.l    d0-d7/a1-a5,(a0)
 	move.l     debut(a5),a0
 	movea.l    0(a0,d1.w),a0
-	lea dogostars-entry(a0),a0 /* a0 -> gostars */
+	move.l offset_gostars-entry(a0),d1
+	add.l d1,a0 /* a0 -> gotstars */
 
 	moveq      #0,d3
-	subq.w     #1,d0
-	beq.s      params2
-	subq.w     #1,d0
-	bne.s      gostarsend
+	cmpi.b     #1,d0
+	beq.w      params2 /* XXX */
+	cmpi.w     #2,d0
+	bne        gostarsend
 	move.l     (a6)+,d3 /* screeno */
 params2:
 	move.l     (a6)+,d5 /* movey */
 	move.l     (a6)+,d4 /* movex */
 	jsr        (a0)
 gostarsend:
-	movem.l    (a7)+,d0-d7/a1-a5
+	movem.l    saveregs2(pc),d0-d7/a1-a5
 	rts
+
+saveregs2: ds.l 14
 
 
 lib4:
@@ -746,7 +838,9 @@ lib5:
 wipe_stars_on:
 	move.l     debut(a5),a0
 	movea.l    0(a0,d1.w),a0
-	move.w     #-1,wipe_on-entry(a0)
+	move.l     params_offset-entry(a0),d6
+	add.l      d6,a0
+	move.w     #-1,wipe_on-params(a0)
 	rts
 
 lib6:
@@ -758,7 +852,9 @@ lib7:
 wipe_stars_off:
 	move.l     debut(a5),a0
 	movea.l    0(a0,d1.w),a0
-	move.w     #0,wipe_on-entry(a0)
+	move.l     params_offset-entry(a0),d6
+	add.l      d6,a0
+	move.w     #0,wipe_on-params(a0)
 	rts
 
 
@@ -766,3 +862,9 @@ libex:
 	dc.w 0
 
 finprg:
+
+LA_PLANES equ 0
+V_BYTES_LIN equ -2
+DEV_TAB equ -692
+
+ZERO equ 0

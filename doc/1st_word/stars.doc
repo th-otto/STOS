@@ -1,214 +1,0 @@
-070000203050000140000004006010000
-1STOS ExtensionSTARS v1.41
-2- # -1
-F0110000001
-9[..........................................................]0110
-€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
-บบ
-บบ
-บบ
-บ        ST(e)/TT/Falcon030Starsv1.4บ
-บบ
-บThemodifiedSTARSextensionบ
-บบ
-บbyบ
-บบ
-บAnthonyHoskin.บ
-บ45WythburnRoad,บ
-บNewbold,บ
-บChesterfield,บ
-บDerbyshire,บ
-บS418DP.(U.K.)บ
-บบ
-บ              Current version: v1.4(4thFebruary 1998)               บ
-บบ
-บบ
-บ                                                                     บ
-บBasedontheoriginalSTARScodebyบ
-บบ
-บLeeUpcraft(c)February1992บ
-บบ
-บบ
-บบ
-บ                                                                     บ
-บ                             Disclaimer€                            บ
-บ                                                                     บ
-บบ
-บ    ThissoftwareisfortheAtariST(e)/TT/Falcon030computersบ
-บ    only.Itakeno responsibilitywhatsoeverintheuse/misuseofบ
-บ    thissoftware.                                               บ
-บบ
-บบ
-บ                                                                     บ
-บ                                                                     บ
-บ                          System Requirements€                        บ
-บ                                                                     บ
-บบ
-บ              Machine   :    AnyAtariST(e)/TT/Falcon030           บ
-บ              RAM       :    Runsonmachineswith512kb-14mbบ
-บ              Monitor   :    TV,Mono/Colourmonitor[RGB&VGA]        บ
-บ              Software  :    STOSBasicv2.6upwards                 บ
-บบ
-บบ
-บ                                                                     บ
-บ                                Contents€                             บ
-บ                                                                     บ
-บบ
-บ    IntroductiontotheSTARSExtensionv1.4............... Page1บ
-บ    STARSExtensionv1.4commandreference................. Page1 บ
-บ                                                                     บ
-บบ
-บบ
-บ                                                                     บ
-บบ
-บบ
-ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
-€ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
-บ                        Introduction                      บ
-ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
-
-Alittlewhileagoinlate(ish)1997,ChrisSwinson,aregistereduserof
-mySTOS-Falconextensionsuitementionedthatitwouldbenicetohavea
-starfieldontheFalconinasimilarfashiontotheST(e)usingtheSTARS
-extension.IalreadyhadLeeUpcraft'sSTARSextensioninstalledonmy
-FalconsoIthoughtwhynot-let'shaveashufftywithitandseehowit
-behavesontheFalcon.Thisnewextensionistheresult.
-
-ThisextensivelymodifiedversionoftheSTARSextensionisbasedupon
-LeeUpcraft'soriginalcodeandremainscompatiblewiththeST/STeand
-keepstheexactsamecommandset.OK,sowhat'snewintheST(e)/TT/Falcon
-030Starsextension?Welltheimprovementsareasfollows;
-
-    1)Theupperlimitonthenumberof'stars'hasbeenincreased
-    from200to512.
-
-    2)WorksintheFalcon's16/256colourvideomodes(whenused
-    inconjunctionwithmySTOS-FalconExtensionsSuiteof
-    course)-theFalcon'sTRU-Colourmodeisnotyetsupported
-    bythisextension.
-
-    3)Commandsremainfullybackwardlycompatiblewiththe
-    originalSTARSextensionandstillworksontheST/STE.
-
-    4)MymodifiedversionusestheLINE_Aroutines(andthe
-    Blitterchipwhenavailable)andnowerasesONLYthearea
-    boundedbytheSX,SY,EX,EYcoordinates.Thismeansthatit
-    isnowpossibletodisplaythe'stars'insideaspaceship
-    windowforexampleandtoeraseonlythatwindowand
-    thereforeunnecessarytoredrawthewholescreen.
-
-ษออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
-บ          CommandReferenceStarsv1.4บ
-ศออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
-
-Command:-starscmds
-Syntax:-starscmds
-Action:-Cannotbecompiled.UsedwithintheSTOSeditortolistthe
-quickreferenceforthe'STARS'commands.
-
---------------------------------------------------------------------------
-
-Command:-setstars
-Syntax:-setstarsN,T,SX,SY,EX,EY,SC,EC
-Action:-Thissetsupthestarfield,where;
-
-     N =Numberofstars-(1to512)
-T=Starstype
-               =0forflatstarsor
-  =1forparallaxstarsor
- =2for'zooming'starsthatmovebetweenthecoords
-    SX,SY,EXandEYwithcoloursbetweenSCandEC.
-
-
-
-Continuedoverleaf....
-
-€          SX=StartXcoord\    AsinLeeUpcraft'soriginalSTARS
-          SY=StartYcoord   extensionthesecoordinatesdefine
-          EX=EndXcoord  therectangleX1,X2,Y1,Y2usedby
-          EY=EndYcoord/   the'stars'.
-
-          SC=Startcolour   \Ifthetypeissetforparallax
-          EC= Endcolour    /stars,thenstarswithlowest
-colour(i.e.,SC)willmove
-slowestwhilehighestcolourstars
-(i.e.,EC)willmovefastest.
-
-WhenusingthisextensionontheFalcon030,theparameters
-SCandECmaytakeanyvalidcolourindexnumberrelating
-tothecurrentFalconvideomodei.e.,
-
-     In16colourvideomodes:-  SCandECranges0-15
-     In256colourvideomodes:-  SCandECranges0-255
-
---------------------------------------------------------------------------
-
-Command   :-   gostarsTheupdatedSTARSextensionhasbeenmodifiedto
-becompatiblewithanewspriteengineI'm
-developingfortheFalcon030-[ifthissprite
-engineturnsoutOKitwillalsobecompatible
-withtheST(e)].
-
-Theold'gostars'command.
-
-Syntax    :-   gostarsX,Y,SCREEN
-Action:-ThismovesstarsdefinedwithsetstarsbymultiplesofX
-andYalongtheXandYaxis.Negativenumbersmoveleft
-andup,positivemoverightanddown,starswillbedrawn
-on'SCREEN',thisshouldbeloadedwithlogicalscreen
-address.StarsareNOTdrawnonthespritesBACKscreen.
-
-Thenew'gostars'command.
-
-Syntax    :    gostarsX,Y[,SCREEN]
-Action:-ThismovesstarsdefinedwithsetstarsbymultiplesofX
-andYalongtheXandYaxis.Negativenumbersmoveleft
-andup,positivemoverightanddown.
-
-SCREENisnowanoptionalparameter,ifthisparameteris
-passedthenitsvalueistheaddressoftheLOGICscreen
-wherethestarsaretobedrawn.
-
-IftheSCREENparameterisomitted-thecommandwill
-automaticallyfetchtheaddressoftheCURRENTlogical
-screen.Thisfeaturenowmakesthisextensioncompatible
-withthespriteengineI'mdeveloping-sincethesprite
-enginerequires3seperatescreens(PHYSIC,LOGICandBACK)
-andinusecontinuallyswapsthePHYSICandLOGICscreens.
-ThismeanttheoldSTARSextensiondidn't'know'aboutthe
-screenswapandthestarsweredrawnonthewrongscreen.
-
-
-
-
---------------------------------------------------------------------------
-
-€Command:-wipestarson
-Syntax:-wipestarson
-Action:-Puttingthiscommandatthebeginningofyourprogramwill
-automaticallyerasethescreenandthendrawthestars.
-ThishasthefollowingadvantagesoverusingtheCLS
-command;
-
-Usingthe'wipestarson'commandtheprogramwillrun
-considerablyfaster,
-
-However,theCLScommanderasestheENTIREscreen,asdid
-LeeUpcraft'soriginalSTARSextensionwhenthe'wipestars
-on'commandwasused.
-
-MymodifiedversionusestheLINE_Aroutines(andthe
-Blitterchipwhenavailable)andnowerasesONLYthearea
-boundedbytheSX,SY,EX,EYcoordinates.Thismeansthatit
-isnowpossibletodisplaythe'stars'insideaspaceship
-windowforexampleandtoeraseonlythatwindowand
-unnecessarytoredrawthewholescreen.
-
---------------------------------------------------------------------------
-
-Command:-wipestarsoff
-Syntax:-wipestarsoff
-Action:-Turnsofftheautomaticclearingprocess.
-
---------------------------------------------------------------------------
-

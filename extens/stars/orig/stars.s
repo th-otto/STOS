@@ -2,12 +2,6 @@
 		.include "errors.inc"
 		.include "window.inc"
 
-LA_PLANES equ 0
-V_BYTES_LIN equ -2
-V_REZ_VT equ -4
-DEV_TAB equ -692
-
-
 MAX_STARS = 512
 
 STARS_FLAT     = 1
@@ -57,6 +51,11 @@ welcome:
 
 table: dc.l 0
 returnpc: dc.l 0
+mch_cookie: dc.l 0
+vdo_cookie: dc.l 0
+snd_cookie: dc.l 0
+cookieid: dc.l 0
+cookievalue: dc.l 0
 
 load:
 	lea.l      finprg(pc),a0
@@ -65,6 +64,34 @@ load:
 
 cold:
 	move.l     a0,table
+		lea.l      mch_cookie(pc),a0
+		clr.l      (a0)+
+		clr.l      (a0)+ /* vdo_cookie */
+		move.l     #1,(a0)+ /* snd_cookie */
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F4D4348,(a1) /* '_MCH' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold1
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F56444F,(a1) /* '_VDO' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold2
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+cold2:
 	move.w     #17,-(a7) /* Random */
 	trap       #14
 	addq.l     #2,a7
@@ -81,12 +108,51 @@ cold:
 warm:
 	rts
 
+getcookie:
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		beq.s      getcookie3
+		movea.l    d0,a0
+		clr.l      d4
+getcookie1:
+		move.l     (a0)+,d0
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.s      getcookie3
+		cmp.l      d3,d0
+		beq.s      getcookie2
+		addq.w     #1,d4
+		bra.s      getcookie1
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.s      getcookie3
+		move.l     d1,(a5)
+getcookie3:
+		move.l     d0,d7
+		rts
+
 getparam:
 	movea.l    (a7)+,a0
 	movem.l    (a7)+,d2-d4
 	tst.b      d2
 	bne.s      typemismatch
 	jmp        (a0)
+
+addrofbank: /* unused */
+	movem.l    a0-a2,-(a7)
+	movea.l    table(pc),a0
+	movea.l    sys_addrofbank(a0),a0
+	jsr        (a0)
+	movem.l    (a7)+,a0-a2
+	rts
 
 syntax:
 	moveq.l    #E_syntax,d0
@@ -317,22 +383,31 @@ setstars:
 	movem.w    startcolor(pc),d6-d7
 	cmp.w      d7,d6
 	bhi        illfunc
-	move.w     stars_count(pc),d5
+	move.w     stars_count,d5
 	cmpi.w     #MAX_STARS-1,d5
 	ble.s      setstars1
 	bra        prtoomany
 setstars1:
     move.l     lineavars(pc),a0
     lea.l      bytes_lin(pc),a1
+    move.l     #32000,screen_size-bytes_lin(a1)
+	move.w     vdo_cookie(pc),d6
+	cmpi.w     #3,d6
+	bne.s      setstars1_1
 	move.w     V_BYTES_LIN(a0),d0
-	move.w     V_REZ_VT(a0),d1
+	andi.l     #$0000FFFF,d0
+	move.w     DEV_TAB+2(a0),d1
+	addq.w     #1,d1
+	andi.l     #$0000FFFF,d1
 	mulu.w     d1,d0
 	move.l     d0,screen_size-bytes_lin(a1)
+setstars1_1:
 	move.w     V_BYTES_LIN(a0),bytes_lin-bytes_lin(a1)
 	move.w     LA_PLANES(a0),d0
 	move.w     d0,nbplanes-bytes_lin(a1)
 	asl.w      #1,d0
 	move.w     d0,nxwd-bytes_lin(a1)
+
 
 	lea.l      starfield(pc),a2
 	movem.w    start_x(pc),d0-d3
@@ -442,7 +517,8 @@ gostars0:
 	bsr        getparam
 	move.w     d3,movex
 	lea        stars_type(pc),a0
-	tst.w      (a0)
+	/* tst.w     (a0) */
+	dc.w 0x0c50,0 /* XXX */
 	beq        prundefined
 	movem.l    d0-d7/a0-a6,-(a7)
 	move.l     screenaddr(pc),d0
@@ -498,7 +574,7 @@ screen_set:
 	move.w     bytes_lin(pc),(a1)+ /* d_nxln */
 	move.w     #2,(a1)+ /* d_nxpl */
 	move.l     #0,(a1)+ /* p_addr */
-	lea.l      bitblt(pc),a6
+	lea.l      bitblt,a6
 	dc.w 0xa007 /* bit_blt */
 	movem.l    (a7)+,d0-d7/a0-a1
 fastcls1:
@@ -521,7 +597,7 @@ fastcls1:
 	move.w     bytes_lin(pc),(a1)+ /* d_nxln */
 	move.w     #2,(a1)+ /* d_nxpl */
 	move.l     #0,(a1)+ /* p_addr */
-	lea.l      bitblt(pc),a6
+	lea.l      bitblt,a6
 	dc.w 0xa007 /* bit_blt */
 fastcls2:
 	movem.l    (a7)+,d0-d7/a0-a6
@@ -636,7 +712,8 @@ gostars13:
 
 stars_cmds:
 		move.l     (a7)+,returnpc
-		tst.w      d0
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		movem.l    d1-d7/a0-a6,-(a7)
 		lea.l      stars_hlp(pc),a0
@@ -913,6 +990,13 @@ end_y:       ds.w       1
 startcolor:  ds.w       1
 endcolor:    ds.w       1
 starfield: ds.w 5*MAX_STARS
+
+LA_PLANES equ 0
+V_BYTES_LIN equ -2
+DEV_TAB equ -692
+
+ZERO equ 0
+
 
 finprg:
 	ds.l 1
