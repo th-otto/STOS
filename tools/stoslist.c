@@ -587,6 +587,8 @@ static struct extension const external_extensions[] = {
 	{ 'H', 0x84, 0, "wipe stars on" },
 	/* 0x85 unused */
 	{ 'H', 0x86, 0, "wipe stars off" },
+	/* 0x87 unused */
+	{ 'H', 0x88, 0, "stars cmds" },
 
 	/* GEM text */
 	{ 'L', 0x80, 0, "gemtext init" },
