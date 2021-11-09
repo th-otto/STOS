@@ -310,7 +310,7 @@ init_dmasound:
 	addq.l     #4,a7
 * src=DMA, dst=speaker, srcclk=intern, prescale=0, protocol=handshake
 	move.w     #1,-(a7)
-	move.w     #PREMUTE,-(a7)
+	move.w     #0,-(a7)
 	move.w     #0,-(a7)
 	move.w     #8,-(a7)
 	move.w     #0,-(a7)
