@@ -135,8 +135,8 @@ l018:	.dc.b I,1,1,0             ; dma sammode
 l019:	.dc.b 0,1,1,0             ; dma playloop off
 l020:	.dc.b I,1,1,0             ; dma sampval
 l021:	.dc.b 0,1,1,0             ; dma playloop on
-l022:	.dc.b I,1
-        .dc.b   I,',',I,',',S,1,1,0     ; dma samconvert */
+/* l022:	.dc.b I,I,',',I,',',S,1,1,0     ; dma samconvert */
+l022:	.dc.b I,1,1,0 /* BUG: should be like above */
 l023:	.dc.b 0,1,1,0             ; dma samplay
 l024:	.dc.b I,1,1,0             ; dma samsize
 l025:	.dc.b 0,1,1,0             ; dma samthru
@@ -166,6 +166,8 @@ l045:	.dc.b 0,1,1,0             ; speaker on
 entry:
 	bra.w init
 
+params_offset: dc.l params-entry
+
 params:
 dma_initialized: ds.w 1
 dma_bufferset: ds.w 1
@@ -176,55 +178,100 @@ dma_playdata_addr: ds.l 1 /* 11896, 16 */
 dma_playend_addr: ds.l 1 /* 1189a, 20 */
 dma_mode:  ds.w 1  /* 1189e, 24 */
 dma_playloop: ds.w 1 /* 118a0, 26 */
-paramsend:
 
 mch_cookie: dc.l 0
+vdo_cookie: dc.l 0
 snd_cookie: dc.l 0
+cookieid: dc.l 0
+cookievalue: dc.l 0
+
+        ds.b 192 /* unused */
+
+paramsend:
+
+        ds.b 16 /* unused */
 
 init:
+		bra init0
+
 cold:
-		lea.l      entry(pc),a4
-		move.l     #0x5F4D4348,d3 /* '_MCH' */
-		bsr        getcookie
-		move.l     d0,mch_cookie-entry(a4)
-		move.l     #0x5F534E44,d3 /* '_SND' */
-		bsr        getcookie
-		move.l     d0,snd_cookie-entry(a4)
-		lea        exit(pc),a2
-		rts
-
-exit:
-	rts
-
-illfunc:
-illfalconfunc:
-		moveq.l    #E_illegalfunc,d0
-goerror:
-        move.l table(a5),a0
-        move.l sys_error(a0),a0
-        jmp (a0)
-
-getjar:
-		move.l     0x000005A0,d0
-		rts
-getcookie:
-		pea        getjar(pc)
+		lea.l      params(pc),a4
+		lea.l      mch_cookie-params(a4),a0
+		clr.l      (a0)+
+		clr.l      (a0)+ /* vdo_cookie */
+		move.l     #1,(a0)+ /* snd_cookie */
+		lea.l      cookieid-params(a4),a1
+		move.l     #0x5F4D4348,(a1) /* '_MCH' */
+		pea.l      getcookie(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 		tst.l      d0
-		beq.s      getcookie3
+		beq.w      cold1 /* XXX */
+		lea.l      cookievalue-params(a4),a1
+		lea.l      mch_cookie-params(a4),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid-params(a4),a1
+		move.l     #0x5F56444F,(a1) /* '_VDO' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.w      cold2 /* XXX */
+		lea.l      cookievalue-params(a4),a1
+		lea.l      vdo_cookie-params(a4),a0
+		move.l     (a1),(a0)
+cold2:
+		lea.l      cookieid-params(a4),a1
+		move.l     #0x5F534E44,(a1) /* '_SND' */
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.w      cold3 /* XXX */
+		lea.l      cookievalue-params(a4),a1
+		lea.l      snd_cookie-params(a4),a0
+		move.l     (a1),(a0)
+cold3:
+init0:
+		lea        exit(pc),a2
+		rts
+
+getcookie:
+		/* movea.l    #0x000005A0.l,a0 */
+		dc.w 0x207c,0,0x5a0 /* XXX */
+		lea.l      cookievalue-params(a4),a5
+		clr.l      (a5)
+		lea.l      cookieid-params(a4),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		beq.w      getcookie3 /* XXX */
 		movea.l    d0,a0
+		clr.l      d4
 getcookie1:
-		move.l     (a0)+,d1
-		beq.s      getcookie3
 		move.l     (a0)+,d0
-		cmp.l      d3,d1
-		bne.s      getcookie1
-		rts
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.w      getcookie3 /* XXX */
+		cmp.l      d3,d0
+		beq.w      getcookie2 /* XXX */
+		addq.w     #1,d4
+		bra.w      getcookie1 /* XXX */
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.w      getcookie3 /* XXX */
+		move.l     d1,(a5)
 getcookie3:
-		moveq      #0,d0
 		rts
+
+exit:
+	rts
 
 /*
  * Syntax:   dma reset
@@ -232,12 +279,8 @@ getcookie3:
 lib1:
 	dc.w	0			; no library calls
 dma_reset:
-		movem.l    d0-d7/a0-a5,-(a7)
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_reset2
+		/* BUG: cookie check removed */
+		movem.l    d0-d7/a0-a6,-(a7)
 * setplayback mode
 		move.w     #0,-(a7)
 		move.w     #0x0088,-(a7) /* buffoper */
@@ -306,16 +349,19 @@ dma_reset:
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,d0-d7/a0-a6
 		/* BUG? LTATTEN/RTATTEN not set here */
 
-		lea        params-entry(a4),a4
-		move.w     #(paramsend-params)/2-1,d7
+		movem.l    a0-a6,-(a7)
+		move.l     debut(a5),a4
+		movea.l    0(a4,d1.w),a4
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		move.w     #(paramsend-params)/4-1,d7
 dma_reset1:
-		clr.w      (a4)+
+		clr.l      (a4)+
 		dbf        d7,dma_reset1
-
-dma_reset2:
-		movem.l    (a7)+,d0-d7/a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
 
 /*
@@ -324,23 +370,16 @@ dma_reset2:
 lib2:
 	dc.w	0			; no library calls
 locksound:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        locksound1
-		movem.l    d1-d2/a0-a2,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     #0x0080,-(a7) /* locksnd */
 		trap       #14
 		addq.l     #2,a7
-		movem.l    (a7)+,d1-d2/a0-a2
+		movem.l    (a7)+,d1-d7/a0-a6
 		move.l     d0,d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-locksound1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   dma buffer REG,BEG_BUFF,EN_BUFF
@@ -348,52 +387,82 @@ locksound1:
 lib3:
 	dc.w	0			; no library calls
 dma_buffer:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		move.l     (a6)+,d3
+		lea.l      dma_buffer_args(pc),a1
+		clr.l      10(a1)
+		move.l     d3,(a1)
+		move.l     (a6)+,d3
+		lea.l      dma_buffer_args+4(pc),a1
+		move.l     d3,(a1)
+		move.l     (a6)+,d3
+		andi.l     #1,d3
+		lea.l      dma_buffer_args+8(pc),a1
+		move.w     d3,(a1)
+		tst.w      d3
+		bne.w      dma_buffer2 /* XXX */
+		lea.l      dma_buffer_args+4(pc),a1
+		movea.l    (a1),a0
+		cmpi.l     #AVR_MAGIC,avr_magic(a0)
+		bne.w      dma_buffer1 /* XXX */
+		move.l     #avr_headersize,6(a1)
+		bra.w      dma_buffer3 /* XXX */
+dma_buffer1:
+		lea.l      dma_buffer_args+4(pc),a1
+		movea.l    (a1),a0
+		cmpi.l     #WAVE_MAGIC,wave_magic(a0)
+		bne.w      dma_buffer3 /* XXX */
+		cmpi.l     #WAVE_FMT,wave_ckid(a0)
+		bne.w      dma_buffer3 /* XXX */
+		move.l     #wave_headersize,6(a1) /* BUG: should use cksize from header */
+		bra.w      dma_buffer3 /* XXX */
+dma_buffer2:
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_buffer5
-		move.l     (a6)+,a3
-		move.l     (a6)+,a2
-		move.l     (a6)+,d3
-		clr.l      d2
-		andi.w     #1,d3
-		bne.s      dma_buffer2
-		cmpi.l     #AVR_MAGIC,avr_magic(a2)
-		bne.s      dma_buffer1
-		move.l     #avr_headersize,d2
-		bra.s      dma_buffer3
-dma_buffer1:
-		cmpi.l     #WAVE_MAGIC,wave_magic(a2)
-		bne.s      dma_buffer3
-		cmpi.l     #WAVE_FMT,wave_ckid(a2)
-		bne.s      dma_buffer3
-		move.l     #wave_headersize,d2 /* BUG: should use cksize from header */
-		bra.s      dma_buffer3
-dma_buffer2:
-		move.l     a3,dma_recend_addr-entry(a4)
-		move.l     a2,dma_recstart_addr-entry(a4)
-		move.w     #-1,dma_bufferset-entry(a4)
-		bra.s      dma_buffer4
-dma_buffer3:
-		move.l     a3,dma_playend_addr-entry(a4)
-		move.l     a2,dma_playstart_addr-entry(a4)
-		add.l      d2,a2
-		move.l     a2,dma_playdata_addr-entry(a4)
-dma_buffer4:
-		move.w     #-1,dma_bufferset-entry(a4)
-		move.l     a3,-(a7)
-		move.l     a2,-(a7)
-		move.w     d3,-(a7)
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		lea.l      dma_buffer_args(pc),a1
+		move.l     (a1),d0
+		move.l     d0,dma_recend_addr-params(a4)
+		move.l     4(a1),d0
+		move.l     d0,dma_recstart_addr-params(a4)
+		move.w     #-1,dma_bufferset-params(a4)
+		lea.l      dma_buffer_args(pc),a1
+		move.l     (a1),-(a7)
+		move.l     4(a1),-(a7)
+		move.w     8(a1),-(a7)
 		move.w     #0x0083,-(a7) /* setbuffer */
 		trap       #14
 		lea.l      12(a7),a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
-dma_buffer5:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
+dma_buffer3:
+		movem.l    a0-a6,-(a7)
+		move.l     debut(a5),a4
+		movea.l    0(a4,d1.w),a4
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		lea.l      dma_buffer_args(pc),a1
+		move.l     (a1),d0
+		move.l     d0,dma_playend_addr-params(a4)
+		move.l     4(a1),d0
+		move.l     d0,dma_playstart_addr-params(a4)
+		move.l     10(a1),d1
+		add.l      d1,d0
+		move.l     d0,dma_playdata_addr-params(a4)
+		move.w     #-1,dma_bufferset-params(a4)
+		move.w     dma_buffer_args+8(pc),d1
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
+		move.l     a1,-(a7)
+		move.l     a0,-(a7)
+		move.w     d1,-(a7)
+		move.w     #0x0083,-(a7) /* setbuffer */
+		trap       #14
+		lea.l      12(a7),a7
+		movem.l    (a7)+,a0-a6
+		rts
 
 dma_buffer_args:
 	ds.l 1 /* end addr */
@@ -407,23 +476,16 @@ dma_buffer_args:
 lib4:
 	dc.w	0			; no library calls
 unlocksound:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        unlocksound1
-		movem.l    d1-d2/a0-a2,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     #0x0081,-(a7) /* unlocksnd */
 		trap       #14
 		addq.l     #2,a7
-		movem.l    (a7)+,d1-d2/a0-a2
+		movem.l    (a7)+,d1-d7/a0-a6
 		move.l     d0,d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-unlocksound1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   devconnect SOURCE,DEST,FREQ
@@ -431,29 +493,27 @@ unlocksound1:
 lib5:
 	dc.w	0			; no library calls
 devconnect:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        devconnect2
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
+		andi.l     #0x0000FFFF,d3
 		lea.l      devconnect_freq(pc),a1
 		move.w     d3,(a1)
 		move.l     (a6)+,d3
-		andi.w     #15,d3
+		andi.l     #15,d3
 		lea.l      devconnect_dest(pc),a1
 		move.w     d3,(a1)
 		move.l     (a6)+,d3
-		andi.w     #3,d3
+		andi.l     #3,d3
 		lea.l      devconnect_source(pc),a1
 		move.w     d3,(a1)
 		lea.l      devconnect_freq(pc),a1
 		move.w     (a1),d3
+		andi.l     #0x0000FFFF,d3
 		cmpi.w     #50000,d3
-		bgt        devconnect2
+		/* bgt        illfreq BUG: check removed */
 		cmpi.w     #8195,d3
-		blt        devconnect2
-		movem.l    a0-a5,-(a7)
+		/* blt        illfreq BUG: check removed */
+		movem.l    a0-a6,-(a7)
 		bsr.w      find_freq
 		lea.l      devconnect_prescale(pc),a1
 		move.w     d0,(a1)
@@ -470,14 +530,11 @@ devconnect:
 		lea.l      12(a7),a7
 		lea.l      devconnect_prescale(pc),a1
 		tst.w      (a1)
-		bne.s      devconnect1
+		bne.w      devconnect1 /* XXX */
 		bsr.w      set_prescale
 devconnect1:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
-devconnect2:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 set_prescale:
 		lea.l      devconnect_steprescale(pc),a1
@@ -499,11 +556,12 @@ find_freq:
 		andi.l     #0x0000FFFF,d0
 find_freq_1:
 		cmpa.l     a0,a1
-		beq.s      find_freq_3
+		beq.w      find_freq_3 /* XXX */
 		cmp.w      (a0),d0
-		beq.s      find_freq_2
-		addq.l     #6,a0
-		bra.s      find_freq_1
+		beq.w      find_freq_2 /* XXX */
+		/* addq.l     #6,a0 */
+		dc.w 0xd1fc,0,6 /* XXX */
+		bra.w      find_freq_1 /* XXX */
 find_freq_2:
 		move.w     2(a0),d0
 		move.w     4(a0),d1
@@ -515,24 +573,25 @@ find_freq_3:
 		clr.l      d6
 find_freq_4:
 		cmpa.l     a0,a1
-		beq.s      find_freq_7
+		beq.w      find_freq_7 /* XXX */
 		move.w     (a2),d0
 		andi.l     #0x0000FFFF,d0
 		move.w     (a0),d1
 		andi.l     #0x0000FFFF,d1
 		sub.w      d1,d0
-		bpl.s      find_freq_5
+		bpl.w      find_freq_5 /* XXX */
 		neg.w      d0
 find_freq_5:
 		lea.l      devconnect_bestfreq(pc),a5
 		cmp.w      (a5),d0
-		bge.s      find_freq_6
+		bge.w      find_freq_6 /* XXX */
 		move.w     d0,(a5)
 		move.w     d6,devconnect_freqidx-devconnect_bestfreq(a5)
 find_freq_6:
-		addq.l     #6,a0
+		/* addq.l     #6,a0 */
+		dc.w 0xd1fc,0,6 /* XXX */
 		addq.w     #1,d6
-		bra.s      find_freq_4
+		bra.w      find_freq_4 /* XXX */
 find_freq_7:
 		lea.l      devconnect_bestfreq(pc),a5
 		move.w     devconnect_freqidx-devconnect_bestfreq(a5),d6
@@ -573,25 +632,18 @@ freqtableend: dc.w 0,0
 lib6:
 	dc.w	0			; no library calls
 dma_status:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_status1
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.w     #0,-(a7)
 		move.w     #0x008C,-(a7) /* sndstatus */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		move.l     d0,d3
 		andi.l     #0x0000FFFF,d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-dma_status1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   dma samsign
@@ -599,56 +651,86 @@ dma_status1:
 lib7:
 	dc.w	0			; no library calls
 dma_samsign:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq        dma_samsign15
-		movea.l    dma_playdata_addr-entry(a4),a0
-		movea.l    dma_playend_addr-entry(a4),a1
-		movea.l    dma_playstart_addr-entry(a4),a2
-		cmpi.l     #AVR_MAGIC,avr_magic(a2)
-		bne.s      dma_samsign6
-		cmpi.w     #16,avr_bits(a2)
-		beq.s      dma_samsign3
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		bne.w      dma_samsign1 /* XXX */
+		movem.l    (a7)+,a0-a6
+		rts
+dma_samsign1:
+		movea.l    dma_playstart_addr-params(a4),a0
+		cmpi.l     #AVR_MAGIC,avr_magic(a0)
+		bne.w      dma_samsign6 /* XXX */
+		cmpi.w     #16,avr_bits(a0)
+		beq.w      dma_samsign3 /* XXX */
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
 dma_samsign2:
 		cmpa.l     a0,a1
-		beq.s      dma_samsign15
+		beq.w      dma_samsign5 /* XXX */
 		eori.b     #0x80,(a0)+
-		bra.s      dma_samsign2
+		bra.w      dma_samsign2 /* XXX */
 dma_samsign3:
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
 dma_samsign4:
 		cmpa.l     a0,a1
-		beq.s      dma_samsign15
+		beq.w      dma_samsign5 /* XXX */
 		move.w     (a0),d0
 		eori.w     #0x8000,d0
 		move.w     d0,(a0)+
-		bra.s      dma_samsign4
+		bra.w      dma_samsign4 /* XXX */
+dma_samsign5:
+		movem.l    (a7)+,a0-a6
+		rts
 dma_samsign6:
-		cmpi.l     #WAVE_MAGIC,wave_magic(a2)
-		bne.s      dma_samsign15
-		cmpi.l     #WAVE_FMT,wave_ckid(a2)
-		bne.s      dma_samsign15
-		cmpi.w     #0x1000,wave_bits(a2)
-		beq.s      dma_samsign13
-		cmpi.w     #0x0800,wave_bits(a2)
-		bne.s      dma_samsign15
+		cmpi.l     #WAVE_MAGIC,wave_magic(a0)
+		bne.w      dma_samsign7 /* XXX */
+		cmpi.l     #WAVE_FMT,wave_ckid(a0)
+		bne.w      dma_samsign7 /* XXX */
+		bra.w      dma_samsign8 /* XXX */
+dma_samsign7:
+		movem.l    (a7)+,a0-a6
+		rts
+dma_samsign8:
+		cmpi.w     #0x100,wave_channels(a0)
+		beq.w      dma_samsign9 /* XXX */
+		cmpi.w     #0x200,wave_channels(a0)
+dma_samsign9:
+		cmpi.w     #0x0800,wave_bits(a0)
+		beq.w      dma_samsign10 /* XXX */
+		cmpi.w     #0x1000,wave_bits(a0)
+		beq.w      dma_samsign13 /* XXX */
+		movem.l    (a7)+,a0-a6
+		rts
+dma_samsign10:
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
 dma_samsign11:
 		cmpa.l     a0,a1
-		beq.s      dma_samsign15
+		beq.w      dma_samsign12 /* XXX */
 		eori.b     #0x80,(a0)+
-		bra.s      dma_samsign11
+		bra.w      dma_samsign11 /* XXX */
+dma_samsign12:
+		movem.l    (a7)+,a0-a6
+		rts
 dma_samsign13:
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
 dma_samsign14:
 		cmpa.l     a0,a1
-		beq.s      dma_samsign15
+		beq.w      dma_samsign15 /* XXX */
 		move.w     (a0),d0
 		rol.w      #8,d0
 		eori.w     #0x8000,d0
 		move.w     d0,(a0)+
-		bra.s      dma_samsign14
+		bra.w      dma_samsign14 /* XXX */
 dma_samsign15:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
 
 /*
@@ -657,25 +739,34 @@ dma_samsign15:
 lib8:
 	dc.w	0			; no library calls
 dma_samrecptr:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		clr.l      d3
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samrecptr1
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samrecptr1 /* XXX */
+		movem.l    d0-d7/a0-a6,-(a7)
 		pea.l      buffptrbuf(pc)
 		move.w     #0x008D,-(a7) /* buffptr */
 		trap       #14
 		addq.l     #6,a7
-		move.l     dma_recstart_addr-entry(a4),d0
-		move.l     buffptrbuf+4(pc),d3
+		movem.l    (a7)+,d0-d7/a0-a6
+		move.l     dma_recstart_addr-params(a4),d0
+		lea.l      buffptrbuf(pc),a0
+		move.l     4(a0),d3
 		sub.l      d0,d3
-dma_samrecptr1:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-
+dma_samrecptr1:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 buffptrbuf: ds.l 4
 
 /*
@@ -684,25 +775,22 @@ buffptrbuf: ds.l 4
 lib9:
 	dc.w	0			; no library calls
 dma_setmode:
+		/* BUG: cookie check removed */
+		move.l     (a6)+,d3
+		/* BUG: valid check removed */
+		andi.l     #3,d3
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_setmode1
-		move.l     (a6)+,d3
-		cmpi.w     #3,d3
-		bcc        dma_setmode1
-		movem.l    a0-a2,-(a7)
-		move.w     d3,dma_mode-entry(a4)
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		move.w     d3,dma_mode-params(a4)
 		move.w     d3,-(a7)
 		move.w     #0x0084,-(a7) /* setmode */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
-dma_setmode1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   POS=dma samplayptr
@@ -710,21 +798,31 @@ dma_setmode1:
 lib10:
 	dc.w	0			; no library calls
 dma_samplayptr:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		clr.l      d3
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samplayptr1
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samplayptr1 /* XXX */
+		movem.l    d0-d7/a0-a6,-(a7)
 		pea.l      buffptrbuf2(pc)
 		move.w     #0x008D,-(a7) /* buffptr */
 		trap       #14
 		addq.l     #6,a7
-		move.l     dma_playdata_addr-entry(a4),d0
-		move.l     buffptrbuf2(pc),d3
+		movem.l    (a7)+,d0-d7/a0-a6
+		move.l     dma_playdata_addr-params(a4),d0
+		lea.l      buffptrbuf2(pc),a0
+		move.l     (a0),d3
 		sub.l      d0,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 dma_samplayptr1:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -737,26 +835,25 @@ buffptrbuf2: ds.l 4
 lib11:
 	dc.w	0			; no library calls
 dma_samtracks:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_samtracks1
-		move.l     (a6)+,d0
-		andi.w     #3,d0
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		andi.w     #3,d3
-		movem.l    a0-a5,-(a7)
-		move.w     d0,-(a7)
-		move.w     d3,-(a7)
+		andi.l     #3,d3
+		lea.l      rectrk(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
+		andi.l     #3,d3
+		lea.l      playtrk(pc),a1
+		move.w     d3,(a1)
+		movem.l    a0-a6,-(a7)
+		lea.l      rectrk(pc),a1
+		move.l     (a1),-(a7) /* BUG: pushed in wrong order */
 		move.w     #0x0085,-(a7) /* settracks */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
-dma_samtracks1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
+rectrk: dc.w 0
+playtrk: dc.w 0
 
 /*
  * Syntax:   X=dma samstatus
@@ -764,26 +861,18 @@ dma_samtracks1:
 lib12:
 	dc.w	0			; no library calls
 dma_samstatus:
-		movem.l    a0-a5,-(a7)
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_samstatus1
-		movem.l    a0-a2,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #0x0088,-(a7) /* buffoper */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
-		moveq      #0,d3
-		move.w     d0,d3
+		movem.l    (a7)+,d1-d7/a0-a6
+		move.l     d0,d3
+		andi.l     #0x0000FFFF,d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-dma_samstatus1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   dma montrack TRACK
@@ -791,23 +880,16 @@ dma_samstatus1:
 lib13:
 	dc.w	0			; no library calls
 dma_montrack:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_montrack1
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		andi.w     #3,d3
-		movem.l    a0-a2,-(a7)
+		andi.l     #3,d3
+		movem.l    a0-a6,-(a7)
 		move.w     d3,-(a7)
 		move.w     #0x0086,-(a7) /* setmontracks */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
-dma_montrack1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   SND_TYPE=dma samtype
@@ -815,70 +897,89 @@ dma_montrack1:
 lib14:
 	dc.w	0			; no library calls
 dma_samtype:
-		movem.l    a0-a5,-(a7)
-		clr.l      d3
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
+		clr.l      d7
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samtype1
-		move.l     dma_playstart_addr-entry(a4),a0
-		lea        128(a0),a1
-		move.l     a0,d0
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samtype1 /* XXX */
+		lea.l      samtype_start(pc),a1
+		move.l     dma_playstart_addr-params(a4),d3
+		move.l     d3,(a1)
+		addi.l     #128,d3
+		move.l     d3,samtype_end-samtype_start(a1)
 		bsr        find_avr
-		tst.l      d3
-		bpl.s      dma_samtype1
-		move.l     d0,a0
+		tst.l      d7
+		bpl.w      dma_samtype1 /* XXX */
 		bsr        find_wave
-		tst.l      d3
-		bpl.s      dma_samtype1
-		clr.l      d3
+		tst.l      d7
+		bpl.w      dma_samtype1 /* XXX */
+		clr.l      d7
 dma_samtype1:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
+		move.l     d7,d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 
 find_avr:
-		moveq.l    #-1,d3
+		movea.l    samtype_start(pc),a0
+		movea.l    samtype_end(pc),a1
 find_avr1:
 		cmpa.l     a0,a1
-		beq.s      find_avr2
+		beq.w      find_avr2 /* XXX */
 		cmpi.b     #'2',(a0)+
-		bne.s      find_avr1
+		bne.w      find_avr1 /* XXX */
 		cmpi.b     #'B',(a0)
-		bne.s      find_avr1
+		bne.w      find_avr1 /* XXX */
 		cmpi.b     #'I',1(a0)
-		bne.s      find_avr1
+		bne.w      find_avr1 /* XXX */
 		cmpi.b     #'T',2(a0)
-		bne.s      find_avr1
-		subq.l     #1,a0
-		moveq.l    #1,d3
+		bne.w      find_avr1 /* XXX */
+		/* subq.l     #1,a0 */
+		dc.w 0x91fc,0,1 /* XXX */
+		/* moveq.l     #1,d7 */
+		dc.w 0x2e3c,0,1 /* XXX */
+		rts
 find_avr2:
+		/* moveq.l     #-1,d7 */
+		dc.w 0x2e3c,-1,-1 /* XXX */
 		rts
 
 find_wave:
-		moveq.l    #-1,d3
+		movea.l    samtype_start(pc),a0
+		movea.l    samtype_end(pc),a1
 find_wave1:
 		cmpa.l     a0,a1
-		beq.s      find_wave2
+		beq.w      find_wave2 /* XXX */
 		cmpi.b     #'W',(a0)+
-		bne.s      find_wave1
+		bne.w      find_wave1 /* XXX */
 		cmpi.b     #'A',(a0)
-		bne.s      find_wave1
+		bne.w      find_wave1 /* XXX */
 		cmpi.b     #'V',1(a0)
-		bne.s      find_wave1
+		bne.w      find_wave1 /* XXX */
 		cmpi.b     #'E',2(a0)
-		bne.s      find_wave1
+		bne.w      find_wave1 /* XXX */
 		cmpi.b     #'f',3(a0)
-		bne.s      find_wave1
+		bne.w      find_wave1 /* XXX */
 		cmpi.b     #'m',4(a0)
-		bne.s      find_wave1
+		bne.w      find_wave1 /* XXX */
 		cmpi.b     #'t',5(a0)
-		bne.s      find_wave1
-		subq.l     #1,a0
-		moveq.l    #2,d3
-find_wave2:
+		bne.w      find_wave1 /* XXX */
+		/* subq.l     #1,a0 */
+		dc.w 0x91fc,0,1 /* XXX */
+		/* moveq.l     #2,d7 */
+		dc.w 0x2e3c,0,2 /* XXX */
 		rts
+find_wave2:
+		/* moveq.l     #-1,d7 */
+		dc.w 0x2e3c,-1,-1 /* XXX */
+		rts
+samtype_start: dc.l 0
+samtype_end: dc.l 0
 
 /*
  * Syntax:   dma interrupt MODE,CAUSE
@@ -886,26 +987,26 @@ find_wave2:
 lib15:
 	dc.w	0			; no library calls
 dma_interrupt:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_interrupt1
-		move.l     (a6)+,d0
-		andi.w     #3,d0
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		andi.w     #1,d3
-		movem.l    a0-a5,-(a7)
-		move.w     d0,-(a7)
-		move.w     d3,-(a7)
+		andi.l     #3,d3
+		lea.l      interrupt_cause(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
+		andi.l     #1,d3
+		lea.l      interrupt_mode(pc),a1
+		move.w     d3,(a1)
+		movem.l    a0-a6,-(a7)
+		lea.l      interrupt_cause(pc),a1
+		move.w     (a1),-(a7)
+		move.w     2(a1),-(a7)
 		move.w     #0x0087,-(a7) /* setinterrupt */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
-dma_interrupt1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
+interrupt_cause: dc.w 0
+interrupt_mode: dc.w 0
 
 /*
  * Syntax:   FREQ=dma samfreq
@@ -913,33 +1014,44 @@ dma_interrupt1:
 lib16:
 	dc.w	0			; no library calls
 dma_samfreq:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samfreq2
-		movea.l    dma_playstart_addr-entry(a4),a0
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samfreq2 /* XXX */
+		movea.l    dma_playstart_addr-params(a4),a0
 		cmpi.l     #AVR_MAGIC,avr_magic(a0)
-		bne.s      dma_samfreq1
-		move.w     avr_samprate+2(a0),d0
+		bne.w      dma_samfreq1 /* XXX */
+		lea.l      samfreq_search(pc),a1
+		move.w     avr_samprate+2(a0),(a1)
 		bsr        samfreq_find
 		move.l     d0,d3
-		bra.s      dma_samfreq3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 dma_samfreq1:
 		cmpi.l     #WAVE_MAGIC,wave_magic(a0)
-		bne.s      dma_samfreq2
+		bne.w      dma_samfreq2 /* XXX */
 		cmpi.l     #WAVE_FMT,wave_ckid(a0)
-		bne.s      dma_samfreq2
+		bne.w      dma_samfreq2 /* XXX */
 		move.b     wave_samprate+1(a0),d0
 		rol.w      #8,d0
 		move.b     wave_samprate(a0),d0
+		lea.l      samfreq_search(pc),a1
+		move.w     d0,(a1)
 		bsr        samfreq_find
 		move.l     d0,d3
-		bra.s      dma_samfreq3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 dma_samfreq2:
+		movem.l    (a7)+,a0-a6
 		move.l     #12292,d3
-dma_samfreq3:
-		movem.l    (a7)+,a0-a5
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -947,40 +1059,49 @@ dma_samfreq3:
 samfreq_find:
 		lea.l      samfreq_table(pc),a0
 		lea.l      samfreq_tableend(pc),a1
+		lea.l      samfreq_search(pc),a2
 		lea.l      samfreq_bestfreq(pc),a4
 		move.w     #8192,(a4)
 		move.w     #0,samfreq_freqidx-samfreq_bestfreq(a4)
+		move.w     (a2),d0
+		andi.l     #0x0000FFFF,d0
 samfreq_find1:
 		cmpa.l     a0,a1
-		beq.s      samfreq_find3
+		beq.w      samfreq_find3 /* XXX */
 		cmp.w      (a0),d0
-		beq.s      samfreq_find2
-		addq.l     #4,a0
+		beq.w      samfreq_find2 /* XXX */
+		/* addq.l     #4,a0 */
+		dc.w 0xd1fc,0,4 /* XXX */
 		bra.w      samfreq_find1
 samfreq_find2:
 		move.w     (a0),d0
 		rts
 samfreq_find3:
 		lea.l      samfreq_table(pc),a0
+		lea.l      samfreq_tableend(pc),a1
+		lea.l      samfreq_search(pc),a2
 		clr.l      d6
 samfreq_find4:
 		cmpa.l     a0,a1
-		beq.s      samfreq_find7
-		move.w     d0,d2
+		beq.w      samfreq_find7 /* XXX */
+		move.w     (a2),d0
+		andi.l     #0x0000FFFF,d0
 		move.w     (a0),d1
-		sub.w      d1,d2
-		bpl.s      samfreq_find5
-		neg.w      d2
+		andi.l     #0x0000FFFF,d1
+		sub.w      d1,d0
+		bpl.w      samfreq_find5 /* XXX */
+		neg.w      d0
 samfreq_find5:
 		lea.l      samfreq_bestfreq(pc),a4
-		cmp.w      (a4),d2
-		bge.s      samfreq_find6
-		move.w     d2,(a4)
+		cmp.w      (a4),d0
+		bge.w      samfreq_find6 /* XXX */
+		move.w     d0,(a4)
 		move.w     d6,samfreq_freqidx-samfreq_bestfreq(a4)
 samfreq_find6:
-		addq.l     #4,a0
+		/* addq.l     #4,a0 */
+		dc.w 0xd1fc,0,4 /* XXX */
 		addq.w     #1,d6
-		bra.s      samfreq_find4
+		bra.w      samfreq_find4 /* XXX */
 samfreq_find7:
 		lea.l      samfreq_bestfreq(pc),a4
 		move.w     samfreq_freqidx-samfreq_bestfreq(a4),d6
@@ -1005,6 +1126,8 @@ samfreq_table:
 		dc.w 9834,9
 		dc.w 8195,11
 samfreq_tableend:
+		dc.w 0,0
+samfreq_search: dc.w 0,0,0,0
 
 /*
  * Syntax:   dma samrecord
@@ -1012,21 +1135,14 @@ samfreq_tableend:
 lib17:
 	dc.w	0			; no library calls
 dma_samrecord:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.l     snd_cookie-entry(a4),d0
-		btst       #2,d0
-		beq        dma_samrecord1
-		movem.l    a0-a2,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.w     #4,-(a7)
 		move.w     #0x88,-(a7) /* buffoper */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
-dma_samrecord1:
-		lea        illfunc-entry(a4),a0
-		jmp        (a0)
 
 /*
  * Syntax:   MDE=dma sammode
@@ -1034,36 +1150,42 @@ dma_samrecord1:
 lib18:
 	dc.w	0			; no library calls
 dma_sammode:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		clr.l      d3
-		tst.w      dma_bufferset-entry(a4)
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
 		beq        dma_sammode4
-		movea.l    dma_playstart_addr-entry(a4),a0
+		movea.l    dma_playstart_addr-params(a4),a0
 		cmpi.l     #AVR_MAGIC,avr_magic(a0)
-		bne.s      dma_sammode1
+		bne.w      dma_sammode1 /* XXX */
 		lea.l      sammode_stereo(pc),a1
 		move.w     avr_stereo(a0),(a1)
 		move.w     avr_bits(a0),2(a1)
 		bsr        sammode_find
 		lea.l      sammode_stereo(pc),a1
 		move.w     (a1),d3
-		bra.s      dma_sammode4
+		andi.l     #0x0000FFFF,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 dma_sammode1:
 		cmpi.l     #WAVE_MAGIC,wave_magic(a0)
-		bne.s      dma_sammode4
+		bne.w      dma_sammode4 /* XXX */
 		cmpi.l     #WAVE_FMT,wave_ckid(a0)
-		bne.s      dma_sammode4
+		bne.w      dma_sammode4 /* XXX */
 		clr.l      d0
 		move.b     wave_channels+1(a0),d0
 		rol.w      #8,d0
 		move.b     wave_channels(a0),d0
 		lea.l      sammode_stereo(pc),a1
 		cmpi.w     #1,d0
-		beq.s      dma_sammode2
+		beq.w      dma_sammode2 /* XXX */
 		move.w     #-1,(a1)
-		bra.s      dma_sammode3
+		bra.w      dma_sammode3 /* XXX */
 dma_sammode2:
 		move.w     #0,(a1)
 dma_sammode3:
@@ -1072,27 +1194,34 @@ dma_sammode3:
 		rol.w      #8,d0
 		move.b     wave_bits(a0),d0
 		move.w     d0,2(a1)
-		bsr        sammode_find
+		bsr        sammode_find /* XXX */
 		lea.l      sammode_stereo(pc),a1
 		move.w     (a1),d3
+		andi.l     #0x0000FFFF,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 dma_sammode4:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 
 sammode_find:
 		lea.l      sammode_stereo(pc),a1
-		lea.l      sammode_table(pc),a2
-		lea.l      sammode_tableend(pc),a3
+		lea.l      sammode_table,a2 /* BUG: absolute address */
+		lea.l      sammode_tableend,a3 /* BUG: absolute address */
 		move.l     (a1),d0
 sammode_find1:
 		cmpa.l     a2,a3
-		beq.s      sammode_find3
+		beq.w      sammode_find3 /* XXX */
 		cmp.l      (a2),d0
-		beq.s      sammode_find2
-		addq.l     #6,a2
-		bra.s      sammode_find1
+		beq.w      sammode_find2 /* XXX */
+		/* addq.l     #6,a2 */
+		dc.w 0xd5fc,0,6 /* XXX */
+		bra.w      sammode_find1 /* XXX */
 sammode_find2:
 		move.w     4(a2),(a1)
 		rts
@@ -1112,14 +1241,17 @@ sammode_stereo: dc.w 0,0
 lib19:
 	dc.w	0			; no library calls
 dma_playloop_off:
-		movem.l    d1-d7/a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    d1-d7/a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_playloop_off1
-		move.w     #0,dma_playloop-entry(a4)
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_playloop_off1 /* XXX */
+		move.w     #0,dma_playloop-params(a4)
 dma_playloop_off1:
-		movem.l    (a7)+,d1-d7/a0-a5
+		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
 /*
@@ -1128,29 +1260,43 @@ dma_playloop_off1:
 lib20:
 	dc.w	0			; no library calls
 dma_sampval:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		clr.l      d3
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_sampval3
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_sampval3 /* XXX */
+		movem.l    a4-a6,-(a7) /* XXX fixme: useless */
 		pea.l      sampvalbuf(pc)
 		move.w     #0x008D,-(a7) /* buffptr */
 		trap       #14
 		addq.l     #6,a7
-		move.l     sampvalbuf(pc),a0
-		move.w     dma_mode-entry(a4),d5
-		cmpi.w     #MODE_STEREO8,d5
-		beq.s      dma_sampval1
+		movem.l    (a7)+,a4-a6 /* XXX fixme: useless */
+		lea.l      sampvalbuf(pc),a0
+		movea.l    (a0),a0
+		move.w     dma_mode-params(a4),d5
+		/* cmpi.w     #MODE_STEREO8,d5 */
+		dc.w 0x0c45,0
+		beq.w      dma_sampval1 /* XXX */
 		cmpi.w     #MODE_STEREO16,d5
-		beq.s      dma_sampval2
+		beq.w      dma_sampval2 /* XXX */
+		move.b     (a0),d3
+		andi.l     #255,d3
+		bra.w      dma_sampval3 /* XXX */
 dma_sampval1:
 		move.b     (a0),d3
-		bra.s      dma_sampval3
+		andi.l     #255,d3
+		bra.w      dma_sampval3 /* XXX */
 dma_sampval2:
 		move.w     (a0),d3
+		andi.l     #0x0000FFFF,d3
+		bra.w      dma_sampval3 /* XXX */
+		nop /* XXX */
 dma_sampval3:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -1163,14 +1309,17 @@ sampvalbuf: ds.l 4
 lib21:
 	dc.w	0			; no library calls
 dma_playloop_on:
-		movem.l    d1-d7/a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    d1-d7/a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_playloop_on1
-		move.w     #1,dma_playloop-entry(a4)
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_playloop_on1 /* XXX */
+		move.w     #1,dma_playloop-params(a4)
 dma_playloop_on1:
-		movem.l    (a7)+,d1-d7/a0-a5
+		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
 /*
@@ -1179,38 +1328,37 @@ dma_playloop_on1:
 lib22:
 	dc.w	0			; no library calls
 dma_samconvert:
-		moveq      #0,d6
-		moveq      #0,d7
-		moveq      #0,d1
-		subq.w     #1,d0
-		beq.s      dma_samconvert1
-* fetch mode
-		move.l     (a6)+,a1
-		move.b     2(a1),d1
-* fetch dst res
-		move.l     (a6)+,d6
-* fetch src res
-		move.l     (a6)+,d7
+		/* BUG: cookie check removed */
+		/* BUG: only version without arguments supported */
+		nop
 dma_samconvert1:
-		movem.l    a0-a5,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		moveq.l    #-1,d3
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samconvert3
-		movea.l    dma_playstart_addr-entry(a4),a0
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samconvert4 /* XXX */
+		movea.l    dma_playstart_addr-params(a4),a0
 		cmpi.l     #AVR_MAGIC,avr_magic(a0)
-		bne.s      dma_samconvert2
+		bne.w      dma_samconvert2 /* XXX */
 		bsr        convert_avr
-		bra.s      dma_samconvert3
+		bra.w      dma_samconvert3 /* XXX */
 dma_samconvert2:
 		cmpi.l     #WAVE_MAGIC,wave_magic(a0)
-		bne.s      dma_samconvert3
+		bne.w      dma_samconvert4 /* XXX */
 		cmpi.l     #WAVE_FMT,wave_ckid(a0)
-		bne.s      dma_samconvert3
+		bne.w      dma_samconvert4 /* XXX */
 		bsr        convert_wave
 dma_samconvert3:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+dma_samconvert4:
+		movem.l    (a7)+,a0-a6
+		/* moveq.l     #-1,d3 */
+		dc.w 0x263c,-1,-1 /* XXX */
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -1220,56 +1368,60 @@ convert_avr:
 		swap       d1
 		move.w     avr_bits(a0),d1
 		cmpi.l     #0xFFFF0010,d1
-		beq.s      convert_avr1
-		moveq.l     #-1,d3
+		beq.w      convert_avr1 /* XXX */
+		/* moveq.l     #-1,d3 */
+		dc.w 0x263c,-1,-1 /* XXX */
 		rts
 convert_avr1:
-		movea.l    dma_playdata_addr-entry(a4),a1
-		movea.l    dma_playdata_addr-entry(a4),a2
-		movea.l    dma_playend_addr-entry(a4),a3
+		movea.l    dma_playdata_addr-params(a4),a1
+		movea.l    dma_playdata_addr-params(a4),a2
+		movea.l    dma_playend_addr-params(a4),a3
 convert_avr2:
 		cmpa.l     a1,a3
-		beq.s      convert_avr3
+		beq.w      convert_avr3 /* XXX */
 		move.b     (a1),d0
 		move.b     d0,(a2)+
 		addq.l     #2,a1
-		bra.s      convert_avr2
+		bra.w      convert_avr2 /* XXX */
 convert_avr3:
 		subq.l     #1,a2
-		move.l     a2,dma_playend_addr-entry(a4)
+		move.l     a2,dma_playend_addr-params(a4)
 		move.w     #-1,avr_stereo(a0)
 		move.w     #8,avr_bits(a0)
-		move.w     #MODE_STEREO8,dma_mode-entry(a4)
-		movea.l    dma_playdata_addr-entry(a4),a0
-		movea.l    dma_playend_addr-entry(a4),a1
+		move.w     #MODE_STEREO8,dma_mode-params(a4)
+		move.w     #-1,dma_bufferset-params(a4)
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
 		move.l     a1,-(a7)
 		move.l     a0,-(a7)
 		move.w     #0,-(a7)
 		move.w     #0x0083,-(a7) /* setbuffer */
 		trap       #14
 		lea.l      12(a7),a7
-		moveq.l    #0,d3
+		/* moveq.l     #0,d3 */
+		dc.w 0x263c,0,0 /* XXX */
 		rts
 
 convert_wave:
-		movea.l    dma_playdata_addr-entry(a4),a1
-		movea.l    dma_playdata_addr-entry(a4),a2
-		movea.l    dma_playend_addr-entry(a4),a3
+		nop
+		movea.l    dma_playdata_addr-params(a4),a1
+		movea.l    dma_playdata_addr-params(a4),a2
+		movea.l    dma_playend_addr-params(a4),a3
 convert_wave1:
 		cmpa.l     a1,a3
-		beq.s      convert_wave2
+		beq.w      convert_wave2 /* XXX */
 		move.b     1(a1),d0
 		eori.b     #0x80,d0
 		move.b     d0,(a2)+
 		addq.l     #2,a1
-		bra.s      convert_wave1
+		bra.w      convert_wave1 /* XXX */
 convert_wave2:
 		subq.l     #1,a2
-		move.l     a2,dma_playend_addr-entry(a4)
+		move.l     a2,dma_playend_addr-params(a4)
 		move.w     #0x0200,wave_channels(a0)
 		move.w     #0x0800,wave_bits(a0)
-		move.l     dma_playstart_addr-entry(a4),d2
-		move.l     dma_playend_addr-entry(a4),d3
+		move.l     dma_playstart_addr-params(a4),d2
+		move.l     dma_playend_addr-params(a4),d3
 		sub.l      d2,d3
 		swap       d3
 		ror.w      #8,d3
@@ -1277,8 +1429,8 @@ convert_wave2:
 		swap       d3
 		ror.w      #8,d3
 		move.w     d3,wave_riffsize(a0)
-		move.l     dma_playdata_addr-entry(a4),d2
-		move.l     dma_playend_addr-entry(a4),d3
+		move.l     dma_playdata_addr-params(a4),d2
+		move.l     dma_playend_addr-params(a4),d3
 		sub.l      d2,d3
 		swap       d3
 		ror.w      #8,d3
@@ -1286,17 +1438,23 @@ convert_wave2:
 		swap       d3
 		ror.w      #8,d3
 		move.w     d3,wave_datasize(a0)
-		move.w     #MODE_STEREO8,dma_mode-entry(a4)
-		movea.l    dma_playdata_addr-entry(a4),a0
-		movea.l    dma_playend_addr-entry(a4),a1
+		move.w     #MODE_STEREO8,dma_mode-params(a4)
+		move.w     #-1,dma_bufferset-params(a4)
+		movea.l    dma_playdata_addr-params(a4),a0
+		movea.l    dma_playend_addr-params(a4),a1
 		move.l     a1,-(a7)
 		move.l     a0,-(a7)
 		move.w     #0,-(a7)
 		move.w     #0x0083,-(a7) /* setbuffer */
 		trap       #14
 		lea.l      12(a7),a7
-		moveq.l     #0,d3
+		/* moveq.l     #0,d3 */
+		dc.w 0x263c,0,0 /* XXX */
 		rts
+
+convert_mode: dc.b 0,0
+comvert_dstres: dc.w 0
+convert_srcres: dc.w 0
 
 /*
  * Syntax:   dma samplay
@@ -1304,25 +1462,31 @@ convert_wave2:
 lib23:
 	dc.w	0			; no library calls
 dma_samplay:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samplay3
-		move.w     dma_playloop-entry(a4),d1
-		beq.s      dma_samplay2
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samplay1 /* XXX */
+		move.w     dma_playloop-params(a4),d1
+		/* tst.w      d1 */
+		dc.w 0x0c41,0 /* XXX */
+		beq.w      dma_samplay2 /* XXX */
 		move.w     #3,-(a7)
 		move.w     #0x0088,-(a7) /* buffoper */
 		trap       #14
 		addq.l     #4,a7
-		bra.s      dma_samplay3
+dma_samplay1:
+		movem.l    (a7)+,a0-a6
+		rts
 dma_samplay2:
 		move.w     #1,-(a7)
 		move.w     #0x0088,-(a7) /* buffoper */
 		trap       #14
 		addq.l     #4,a7
-dma_samplay3:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
 
 /*
@@ -1331,16 +1495,24 @@ dma_samplay3:
 lib24:
 	dc.w	0			; no library calls
 dma_samsize:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		clr.l      d3
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samsize1
-		move.l     dma_playend_addr-entry(a4),d3
-		sub.l      dma_playstart_addr-entry(a4),d3
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samsize1 /* XXX */
+		move.l     dma_playstart_addr-params(a4),d2
+		move.l     dma_playend_addr-params(a4),d3
+		sub.l      d2,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 dma_samsize1:
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -1351,7 +1523,8 @@ dma_samsize1:
 lib25:
 	dc.w	0			; no library calls
 dma_samthru:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.w     #1,-(a7)
 		move.w     #0,-(a7)
 		move.w     #0,-(a7)
@@ -1388,7 +1561,7 @@ dma_samthru:
 		move.w     #0x0087,-(a7) /* setinterrupt */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib26:
@@ -1401,18 +1574,21 @@ lib26:
 lib27:
 	dc.w	0			; no library calls
 dma_samstop:
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.l     debut(a5),a4
 		movea.l    0(a4,d1.w),a4
-		tst.w      dma_bufferset-entry(a4)
-		beq.s      dma_samstop1
-		move.w     #0,dma_playloop-entry(a4)
+		move.l     params_offset-entry(a4),d0
+		adda.l     d0,a4
+		tst.w      dma_bufferset-params(a4)
+		beq.w      dma_samstop1 /* XXX */
+		move.w     #0,dma_playloop-params(a4)
 dma_samstop1:
 		move.w     #0,-(a7)
 		move.w     #0x0088,-(a7) /* buffoper */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib28:
@@ -1425,15 +1601,16 @@ lib28:
 lib29:
 	dc.w	0			; no library calls
 adder_in:
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		andi.w     #3,d3
-		movem.l    a0-a2,-(a7)
+		andi.l     #3,d3
+		movem.l    a0-a6,-(a7)
 		move.w     d3,-(a7)
 		move.w     #ADDERIN,-(a7)
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib30:
@@ -1446,15 +1623,16 @@ lib30:
 lib31:
 	dc.w	0			; no library calls
 adc_input:
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
 		andi.l     #3,d3
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     d3,-(a7)
 		move.w     #ADCINPUT,-(a7)
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib32:
@@ -1475,17 +1653,18 @@ lib34:
 lib35:
 	dc.w	0			; no library calls
 left_gain:
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
 		andi.l     #15,d3
-		movem.l    a0-a2,-(a7)
-		lsl.w      #4,d3
-		andi.w     #0x000000F0,d3
+		movem.l    a0-a6,-(a7)
+		rol.w      #4,d3
+		andi.l     #0x000000F0,d3
 		move.w     d3,-(a7)
 		move.w     #LTGAIN,-(a7)
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib36:
@@ -1498,16 +1677,18 @@ lib36:
 lib37:
 	dc.w	0			; no library calls
 right_gain:
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		movem.l    a0-a2,-(a7)
-		lsl.w      #4,d3
-		andi.w     #0x000000F0,d3
+		andi.l     #0x0000FFFF,d3
+		movem.l    a0-a6,-(a7)
+		rol.w      #4,d3
+		andi.l     #0x000000F0,d3
 		move.w     d3,-(a7)
 		move.w     #RTGAIN,-(a7)
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib38:
@@ -1520,17 +1701,19 @@ lib38:
 lib39:
 	dc.w	0			; no library calls
 left_volume:
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		movem.l    a0-a2,-(a7)
+		andi.l     #0x0000FFFF,d3
+		movem.l    a0-a6,-(a7)
 		not.w      d3
-		andi.w     #15,d3
-		lsl.w      #4,d3
+		andi.l     #15,d3
+		rol.w      #4,d3
 		move.w     d3,-(a7)
 		move.w     #LTATTEN,-(a7)
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib40:
@@ -1543,17 +1726,19 @@ lib40:
 lib41:
 	dc.w	0			; no library calls
 right_volume:
+		/* BUG: cookie check removed */
 		move.l     (a6)+,d3
-		movem.l    a0-a2,-(a7)
+		andi.l     #0x0000FFFF,d3
+		movem.l    a0-a6,-(a7)
 		not.w      d3
-		andi.w     #15,d3
-		lsl.w      #4,d3
+		andi.l     #15,d3
+		rol.w      #4,d3
 		move.w     d3,-(a7)
 		move.w     #RTATTEN,-(a7)
 		move.w     #0x0082,-(a7) /* soundcmd */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 		rts
 
 lib42:
@@ -1566,21 +1751,14 @@ lib42:
 lib43:
 	dc.w	0			; no library calls
 speaker_off:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.w     mch_cookie-entry(a4),d0
-		subq.w     #3,d0
-		bne.s      speaker_off1
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.w     #0x0040,-(a7)
 		move.w     #30,-(a7) /* Ongibit */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
-speaker_off1:
-		lea        illfalconfunc-entry(a4),a0
-		jmp        (a0)
 
 lib44:
 	dc.w	0			; no library calls
@@ -1592,21 +1770,14 @@ lib44:
 lib45:
 	dc.w	0			; no library calls
 speaker_on:
-		move.l     debut(a5),a4
-		movea.l    0(a4,d1.w),a4
-		move.w     mch_cookie-entry(a4),d0
-		subq.w     #3,d0
-		bne.s      speaker_on1
-		movem.l    a0-a5,-(a7)
+		/* BUG: cookie check removed */
+		movem.l    a0-a6,-(a7)
 		move.w     #0x00BF,-(a7)
 		move.w     #29,-(a7) /* Offgibit */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a5
+		movem.l    (a7)+,a0-a6
 		rts
-speaker_on1:
-		lea        illfalconfunc-entry(a4),a0
-		jmp        (a0)
 
 libex:
    dc.w 0
