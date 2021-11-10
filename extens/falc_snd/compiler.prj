@@ -1,6 +1,5 @@
 compiler\falc_snd.ecy
 .L[-S=0]
-.S[-2]
 .S[-DCOMPILER=1]
 .S[-I..\..\src]
 .S[-I..\..\compiler]
