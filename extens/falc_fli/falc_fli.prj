@@ -1,0 +1,8 @@
+stos\falc_fli.exp
+.L[-S=0]
+.S[-2]
+.S[-S]
+.S[-DCOMPILER=0]
+.S[-I..\..\src]
+=
+falc_fli.s

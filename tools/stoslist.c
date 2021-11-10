@@ -680,7 +680,18 @@ static struct extension const external_extensions[] = {
 	/* Protracker: 3 commands */
 	{ 'P', 0x80, 0, "propack" },
 	{ 'P', 0x81, 0, "mpack" },
+	/* 0x82 unused */
 	{ 'P', 0x83, 0, "munpack" },
+
+	/* Falcon FLI extension: 8 commands */
+	{ 'P', 0x80, 0, "_fli bank" },
+	{ 'P', 0x81, 0, "_fli framewidth" },
+	{ 'P', 0x82, 0, "_fli screen" },
+	{ 'P', 0x83, 0, "_fli frameheight" },
+	{ 'P', 0x84, 0, "_fli play" },
+	{ 'P', 0x85, 0, "_fli frames" },
+	{ 'P', 0x86, 0, "_fli stop" },
+	{ 'P', 0x87, 0, "_fli frame" },
 
 	/* Missing Link: 33 commands (link1) */
 	{ 'Q', 0x80, 0, "landscape" },
@@ -729,7 +740,7 @@ static struct extension const external_extensions[] = {
 	{ 'Q', 0x88, 0, "track unpack" },
 	{ 'Q', 0x89, 0, "track name" },
 
-	/* Missing L0, ink: 28 commands (link2) */
+	/* Missing Link: 28 commands (link2) */
 	{ 'R', 0x80, 0, "joey" },
 	{ 'R', 0x81, 0, "b height" },
 	{ 'R', 0x82, 0, "blit" },
