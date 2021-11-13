@@ -1,0 +1,8 @@
+stos\falc_vid.exx
+.L[-S=0]
+.S[-S]
+.S[-2]
+.S[-DCOMPILER=0]
+.S[-I..\..\src]
+=
+falc_vid.s

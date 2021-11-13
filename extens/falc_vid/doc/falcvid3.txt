@@ -583,7 +583,7 @@ Command   :-   _get falc zone
 Version   :-   All VIDEO (II) and (III) versions.
 Syntax    :-   ZNE=_falc zone(N)
 Action    :-   This command performs exactly the same function as the STOS 
-               setzone  command,  this version is for the Falcon's  16/256 
+               zone  command,  this version is for the Falcon's  16/256 
                colour and TRUE-COLOUR video modes.
 
                Returns  ZNE  = Zone in which the mouse  pointer  is  found 
@@ -734,7 +734,7 @@ Action    :    Returns  BLUE  with the value of colour blue  component  of
 
 Command   :-   _falc palt
 Version   :-   All VIDEO (II) and (III) versions.
-Syntax    :-   X=_falc palt(ADDR)
+Syntax    :-   X=_falc palt(ADDR,COUNT)
 Action    :    Convert  an  old ST 16 colour palette to a  new  Falcon  16 
                colour  palette.  ADDR is the address of an  INTEGER  array 
                containing  the  ST palette.  The returned value 'X'  is  a 
@@ -1056,12 +1056,12 @@ colours 0 - 16, as was the default of the previous VIDEO versions command.
 
 Command   :-   dpack ilbm
 Version   :-   All VIDEO versions.
-Syntax    :-   X=dpack ilbm(SCE_ADDR,DEST_ADDR)
+Syntax    :-   X=dpack ilbm(SRC_ADDR,DEST_ADDR)
 Action    :-   This  function depacks/converts an IFF (Amiga 16 colour)  / 
                ILBM (256 colour) format picture file into  a normal bitmap 
                ready to display on screen.
 
-               SCE_ADDR  =    Address  of buffer (normally a  STOS  memory 
+               SRC_ADDR  =    Address  of buffer (normally a  STOS  memory 
                               bank)  where the source  InterLeaved  BitMap 
                               picture is held.
 

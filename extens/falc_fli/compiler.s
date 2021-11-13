@@ -55,6 +55,8 @@ l006:	.dc.b I,1,1,0             ; _fli frames
 l007:	.dc.b 0,1,1,0             ; _fli stop
 l008:	.dc.b I,1,1,0             ; _fli frame
 
+		.even
+
 entry:
 	bra.w init
 	

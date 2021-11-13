@@ -1,0 +1,9 @@
+compiler\falc_vid.ecx
+.S[-S]
+.S[-2]
+.L[-S=0]
+.S[-DCOMPILER=1]
+.S[-I..\..\src]
+.S[-I..\..\compiler]
+=
+compiler.s
