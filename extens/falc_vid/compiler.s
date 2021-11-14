@@ -167,7 +167,7 @@ l015:	.dc.b 0,I,1               ; _get st palette
         .dc.b   I,',',I,1,1,0
 l016:	.dc.b I,I,1,1,0           ; _falc rgb
 l017:	.dc.b 0,1,1,0             ; palfade in
-l018:	.dc.b I,I,1,1,0           ; _falc palt BUG: count parameter missing
+l018:	.dc.b I,I,',',I,1,1,0     ; _falc palt
 l019:	.dc.b 0,1,1,0             ; palfade out
 l020:	.dc.b I,1,1,0             ; darkest
 l021:	.dc.b 0,I,',',I,1,1,0     ; quickwipe
@@ -206,16 +206,7 @@ l047:	.dc.b 0,I,',',I,1         ; _convert pi1
 entry:
 	bra.w init
 
-params_offset: dc.l params-entry
-switchmode_offset: dc.l switchmode-entry
-getilbmchunks_offset: dc.l getilbmchunks-entry
-modetable_offset: dc.l modetable-entry
-convert2rgb_offset: dc.l convert2rgb-entry
-installvbl_offset: dc.l installvbl-entry
-restorevbl_offset: dc.l restorevbl-entry
-
-
-params: /* 1022a */
+params:
 ilbm_form: ds.l 1
 ilbm_ilbm: ds.l 1
 ilbm_bmhd: ds.l 1
@@ -239,14 +230,12 @@ ilbm_planes2: ds.w 1
 ilbm_nxwd: ds.l 1 /* 58 */
 	ds.w 1 /* unused */
 
-falcon_mode: ds.w 1 /* 1407a, 64 */
+falcon_mode: ds.w 1
 	ds.l 1
 
 fade1tab: ds.l 256
 fade2tab: ds.l 256
 fade3tab: ds.l 256
-
-	ds.b 478 /* unused */
 
 modetable:
           /* mode                            width,height, bytes,scanl,planes,hht,hbb,hbe, hdb,hde,hss, vft, vbb,vbe,vdb, vde, vss,vco, vmc */
@@ -303,7 +292,7 @@ modetable:
 		dc.w VERTFLAG+PAL+VGA+COL80+$3000+BPS4,800,   320,   400,  200,     4,240,181, 23, 719,168,173,1345,1305, 15, 25,1306,1306,  9,$182
 		dc.w VERTFLAG+PAL+VGA+COL80+$3000+BPS8,800,   320,   800,  400,     8,241,180, 23, 728,171,172,1345,1329, 45, 49,1330,1332,  9,$182
 modetable_end:
-		dc.w -1,-1
+		dc.l -1
 
 
 switchmode:
@@ -325,24 +314,19 @@ switchmode2:
 		movem.l    d1-d2/a5,-(a7)
 		dc.w       0xa000 /* linea_init */
 		movem.l    (a7)+,d1-d2/a5
-		movea.l    d0,a0
 		move.w     d1,DEV_TAB(a0)
-		/* subq.w     #1,DEV_TAB(a0) */
-		dc.w 0x0468,1,DEV_TAB /* XXX */
+		subq.w     #1,DEV_TAB(a0)
 		move.w     d1,V_REZ_HZ(a0)
-		move.w     #0,LA_XMN_CLIP(a0)
-		move.w     #0,LA_YMN_CLIP(a0)
+		clr.w      LA_XMN_CLIP(a0)
+		clr.w      LA_YMN_CLIP(a0)
 		move.w     d1,LA_XMX_CLIP(a0)
-		/* subq.w     #1,LA_XMX_CLIP(a0) */
-		dc.w 0x0468,1,LA_XMX_CLIP /* XXX */
+		subq.w     #1,LA_XMX_CLIP(a0)
 		move.w     d2,LA_YMX_CLIP(a0)
-		/* subq.w     #1,LA_YMX_CLIP(a0) */
-		dc.w 0x0468,1,LA_YMX_CLIP /* XXX */
+		subq.w     #1,LA_YMX_CLIP(a0)
 		move.w     #-1,LA_CLIP(a0)
 		move.w     10(a5),LA_PLANES(a0)
 		move.w     4(a5),DEV_TAB+2(a0)
-		/* subq.w     #1,DEV_TAB+2(a0) */
-		dc.w 0x0468,1,DEV_TAB+2 /* XXX */
+		subq.w     #1,DEV_TAB+2(a0)
 		move.w     4(a5),V_REZ_VT(a0)
 		move.w     d1,d0
 		lsr.w      #3,d0
@@ -352,8 +336,7 @@ switchmode2:
 		move.w     4(a5),d1
 		ext.l      d1
 		divs.w     d0,d1
-		/* subq.w     #1,d1 */
-		dc.w 0x0441,1 /* XXX */
+		subq.w     #1,d1
 		move.w     d1,V_CEL_MY(a0)
 		move.w     6(a5),d2 /* bytes_lin */
 		move.w     d2,V_BYTES_LIN(a0)
@@ -378,9 +361,9 @@ switchmode2:
 		cmpi.w     #8,d3
 		beq.s      switchmode3
 		move.w     #256,DEV_TAB+26(a0)
-		move.w     #0,DEV_TAB+78(a0)
+		clr.w      DEV_TAB+78(a0)
 switchmode3:
-		lea.l      scanline_width,a4 /* BUG: absolute address */
+		lea.l      scanline_width(pc),a4
 		move.w     8(a5),(a4)
 		pea.l      set_scanline(pc)
 		move.w     #38,-(a7) /* Supexec */
@@ -391,8 +374,7 @@ switchmode4:
 		rts
 
 set_scanline:
-		lea.l      scanline_width,a4 /* BUG: not allowed to trash a4 */ /* BUG: absolute address */
-		move.w     (a4),d0
+		move.w     scanline_width(pc),d0
 		move.w     d0,($FFFF8210).w
 		rts
 
@@ -400,83 +382,36 @@ scanline_width: dc.w       0
 
 getilbmchunks:
 		movem.l    a0-a6,-(a7)
+		lea.l      params(pc),a6
 		bsr.s      ilbm_find_form
-		tst.l      d7
-		bne.s      getilbmchunks1
-		bsr.s      ilbm_find_ilbm
-		tst.l      d7
 		bne.s      getilbmchunks1
 		bsr        ilbm_find_bmhd
-		tst.l      d7
 		bne.s      getilbmchunks1
 		bsr        ilbm_find_cmap
-		tst.l      d7
 		bne.s      getilbmchunks1
 		bsr        ilbm_find_body
-		tst.l      d7
-		bne.s      getilbmchunks1
-		movem.l    (a7)+,a0-a6
-		rts
 getilbmchunks1:
 		movem.l    (a7)+,a0-a6
-		moveq.l    #-1,d7
 		rts
 
 
-/* FIXME: walk through list of chunks instead */
 ilbm_find_form:
-		lea.l      params(pc),a6
 		movea.l    ilbm_addr-params(a6),a0
-		move.l     ilbm_size-params(a6),d7
-ilbm_find_form1:
-		tst.l      d7
-		beq.s      ilbm_find_form2
-		subq.l     #1,d7
-		cmpi.b     #'F',(a0)+
-		bne.s      ilbm_find_form1
-		cmpi.b     #'O',(a0)
-		bne.s      ilbm_find_form1
-		cmpi.b     #'R',1(a0)
-		bne.s      ilbm_find_form1
-		cmpi.b     #'M',2(a0)
-		bne.s      ilbm_find_form1
-		subq.l     #1,a0
-		move.l     a0,ilbm_form-params(a6)
+		moveq.l    #-1,d7
+		cmp.l      #0x464f524d,(a0)+ /* 'FORM' */
+		bne        ilbm_find_form2
+		move.l     (a0)+,d0
+		addq.l     #8,d0
+		cmp.l      #0x494c424d,(a0)+ /* 'ILBM' */
+		bne        ilbm_find_form2
+		move.l     d0,ilbm_size-params(a6)
 		moveq.l    #0,d7
-		rts
 ilbm_find_form2:
-		moveq.l    #-1,d7
 		rts
 
-
-/* FIXME: walk through list of chunks instead */
-ilbm_find_ilbm:
-		lea.l      params(pc),a6
-		movea.l    ilbm_addr-params(a6),a0
-		move.l     ilbm_size-params(a6),d7
-ilbm_find_ilbm1:
-		tst.l      d7
-		beq.s      ilbm_find_ilbm2
-		subq.l     #1,d7
-		cmpi.b     #'I',(a0)+
-		bne.s      ilbm_find_ilbm1
-		cmpi.b     #'L',(a0)
-		bne.s      ilbm_find_ilbm1
-		cmpi.b     #'B',1(a0)
-		bne.s      ilbm_find_ilbm1
-		cmpi.b     #'M',2(a0)
-		bne.s      ilbm_find_ilbm1
-		subq.l     #1,a0
-		move.l     a0,ilbm_ilbm-params(a6)
-		moveq.l    #0,d7
-		rts
-ilbm_find_ilbm2:
-		moveq.l    #-1,d7
-		rts
 
 /* FIXME: walk through list of chunks instead */
 ilbm_find_bmhd:
-		lea.l      params(pc),a6
 		movea.l    ilbm_addr-params(a6),a0
 		move.l     ilbm_size-params(a6),d7
 ilbm_find_bmhd1:
@@ -510,7 +445,6 @@ ilbm_find_bmhd2:
 
 /* FIXME: walk through list of chunks instead */
 ilbm_find_cmap:
-		lea.l      params(pc),a6
 		movea.l    ilbm_addr-params(a6),a0
 		move.l     ilbm_size-params(a6),d7
 ilbm_find_cmap1:
@@ -538,7 +472,6 @@ ilbm_find_cmap2:
 
 /* FIXME: walk through list of chunks instead */
 ilbm_find_body:
-		lea.l      params(pc),a6
 		movea.l    ilbm_addr-params(a6),a0
 		move.l     ilbm_size-params(a6),d7
 ilbm_find_body1:
@@ -564,6 +497,7 @@ ilbm_find_body2:
 
 
 convert2rgb:
+		movem.l    d1-d3,-(a7)
 		clr.l      d2
 		clr.l      d3
 		move.w     d0,d1
@@ -580,11 +514,12 @@ convert2rgb:
 		or.l       d3,d2
 		or.l       d2,d1
 		move.l     d1,d0
+		movem.l    (a7)+,d1-d3
 		rts
 
 installvbl:
 		lea        vblstart(pc),a1
-		move.l     d0,(a1)
+		move.l     d0,(a1) /* vblstart & vbdelay */
 		move.w     shift_flag(pc),d0
 		tst.w      d0
 		bne.s      installvbl1
@@ -592,20 +527,18 @@ installvbl:
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.l     #7,d0
+		andi.w     #7,d0
 		cmpi.w     #BPS8,d0
 		bne.s      installvbl1
-		andi.l     #3,d0
 		moveq.l    #1,d7
 		asl.l      d0,d7
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
 		andi.l     #MAXPAL-1,d7
-		lea.l      rgbpalette(pc),a0
-		move.l     a0,-(a7)
+		pea.l      rgbpalette(pc)
 		move.w     d7,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -619,10 +552,10 @@ installvbl1:
 		rts
 
 sinstallvbl:
-		lea.l      gooldvbl+2(pc),a0
-		move.l     $00000070.l,(a0) /* XXX */
+		lea.l      oldvbl(pc),a0
+		move.l     $00000070,(a0)
 		lea.l      newvbl(pc),a1
-		move.l     a1,$00000070.l /* XXX */
+		move.l     a1,$00000070
 		lea        vblcount(pc),a1
 		clr.w      (a1)
 		rts
@@ -635,7 +568,7 @@ restorevbl:
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.l     #7,d0
+		andi.w     #7,d0
 		cmpi.w     #BPS8,d0
 		bne.s      restorevbl1
 		pea.l      srestorevbl(pc)
@@ -644,20 +577,18 @@ restorevbl:
 		addq.l     #6,a7
 		pea.l      rgbpalette(pc)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		lea.l      shift_flag(pc),a0
-		move.w     #0,(a0)
+		clr.w      (a0)
 restorevbl1:
 		rts
 
 srestorevbl:
-		movea.l    gooldvbl+2(pc),a0
-		/* movea.w    #$0070,a1 */
-		dc.w 0x227c,0,0x70 /* XXX */
-		move.l     a0,(a1)
+		movea.l    oldvbl(pc),a0
+		move.l     a0,$0070
 		lea        vblcount(pc),a1
 		clr.w      (a1)
 		rts
@@ -665,14 +596,13 @@ srestorevbl:
 newvbl:
 		movem.l    d0-d7/a0-a6,-(a7)
 		lea.l      vblcount(pc),a4
-		/* addq.w     #1,(a4) */
-		dc.w 0x0654,1 /* XXX */
+		addq.w     #1,(a4)
 		move.w     (a4),d0
 		cmp.w      vbldelay(pc),d0
 		blt.s      newvbl2
-		movea.l    #$00FF9800,a0 /* XXX */
+		movea.l    #$ffff9800,a0
 		move.l     #255-1,d6
-		clr.l      d7
+		moveq.l    #0,d7
 		move.w     vblstart(pc),d7
 		sub.w      d7,d6
 		asl.l      #2,d7
@@ -686,7 +616,10 @@ newvbl1:
 		clr.w      (a4)
 newvbl2:
 		movem.l    (a7)+,d0-d7/a0-a6
-gooldvbl: jmp        0.l
+		move.l     oldvbl(pc),-(a7)
+		rts
+
+oldvbl:   ds.l 1
 
 vblstart: dc.w 0
 vbldelay: dc.w 0
@@ -694,7 +627,7 @@ vblcount: dc.w 0
 
 shift_flag: dc.w 0
 
-rgbpalette: ds.l 256 /* 11ca2 */
+rgbpalette: ds.l 256
 
 
 init:
@@ -712,7 +645,6 @@ lib1:
 	dc.w	0			; no library calls
 vsetmode:
 		move.l     (a6)+,d3
-		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		movem.l    d1-d3/a0-a6,-(a7)
 		lea.l      vsetmode_mode(pc),a1
 		move.w     d3,(a1)
@@ -723,7 +655,7 @@ vsetmode:
 		trap       #5
 vsetmode1:
 		move.w     vsetmode_mode(pc),d0
-		andi.l     #$1ff,d0
+		andi.w     #$1ff,d0
 		move.w     d0,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
@@ -732,13 +664,13 @@ vsetmode1:
 		trap       #14
 		addq.l     #2,a7
 		lea.l      vsetmode_montype(pc),a1
-		andi.l     #3,d0
+		andi.w     #3,d0
 		move.w     d0,(a1)
 		movem.l    (a7)+,d1-d3/a0-a6
 		move.l     debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     modetable_offset-entry(a0),d2
-		add.l      d2,a0
+		lea        switchmode-entry(a0),a2
+		lea        modetable-entry(a0),a0
 		lea        ptr_modetable(pc),a1
 		move.l     a0,(a1)
 		movem.l    d1-d3/a0-a6,-(a7)
@@ -747,12 +679,8 @@ vsetmode1:
 		trap       #14
 		addq.l     #6,a7
 		movem.l    (a7)+,d1-d3/a0-a6
-		move.l     debut(a5),a0
-		movea.l    0(a0,d1.w),a0
-		move.l     switchmode_offset-entry(a0),d0
-		adda.l     d0,a0
 		move.w     vsetmode_mode(pc),d3
-		jsr        (a0)
+		jsr        (a2) /* -> switchmode */
 		move.w     vsetmode_mode(pc),d1
 		andi.l     #$1ff,d1
 		move.l     falcon_screensize(pc),d2
@@ -770,7 +698,7 @@ initvidel:
 initvidel1:
 		cmpi.l     #-1,(a4)
 		beq.s      initvidel3
-		cmp.w      ZERO(a4),d3
+		cmp.w      (a4),d3
 		beq.s      initvidel2
 		lea.l      40(a4),a4
 		bra.s      initvidel1
@@ -800,7 +728,7 @@ initvidel3:
 
 vsetmode_mode: dc.w 0
 vsetmode_montype: dc.w 0
-falcon_screensize: ds.l 1 /* 14036 */
+falcon_screensize: ds.l 1
 
 /*
  * Syntax:   VID_MDE=vgetmode
@@ -813,8 +741,8 @@ vgetmode:
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		move.l     d0,d3
-		andi.l     #0x0000FFFF,d3
+		moveq      #0,d3
+		move.w     d0,d3
 		clr.l      d2
 		movem.l    (a7)+,a0-a6
 		move.l     d3,-(a6)
@@ -830,10 +758,8 @@ falc_cls:
 		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      falc_cls1
-		movem.l    a0-a1,-(a7) /* XXX useless */
 		move.l     d3,-(a6)
 lib3_1:	jsr        L_addrofbank.l
-		movem.l    (a7)+,a0-a1 /* XXX useless */
 falc_cls1:
 		lea.l      cls_address(pc),a1
 		move.l     d3,(a1)
@@ -874,8 +800,6 @@ falc_cls3:
 		moveq.l    #0,d1
 		moveq.l    #S_falc_locate,d0
 		trap       #5
-		moveq      #S_multipen_off,d0 /* BUG: why? */
-		trap       #5
 		move.w     cls_mousestat(pc),d0
 		tst.w      d0
 		beq.s      falc_cls4
@@ -896,7 +820,6 @@ lib4:
 	dc.w	0			; no library calls
 vgetsize:
 		move.l     (a6)+,d3
-		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		cmpi.w     #0x1ff,d3
 		bge.s      vgetsize1
 		movem.l    d1/a0-a6,-(a7)
@@ -911,12 +834,11 @@ vgetsize:
 		rts
 vgetsize1:
 		movem.l    d1/a0-a6,-(a7)
-		exg        d3,d0
+		move.l     d3,d0
 		move.l     #0x00008000,d3
 		move.l     debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     modetable_offset-entry(a0),d2
-		add.l      d2,a0
+		lea        modetable-entry(a0),a0
 vgetsize2:
 		cmpi.l     #-1,(a0)
 		beq.s      vgetsize4
@@ -950,13 +872,11 @@ lib5_1:	jsr        L_addrofbank.l
 		movem.l    (a7)+,a0-a1
 vgetpalt1:
 		movem.l    a0-a6,-(a7)
-		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VSetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.l     #7,d0
-		move.l     (a7)+,d3
+		andi.w     #7,d0
 		cmpi.w     #2,d0
 		beq.s      vgetpalt2
 		cmpi.w     #3,d0
@@ -966,7 +886,7 @@ vgetpalt1:
 vgetpalt2:
 		move.l     d3,-(a7)
 		move.w     #16,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -975,7 +895,7 @@ vgetpalt2:
 vgetpalt3:
 		move.l     d3,-(a7)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -992,8 +912,8 @@ montype:
 		move.w     #89,-(a7) /* VgetMonitor */
 		trap       #14
 		addq.l     #2,a7
-		move.l     d0,d3
-		andi.l     #0x0000FFFF,d3
+		moveq      #0,d3
+		move.w     d0,d3
 		clr.l      d2
 		movem.l    (a7)+,a0-a6
 		move.l     d3,-(a6)
@@ -1015,13 +935,11 @@ lib7_1:	jsr        L_addrofbank.l
 		movem.l    (a7)+,a0-a1
 vsetpalt1:
 		movem.l    a0-a6,-(a7)
-		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VgetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.l     #7,d0
-		move.l     (a7)+,d3
+		andi.w     #7,d0
 		cmpi.w     #2,d0
 		beq.s      vsetpalt2
 		cmpi.w     #3,d0
@@ -1031,7 +949,7 @@ vsetpalt1:
 vsetpalt2:
 		move.l     d3,-(a7)
 		move.w     #16,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -1040,7 +958,7 @@ vsetpalt2:
 vsetpalt3:
 		move.l     d3,-(a7)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -1054,35 +972,33 @@ lib8:
 	dc.w	0			; no library calls
 whichmode:
 		lea.l      dev_flg(pc),a1
-		move.w     #0,(a1)
-		cmpi.b     #1,d0
+		clr.w      (a1)
+		moveq      #0,d3
+		subq.w     #1,d0
 		beq.s      whichmode2
-		cmpi.w     #2,d0
-		beq.s      whichmode1
-		rts
-whichmode1:
+		subq.w     #1,d0
+		bne        whichmode6
 		move.l     (a6)+,d3
-		lea.l      dev_flg(pc),a1
-		andi.l     #3,d3
-		move.w     d3,(a1)
+		andi.w     #3,d3
 whichmode2:
+		lea.l      dev_flg(pc),a1
+		move.w     d3,(a1)
 		move.l     (a6)+,d3
-		move.w     #1,d4
+		moveq      #1,d4
 		cmpi.l     #2,d3
 		beq.s      whichmode3
-		move.w     #2,d4
+		moveq      #2,d4
 		cmpi.l     #4,d3
 		beq.s      whichmode3
-		move.w     #4,d4
+		moveq      #4,d4
 		cmpi.l     #16,d3
 		beq.s      whichmode3
-		move.w     #8,d4
+		moveq      #8,d4
 		cmpi.l     #256,d3
 		beq.s      whichmode3
-		move.w     #16,d4
+		moveq      #16,d4
 		cmpi.l     #-1,d3
-		beq.s      whichmode3
-		bra        whichmode6
+		bne        whichmode6
 whichmode3:
 		move.l     (a6)+,d3
 		cmpi.l     #200,d3
@@ -1094,8 +1010,7 @@ whichmode3:
 		cmpi.l     #400,d3
 		beq.s      whichmode4
 		cmpi.l     #480,d3
-		beq.s      whichmode4
-		bra        whichmode6
+		bne.s      whichmode6
 whichmode4:
 		move.w     d3,d0
 		swap       d0
@@ -1109,15 +1024,13 @@ whichmode4:
 		cmpi.l     #768,d3
 		beq.s      whichmode5
 		cmpi.l     #800,d3
-		beq.s      whichmode5
-		bra        whichmode6
+		bne.s      whichmode6
 whichmode5:
 		move.w     d3,d0
 		swap       d0
 		move.l     debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     modetable_offset-entry(a0),d2
-		adda.l     d2,a0
+		lea        modetable-entry(a0),a0
 		movem.l    d0-d2/a0-a6,-(a7)
 		lea.l      dev_flg(pc),a1
 		exg        d4,d1
@@ -1134,17 +1047,17 @@ whichmode6:
 dev_flg: dc.w 0
 
 getmode:
-		cmpi.w     #2,(a1)
+		cmpi.w     #MON_VGA,(a1)
 		beq.s      getmode6
-		cmpi.w     #1,(a1)
+		cmpi.w     #MON_COLOR,(a1)
 		beq.s      getmode1
-		cmpi.w     #3,(a1)
+		cmpi.w     #MON_TV,(a1)
 		beq.s      getmode1
 		movem.l    d0-d6/a0-a6,-(a7)
 		move.w     #89,-(a7) /* VgetMonitor */
 		trap       #14
 		addq.l     #2,a7
-		andi.l     #3,d0
+		andi.w     #3,d0
 		move.l     d0,d7
 		movem.l    (a7)+,d0-d6/a0-a6
 		cmp.w      #MON_VGA,d7
@@ -1203,7 +1116,6 @@ get_spritepalette:
 		trap       #14
 		addq.l     #4,a7
 		movem.l    (a7)+,a0-a6
-		andi.l     #0xFFFF,d0
 		cmpi.w     #STMODES+PAL+BPS4,d0
 		beq.s      get_spritepalette1
 		cmpi.w     #STMODES+PAL+COL80+BPS2,d0
@@ -1215,11 +1127,12 @@ get_spritepalette1:
 		move.l     #1,-(a6)
 lib9_1:	jsr        L_addrofbank.l
 		movea.l    d3,a0
-		/* FIXME: check for valid bank removed */
+		cmpi.l     #0x19861987,(a0)
+		bne        get_spritepalette7
 get_spritepalette2:
 		movem.l    a1-a6,-(a7)
 		move.l     a0,-(a7)
-		move.w     #2,-(a7) /* Physbase */ /* BUG: may clobber d2 */
+		move.w     #2,-(a7) /* Physbase */
 		trap       #14
 		addq.l     #2,a7
 		addi.l     #32000,d0
@@ -1229,9 +1142,7 @@ get_spritepalette2:
 		lsr.l      #1,d2
 		subq.l     #1,d2
 get_spritepalette3:
-		move.w     (a0),d1
-		swap       d1
-		move.w     2(a0),d1
+		move.l     (a0),d1
 		addq.l     #2,a0
 		cmpi.l     #0x50414C54,d1 /* 'PALT' */
 		beq.s      get_spritepalette4
@@ -1250,6 +1161,7 @@ get_spritepalette5:
 		addq.l     #6,a7
 get_spritepalette6:
 		movem.l    (a7)+,a1-a6
+get_spritepalette7:
 		rts
 
 /*
@@ -1259,41 +1171,14 @@ lib10:
 	dc.w	0			; no library calls
 scr_width:
 		movem.l    a0-a6,-(a7)
-/* FIXME: just use always linea vars */
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VSetMode */
-		trap       #14
-		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
-		andi.l     #0x0000FFFF,d0
-		btst       #7,d0 /* ST-Compatible? */
-		bne.s      scr_width1
-		movem.l    a0-a6,-(a7)
 		dc.w       0xa000 /* linea_init */
-		movea.l    d0,a0
+		moveq      #0,d3
 		move.w     DEV_TAB(a0),d3
-		/* addq.w     #1,d3 */
-		dc.w 0x0643,1 /* XXX */
-		andi.l     #0x0000FFFF,d3
+		addq.w     #1,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-scr_width1:
-		movem.l    a0-a6,-(a7)
-		move.w     #4,-(a7) /* Getrez */
-		trap       #14
-		addq.l     #2,a7
-		andi.l     #3,d0
-		asl.w      #1,d0
-		lea.l      scrwidth_tab(pc),a1
-		move.w     0(a1,d0.w),d3
-		andi.l     #0x0000FFFF,d3
-		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
-scrwidth_tab: dc.w 320,640,640
 
 /*
  * Syntax:   _hardphysic ADDR
@@ -1322,15 +1207,14 @@ hardphysic1:
 		rts
 
 setphysaddr:
-		move.l     hardphysic_addr(pc),d1
-		movea.l    #$00FF8200,a1 /* XXX */
+		move.l     hardphysic_addr(pc),d0
+		move.l     d0,d1
 		swap       d1
-		move.b     d1,1(a1)
+		move.b     d1,($FFFF8201).w
 		swap       d1
-		asr.l      #8,d1
-		move.b     d1,3(a1)
-		asl.l      #8,d1 /* BUG: will always clear d1.b */
-		move.b     d1,13(a1)
+		lsr.l      #8,d0
+		move.b     d0,($FFFF8203).w
+		move.b     d1,($FFFF820D).w
 		rts
 
 hardphysic_addr: dc.l 0
@@ -1342,42 +1226,14 @@ lib12:
 	dc.w	0			; no library calls
 scr_height:
 		movem.l    a0-a6,-(a7)
-* FIXME: just use always linea vars */
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
-		andi.l     #0x0000FFFF,d0
-		btst       #7,d0 /* ST-Compatible? */
-		bne.s      scr_height1
-		movem.l    a0-a6,-(a7)
 		dc.w       0xa000 /* linea_init */
-		movea.l    d0,a0
+		moveq      #0,d3
 		move.w     DEV_TAB+2(a0),d3
-		/* addq.w     #1,d3 */
-		dc.w 0x0643,1 /* XXX */
-		andi.l     #0x0000FFFF,d3
+		addq.w     #1,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-scr_height1:
-		movem.l    a0-a6,-(a7)
-		move.w     #4,-(a7) /* Getrez */
-		trap       #14
-		addq.l     #2,a7
-		andi.l     #3,d0
-		asl.w      #1,d0
-		lea.l      scrheight_tab(pc),a1
-		move.w     0(a1,d0.w),d3
-		andi.l     #0x0000FFFF,d3
-		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
-
-scrheight_tab: dc.w 200,200,400
 
 /*
  * Syntax:   _setcolour C,RGB
@@ -1396,48 +1252,38 @@ setcolour1:
 		andi.l     #63,d5
 		move.l     (a6)+,d4
 		andi.l     #63,d4
+		asl.l      #8,d4
+		or.l       d4,d5
 		move.l     (a6)+,d3
 		andi.l     #63,d3
 		asl.l      #8,d3
 		asl.l      #8,d3
-		andi.l     #$003F0000,d3 /* FIXME: already done above */
-		asl.l      #8,d4
-		andi.l     #$00003F00,d4 /* FIXME: already done above */
-		or.l       d5,d4
-		or.l       d4,d3
+		or.l       d3,d5
 		bra.s      setcolour3
 setcolour2:
-		move.l     (a6)+,d3
+		move.l     (a6)+,d5
 setcolour3:
-		lea.l      setcolor_rgb(pc),a3
-		move.l     d3,(a3)
 		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
-		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		move.l     (a7)+,d3
-		andi.l     #0x0000FFFF,d0 /* FIXME: useless */
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      setcolour4
-		lea.l      setcolor_rgb(pc),a0
-		move.l     (a0),d0
-		andi.l     #$003F3F3F,d0
-		asl.l      #2,d0
-		move.l     d0,(a0)
-		pea.l      setcolor_rgb(pc)
+		andi.l     #$003F3F3F,d5
+		asl.l      #2,d5
+		move.l     d5,-(a7)
+		pea.l      (a7)
 		move.w     #1,-(a7)
 		move.w     d3,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
-		lea.l      10(a7),a7
+		lea.l      14(a7),a7
 		movem.l    (a7)+,a0-a6
 		rts
 setcolour4:
-		move.l     setcolor_rgb(pc),d0
-		andi.l     #0x00000FFF,d0
+		andi.w     #0x00000FFF,d5
 		move.w     d0,-(a7)
 		move.w     d3,-(a7)
 		move.w     #7,-(a7) /* Setcolor */
@@ -1445,8 +1291,6 @@ setcolour4:
 		addq.l     #6,a7
 		movem.l    (a7)+,a0-a6
 		rts
-
-setcolor_rgb: ds.l 1
 
 /*
  * Syntax:   RGB=_getcolour (C)
@@ -1462,7 +1306,6 @@ getcolour:
 		trap       #14
 		addq.l     #4,a7
 		move.l     (a7)+,d3
-		andi.l     #0x0000FFFF,d0 /* FIXME: useless */
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      getcolour1
 		pea.l      getcolor_rgb(pc)
@@ -1485,8 +1328,9 @@ getcolour1:
 		trap       #14
 		addq.l     #6,a7
 		movem.l    (a7)+,a0-a6
-		andi.l     #0x0000FFFF,d0
-		move.l     d0,-(a6)
+		moveq      #0,d3
+		move.w     d0,d3
+		move.l     d3,-(a6)
 		clr.l      d2
 		rts
 
@@ -1499,19 +1343,18 @@ lib15:
 	dc.w lib15_1-lib15
 	dc.w	0
 get_st_palette:
-		lea        palette_colreg(pc),a1
-		move.l     #0,(a1)
-		cmpi.b     #1,d0
+		moveq      #0,d3
+		subq.w     #1,d0
 		beq.s      get_st_palette2
-		cmpi.w     #2,d0
-		beq.s      get_st_palette1
-		rts
+		subq.w     #1,d0
+		bne        get_st_palette8
 get_st_palette1:
 		move.l     (a6)+,d3
 		andi.l     #0x000000F0,d3
 		asl.w      #2,d3
-		move.l     d3,(a1)
 get_st_palette2:
+		lea        palette_colreg(pc),a0
+		move.l     d3,(a0)
 		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      get_st_palette3
@@ -1524,15 +1367,17 @@ get_st_palette3:
 		addi.l     #32000,d3
 		movea.l    d3,a0
 		movem.l    a0-a6,-(a7)
+		move.l     debut(a5),a4
+		movea.l    0(a4,d1.w),a4
+		lea        convert2rgb-entry(a4),a2
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
 		movem.l    (a7)+,a0-a6
-		andi.l     #0x0000FFFF,d0 /* FIXME: useless */
 		btst       #7,d0 /* ST-compatible? */
 		bne        get_st_palette7
-		andi.l     #3,d0
+		andi.w     #3,d0
 		moveq.l    #1,d7
 		asl.l      d0,d7
 		cmpi.w     #8,d7
@@ -1540,75 +1385,51 @@ get_st_palette3:
 		cmpi.w     #16,d7
 		beq.s      get_st_palette6
 		lea        palette_colreg(pc),a1
-		move.l     #0,(a1)
+		clr.l      (a1)
 get_st_palette4:
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
-		andi.l     #MAXPAL-1,d7
 		movem.l    a0-a2,-(a7)
-		lea.l      st_palette_rgb(pc),a0
-		move.l     a0,-(a7)
+		pea.l      rgbpalette-entry(a4)
 		move.w     d7,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		movem.l    (a7)+,a0-a2
-		lea.l      st_palette_rgb(pc),a1
+		lea.l      rgbpalette-entry(a4),a1
 		move.l     palette_colreg(pc),d0
 		adda.l     d0,a1
-		move.w     #16-1,d4
+		moveq      #16-1,d4
 get_st_palette5:
-		clr.l      d0
+		moveq.l    #0,d0
 		move.w     (a0)+,d0
-		bsr.s      convert2rgb_st
+		jsr        (a2) /* -> convert2rgb */
 		move.l     d0,(a1)+
 		dbf        d4,get_st_palette5
-		pea.l      st_palette_rgb(pc)
+		pea.l      rgbpalette-entry(a4)
 		move.w     d7,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		.IFNE 0 /* FIXME: missing */
 		move.w     #37,-(a7) /* Vsync */
 		trap       #14
 		addq.l     #2,a7
-		.ENDC
 get_st_palette6:
 		movem.l    (a7)+,a0-a6
 		rts
 get_st_palette7:
 		move.l     a0,-(a7)
-		move.w     #6,-(a7) /* Setcolor */
+		move.w     #6,-(a7) /* Setpalette */
 		trap       #14
 		addq.l     #6,a7
 		movem.l    (a7)+,a0-a6
-		rts
-
-/* FIXME: duplicate code */
-convert2rgb_st:
-		clr.l      d2
-		clr.l      d3
-		move.w     d0,d1
-		move.w     d0,d2
-		move.w     d0,d3
-		andi.l     #0x00000F00,d1
-		lsl.l      #8,d1
-		lsl.l      #5,d1
-		andi.l     #0x000000F0,d2
-		lsl.l      #5,d2
-		lsl.l      #4,d2
-		andi.l     #15,d3
-		lsl.l      #5,d3
-		or.l       d3,d2
-		or.l       d2,d1
-		move.l     d1,d0
+get_st_palette8:
 		rts
 
 palette_colreg: dc.l 0
-st_palette_rgb: ds.l 256
 
 /*
  * Syntax:   NEW_RGB=_falc rgb(OLD_RGB)
@@ -1617,15 +1438,12 @@ lib16:
 	dc.w	0			; no library calls
 falc_rgb:
 		move.l     (a6)+,d3
-		movem.l    d1-d7/a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     convert2rgb_offset-entry(a0),d0
-		adda.l     d0,a0
+		lea        convert2rgb-entry(a0),a0
 		move.l     d3,d0
 		andi.l     #0x00000777,d0
-		jsr        (a0)
-		movem.l    (a7)+,d1-d7/a0-a6
+		jsr        (a0) /* -> convert2rgb */
 		asr.l      #2,d0
 		move.l     d0,-(a6)
 		clr.l      d2
@@ -1642,22 +1460,19 @@ palfade_in:
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.l     #7,d0
+		andi.w     #7,d0
 		movem.l    (a7)+,d1-d7/a0-a6
-		cmpi.w     #3,d0
-		beq.s      palfade_in1
-		rts
-palfade_in1:
+		cmpi.w     #BPS8,d0
+		bne        palfade_in5
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea.l      params-entry(a6),a6
 		lea.l      fade3tab-params(a6),a0
 		lea.l      fade2tab-params(a6),a1
 		move.w     #256-1,d7
 palfade_in2:
-		move.l     #0,(a0)+
+		clr.l      (a0)+
 		move.l     #0x00010101,(a1)+
 		dbf        d7,palfade_in2
 		move.w     #256-1,d6
@@ -1665,7 +1480,7 @@ palfade_in3:
 		lea.l      fade3tab-params(a6),a0
 		lea.l      fade2tab-params(a6),a1
 		lea.l      fade1tab-params(a6),a2
-		move.l     #256-1,d7
+		move.w     #256-1,d7
 palfade_in4:
 		move.l     (a0),d0
 		move.l     (a1),d1
@@ -1680,13 +1495,14 @@ palfade_in4:
 		movem.l    d0-d7/a0-a6,-(a7)
 		pea.l      fade3tab-params(a6)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		movem.l    (a7)+,d0-d7/a0-a6
 		dbf        d6,palfade_in3
 		movem.l    (a7)+,a0-a6
+palfade_in5:
 		rts
 
 fadein_red:
@@ -1726,27 +1542,26 @@ fadein_blue1:
  * Syntax:   X=_falc palt(ADDR,COUNT)
  */
 lib18:
-	dc.w	0			; no library calls
+	dc.w lib18_1-lib18
+	dc.w	0
 falc_palt:
 		move.l     (a6)+,d7
 		move.l     (a6)+,d3
+		move.l     d3,-(a6)
+lib18_1:	jsr        L_addrofbank.l
 		movea.l    d3,a0
-		/* BUG: missing bank translation */
+		movea.l    debut(a5),a1
+		movea.l    0(a1,d1.w),a1
+		lea        convert2rgb-entry(a1),a1
 falc_palt1:
-		movem.l    d1-d6/a0-a6,-(a7)
 		move.l     (a0),d0
 		andi.l     #0x00000FFF,d0
-		movea.l    debut(a5),a0
-		movea.l    0(a0,d1.w),a0
-		move.l     convert2rgb_offset-entry(a0),d2
-		adda.l     d2,a0
-		jsr        (a0)
-		movem.l    (a7)+,d1-d6/a0-a6
+		jsr        (a1) /* -> convert2rgb */
 		move.l     d0,(a0)+
 		dbf        d7,falc_palt1
 		moveq.l    #0,d3
 		clr.l      d2
-		/* move.l     d3,-(a6) BUG: missing */
+		move.l     d3,-(a6)
 		rts
 
 /*
@@ -1756,36 +1571,34 @@ lib19:
 	dc.w	0			; no library calls
 palfade_out:
 		movem.l    a0-a6,-(a7)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
 		btst       #7,d0 /* ST-compatible? */
-		bne.s      palfade_out1
-		andi.l     #7,d0
-		cmpi.w     #2,d0
-		beq.s      palfade_out2
+		bne        palfade_out7
+		andi.w     #7,d0
 		cmpi.w     #BPS8,d0
 		beq        fadeout_256
-palfade_out1:
-		movem.l    (a7)+,a0-a6
-		rts
-palfade_out2:
-		lea.l      fadeout2tab(pc),a0
-		move.w     #16-1,d7
+		cmpi.w     #BPS4,d0
+		bne        palfade_out7
+		lea.l      fade2tab-entry(a6),a0
+		moveq      #16-1,d7
 palfade_out3:
 		move.l     #0x00010101,(a0)+
 		dbf        d7,palfade_out3
-		pea.l      fadeout3tab(pc)
+		pea.l      fade3tab-entry(a6)
 		move.w     #16,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		move.w     #256-1,d6
 palfade_out4:
-		lea.l      fadeout3tab(pc),a0
-		lea.l      fadeout2tab(pc),a1
+		lea.l      fade3tab-entry(a6),a0
+		lea.l      fade2tab-entry(a6),a1
 		moveq.l    #16-1,d7
 palfade_out5:
 		move.l     (a0),d0
@@ -1798,27 +1611,26 @@ palfade_out5:
 		move.l     d0,(a0)+
 		dbf        d7,palfade_out5
 		movem.l    d0-d7/a0-a6,-(a7)
+		/* FIXME: short delay */
 		move.l     #0x00001FFF,d6
 palfade_out6:
-		/* subq.l     #1,d6 */
-		dc.w 0x0486,0,1 /* XXX */
+		subq.l     #1,d6
 		bpl.s      palfade_out6
-		pea.l      fadeout3tab(pc)
+		pea.l      fade3tab-entry(a6)
 		move.w     #16,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		movem.l    (a7)+,d0-d7/a0-a6
 		dbf        d6,palfade_out4
+palfade_out7:
 		movem.l    (a7)+,a0-a6
 		rts
 
 fadeout_red:
 		move.l     d0,d2
 		andi.l     #0x00FF0000,d2
-		/* tst.l      d2 */
-		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_red1
 		andi.l     #0x0000FFFF,d1
 fadeout_red1:
@@ -1827,8 +1639,6 @@ fadeout_red1:
 fadeout_green:
 		move.l     d0,d2
 		andi.l     #0x0000FF00,d2
-		/* tst.l      d2 */
-		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_green1
 		andi.l     #0x00FF00FF,d1
 fadeout_green1:
@@ -1837,30 +1647,28 @@ fadeout_green1:
 fadeout_blue:
 		move.l     d0,d2
 		andi.l     #0x000000FF,d2
-		/* tst.l      d2 */
-		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_blue1
 		andi.l     #0x00FFFF00,d1
 fadeout_blue1:
 		rts
 
 fadeout_256:
-		lea.l      fadeout2tab(pc),a0
+		lea.l      fade2tab-entry(a6),a0
 		move.w     #256-1,d7
 fadeout_256_1:
 		move.l     #0x00010101,(a0)+
 		dbf        d7,fadeout_256_1
-		pea.l      fadeout3tab(pc)
+		pea.l      fade3tab-entry(a6)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		move.w     #256-1,d6
 fadeout_256_2:
-		lea.l      fadeout3tab(pc),a0
-		lea.l      fadeout2tab(pc),a1
-		move.l     #256-1,d7
+		lea.l      fade3tab-entry(a6),a0
+		lea.l      fade2tab-entry(a6),a1
+		move.w     #256-1,d7
 fadeout_256_3:
 		move.l     (a0),d0
 		move.l     (a1),d1
@@ -1872,9 +1680,9 @@ fadeout_256_3:
 		move.l     d0,(a0)+
 		dbf        d7,fadeout_256_3
 		movem.l    d0-d7/a0-a6,-(a7)
-		pea.l      fadeout3tab(pc)
+		pea.l      fade3tab-entry(a6)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -1886,8 +1694,6 @@ fadeout_256_3:
 fadeout_256_red:
 		move.l     d0,d2
 		andi.l     #0x00FF0000,d2
-		/* tst.l      d2 */
-		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_256_red1
 		andi.l     #0x0000FFFF,d1
 fadeout_256_red1:
@@ -1896,8 +1702,6 @@ fadeout_256_red1:
 fadeout_256_green:
 		move.l     d0,d2
 		andi.l     #0x0000FF00,d2
-		/* tst.l      d2 */
-		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_256_green1
 		andi.l     #0x00FF00FF,d1
 fadeout_256_green1:
@@ -1906,271 +1710,10 @@ fadeout_256_green1:
 fadeout_256_blue:
 		move.l     d0,d2
 		andi.l     #0x000000FF,d2
-		/* tst.l      d2 */
-		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_256_blue1
 		andi.l     #0x00FFFF00,d1
 fadeout_256_blue1:
 		rts
-
-fadeout2tab:
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-	dc.l 0x010101
-fadeout3tab: ds.l 256
 
 /*
  * Syntax:   D=darkest
@@ -2179,45 +1722,44 @@ lib20:
 	dc.w	0			; no library calls
 darkest:
 		movem.l    d4-d7/a0-a6,-(a7)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
+		clr.l      d3
 		btst       #7,d0 /* ST-compatible? */
 		bne        darkest4
-		andi.l     #7,d0
+		andi.w     #7,d0
+		cmpi.w     #BPS8,d0
+		bgt        darkest3
 		moveq.l    #1,d7
-		asl.l      d0,d7 /* BUG: wrong for chunky mode (BPS8C) and truecolor */
+		asl.l      d0,d7
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
-		andi.l     #MAXPAL-1,d7 /* FIXME: useless */
 		cmpi.w     #16,d7
-		beq        darkest11
-		lea.l      darkest_table(pc),a0
-		move.l     a0,-(a7)
+		beq        darkest3
+		pea.l      rgbpalette-entry(a6)
 		move.w     #256,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		lea.l      darkest_table(pc),a0
-		lea.l      darkest_color(pc),a1
-		move.l     #0x00010101,(a1)
+		lea.l      rgbpalette-entry(a6),a0
+		moveq.l    #-1,d4
 		clr.l      d2
-		clr.l      d3
 darkest1:
 		cmp.w      d7,d2
 		beq.s      darkest3
-		move.l     (a0),d0
-		move.l     (a1),d1
-		sub.l      d1,d0
-		cmp.l      d1,d0
-		blt.s      darkest2
-		exg        d1,d0
+		move.l     (a0)+,d0
+		cmp.l      d0,d4
+		bls.s      darkest2
+		move.l     d0,d4
 		move.l     d2,d3
 darkest2:
-		addq.w     #1,d2 /* BUG: a0 not incremented, (a1) not updated */
+		addq.w     #1,d2
 		bra.s      darkest1
 darkest3:
 		movem.l    (a7)+,d4-d7/a0-a6
@@ -2225,61 +1767,38 @@ darkest3:
 		move.l     d3,-(a6)
 		rts
 
-darkest_color: dc.l 0x010101,0
-darkest_table: ds.l 256 /* FIXME */
-
 darkest4:
 		move.w     #4,-(a7) /* Getrez */
 		trap       #14
 		addq.l     #2,a7
 		moveq.l    #16,d7
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
+		tst.w      d0
 		beq.s      darkest5
 		moveq.l    #4,d7
-		cmpi.w     #1,d0
+		subq.w     #1,d0
 		beq.s      darkest5
 		moveq.l    #2,d7
 darkest5:
-		move.w     d7,-(a7)
-		move.w     #2,-(a7)
+		move.w     #2,-(a7) /* Physbase */
 		trap       #14
 		addq.l     #2,a7
 		addi.l     #32000,d0
 		movea.l    d0,a0
-		move.w     (a7)+,d7
-		clr.l      d3
-		move.w     (a0)+,d0
-		move.w     (a0),d1
-		cmp.w      d0,d1
-		bgt.s      darkest6
-		move.w     d1,d2
-		addq.w     #1,d3
-		bra.s      darkest7
-darkest6:
-		move.w     d0,d2
-darkest7:
-		move.w     #1,d4
+		clr.l      d2
 darkest8:
 		move.w     (a0)+,d0
 		cmp.w      d0,d2
-		bgt.s      darkest9
-		bra.s      darkest10
-darkest9:
+		ble.s      darkest10
 		move.w     d0,d2
 		move.w     d4,d3
 darkest10:
 		addq.w     #1,d4
 		cmp.w      d7,d4
 		blt.s      darkest8
-		movem.l    (a7)+,d4-d7/a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
 darkest11:
 		movem.l    (a7)+,d4-d7/a0-a6
 		clr.l      d2
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 
 /*
@@ -2288,12 +1807,12 @@ darkest11:
 lib21:
 	dc.w	0			; no library calls
 quickwipe:
-		move.l     (a6)+,d3
-		move.l     d3,d7
-		move.l     (a6)+,d3
-		movea.l    d3,a0
+		move.l     (a6)+,d0
+		move.l     d0,d7
+		move.l     (a6)+,a0
 		adda.l     d7,a0
-		asr.l      #7,d7
+		lsr.l      #7,d7
+		beq.s      quickwipe2
 		subq.l     #1,d7
 		moveq.l    #0,d1
 		moveq.l    #0,d2
@@ -2309,6 +1828,14 @@ quickwipe1:
 		movem.l    d1-d4,-(a0)
 		movem.l    d1-d4,-(a0)
 		dbf        d7,quickwipe1
+quickwipe2:
+		and.w      #127,d0
+		beq.s      quickwipe4
+		subq.w     #1,d0
+quickwipe3:
+		move.b     d1,-(a0)
+		dbf        d0,quickwipe3
+quickwipe4:
 		movem.l    d0-d7/a0-a6,-(a7)
 		moveq.l    #0,d1
 		moveq.l    #S_falc_locate,d0
@@ -2323,30 +1850,30 @@ lib22:
 	dc.w	0			; no library calls
 brightest:
 		movem.l    d1-d7/a0-a6,-(a7)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
+		clr.l      d3
 		btst       #7,d0 /* ST-compatible? */
 		bne        brightest6
-		andi.l     #7,d0
+		andi.w     #7,d0
+		cmp.w      #BPS8,d0
+		bgt        brightest14
 		moveq.l    #1,d7
-		asl.l      d0,d7 /* BUG: wrong for chunky mode (BPS8C) and truecolor */
-		cmpi.w     #16,d7
-		beq        brightest13
+		asl.l      d0,d7
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
-		andi.l     #MAXPAL-1,d7 /* FIXME: useless */
-		move.l     d7,-(a7)
-		pea        brightest_table(pc)
+		pea        rgbpalette-entry(a6)
 		move.w     d7,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		lea.l      brightest_table(pc),a0
-		move.l     (a7)+,d7
+		lea.l      rgbpalette-entry(a6),a0
 		clr.l      d3
 		move.l     (a0)+,d0
 		move.l     (a0),d1
@@ -2362,9 +1889,7 @@ brightest2:
 brightest3:
 		move.l     (a0)+,d0
 		cmp.l      d0,d2
-		bmi.s      brightest4
-		bra.s      brightest5
-brightest4:
+		bge.s      brightest5
 		move.l     d0,d2
 		move.w     d4,d3
 brightest5:
@@ -2378,15 +1903,12 @@ brightest5:
 		move.l     d3,-(a6)
 		rts
 
-brightest_table: ds.l 256 /* FIXME */
-
 brightest6:
 		move.w     #4,-(a7) /* Getrez */
 		trap       #14
 		addq.l     #2,a7
 		moveq.l    #16,d7
-		/* tst.w d0 */
-		dc.w 0x0c40,0 /* XXX */
+		tst.w      d0
 		beq.s      brightest7
 		moveq.l    #4,d7
 		cmpi.w     #1,d0
@@ -2424,17 +1946,14 @@ brightest12:
 		addq.w     #1,d4
 		cmp.w      d7,d4
 		blt.s      brightest10
-		move.l     d3,d0
-		movem.l    (a7)+,d1-d7/a0-a6
-		clr.l      d2
-		move.l     d0,-(a6)
-		rts
 brightest13:
-		move.l     #0x0000FFDF,d0
 		movem.l    (a7)+,d1-d7/a0-a6
 		clr.l      d2
-		move.l     d0,-(a6)
+		move.l     d3,-(a6)
 		rts
+brightest14:
+		move.l     #0x0000FFDF,d3
+		bra.s      brightest13
 
 /*
  * Syntax:   ilbmpalt S
@@ -2444,29 +1963,21 @@ lib23:
 	dc.w	0
 ilbmpalt:
 		move.l     (a6)+,d3
-		move.l     d3,d2
-		addi.l     #256,d2
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      ilbmpalt1
 		movem.l    a0-a1,-(a7)
 		move.l     d3,-(a6)
 lib23_1:		jsr        L_addrofbank.l
-		/* BUG: d2 not updated */
 		movem.l    (a7)+,a0-a1
 ilbmpalt1:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        convert2rgb-entry(a6),a2
+		lea        getilbmchunks-entry(a6),a0
+		lea        params-entry(a6),a6
 		move.l     d3,ilbm_addr-params(a6)
-		sub.l      d3,d2
-		move.l     d2,ilbm_size-params(a6)
-		movea.l    debut(a5),a0
-		movea.l    0(a0,d1.w),a0
-		move.l     getilbmchunks_offset-entry(a0),d0
-		adda.l     d0,a0
-		jsr        (a0)
+		jsr        (a0) /* -> getilbmchunks */
 		tst.l      d7
 		bne.s      ilbmpalt2
 		movem.l    d1-d7/a0-a6,-(a7)
@@ -2486,10 +1997,7 @@ ilbmpalt4:
 		move.w     ilbm_planes-params(a6),d1
 		andi.l     #255,d1
 		cmpi.b     #4,d1
-		ble.s      ilbmpalt5
-		movem.l    (a7)+,a0-a6
-		rts
-ilbmpalt5:
+		bgt.s      ilbmpalt2
 		movea.l    ilbm_cmap-params(a6),a4
 		addq.l     #8,a4
 		move.w     ilbm_cmapsize-params(a6),d7
@@ -2552,31 +2060,14 @@ ilbmpalt9:
 		or.l       d3,d1
 		move.l     d1,d0
 		andi.l     #0x00000FFF,d0
-		/* FIXME: duplicate code of convert2rgb */
-		clr.l      d2
-		clr.l      d3
-		move.w     d0,d1
-		move.w     d0,d2
-		move.w     d0,d3
-		andi.l     #0x00000F00,d1
-		lsl.l      #8,d1
-		lsl.l      #5,d1
-		andi.l     #0x000000F0,d2
-		lsl.l      #5,d2
-		lsl.l      #4,d2
-		andi.l     #15,d3
-		lsl.l      #5,d3
-		or.l       d3,d2
-		or.l       d2,d1
-		move.l     d1,d0
+		jsr        (a2) /* -> convert2rgb */
 		move.l     d0,(a5)+
 		addq.w     #1,d6
 		cmp.w      d6,d7
 		bne.s      ilbmpalt9
-		lea.l      fade3tab-params(a6),a0
-		move.l     a0,-(a7)
+		pea.l      fade3tab-params(a6)
 		move.w     d7,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -2606,7 +2097,7 @@ ilbmpalt11:
 		lea.l      fade3tab-params(a6),a0
 		move.l     a0,-(a7)
 		move.w     d7,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -2624,16 +2115,14 @@ lib24:
 get_red:
 		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
-		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		move.l     (a7)+,d3
-		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      get_red2
 		andi.l     #7,d0
+		moveq.l    #0,d3
 		cmpi.w     #BPS16,d0
 		beq.s      get_red1
 		pea.l      get_red_rgb(pc)
@@ -2642,18 +2131,14 @@ get_red:
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		lea.l      get_red_rgb(pc),a0
-		move.l     (a0),d0
-		asr.l      #2,d0
-		asr.l      #8,d0
-		asr.l      #8,d0
-		andi.l     #0x0000003F,d0
-		movem.l    (a7)+,a0-a6
-		move.l     d0,-(a6)
-		rts
+		move.l     get_red_rgb(pc),d3
+		asr.l      #2,d3
+		asr.l      #8,d3
+		asr.l      #8,d3
+		andi.l     #0x0000003F,d3
 get_red1:
 		movem.l    (a7)+,a0-a6
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 get_red2:
 		move.w     #-1,-(a7)
@@ -2679,8 +2164,7 @@ shift_off:
 		movem.l    d1-d7/a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     restorevbl_offset-entry(a0),d0
-		adda.l     d0,a0
+		lea        restorevbl-entry(a0),a0
 		jsr        (a0)
 		movem.l    (a7)+,d1-d7/a0-a6
 		rts
@@ -2693,16 +2177,14 @@ lib26:
 get_green:
 		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
-		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		move.l     (a7)+,d3
-		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      get_green2
 		andi.l     #7,d0
+		moveq.l    #0,d3
 		cmpi.w     #BPS16,d0
 		beq.s      get_green1
 		pea.l      get_green_rgb(pc)
@@ -2711,17 +2193,13 @@ get_green:
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		lea.l      get_green_rgb(pc),a0
-		move.l     (a0),d0
-		asr.l      #2,d0
-		asr.l      #8,d0
-		andi.l     #0x0000003F,d0
-		movem.l    (a7)+,a0-a6
-		move.l     d0,-(a6)
-		rts
+		move.l     get_green_rgb(pc),d3
+		asr.l      #2,d3
+		asr.l      #8,d3
+		andi.l     #0x0000003F,d3
 get_green1:
 		movem.l    (a7)+,a0-a6
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 get_green2:
 		move.w     #-1,-(a7)
@@ -2744,32 +2222,24 @@ lib27:
 	dc.w	0			; no library calls
 _shift:
 		move.l     (a6)+,d3
-		tst.l      d3
 		bmi        shift2
 		cmpi.l     #254,d3
 		bgt        shift2
-		lea        vblstart_param(pc),a0
-		move.w     d3,(a0)+
+		move.w     d3,d0
+		swap       d0
 		move.l     (a6)+,d3
 		andi.l     #127,d3
-		tst.l      d3
 		beq        shift2
-		move.w     d3,(a0)+
+		move.w     d3,d0
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     installvbl_offset-entry(a0),d2
-		adda.l     d2,a0
-		lea        vblstart_param(pc),a1
-		move.l     (a1),d0
+		lea        installvbl-entry(a0),a0
 		jsr        (a0)
 shift1:
 		movem.l    (a7)+,a0-a6
 shift2:
 		rts
-
-vblstart_param: dc.w 0
-vbldelay_param: dc.w 0
 
 /*
  * Syntax:   BLUE=_get blue(COL_INDEX)
@@ -2779,16 +2249,14 @@ lib28:
 get_blue:
 		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
-		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		move.l     (a7)+,d3
-		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      get_blue2
 		andi.l     #7,d0
+		moveq.l    #0,d3
 		cmpi.w     #BPS16,d0
 		beq.s      get_blue1
 		pea.l      get_blue_rgb(pc)
@@ -2797,16 +2265,12 @@ get_blue:
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		lea.l      get_blue_rgb(pc),a0
-		move.l     (a0),d0
-		asr.l      #2,d0
-		andi.l     #0x0000003F,d0
-		movem.l    (a7)+,a0-a6
-		move.l     d0,-(a6)
-		rts
+		move.l     get_blue_rgb(pc),d3
+		asr.l      #2,d3
+		andi.l     #0x0000003F,d3
 get_blue1:
 		movem.l    (a7)+,a0-a6
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 get_blue2:
 		move.w     #-1,-(a7)
@@ -2832,49 +2296,36 @@ lib30:
 	dc.w lib30_1-lib30
 	dc.w	0
 vget_ilbm_mode:
-		lea.l      ilbm_mode_montype(pc),a1
-		move.w     #MON_MONO,(a1)
+		moveq      #MON_MONO,d3
 		cmpi.b     #1,d0
 		beq.s      vget_ilbm_mode2
 		cmpi.w     #2,d0
-		beq.s      vget_ilbm_mode1
-		rts
-vget_ilbm_mode1:
+		bne.s      vget_ilbm_mode5
 		move.l     (a6)+,d3
-		lea.l      ilbm_mode_montype(pc),a1
-		andi.l     #3,d3
-		move.w     d3,(a1)
+		andi.w     #3,d3
 vget_ilbm_mode2:
+		lea.l      ilbm_mode_montype(pc),a1
+		move.w     d3,(a1)
 		move.l     (a6)+,d3
-		move.l     d3,d2
-		addi.l     #256,d2
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      vget_ilbm_mode3
 		movem.l    a0-a1,-(a7)
 		move.l     d3,-(a6)
 lib30_1:	jsr        L_addrofbank.l
 		movem.l    (a7)+,a0-a1
-		/* BUG: d2 not updated */
 vget_ilbm_mode3:
 		movem.l    d1/a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        getilbmchunks-entry(a6),a0
+		lea        params-entry(a6),a6
 		move.l     d3,ilbm_addr-params(a6)
-		sub.l      d3,d2
-		move.l     d2,ilbm_size-params(a6)
-		movea.l    debut(a5),a0
-		movea.l    0(a0,d1.w),a0
-		move.l     getilbmchunks_offset-entry(a0),d0
-		adda.l     d0,a0
-		jsr        (a0)
+		jsr        (a0) /* -> getilbmchunks */
 		tst.l      d7
 		bne.s      vget_ilbm_mode4
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     modetable_offset-entry(a0),d2
-		add.l      d2,a0
+		lea        modetable-entry(a0),a0
 		lea.l      ilbm_mode_montype(pc),a1
 		bsr.s      find_ilbm_mode
 		clr.l      d2
@@ -2996,29 +2447,19 @@ dpack_ilbm2:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        getilbmchunks-entry(a6),a0
+		lea        params-entry(a6),a6
 		move.l     d3,ilbm_addr-params(a6)
-		sub.l      d3,d2 /* WTF? where was d2 set? */
-		move.l     d2,ilbm_size-params(a6)
+		moveq.l    #-1,d3
 		lea.l      dpack_dst(pc),a1
 		move.l     (a1),dpack_ptr-params(a6)
-		movea.l    debut(a5),a0
-		movea.l    0(a0,d1.w),a0
-		move.l     getilbmchunks_offset-entry(a0),d0
-		add.l      d0,a0
-		jsr        (a0)
+		jsr        (a0) /* -> getilbmchunks */
 		tst.l      d7
 		bne.s      dpack_ilbm3
 		bsr.s      unpack_ilbm
 		bsr.s      dpack_palette
-		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
 dpack_ilbm3:
 		movem.l    (a7)+,a0-a6
-		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -3028,9 +2469,9 @@ dpack_dst: dc.l 0
 
 unpack_ilbm:
 		bsr        ilbm_calc_params
-		tst.b      ilbm_compression-params(a6)
-		bne.s      uncompress_ilbm
-		clr.l      d3
+		cmp.b      #1,ilbm_compression-params(a6)
+		beq.s      uncompress_ilbm
+		moveq      #-1,d3
 		rts
 
 dpack_palette:
@@ -3099,9 +2540,7 @@ uncompress_ilbm5:
 		addq.w     #1,d7
 		cmp.w      ilbm_height2-params(a6),d7
 		bne.s      uncompress_ilbm1
-		nop
 		movem.l    (a7)+,d1-d7/a0-a6
-		moveq.l    #-1,d3
 		rts
 
 uncompress_literal:
@@ -3148,7 +2587,7 @@ ilbm_calc_params:
 		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     ilbm_height-params(a6),ilbm_height2-params(a6)
 		move.w     ilbm_planes-params(a6),d3
-		andi.l     #255,d3
+		andi.w     #255,d3
 		move.w     d3,ilbm_planes2-params(a6)
 		cmpi.w     #1,d3
 		beq.s      ilbm_calc_params1
@@ -3161,7 +2600,7 @@ ilbm_calc_params:
 ilbm_calc_params1:
 		move.w     #80,ilbm_bytes_lin-params(a6)
 		move.w     #80,ilbm_bytes-params(a6)
-		move.l     #0,ilbm_nxwd-params(a6)
+		clr.l      ilbm_nxwd-params(a6)
 		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 ilbm_calc_params2:
@@ -3212,41 +2651,15 @@ fmchunk1:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        params-entry(a6),a6
 		movea.l    d3,a0
-		
-/* FIXME: walk through list of chunks instead */
-		move.l     #256,d7
-fmchunk2:
-		tst.l      d7
-		beq.s      fmchunk3
-		subq.l     #1,d7
-		cmpi.b     #'F',(a0)+
-		bne.s      fmchunk2
-		cmpi.b     #'O',(a0)
-		bne.s      fmchunk2
-		cmpi.b     #'R',1(a0)
-		bne.s      fmchunk2
-		cmpi.b     #'M',2(a0)
-		bne.s      fmchunk2
-		subq.l     #1,a0
+		moveq.l    #0,d3
+		cmp.l      #0x464f524d,(a0) /* 'FORM' */
+		bne        fmchunk5
 		move.l     a0,ilbm_form-params(a6)
-		moveq.l    #0,d7
-		bra.s      fmchunk4
-fmchunk3:
-		moveq.l    #-1,d7
-fmchunk4:
-		tst.l      d7
-		bne.s      fmchunk5
 		move.l     a0,d3
-		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
 fmchunk5:
 		movem.l    (a7)+,a0-a6
-		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -3265,7 +2678,6 @@ falc_zone:
 		andi.l     #15,d1
 		move.w     #S_zone,d0
 		trap       #5
-		andi.l     #0x000003FF,d1 /* BUG */
 		clr.l      d2
 		move.l     d1,-(a6)
 		rts
@@ -3290,9 +2702,9 @@ ilbmchunk1:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        params-entry(a6),a6
 		movea.l    d3,a0
+		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 ilbmchunk2:
@@ -3309,21 +2721,9 @@ ilbmchunk2:
 		bne.s      ilbmchunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_ilbm-params(a6)
-		moveq.l    #0,d7
-		bra.s      ilbmchunk4
-ilbmchunk3:
-		moveq.l    #-1,d7
-ilbmchunk4:
-		tst.l      d7
-		bne.s      ilbmchunk5
 		move.l     a0,d3
+ilbmchunk3:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
-ilbmchunk5:
-		movem.l    (a7)+,a0-a6
-		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -3356,9 +2756,9 @@ bmhdchunk1:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        params-entry(a6),a6
 		movea.l    d3,a0
+		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 bmhdchunk2:
@@ -3375,21 +2775,9 @@ bmhdchunk2:
 		bne.s      bmhdchunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_bmhd-params(a6)
-		moveq.l    #0,d7
-		bra.s      bmhdchunk4
-bmhdchunk3:
-		moveq.l    #-1,d7
-bmhdchunk4:
-		tst.l      d7
-		bne.s      bmhdchunk5
 		move.l     a0,d3
+bmhdchunk3:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
-bmhdchunk5:
-		movem.l    (a7)+,a0-a6
-		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -3444,9 +2832,9 @@ cmapchunk1:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        params-entry(a6),a6
 		movea.l    d3,a0
+		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 cmapchunk2:
@@ -3463,21 +2851,9 @@ cmapchunk2:
 		bne.s      cmapchunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_cmap-params(a6)
-		moveq.l    #0,d7
-		bra.s      cmapchunk4
-cmapchunk3:
-		moveq.l    #-1,d7
-cmapchunk4:
-		tst.l      d7
-		bne.s      cmapchunk5
 		move.l     a0,d3
+cmapchunk3:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
-cmapchunk5:
-		movem.l    (a7)+,a0-a6
-		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -3490,30 +2866,26 @@ lib43:
 	dc.w lib43_2-lib43
 	dc.w	0
 paste_pi1:
-		lea.l      paste_colreg(pc),a1
-		move.w     #0,(a1)
-		cmpi.b     #1,d0
+		moveq      #0,d3
+		subq.w     #1,d0
 		beq.s      paste_pi1_1
-		cmpi.w     #2,d0
-		beq.s      paste_pi0
-		rts
-paste_pi0:
-		lea.l      paste_colreg(pc),a1
+		subq.w     #1,d0
+		bne        paste_pi1_19
 		move.l     (a6)+,d3
-		andi.l     #0x000000F0,d3
-		move.w     d3,(a1)
+		andi.w     #0x00F0,d3
 paste_pi1_1:
+		lea.l      paste_colreg(pc),a1
+		move.w     d3,(a1)
 		lea.l      paste_dx(pc),a3
 		move.l     (a6)+,d3
-		tst.l      d3
 		bpl.s      paste_pi1_2
-		clr.l      d3
+		moveq.l    #0,d3
 paste_pi1_2:
 		move.w     d3,paste_dy-paste_dx(a3)
 		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      paste_pi1_3
-		clr.l      d3
+		moveq.l    #0,d3
 paste_pi1_3:
 		move.w     d3,(a3)
 		move.l     (a6)+,d3
@@ -3579,9 +2951,7 @@ paste_pi1_11:
 		movem.l    (a7)+,d1/a5
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     modetable_offset-entry(a0),d2
-		adda.l     d2,a0
-		movea.l    a0,a4
+		lea        modetable-entry(a0),a4
 paste_pi1_12:
 		cmpi.l     #-1,(a4)
 		beq.s      paste_pi1_14
@@ -3598,19 +2968,15 @@ paste_pi1_14:
 		rts
 paste_pi1_15:
 		lea.l      paste_src(pc),a0
-		lea.l      bitblt(pc),a1
 		move.w     d2,d6
 		asl.w      #1,d2
 		movem.l    d2/d6/a0-a3,-(a7)
 		dc.w       0xa000 /* linea_init */
-		movea.l    d0,a0
 		move.w     DEV_TAB(a0),d3
-		/* addq.w     #1,d3  */
-		dc.w 0x0643,1 /* XXX */
+		addq.w     #1,d3
 		andi.l     #0x0000FFFF,d3
 		move.w     DEV_TAB+2(a0),d4
-		/* addq.w     #1,d4 */
-		dc.w 0x0644,1 /* XXX */
+		addq.w     #1,d4
 		movem.l    (a7)+,d2/d6/a0-a3
 		move.w     d3,d7
 		move.w     paste_dx-paste_src(a0),d0
@@ -3630,6 +2996,10 @@ paste_pi1_16:
 paste_pi1_17:
 		cmpi.w     #16,d6
 		beq        paste_hi
+		/* space for bitblit frame */
+		lea        -78(a7),a7
+		lea.l      (a7),a1
+		move.l     a1,a6
 		cmpi.w     #8,d6
 		blt.s      paste_pi1_18
 		movem.l    d0-d7/a0-a1,-(a7)
@@ -3643,8 +3013,7 @@ paste_pi1_17:
 		move.w     paste_sx-paste_src(a0),(a1)+ /* s_xmin */
 		move.w     paste_sy-paste_src(a0),(a1)+ /* s_ymin */
 		move.l     paste_dst-paste_src(a0),d6
-		/* addq.l     #8,d6 */
-		dc.w 0x0686,0,8 /* XXX */
+		addq.l     #8,d6
 		move.l     d6,(a1)+ /* s_form */
 		move.w     #8,(a1)+ /* s_nxwd */
 		move.w     #160,(a1)+ /* s_nxln */
@@ -3652,14 +3021,12 @@ paste_pi1_17:
 		move.w     paste_dx-paste_src(a0),(a1)+ /* d_xmin */
 		move.w     paste_dy-paste_src(a0),(a1)+ /* d_ymin */
 		move.l     paste_dst-paste_src(a0),d6
-		/* addq.l     #8,d6 */
-		dc.w 0x0686,0,8 /* XXX */
+		addq.l     #8,d6
 		move.l     d6,(a1)+ /* d_form */
 		move.w     d2,(a1)+ /* d_nxwd */
 		move.w     d1,(a1)+ /* d_nxln */
 		move.w     #2,(a1)+ /* d_nxpl */
-		move.l     #0,(a1)+ /* p_addr */
-		lea.l      bitblt(pc),a6
+		clr.l      (a1)+ /* p_addr */
 		dc.w       0xa007 /* bit_blt */
 		movem.l    (a7)+,d0-d7/a0-a1
 paste_pi1_18:
@@ -3667,7 +3034,7 @@ paste_pi1_18:
 		move.w     paste_height-paste_src(a0),(a1)+ /* b_ht */
 		move.w     #4,(a1)+ /* plane_cnt */
 		move.w     #1,(a1)+ /* fg_col */
-		move.w     #0,(a1)+ /* bg_col */
+		clr.w      (a1)+ /* bg_col */
 		move.l     #0x03030303,(a1)+ /* op_tab 4 x S_ONLY */
 		move.w     paste_sx-paste_src(a0),(a1)+ /* s_xmin */
 		move.w     paste_sy-paste_src(a0),(a1)+ /* s_ymin */
@@ -3681,10 +3048,10 @@ paste_pi1_18:
 		move.w     d2,(a1)+ /* d_nxwd */
 		move.w     d1,(a1)+ /* d_nxln */
 		move.w     #2,(a1)+ /* d_nxpl */
-		move.l     #0,(a1)+ /* p_addr */
-		lea.l      bitblt(pc),a6
+		clr.l      (a1)+ /* p_addr */
 		dc.w       0xa007 /* bit_blt */
 		movem.l    (a7)+,a0-a6
+paste_pi1_19:
 		rts
 
 paste_src: dc.l 0
@@ -3740,8 +3107,8 @@ paste_hi:
 		move.w     #200-1,d7 /* BUG: ignores height */
 paste_hi1:
 		moveq.l    #0,d6
-		lea.l      ZERO(a1),a3
-		lea.l      ZERO(a2),a4
+		lea.l      (a1),a3
+		lea.l      (a2),a4
 paste_hi2:
 		moveq.l    #0,d5
 paste_hi3:
@@ -3786,8 +3153,6 @@ paste_hi7:
 		movem.l    (a7)+,a0-a6
 		rts
 
-bitblt: ds.b 78 /* 13fe8 */
-
 /*
  * Syntax:   ADR=bodychunk(BANK)
  */
@@ -3804,9 +3169,9 @@ bodychunk1:
 		movem.l    a0-a6,-(a7)
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a6
-		move.l     params_offset-entry(a6),d4
-		adda.l     d4,a6
+		lea        params-entry(a6),a6
 		movea.l    d3,a0
+		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 bodychunk2:
@@ -3823,21 +3188,9 @@ bodychunk2:
 		bne.s      bodychunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_body-params(a6)
-		moveq.l    #0,d7
-		bra.s      bodychunk4
-bodychunk3:
-		moveq.l    #-1,d7
-bodychunk4:
-		tst.l      d7
-		bne.s      bodychunk5
 		move.l     a0,d3
+bodychunk3:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
-		move.l     d3,-(a6)
-		rts
-bodychunk5:
-		movem.l    (a7)+,a0-a6
-		clr.l      d3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -3855,14 +3208,14 @@ bitblit:
 		move.l     d3,(a1)
 		move.l     (a6)+,d3
 		tst.l      d3
-		bpl.w      bitblit1 /* XXX */
+		bpl.s      bitblit1
 		clr.l      d3
 bitblit1:
 		lea.l      bitblit_dy(pc),a1
 		move.w     d3,(a1)
 		move.l     (a6)+,d3
 		tst.l      d3
-		bpl.w      bitblit2 /* XXX */
+		bpl.s      bitblit2
 		clr.l      d3
 bitblit2:
 		lea.l      bitblit_dx(pc),a1
@@ -3890,7 +3243,7 @@ bitblit3:
 bitblit4:
 		cmpi.l     #200-1,d3
 		ble.s      bitblit5
-		move.l     #200-1,d3 /* BUG: should check again V_REZ_HZ */
+		move.l     #200-1,d3
 bitblit5:
 		lea.l      bitblit_sy(pc),a1
 		move.w     d3,(a1)
@@ -3899,7 +3252,7 @@ bitblit5:
 		bpl.s      bitblit6
 		clr.l      d3
 bitblit6:
-		cmpi.l     #320-1,d3 /* BUG: should check again V_REZ_HT */
+		cmpi.l     #320-1,d3
 		ble.s      bitblit7
 		move.l     #320-1,d3
 bitblit7:
@@ -3917,21 +3270,17 @@ bitblit8:
 		move.l     d3,(a1)
 		movem.l    a0-a6,-(a7)
 		lea.l      bitblit_src(pc),a0
-		lea.l      bitblt2,a1 /* BUG: absolute address */
 		movem.l    a0-a1,-(a7)
-		dc.w       0xa000
-		movea.l    d0,a0
+		dc.w       0xa000 /* linea_init */
 		move.w     V_BYTES_LIN(a0),d1
-		move.w     ZERO(a0),d2 /* LA_PLANES */
+		move.w     LA_PLANES(a0),d2
 		move.w     d2,d6
 		asl.w      #1,d2
 		move.w     DEV_TAB(a0),d3
-		/* addq.w     #1,d3 */
-		dc.w 0x0643,1 /* XXX */
+		addq.w     #1,d3
 		andi.l     #0x0000FFFF,d3
 		move.w     DEV_TAB+2(a0),d4
-		/* addq.w     #1,d4 */
-		dc.w 0x0644,1 /* XXX */
+		addq.w     #1,d4
 		movem.l    (a7)+,a0-a1
 		move.w     d3,d7
 		move.w     bitblit_dx-bitblit_src(a0),d0
@@ -3950,11 +3299,11 @@ bitblit13:
 		move.w     d7,bitblit_height-bitblit_src(a0)
 bitblit14:
 		cmpi.w     #8,d6
-		ble.s      bitblit15
-		movem.l    (a7)+,a0-a6
-		rts
-bitblit15:
+		bgt.s      bitblit15
 		lea.l      bitblit_op(pc),a3
+		/* space for bitblit frame */
+		lea        -78(a7),a7
+		lea.l      (a7),a1
 		move.w     bitblit_width-bitblit_src(a0),(a1)+ /* b_wd */
 		move.w     bitblit_height-bitblit_src(a0),(a1)+ /* b_ht */
 		move.w     d6,(a1)+ /* plane_cnt */
@@ -3975,9 +3324,11 @@ bitblit15:
 		move.w     d2,(a1)+ /* d_nxwd */
 		move.w     d1,(a1)+ /* d_nxln */
 		move.w     #2,(a1)+ /* d_nxpl */
-		move.l     #0,(a1)+ /* p_addr */
-		lea.l      bitblt2,a6 /* BUG: absolute address */
+		clr.l      (a1)+ /* p_addr */
+		lea.l      (a7),a6
 		dc.w       0xa007 /* bit_blt */
+		lea        78(a7),a7
+bitblit15:
 		movem.l    (a7)+,a0-a6
 		rts
 
@@ -4009,8 +3360,6 @@ bitblit_optab:
            dc.b 14,14,14,14
            dc.b 15,15,15,15
 
-bitblt2: ds.b 78 /* 13fe8 */
-
 lib46:
 	dc.w	0			; no library calls
 	rts
@@ -4023,18 +3372,16 @@ lib47:
 	dc.w lib47_2-lib47
 	dc.w	0
 convert_pi1:
-		lea        convert_colreg(pc),a1
-		move.l     #0,(a1)
-		cmpi.b     #1,d0
+		moveq      #0,d3
+		subq.w     #1,d0
 		beq.s      convert_pi1_1
-		cmpi.w     #2,d0
-		beq.s      convert_pi0
-		rts
-convert_pi0:
+		subq.w     #1,d0
+		bne        convert_pi1_8
 		move.l     (a6)+,d3
-		andi.l     #0x000000F0,d3
-		move.b     d3,(a1)
+		andi.w     #0x00F0,d3
 convert_pi1_1:
+		lea        convert_colreg(pc),a1
+		move.b     d3,(a1)
 		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      convert_pi1_2
@@ -4086,7 +3433,7 @@ convert_pi1_6:
 		movea.l    d0,a2
 		movea.l    convert_src(pc),a0
 		movea.l    convert_dst(pc),a1
-		move.w     ZERO(a2),d5 /* LA_PLANES */
+		move.w     LA_PLANES(a2),d5
 		cmpi.w     #4,d5
 		beq.s      convert_4planes
 		cmpi.w     #8,d5
@@ -4100,12 +3447,11 @@ convert_pi1_6:
 		trap       #5
 convert_pi1_7:
 		movem.l    (a7)+,d0-d7/a0-a6
+convert_pi1_8:
 		rts
 
 convert_src: dc.l 0
-	ds.w 4
 convert_dst: dc.l 0
-	dc.l 0
 convert_mousestat: dc.w 0
 
 convert_4planes:
@@ -4114,21 +3460,21 @@ convert_4planes:
 		moveq.l    #0,d6
 		moveq.l    #0,d7
 		move.l     #160,d4
-		move.w     ZERO(a2),d2 /* LA_PLANES */
+		move.w     LA_PLANES(a2),d2
 		asl.w      #1,d2
 		move.w     V_BYTES_LIN(a2),d6
 		move.w     #200,d7
 		subq.w     #1,d7
 convert_4planes1:
 		moveq.l    #4-1,d3
-		lea.l      ZERO(a0),a2
-		lea.l      ZERO(a1),a3
+		lea.l      (a0),a2
+		lea.l      (a1),a3
 convert_4planes2:
 		moveq.l    #20-1,d1
-		lea.l      ZERO(a2),a4
-		lea.l      ZERO(a3),a5
+		lea.l      (a2),a4
+		lea.l      (a3),a5
 convert_4planes3:
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		movem.l    d7,-(a7)
 		moveq.l    #15,d7
 		moveq.l    #0,d5
@@ -4174,7 +3520,7 @@ convert_8planes:
 		moveq.l    #0,d6
 		moveq.l    #0,d7
 		move.l     #160,d4
-		move.w     ZERO(a2),d2 /* LA_PLANES */
+		move.w     LA_PLANES(a2),d2
 		asl.w      #1,d2
 		move.w     V_BYTES_LIN(a2),d6
 		move.w     #200,d7
@@ -4182,16 +3528,16 @@ convert_8planes:
 		lea.l      plane8pixels(pc),a6
 convert_8planes1:
 		moveq.l    #3,d3
-		lea.l      ZERO(a0),a2
-		lea.l      ZERO(a1),a3
+		lea.l      (a0),a2
+		lea.l      (a1),a3
 convert_8planes2:
-		moveq.l    #19,d1
-		lea.l      ZERO(a2),a4
-		lea.l      ZERO(a3),a5
+		moveq.l    #20-1,d1
+		lea.l      (a2),a4
+		lea.l      (a3),a5
 convert_8planes3:
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		movem.l    d7,-(a7)
-		moveq.l    #15,d7
+		moveq.l    #16-1,d7
 		moveq.l    #0,d5
 convert_8planes4:
 		rol.w      #1,d0
@@ -4209,7 +3555,7 @@ convert_8planes6:
 		move.w     d5,(a5)
 		tst.w      d3
 		bne.s      convert_8planes7
-		move.w     ZERO(a6),2(a5)
+		move.w     (a6),2(a5)
 		move.w     2(a6),4(a5)
 		move.w     4(a6),6(a5)
 		move.w     6(a6),8(a5)
@@ -4219,7 +3565,7 @@ convert_8planes7:
 		move.w     d5,(a5)
 		tst.w      d3
 		bne.s      convert_8planes8
-		move.w     ZERO(a6),2(a5)
+		move.w     (a6),2(a5)
 		move.w     2(a6),4(a5)
 		move.w     4(a6),6(a5)
 		move.w     6(a6),8(a5)
@@ -4244,13 +3590,13 @@ convert_8planes9:
 
 convert_hi:
 		moveq.l    #0,d4
-		move.w     -2(a2),d4
+		move.w     V_BYTES_LIN(a2),d4
 		lea.l      32000(a0),a4
 		move.w     #200-1,d7
 convert_hi1:
 		moveq.l    #0,d6
-		lea.l      ZERO(a0),a2
-		lea.l      ZERO(a1),a3
+		lea.l      (a0),a2
+		lea.l      (a1),a3
 convert_hi2:
 		moveq.l    #0,d5
 convert_hi3:
@@ -4327,5 +3673,3 @@ plane8pixels: ds.w 4
 
 libex:
 	ds.w 1
-
-ZERO equ 0

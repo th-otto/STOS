@@ -3,6 +3,8 @@
 		.include "window.inc"
 		.include "sprites.inc"
 		.include "linea.inc"
+		.include "equates.inc"
+		.include "lib.inc"
 
 MAXPAL = 512 /* ?? why 512? */
 
@@ -30,229 +32,279 @@ VERTFLAG		= 0x100	/* double-line on VGA, interlace on ST/TV */
 
 		.text
 
-        bra.w load
+* Define extension addresses
 
-        dc.b $80
-tokens:
-		dc.b "vsetmode",$80
-		dc.b "vgetmode",$81
-		dc.b "_falc cls",$82
-		dc.b "vgetsize",$83
-		dc.b "vgetpalt",$84
-		dc.b "montype",$85
-		dc.b "vsetpalt",$86
-		dc.b "whichmode",$87
-		dc.b "_get spritepalette",$88
-		dc.b "scr width",$89
-		dc.b "_hardphysic",$8a
-		dc.b "scr height",$8b
-		dc.b "_setcolour",$8c
-		dc.b "_getcolour",$8d
-		dc.b "_get st palette",$8e
-		dc.b "_falc rgb",$8f
-		dc.b "palfade in",$90
-		dc.b "_falc palt",$91
-		dc.b "palfade out",$92
-		dc.b "darkest",$93
-		dc.b "quickwipe",$94
-		dc.b "brightest",$95
-		dc.b "ilbmpalt",$96
-		dc.b "_get red",$97
-		dc.b "_shift off",$98
-		dc.b "_get green",$99
-		dc.b "_shift",$9a
-		dc.b "_get blue",$9b
-		/* $9c unused */
-		dc.b "vget ilbm mode",$9d
-		/* $9e unused */
-		dc.b "dpack ilbm",$9f
-		/* $a0 unused */
-		dc.b "fmchunk",$a1
-		/* $a2 unused */
-		dc.b "_falc zone",$a3
-		/* $a4 unused */
-		dc.b "ilbmchunk",$a5
-		dc.b "_reset falc zone",$a6
-		dc.b "bmhdchunk",$a7
-		dc.b "_set falc zone",$a8
-		dc.b "cmapchunk",$a9
-		dc.b "_paste pi1",$aa
-		dc.b "bodychunk",$ab
-		dc.b "_bitblit",$ac
-		/* $ad unused */
-		dc.b "_convert pi1",$ae
-        dc.b 0
-        even
+start:
+	dc.l	para-start		; parameter definitions
+	dc.l	entry-start		; reserve data area for program
+	dc.l	lib1-start		; start of library
 
-jumps:  dc.w 47
-		dc.l vsetmode
-		dc.l vgetmode
-		dc.l falc_cls
-		dc.l vgetsize
-		dc.l vgetpalt
-		dc.l montype
-		dc.l vsetpalt
-		dc.l whichmode
-		dc.l get_spritepalette
-		dc.l scr_width
-		dc.l hardphysic
-		dc.l scr_height
-		dc.l setcolour
-		dc.l getcolour
-		dc.l get_st_palette
-		dc.l falc_rgb
-		dc.l palfade_in
-		dc.l falc_palt
-		dc.l palfade_out
-		dc.l darkest
-		dc.l quickwipe
-		dc.l brightest
-		dc.l ilbmpalt
-		dc.l get_red
-		dc.l shift_off
-		dc.l get_green
-		dc.l shift
-		dc.l get_blue
-		dc.l dummy
-		dc.l vget_ilbm_mode
-		dc.l dummy
-		dc.l dpack_ilbm
-		dc.l dummy
-		dc.l fmchunk
-		dc.l dummy
-		dc.l falc_zone
-		dc.l dummy
-		dc.l ilbmchunk
-		dc.l reset_falc_zone
-		dc.l bmhdchunk
-		dc.l set_falc_zone
-		dc.l cmapchunk
-		dc.l paste_pi1
-		dc.l bodychunk
-		dc.l bitblit
-		dc.l dummy
-		dc.l convert_pi1
-		
-welcome:
-		dc.b 10
-		dc.b "Falcon 030 VIDEO (III) Extension v0.5 ",$bd," Anthony Hoskin.",0
-		dc.b 10
-		dc.b "Falcon 030 Extension de VIDEO (III) v0.5 ",$bd," Anthony Hoskin.",0
+catalog:
+	dc.w	lib2-lib1
+	dc.w	lib3-lib2
+	dc.w	lib4-lib3
+	dc.w	lib5-lib4
+	dc.w	lib6-lib5
+	dc.w	lib7-lib6
+	dc.w	lib8-lib7
+	dc.w	lib9-lib8
+	dc.w	lib10-lib9
+	dc.w	lib11-lib10
+	dc.w	lib12-lib11
+	dc.w	lib13-lib12
+	dc.w	lib14-lib13
+	dc.w	lib15-lib14
+	dc.w	lib16-lib15
+	dc.w	lib17-lib16
+	dc.w	lib18-lib17
+	dc.w	lib19-lib18
+	dc.w	lib20-lib19
+	dc.w	lib21-lib20
+	dc.w	lib22-lib21
+	dc.w	lib23-lib22
+	dc.w	lib24-lib23
+	dc.w	lib25-lib24
+	dc.w	lib26-lib25
+	dc.w	lib27-lib26
+	dc.w	lib28-lib27
+	dc.w	lib29-lib28
+	dc.w	lib30-lib29
+	dc.w	lib31-lib30
+	dc.w	lib32-lib31
+	dc.w	lib33-lib32
+	dc.w	lib34-lib33
+	dc.w	lib35-lib34
+	dc.w	lib36-lib35
+	dc.w	lib37-lib36
+	dc.w	lib38-lib37
+	dc.w	lib39-lib38
+	dc.w	lib40-lib39
+	dc.w	lib41-lib40
+	dc.w	lib42-lib41
+	dc.w	lib43-lib42
+	dc.w	lib44-lib43
+	dc.w	lib45-lib44
+	dc.w	lib46-lib45
+	dc.w	lib47-lib46
+	dc.w	libex-lib47
+
+para:
+	dc.w	47			; number of library routines
+	dc.w	47			; number of extension commands
+
+	.dc.w l001-para
+	.dc.w l002-para
+	.dc.w l003-para
+	.dc.w l004-para
+	.dc.w l005-para
+	.dc.w l006-para
+	.dc.w l007-para
+	.dc.w l008-para
+	.dc.w l009-para
+	.dc.w l010-para
+	.dc.w l011-para
+	.dc.w l012-para
+	.dc.w l013-para
+	.dc.w l014-para
+	.dc.w l015-para
+	.dc.w l016-para
+	.dc.w l017-para
+	.dc.w l018-para
+	.dc.w l019-para
+	.dc.w l020-para
+	.dc.w l021-para
+	.dc.w l022-para
+	.dc.w l023-para
+	.dc.w l024-para
+	.dc.w l025-para
+	.dc.w l026-para
+	.dc.w l027-para
+	.dc.w l028-para
+	.dc.w l029-para
+	.dc.w l030-para
+	.dc.w l031-para
+	.dc.w l032-para
+	.dc.w l033-para
+	.dc.w l034-para
+	.dc.w l035-para
+	.dc.w l036-para
+	.dc.w l037-para
+	.dc.w l038-para
+	.dc.w l039-para
+	.dc.w l040-para
+	.dc.w l041-para
+	.dc.w l042-para
+	.dc.w l043-para
+	.dc.w l044-para
+	.dc.w l045-para
+	.dc.w l046-para
+	.dc.w l047-para
+
+
+* Parameter definitions
+
+I	equ	0
+F	equ	$40
+S	equ	$80
+
+l001:	.dc.b 0,I,1,1,0           ; vsetmode
+l002:	.dc.b I,1,1,0             ; vgetmode
+l003:	.dc.b 0,I,1,1,0           ; _falc cls
+l004:	.dc.b I,I,1,1,0           ; vgetsize
+l005:	.dc.b 0,I,1,1,0           ; vgetpalt
+l006:	.dc.b I,1,1,0             ; montype
+l007:	.dc.b 0,I,1,1,0           ; vsetpalt
+l008:	.dc.b I,I,',',I,',',I,1   ; whichmode
+        .dc.b   I,',',I,',',I,',',I,1,1,0
+l009:	.dc.b 0,1,1,0             ; _get spritepalette
+l010:	.dc.b I,1,1,0             ; scr width
+l011:	.dc.b 0,I,1,1,0           ; _hardphysic
+l012:	.dc.b I,1,1,0             ; scr height
+l013:	.dc.b 0,I,',',I,1         ; setcolour
+        .dc.b   I,',',I,',',I,',',I,1,1,0
+l014:	.dc.b I,I,1,1,0           ; _getcolour
+l015:	.dc.b 0,I,1               ; _get st palette
+        .dc.b   I,',',I,1,1,0
+l016:	.dc.b I,I,1,1,0           ; _falc rgb
+l017:	.dc.b 0,1,1,0             ; palfade in
+l018:	.dc.b I,I,1,1,0           ; _falc palt BUG: count parameter missing
+l019:	.dc.b 0,1,1,0             ; palfade out
+l020:	.dc.b I,1,1,0             ; darkest
+l021:	.dc.b 0,I,',',I,1,1,0     ; quickwipe
+l022:	.dc.b I,1,1,0             ; brightest
+l023:	.dc.b 0,I,1,1,0           ; ilbmpalt
+l024:	.dc.b I,I,1,1,0           ; _get red
+l025:	.dc.b 0,1,1,0             ; _shift off
+l026:	.dc.b I,I,1,1,0           ; _get green
+l027:	.dc.b 0,I,',',I,1,1,0     ; _shift
+l028:	.dc.b I,I,1,1,0           ; _get blue
+l029:	.dc.b 0,1,1,0
+l030:	.dc.b I,I,1               ; vget ilbm mode
+        .dc.b   I,',',I,1,1,0
+l031:	.dc.b 0,1,1,0
+l032:	.dc.b I,I,',',I,1,1,0     ; dpack ilbm
+l033:	.dc.b 0,1,1,0
+l034:	.dc.b I,I,1,1,0           ; fmchunk
+l035:	.dc.b 0,1,1,0
+l036:	.dc.b I,I,1,1,0           ; _falc zone
+l037:	.dc.b 0,1,1,0
+l038:	.dc.b I,I,1,1,0           ; ilbmchunk
+l039:	.dc.b 0,1,1,0             ; _reset falc zone
+l040:	.dc.b I,I,1,1,0           ; bmhdchunk
+l041:	.dc.b 0,I,',',I,',',I,',',I,',',I,1,1,0  ; _set falc zone
+l042:	.dc.b I,I,1,1,0           ; cmapchunk
+l043:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1  ; _paste pi1
+        .dc.b   I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0
+l044:	.dc.b I,I,1,1,0           ; bodychunk
+l045:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0  ; _bitblit
+l046:	.dc.b I,1,1,0
+l047:	.dc.b 0,I,',',I,1         ; _convert pi1
+        .dc.b   I,',',I,',',I,1,1,0
+
 		.even
 
-load:
-		lea.l      finprg(pc),a0
-		lea.l      cold(pc),a1
-		rts
+entry:
+	bra.w init
 
-cold:
-		lea        table(pc),a1
-		move.l     a0,(a1)
-		lea.l      welcome(pc),a0
-		lea.l      warm(pc),a1
-		lea.l      tokens(pc),a2
-		lea.l      jumps(pc),a3
-		movem.l    d0-d6/a0-a6,-(a7)
-		move.w     #4,-(a7)
-		trap       #14
-		addq.l     #2,a7
-		andi.w     #7,d0
-		lea.l      mode(pc),a0
-		move.w     d0,(a0)
-		moveq.l    #0,d1
-		moveq.l    #S_set_mouse_stat,d0
-		trap       #5
-		move.l     #0x5F56444F,d3 /* '_VDO' */
-		bsr        getcookie
-		lea.l      vdo_cookie(pc),a0
-		move.l     d0,(a0)
-		movem.l    (a7)+,d0-d6/a0-a6
-		bsr.s      check_spritelib
-		tst.w      d7
-		bmi.s      cold4
-		beq.s      cold4
-		bra        spritelib_err
-cold4:
-		rts
+params_offset: dc.l params-entry
+switchmode_offset: dc.l switchmode-entry
+getilbmchunks_offset: dc.l getilbmchunks-entry
+modetable_offset: dc.l modetable-entry
+convert2rgb_offset: dc.l convert2rgb-entry
+installvbl_offset: dc.l installvbl-entry
+restorevbl_offset: dc.l restorevbl-entry
 
-check_spritelib:
-		movem.l    d0-d6/a0-a6,-(a7)
-		movea.l    0x00000094,a1 ; vector for trap #5
-		lea.l      -(spritelib_id_end-spritelib_id)(a1),a1
-		lea.l      spritelib_id(pc),a0
-		moveq.l    #spritelib_id_end-spritelib_id-1,d7
-check_spritelib1:
-		cmpm.b     (a0)+,(a1)+
-		bne.s      check_spritelib2
-		dbf        d7,check_spritelib1
-check_spritelib2:
-		movem.l    (a7)+,d0-d6/a0-a6
-		rts
 
-spritelib_id:
-	dc.b "FALCON 030 STOS Sprite 5.8",0,0
-spritelib_id_end:
+params: /* 1022a */
+ilbm_form: ds.l 1
+ilbm_ilbm: ds.l 1
+ilbm_bmhd: ds.l 1
+ilbm_cmap: ds.l 1
+ilbm_body: ds.l 1
+ilbm_width: ds.w 1 /* 20 */
+ilbm_height: ds.w 1 /* 22 */
+ilbm_xorigin: ds.w 1 /* 24 */
+ilbm_yorigin: ds.w 1 /* 26 */
+ilbm_planes: ds.w 1 /* 28 */
+ilbm_compression: ds.b 2 /* 30 */
+ilbm_cmapsize: ds.w 1 /* 32 */
+ilbm_size:	ds.l 1 /* 34 */
+	ds.l 1 /* unused */
+ilbm_addr: ds.l 1 /* 42 */
+dpack_ptr: ds.l 1
+ilbm_height2: ds.w 1 /* 50 */
+ilbm_bytes: ds.w 1 /* 52 */
+ilbm_bytes_lin: ds.w 1 /* 54 */
+ilbm_planes2: ds.w 1
+ilbm_nxwd: ds.l 1 /* 58 */
+	ds.w 1 /* unused */
 
-warm:
-		movem.l    a0-a6,-(a7)
-		moveq.l    #S_st_mouse_off,d0
-		trap       #5
-		moveq.l    #0,d1
-		moveq.l    #S_set_mouse_stat,d0
-		trap       #5
-		movem.l    (a7)+,a0-a6
-		rts
+falcon_mode: ds.w 1 /* 1407a, 64 */
+	ds.l 1
 
-getjar:
-		move.l     0x000005A0,d0
-		rts
-getcookie:
-		pea        getjar(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		tst.l      d0
-		beq.s      getcookie3
-		movea.l    d0,a0
-getcookie1:
-		move.l     (a0)+,d1
-		beq.s      getcookie3
-		move.l     (a0)+,d0
-		cmp.l      d3,d1
-		bne.s      getcookie1
-		rts
-getcookie3:
-		moveq      #0,d0
-		rts
+fade1tab: ds.l 256
+fade2tab: ds.l 256
+fade3tab: ds.l 256
 
-getinteger:
-		movea.l    (a7)+,a0
-		movem.l    (a7)+,d2-d4
-		tst.b      d2
-		bne        typemismatch
-		jmp        (a0)
+	ds.b 478 /* unused */
 
-addrofbank:
-		movem.l    a0-a2,-(a7)
-		movea.l    table(pc),a0
-		movea.l    sys_addrofbank(a0),a0
-		jsr        (a0)
-		movem.l    (a7)+,a0-a2
-		rts
+modetable:
+          /* mode                            width,height, bytes,scanl,planes,hht,hbb,hbe, hdb,hde,hss, vft, vbb,vbe,vdb, vde, vss,vco, vmc */
+		dc.w STMODES+PAL+BPS4,                 320,   200,   160,   80,     4, 62, 50,  9, 575, 28, 52, 625, 613, 47,111, 511, 619,  0,$083
+		dc.w STMODES+PAL+COL80+BPS2,           640,   200,   160,   80,     2, 62, 50,  9, 575, 28, 52, 625, 613, 47,111, 511, 619,  4,$083
+		dc.w VERTFLAG+STMODES+PAL+COL80+BPS1,  640,   400,    80,   40,     1,510,409, 80,1007,160,434, 624, 613, 47,126, 526, 619,  6,$183
+		dc.w PAL+BPS8,                         320,   200,   320,  160,     8,254,203, 39,  28,125,216, 625, 613, 47,127, 527, 619,  0,$183
+		dc.w PAL+BPS16,                        320,   200,   640,  320,    16,254,203, 39,  46,143,216, 625, 613, 47,127, 527, 619,  0,$183
+		dc.w VERTFLAG+PAL+BPS4,                320,   400,   160,   80,     4,254,203, 39,  12,109,216, 624, 613, 47,126, 526, 619,  2,$183
+		dc.w VERTFLAG+PAL+BPS8,                320,   400,   320,  160,     8,254,203, 39,  28,125,216, 624, 613, 47,126, 526, 619,  2,$183
+		dc.w VERTFLAG+PAL+BPS16,               320,   400,   640,  320,    16,254,203, 39,  46,143,216, 624, 613, 47,126, 526, 619,  2,$183
+		dc.w PAL+OVERSCAN+BPS4,                384,   240,   192,   96,     4,254,203, 39, 748,141,216, 625, 613, 47, 87, 567, 619,  0,$183
+		dc.w PAL+OVERSCAN+BPS8,                384,   240,   384,  192,     8,254,203, 39, 764,157,216, 625, 613, 47, 87, 567, 619,  0,$183
+		dc.w PAL+OVERSCAN+BPS16,               384,   240,   768,  384,    16,254,203, 39,  14,175,216, 625, 613, 47, 87, 567, 619,  0,$183
+		dc.w VERTFLAG+PAL+OVERSCAN+BPS4,       384,   480,   192,   96,     4,254,203, 39, 748,141,216, 624, 613, 47, 86, 566, 619,  2,$183
+		dc.w VERTFLAG+PAL+OVERSCAN+BPS8,       384,   480,   384,  192,     8,254,203, 39, 764,157,216, 624, 613, 47, 86, 566, 619,  2,$183
+		dc.w VERTFLAG+PAL+OVERSCAN+BPS16,      384,   480,   768,  384,    16,254,203, 39,  14,175,216, 624, 613, 47, 86, 566, 619,  2,$183
+		dc.w PAL+COL80+BPS4,                   640,   200,   320,  160,     4,510,409, 80,  77,254,434, 625, 613, 47,127, 527, 619,  4,$183
+		dc.w PAL+COL80+BPS8,                   640,   200,   640,  320,     8,510,409, 80,  93,270,434, 625, 613, 47,127, 527, 619,  4,$183
+		dc.w PAL+COL80+BPS16,                  640,   200,  1280,  640,    16,510,409, 80, 113,290,434, 625, 613, 47,127, 527, 619,  4,$183
+		dc.w PAL+COL80+$1000+BPS4,             640,   240,   320,  160,     4,510,409, 80,  77,254,434, 625, 613, 47, 87, 567, 619,  4,$183
+		dc.w PAL+COL80+$1000+BPS8,             640,   240,   640,  320,     8,510,409, 80,  93,270,434, 625, 613, 47, 87, 567, 619,  4,$183
+		dc.w VERTFLAG+PAL+COL80+BPS2,          640,   400,   160,   80,     2, 62, 48,  8,   2, 32, 52, 624, 613, 47,126, 526, 619,  6,$183
+		dc.w VERTFLAG+PAL+COL80+BPS4,          640,   400,   320,  160,     4,510,409, 80,  77,254,434, 624, 613, 47,126, 526, 619,  6,$183
+		dc.w VERTFLAG+PAL+COL80+BPS8,          640,   400,   640,  320,     8,510,409, 80,  93,270,434, 624, 613, 47,126, 526, 619,  6,$183
+		dc.w VERTFLAG+PAL+COL80+BPS16,         640,   400,  1280,  640,    16,510,409, 80, 113,290,434, 624, 613, 47,126, 526, 619,  6,$183
+		dc.w VERTFLAG+PAL+COL80+$1000+BPS4,    640,   480,   320,  160,     4,510,409, 80,  77,254,434, 672, 577, 97, 96, 576, 669,  6,$183
+		dc.w VERTFLAG+PAL+COL80+$1000+BPS8,    640,   480,   640,  320,     8,510,409, 80,  93,270,434, 672, 577, 97, 96, 576, 669,  6,$183
+		dc.w VERTFLAG+PAL+COL80+$1000+BPS16,   640,   480,  1280,  640,    16,510,409, 80, 113,290,434, 672, 576, 97, 96, 576, 669,  6,$183
+		dc.w PAL+COL80+OVERSCAN+BPS4,          768,   240,   384,  192,     4,510,360, 80,  13,318,418, 625, 613, 47, 87, 567, 624,  4,$183
+		dc.w PAL+COL80+OVERSCAN+BPS8,          768,   240,   768,  384,     8,510,409, 80,  35,340,422, 625, 613, 47, 87, 567, 619,  4,$183
+		dc.w PAL+COL80+OVERSCAN+BPS16,         768,   240,  1536,  768,    16,510,409, 80,  49,354,434, 625, 613, 47, 87, 567, 619,  4,$183
+		dc.w VERTFLAG+PAL+COL80+OVERSCAN+BPS4, 768,   480,   384,  192,     4,510,409, 80,  13,318,434, 624, 613, 47, 86, 566, 619,  6,$183
+		dc.w VERTFLAG+PAL+COL80+OVERSCAN+BPS8, 768,   480,   768,  384,     8,510,409, 80,  29,334,434, 624, 613, 47, 86, 566, 619,  6,$183
+		dc.w VERTFLAG+PAL+COL80+OVERSCAN+BPS16,768,   480,  1536,  768,    16,510,409, 80,  49,354,434, 624, 613, 47, 86, 566, 619,  6,$183
+		dc.w VERTFLAG+PAL+VGA+BPS4,            320,   240,   160,   80,     4,198,141, 21, 650,107,150,1049,1023, 63, 63,1023,1045,  5,$186
+		dc.w VERTFLAG+PAL+VGA+BPS8,            320,   240,   320,  160,     8,198,141, 21, 666,123,150,1049,1023, 63, 63,1023,1045,  5,$186
+		dc.w VERTFLAG+PAL+VGA+BPS16,           320,   240,   640,  320,    16,198,141, 21, 684,145,150,1049,1023, 63, 63,1023,1045,  5,$186
+		dc.w PAL+VGA+BPS4,                     320,   480,   160,   80,     4,198,141, 21, 650,107,150,1049,1023, 63, 63,1023,1045,  4,$186
+		dc.w PAL+VGA+BPS8,                     320,   480,   320,  160,     8,198,141, 21, 666,123,150,1049,1023, 63, 63,1023,1045,  4,$186
+		dc.w PAL+VGA+BPS16,                    320,   480,   640,  320,    16,198,141, 21, 684,145,150,1049,1023, 63, 63,1023,1045,  4,$186
+		dc.w VERTFLAG+PAL+VGA+COL80+BPS2,      640,   240,   160,   80,     2, 23, 18,  1, 526, 13, 17,1049,1023, 63, 63,1023,1045,  9,$186
+		dc.w VERTFLAG+PAL+VGA+COL80+BPS4,      640,   240,   320,  160,     4,198,141, 21, 675,124,140,1049,1023, 63, 63,1023,1045,  9,$186
+		dc.w VERTFLAG+PAL+VGA+COL80+BPS8,      640,   240,   640,  320,     8,198,141, 21, 683,132,140,1049,1023, 63, 63,1023,1045,  9,$186
+		dc.w PAL+VGA+COL80+BPS1,               640,   480,    80,   40,     1,198,141, 21, 627, 80,150,1049,1023, 63, 63,1023,1045,  8,$186
+		dc.w PAL+VGA+COL80+BPS2,               640,   480,   160,   80,     2, 23, 18,  1, 526, 13, 17,1049,1023, 63, 63,1023,1045,  8,$186
+		dc.w PAL+VGA+COL80+BPS4,               640,   480,   320,  160,     4,198,141, 21, 675,124,140,1049,1023, 63, 63,1023,1045,  8,$186
+		dc.w PAL+VGA+COL80+BPS8,               640,   480,   640,  320,     8,198,141, 21, 683,132,140,1049,1023, 63, 63,1023,1045,  8,$186
+		dc.w PAL+VGA+$2000+BPS16,              640,   480,  1280,  640,    16,386,295, 43, 894,295,293,1033,1025, 65, 65,1025,1029,  4,$182
+		dc.w VERTFLAG+PAL+VGA+COL80+$2000+BPS4,768,   240,   384,  192,     4,236,178, 23, 724,168,172,1049,1023, 63, 63,1023,1045,  9,$182
+		dc.w VERTFLAG+PAL+VGA+COL80+$2000+BPS8,768,   240,   768,  384,     8,236,171, 23, 725,168,160,1049,1023, 63, 63,1023,1045,  9,$182
+		dc.w PAL+VGA+COL80+$2000+BPS4,         768,   480,   384,  192,     4,236,177, 23, 723,168,172,1049,1023, 63, 63,1023,1045,  8,$182
+		dc.w PAL+VGA+COL80+$2000+BPS8,         768,   480,   768,  384,     8,236,169, 23, 723,168,161,1049,1023, 63, 63,1023,1045,  8,$182
+		dc.w VERTFLAG+PAL+VGA+COL80+$3000+BPS4,800,   320,   400,  200,     4,240,181, 23, 719,168,173,1345,1305, 15, 25,1306,1306,  9,$182
+		dc.w VERTFLAG+PAL+VGA+COL80+$3000+BPS8,800,   320,   800,  400,     8,241,180, 23, 728,171,172,1345,1329, 45, 49,1330,1332,  9,$182
+modetable_end:
+		dc.w -1,-1
 
-dummy:
-		bra        syntax
-
-getpalette:
-		movem.l    d1-d7/a0-a6,-(a7)
-		pea.l      rgbpalette(pc)
-		move.w     d7,-(a7)
-		clr.w      -(a7)
-		move.w     #94,-(a7) /* VgetRGB */
-		trap       #14
-		lea.l      10(a7),a7
-		movem.l    (a7)+,d1-d7/a0-a6
-		rts
 
 switchmode:
 		movem.l    a0-a6,-(a7)
@@ -273,19 +325,24 @@ switchmode2:
 		movem.l    d1-d2/a5,-(a7)
 		dc.w       0xa000 /* linea_init */
 		movem.l    (a7)+,d1-d2/a5
+		movea.l    d0,a0
 		move.w     d1,DEV_TAB(a0)
-		subq.w     #1,DEV_TAB(a0)
+		/* subq.w     #1,DEV_TAB(a0) */
+		dc.w 0x0468,1,DEV_TAB /* XXX */
 		move.w     d1,V_REZ_HZ(a0)
-		clr.w      LA_XMN_CLIP(a0)
-		clr.w      LA_YMN_CLIP(a0)
+		move.w     #0,LA_XMN_CLIP(a0)
+		move.w     #0,LA_YMN_CLIP(a0)
 		move.w     d1,LA_XMX_CLIP(a0)
-		subq.w     #1,LA_XMX_CLIP(a0)
+		/* subq.w     #1,LA_XMX_CLIP(a0) */
+		dc.w 0x0468,1,LA_XMX_CLIP /* XXX */
 		move.w     d2,LA_YMX_CLIP(a0)
-		subq.w     #1,LA_YMX_CLIP(a0)
+		/* subq.w     #1,LA_YMX_CLIP(a0) */
+		dc.w 0x0468,1,LA_YMX_CLIP /* XXX */
 		move.w     #-1,LA_CLIP(a0)
 		move.w     10(a5),LA_PLANES(a0)
 		move.w     4(a5),DEV_TAB+2(a0)
-		subq.w     #1,DEV_TAB+2(a0)
+		/* subq.w     #1,DEV_TAB+2(a0) */
+		dc.w 0x0468,1,DEV_TAB+2 /* XXX */
 		move.w     4(a5),V_REZ_VT(a0)
 		move.w     d1,d0
 		lsr.w      #3,d0
@@ -295,7 +352,8 @@ switchmode2:
 		move.w     4(a5),d1
 		ext.l      d1
 		divs.w     d0,d1
-		subq.w     #1,d1
+		/* subq.w     #1,d1 */
+		dc.w 0x0441,1 /* XXX */
 		move.w     d1,V_CEL_MY(a0)
 		move.w     6(a5),d2 /* bytes_lin */
 		move.w     d2,V_BYTES_LIN(a0)
@@ -320,9 +378,9 @@ switchmode2:
 		cmpi.w     #8,d3
 		beq.s      switchmode3
 		move.w     #256,DEV_TAB+26(a0)
-		clr.w      DEV_TAB+78(a0)
+		move.w     #0,DEV_TAB+78(a0)
 switchmode3:
-		lea.l      scanline_width(pc),a4
+		lea.l      scanline_width,a4 /* BUG: absolute address */
 		move.w     8(a5),(a4)
 		pea.l      set_scanline(pc)
 		move.w     #38,-(a7) /* Supexec */
@@ -333,133 +391,331 @@ switchmode4:
 		rts
 
 set_scanline:
-		move.w     scanline_width(pc),d0
+		lea.l      scanline_width,a4 /* BUG: not allowed to trash a4 */ /* BUG: absolute address */
+		move.w     (a4),d0
 		move.w     d0,($FFFF8210).w
 		rts
 
 scanline_width: dc.w       0
 
-syntax:
-		moveq.l    #E_syntax,d0
-		bra.s      goerror
-illfunc:
-		moveq.l    #E_illegalfunc,d0
-		bra.s      goerror
-typemismatch:
-		moveq.l    #E_typemismatch,d0
-		bra.s      goerror
-stringtoolong: /* unused */
-		moveq.l    #E_string_too_long,d0
+getilbmchunks:
+		movem.l    a0-a6,-(a7)
+		bsr.s      ilbm_find_form
+		tst.l      d7
+		bne.s      getilbmchunks1
+		bsr.s      ilbm_find_ilbm
+		tst.l      d7
+		bne.s      getilbmchunks1
+		bsr        ilbm_find_bmhd
+		tst.l      d7
+		bne.s      getilbmchunks1
+		bsr        ilbm_find_cmap
+		tst.l      d7
+		bne.s      getilbmchunks1
+		bsr        ilbm_find_body
+		tst.l      d7
+		bne.s      getilbmchunks1
+		movem.l    (a7)+,a0-a6
+		rts
+getilbmchunks1:
+		movem.l    (a7)+,a0-a6
+		moveq.l    #-1,d7
+		rts
 
-goerror:
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     mode(pc),d0
-		cmpi.w     #2,d0
-		beq.s      goerror1
-		move.w     d0,-(a7)
-		move.l     #-1,-(a7)
-		move.l     #-1,-(a7)
-		move.w     #5,-(a7)
-		trap       #14
-		lea.l      12(a7),a7
-		moveq.l    #S_initmode,d0
-		trap       #5
-		moveq.l    #W_initmode,d7
-		trap       #3
-goerror1:
-		movem.l    (a7)+,d0-d7/a0-a6
-		movea.l    table(pc),a0
-		movea.l    sys_error(a0),a0
-		jmp        (a0)
 
-illfalconfunc:
-		moveq.l    #1,d0
-		bra.s      printerr
-notsupported: /* unused */
-		moveq.l    #2,d0
-		bra.s      printerr
-invalidbank:
-		moveq.l    #7,d0
-		bra.s      printerr
-spritelib_err:
-		moveq.l    #8,d0
+/* FIXME: walk through list of chunks instead */
+ilbm_find_form:
+		lea.l      params(pc),a6
+		movea.l    ilbm_addr-params(a6),a0
+		move.l     ilbm_size-params(a6),d7
+ilbm_find_form1:
+		tst.l      d7
+		beq.s      ilbm_find_form2
+		subq.l     #1,d7
+		cmpi.b     #'F',(a0)+
+		bne.s      ilbm_find_form1
+		cmpi.b     #'O',(a0)
+		bne.s      ilbm_find_form1
+		cmpi.b     #'R',1(a0)
+		bne.s      ilbm_find_form1
+		cmpi.b     #'M',2(a0)
+		bne.s      ilbm_find_form1
+		subq.l     #1,a0
+		move.l     a0,ilbm_form-params(a6)
+		moveq.l    #0,d7
+		rts
+ilbm_find_form2:
+		moveq.l    #-1,d7
+		rts
 
-printerr:
-		movem.l    d0-d7/a0-a6,-(a7)
+
+/* FIXME: walk through list of chunks instead */
+ilbm_find_ilbm:
+		lea.l      params(pc),a6
+		movea.l    ilbm_addr-params(a6),a0
+		move.l     ilbm_size-params(a6),d7
+ilbm_find_ilbm1:
+		tst.l      d7
+		beq.s      ilbm_find_ilbm2
+		subq.l     #1,d7
+		cmpi.b     #'I',(a0)+
+		bne.s      ilbm_find_ilbm1
+		cmpi.b     #'L',(a0)
+		bne.s      ilbm_find_ilbm1
+		cmpi.b     #'B',1(a0)
+		bne.s      ilbm_find_ilbm1
+		cmpi.b     #'M',2(a0)
+		bne.s      ilbm_find_ilbm1
+		subq.l     #1,a0
+		move.l     a0,ilbm_ilbm-params(a6)
+		moveq.l    #0,d7
+		rts
+ilbm_find_ilbm2:
+		moveq.l    #-1,d7
+		rts
+
+/* FIXME: walk through list of chunks instead */
+ilbm_find_bmhd:
+		lea.l      params(pc),a6
+		movea.l    ilbm_addr-params(a6),a0
+		move.l     ilbm_size-params(a6),d7
+ilbm_find_bmhd1:
+		tst.l      d7
+		beq.s      ilbm_find_bmhd2
+		subq.l     #1,d7
+		cmpi.b     #'B',(a0)+
+		bne.s      ilbm_find_bmhd1
+		cmpi.b     #'M',(a0)
+		bne.s      ilbm_find_bmhd1
+		cmpi.b     #'H',1(a0)
+		bne.s      ilbm_find_bmhd1
+		cmpi.b     #'D',2(a0)
+		bne.s      ilbm_find_bmhd1
+		subq.l     #1,a0
+		move.l     a0,ilbm_bmhd-params(a6)
+		move.w     8(a0),ilbm_width-params(a6)
+		move.w     10(a0),ilbm_height-params(a6)
+		move.w     10(a0),ilbm_height2-params(a6)
+		move.w     12(a0),ilbm_xorigin-params(a6)
+		move.w     14(a0),ilbm_yorigin-params(a6)
+		move.b     16(a0),d5
+		andi.w     #255,d5
+		move.w     d5,ilbm_planes-params(a6)
+		move.b     18(a0),ilbm_compression-params(a6)
+		moveq.l    #0,d7
+		rts
+ilbm_find_bmhd2:
+		moveq.l    #-1,d7
+		rts
+
+/* FIXME: walk through list of chunks instead */
+ilbm_find_cmap:
+		lea.l      params(pc),a6
+		movea.l    ilbm_addr-params(a6),a0
+		move.l     ilbm_size-params(a6),d7
+ilbm_find_cmap1:
+		tst.l      d7
+		beq.s      ilbm_find_cmap2
+		subq.l     #1,d7
+		cmpi.b     #'C',(a0)+
+		bne.s      ilbm_find_cmap1
+		cmpi.b     #'M',(a0)
+		bne.s      ilbm_find_cmap1
+		cmpi.b     #'A',1(a0)
+		bne.s      ilbm_find_cmap1
+		cmpi.b     #'P',2(a0)
+		bne.s      ilbm_find_cmap1
+		subq.l     #1,a0
+		move.l     a0,ilbm_cmap-params(a6)
+		move.l     4(a0),d0
+		divu.w     #3,d0
+		move.w     d0,ilbm_cmapsize-params(a6)
+		moveq.l    #0,d7
+		rts
+ilbm_find_cmap2:
+		moveq.l    #-1,d7
+		rts
+
+/* FIXME: walk through list of chunks instead */
+ilbm_find_body:
+		lea.l      params(pc),a6
+		movea.l    ilbm_addr-params(a6),a0
+		move.l     ilbm_size-params(a6),d7
+ilbm_find_body1:
+		tst.l      d7
+		beq.s      ilbm_find_body2
+		subq.l     #1,d7
+		cmpi.b     #'B',(a0)+
+		bne.s      ilbm_find_body1
+		cmpi.b     #'O',(a0)
+		bne.s      ilbm_find_body1
+		cmpi.b     #'D',1(a0)
+		bne.s      ilbm_find_body1
+		cmpi.b     #'Y',2(a0)
+		bne.s      ilbm_find_body1
+		subq.l     #1,a0
+		move.l     a0,ilbm_body-params(a6)
+		moveq.l    #0,d7
+		rts
+ilbm_find_body2:
+		moveq.l    #-1,d7
+		rts
+
+
+
+convert2rgb:
+		clr.l      d2
+		clr.l      d3
+		move.w     d0,d1
+		move.w     d0,d2
+		move.w     d0,d3
+		andi.l     #0x00000F00,d1
+		lsl.l      #8,d1
+		lsl.l      #5,d1
+		andi.l     #0x000000F0,d2
+		lsl.l      #5,d2
+		lsl.l      #4,d2
+		andi.l     #15,d3
+		lsl.l      #5,d3
+		or.l       d3,d2
+		or.l       d2,d1
+		move.l     d1,d0
+		rts
+
+installvbl:
+		lea        vblstart(pc),a1
+		move.l     d0,(a1)
+		move.w     shift_flag(pc),d0
 		tst.w      d0
-		beq.s      printerr1
-		move.w     mode(pc),d0
-		cmpi.w     #2,d0
-		beq.s      printerr1
-		move.w     d0,-(a7)
-		move.l     #-1,-(a7)
-		move.l     #-1,-(a7)
-		move.w     #5,-(a7)
+		bne.s      installvbl1
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
-		lea.l      12(a7),a7
-		moveq.l    #S_initmode,d0
-		trap       #5
-		moveq.l    #W_initmode,d7
-		trap       #3
-printerr1:
-		movem.l    (a7)+,d0-d7/a0-a6
-		lea.l      errormsgs(pc),a2
-		lsl.w      #1,d0
-printerr2:
-		/* tst.b     (a2)+ */
-		dc.w 0x0c1a,0
-		bne.s      printerr2
-		subq.w     #1,d0
-		bpl.s      printerr2
-		movea.l    table(pc),a1
-		movea.l    sys_err2(a1),a1
-		jmp        (a1)
+		addq.l     #4,a7
+		andi.l     #7,d0
+		cmpi.w     #BPS8,d0
+		bne.s      installvbl1
+		andi.l     #3,d0
+		moveq.l    #1,d7
+		asl.l      d0,d7
+		moveq.l    #1,d6
+		asl.l      d7,d6
+		move.l     d6,d7
+		andi.l     #MAXPAL-1,d7
+		lea.l      rgbpalette(pc),a0
+		move.l     a0,-(a7)
+		move.w     d7,-(a7)
+		move.w     #0,-(a7)
+		move.w     #94,-(a7) /* VgetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		pea.l      sinstallvbl(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		lea.l      shift_flag(pc),a0
+		move.w     #-1,(a0)
+installvbl1:
+		rts
 
-errormsgs:
-		dc.b 0
-		dc.b "Illegal Command/Function (use only on Falcon 030)",0
-		dc.b "Illegal Command/Function (use only on Falcon 030)",0
-		dc.b "Command/Function not supported by video hardware",0
-		dc.b "Command/Function not supported by video hardware",0
-		dc.b "Cookie ID string requires 4 characters",0
-		dc.b "Cookie ID string requires 4 characters",0
-		dc.b "Memory bank does not contain ILBM data",0
-		dc.b "Cette banque ne conteint pas de donn",$82,"es ILBM",0
-		dc.b "Illegal Colour value (must be 2, 4, 16, 256 or -1 for Tru-Colour !)",0
-		dc.b "Illegal Colour value (must be 2, 4, 16, 256 or -1 for Tru-Colour !)",0
-		dc.b "Illegal Screen width value (must be 320, 384, 640 or 768)",0
-		dc.b "Illegal Screen width value (must be 320, 384, 640 or 768)",0
-		dc.b "Illegal Screen height value (must be 200, 240, 400 or 480)",0
-		dc.b "Illegal Screen height value (must be 200, 240, 400 or 480)",0
-		dc.b "Memory bank does not contain sprite data",0
-		dc.b "Cette banque ne conteint pas de donn",$82,"es sprite",0
-		dc.b 13,10,C_inverse
-		dc.b "Extension ERROR - the 'SPRIT101.BIN' file version in the STOS folder",13,10
-		dc.b "is incompatible with the Falcon 030 VIDEO (III) Extension v0.5.           ",13,10
-		dc.b "Please re-boot your system with the 'SPRIT101.BIN' version 5.8 file ",13,10
-		dc.b "in the STOS folder.",C_normal,13,10,0
-		dc.b 13,10,C_inverse
-		dc.b "Extension ERROR - the 'SPRIT101.BIN' file version in the STOS folder        ",13,10
-		dc.b "is incompatible with the Falcon 030 VIDEO (III) Extension v0.5. ",13,10
-		dc.b "Please re-boot your system with the 'SPRIT101.BIN' version 5.8 file ",13,10
-		dc.b "in the STOS folder.",C_normal,13,10,0
-		.even
+sinstallvbl:
+		lea.l      gooldvbl+2(pc),a0
+		move.l     $00000070.l,(a0) /* XXX */
+		lea.l      newvbl(pc),a1
+		move.l     a1,$00000070.l /* XXX */
+		lea        vblcount(pc),a1
+		clr.w      (a1)
+		rts
+
+restorevbl:
+		move.w     shift_flag(pc),d0
+		tst.w      d0
+		beq.s      restorevbl1
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		andi.l     #7,d0
+		cmpi.w     #BPS8,d0
+		bne.s      restorevbl1
+		pea.l      srestorevbl(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		pea.l      rgbpalette(pc)
+		move.w     #256,-(a7)
+		move.w     #0,-(a7)
+		move.w     #93,-(a7) /* VsetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		lea.l      shift_flag(pc),a0
+		move.w     #0,(a0)
+restorevbl1:
+		rts
+
+srestorevbl:
+		movea.l    gooldvbl+2(pc),a0
+		/* movea.w    #$0070,a1 */
+		dc.w 0x227c,0,0x70 /* XXX */
+		move.l     a0,(a1)
+		lea        vblcount(pc),a1
+		clr.w      (a1)
+		rts
+
+newvbl:
+		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      vblcount(pc),a4
+		/* addq.w     #1,(a4) */
+		dc.w 0x0654,1 /* XXX */
+		move.w     (a4),d0
+		cmp.w      vbldelay(pc),d0
+		blt.s      newvbl2
+		movea.l    #$00FF9800,a0 /* XXX */
+		move.l     #255-1,d6
+		clr.l      d7
+		move.w     vblstart(pc),d7
+		sub.w      d7,d6
+		asl.l      #2,d7
+		adda.l     d7,a0
+		lea.l      4(a0),a1
+		move.l     (a0),d5
+newvbl1:
+		move.l     (a1)+,(a0)+
+		dbf        d6,newvbl1
+		move.l     d5,(a0)
+		clr.w      (a4)
+newvbl2:
+		movem.l    (a7)+,d0-d7/a0-a6
+gooldvbl: jmp        0.l
+
+vblstart: dc.w 0
+vbldelay: dc.w 0
+vblcount: dc.w 0
+
+shift_flag: dc.w 0
+
+rgbpalette: ds.l 256 /* 11ca2 */
+
+
+init:
+		lea exit(pc),a2
+		rts
+
+exit:
+		rts
+
 
 /*
  * Syntax:   vsetmode VID_MDE
  */
+lib1:
+	dc.w	0			; no library calls
 vsetmode:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
+		movem.l    d1-d3/a0-a6,-(a7)
 		lea.l      vsetmode_mode(pc),a1
 		move.w     d3,(a1)
-		movem.l    d3/a0-a6,-(a7)
 		btst       #7,d3 /* ST-compatible? */
 		bne.s      vsetmode1
 		move.w     #S_hide,d0
@@ -467,7 +723,7 @@ vsetmode:
 		trap       #5
 vsetmode1:
 		move.w     vsetmode_mode(pc),d0
-		andi.w     #$1ff,d0
+		andi.l     #$1ff,d0
 		move.w     d0,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
@@ -476,38 +732,45 @@ vsetmode1:
 		trap       #14
 		addq.l     #2,a7
 		lea.l      vsetmode_montype(pc),a1
-		andi.w     #3,d0
+		andi.l     #3,d0
 		move.w     d0,(a1)
-		move.w     vsetmode_mode(pc),d0
-		andi.w     #$1ff,d0
-		move.w     d0,-(a7)
-		move.w     #91,-(a7) /* VgetSize */
-		trap       #14
-		addq.l     #4,a7
-		lea.l      falcon_screensize(pc),a0
-		move.l     d0,(a0)
+		movem.l    (a7)+,d1-d3/a0-a6
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     modetable_offset-entry(a0),d2
+		add.l      d2,a0
+		lea        ptr_modetable(pc),a1
+		move.l     a0,(a1)
+		movem.l    d1-d3/a0-a6,-(a7)
 		pea.l      initvidel(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,d1-d3/a0-a6
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     switchmode_offset-entry(a0),d0
+		adda.l     d0,a0
 		move.w     vsetmode_mode(pc),d3
-		bsr        switchmode
+		jsr        (a0)
 		move.w     vsetmode_mode(pc),d1
 		andi.l     #$1ff,d1
 		move.l     falcon_screensize(pc),d2
 		moveq.l    #S_falc_initmode,d0
 		trap       #5
-		movem.l    (a7)+,d3/a0-a6
 		rts
 
+ptr_modetable: dc.l 0
+
 initvidel:
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
+		lea        falcon_screensize(pc),a0
+		move.l     #32768,(a0)
+		move.l     ptr_modetable(pc),a4
 		move.w     vsetmode_mode(pc),d3
 initvidel1:
-		cmpa.l     a4,a5
+		cmpi.l     #-1,(a4)
 		beq.s      initvidel3
-		cmp.w      (a4),d3
+		cmp.w      ZERO(a4),d3
 		beq.s      initvidel2
 		lea.l      40(a4),a4
 		bra.s      initvidel1
@@ -537,46 +800,44 @@ initvidel3:
 
 vsetmode_mode: dc.w 0
 vsetmode_montype: dc.w 0
+falcon_screensize: ds.l 1 /* 14036 */
 
 /*
  * Syntax:   VID_MDE=vgetmode
  */
+lib2:
+	dc.w	0			; no library calls
 vgetmode:
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		tst.w      d0
-		bne        syntax
 		movem.l    a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
-		moveq      #0,d3
-		move.w     d0,d3
+		move.l     d0,d3
+		andi.l     #0x0000FFFF,d3
 		clr.l      d2
+		movem.l    (a7)+,a0-a6
+		move.l     d3,-(a6)
 		rts
 
 /*
  * Syntax:   _falc cls SCR_ADDRESS
  */
+lib3:
+	dc.w lib3_1-lib3
+	dc.w	0
 falc_cls:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      falc_cls1
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7) /* XXX useless */
+		move.l     d3,-(a6)
+lib3_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1 /* XXX useless */
 falc_cls1:
 		lea.l      cls_address(pc),a1
 		move.l     d3,(a1)
-		movem.l    a0-a6,-(a7)
+		movem.l    d1-d7/a0-a6,-(a7)
 		moveq.l    #S_st_mouse_stat,d0
 		trap       #5
 		lea.l      cls_mousestat(pc),a0
@@ -608,20 +869,20 @@ falc_cls3:
 		move.l     a3,(a0)+
 		move.l     a4,(a0)+
 		dbne       d0,falc_cls3
-		movem.l    d0-d7/a0-a6,-(a7)
 		moveq.l    #S_falc_initfont,d0
 		trap       #5
 		moveq.l    #0,d1
 		moveq.l    #S_falc_locate,d0
 		trap       #5
-		movem.l    (a7)+,d0-d7/a0-a6
+		moveq      #S_multipen_off,d0 /* BUG: why? */
+		trap       #5
 		move.w     cls_mousestat(pc),d0
 		tst.w      d0
 		beq.s      falc_cls4
 		moveq.l    #S_st_mouse_on,d0
 		trap       #5
 falc_cls4:
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
 cls_mousestat: dc.w 0
@@ -631,71 +892,71 @@ cls_zeroes: ds.l 8
 /*
  * Syntax:   VID_SIZE=vgetsize(VID_MDE)
  */
+lib4:
+	dc.w	0			; no library calls
 vgetsize:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		cmpi.w     #0x1ff,d3
 		bge.s      vgetsize1
-		movem.l    a0-a6,-(a7)
+		movem.l    d1/a0-a6,-(a7)
 		move.w     d3,-(a7)
 		move.w     #91,-(a7) /* VGetSize */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
 		move.l     d0,d3
+		movem.l    (a7)+,d1/a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 vgetsize1:
-		movem.l    a0-a6,-(a7)
-		move.l     d3,d0
+		movem.l    d1/a0-a6,-(a7)
+		exg        d3,d0
 		move.l     #0x00008000,d3
-		lea.l      modetable(pc),a5
-		lea.l      modetable_end(pc),a6
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     modetable_offset-entry(a0),d2
+		add.l      d2,a0
 vgetsize2:
-		cmpa.l     a5,a6
+		cmpi.l     #-1,(a0)
 		beq.s      vgetsize4
-		move.w     (a5),d2
+		move.w     (a0),d2
 		cmp.w      d2,d0
 		beq.s      vgetsize3
-		lea.l      40(a5),a5
+		lea.l      40(a0),a0
 		bra.s      vgetsize2
 vgetsize3:
 		moveq.l    #0,d3
-		move.w     6(a5),d3 /* bytes_lin */
-		mulu.w     4(a5),d3 /* height */
+		move.w     6(a0),d3 /* bytes_lin */
+		mulu.w     4(a0),d3 /* height */
 vgetsize4:
+		movem.l    (a7)+,d1/a0-a6
 		clr.l      d2
-		movem.l    (a7)+,a0-a6
+		move.l     d3,-(a6)
 		rts
-
 /*
  * Syntax:   vgetpalt RGB_BUFF
  */
+lib5:
+	dc.w lib5_1-lib5
+	dc.w	0
 vgetpalt:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      vgetpalt1
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib5_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 vgetpalt1:
 		movem.l    a0-a6,-(a7)
+		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VSetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.w     #7,d0
+		andi.l     #7,d0
+		move.l     (a7)+,d3
 		cmpi.w     #2,d0
 		beq.s      vgetpalt2
 		cmpi.w     #3,d0
@@ -705,7 +966,7 @@ vgetpalt1:
 vgetpalt2:
 		move.l     d3,-(a7)
 		move.w     #16,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -714,7 +975,7 @@ vgetpalt2:
 vgetpalt3:
 		move.l     d3,-(a7)
 		move.w     #256,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -724,44 +985,43 @@ vgetpalt3:
 /*
  * Syntax:   MON_TYPE=montype
  */
+lib6:
+	dc.w	0			; no library calls
 montype:
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		tst.w      d0
-		bne        syntax
 		movem.l    a0-a6,-(a7)
 		move.w     #89,-(a7) /* VgetMonitor */
 		trap       #14
 		addq.l     #2,a7
-		movem.l    (a7)+,a0-a6
-		moveq      #0,d3
-		move.w     d0,d3
+		move.l     d0,d3
+		andi.l     #0x0000FFFF,d3
 		clr.l      d2
+		movem.l    (a7)+,a0-a6
+		move.l     d3,-(a6)
 		rts
 
 /*
  * Syntax:   vsetpalt RGB_BUFF
  */
+lib7:
+	dc.w lib7_1-lib7
+	dc.w	0
 vsetpalt:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      vsetpalt1
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib7_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 vsetpalt1:
 		movem.l    a0-a6,-(a7)
+		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VgetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.w     #7,d0
+		andi.l     #7,d0
+		move.l     (a7)+,d3
 		cmpi.w     #2,d0
 		beq.s      vsetpalt2
 		cmpi.w     #3,d0
@@ -771,7 +1031,7 @@ vsetpalt1:
 vsetpalt2:
 		move.l     d3,-(a7)
 		move.w     #16,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -780,7 +1040,7 @@ vsetpalt2:
 vsetpalt3:
 		move.l     d3,-(a7)
 		move.w     #256,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -790,41 +1050,41 @@ vsetpalt3:
 /*
  * Syntax:   VID_MDE=whichmode(SCR_WIDTH,SCR_HEIGHT,N_COLOURS[,DEV_FLG])
  */
+lib8:
+	dc.w	0			; no library calls
 whichmode:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		moveq      #0,d3
-		subq.w     #3,d0
+		lea.l      dev_flg(pc),a1
+		move.w     #0,(a1)
+		cmpi.b     #1,d0
 		beq.s      whichmode2
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		andi.w     #3,d3
+		cmpi.w     #2,d0
+		beq.s      whichmode1
+		rts
+whichmode1:
+		move.l     (a6)+,d3
+		lea.l      dev_flg(pc),a1
+		andi.l     #3,d3
+		move.w     d3,(a1)
 whichmode2:
-		lea.l      dev_flg(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
-		moveq      #1,d4
+		move.l     (a6)+,d3
+		move.w     #1,d4
 		cmpi.l     #2,d3
 		beq.s      whichmode3
-		moveq      #2,d4
+		move.w     #2,d4
 		cmpi.l     #4,d3
 		beq.s      whichmode3
-		moveq      #4,d4
+		move.w     #4,d4
 		cmpi.l     #16,d3
 		beq.s      whichmode3
-		moveq      #8,d4
+		move.w     #8,d4
 		cmpi.l     #256,d3
 		beq.s      whichmode3
-		moveq      #16,d4
+		move.w     #16,d4
 		cmpi.l     #-1,d3
-		bne        whichmode6
+		beq.s      whichmode3
+		bra        whichmode6
 whichmode3:
-		lea.l      which_nplanes(pc),a0
-		move.w     d4,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
 		cmpi.l     #200,d3
 		beq.s      whichmode4
 		cmpi.l     #240,d3
@@ -834,11 +1094,12 @@ whichmode3:
 		cmpi.l     #400,d3
 		beq.s      whichmode4
 		cmpi.l     #480,d3
-		bne.s      whichmode7
+		beq.s      whichmode4
+		bra        whichmode6
 whichmode4:
-		lea.l      which_height(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,d0
+		swap       d0
+		move.l     (a6)+,d3
 		cmpi.l     #320,d3
 		beq.s      whichmode5
 		cmpi.l     #384,d3
@@ -848,52 +1109,50 @@ whichmode4:
 		cmpi.l     #768,d3
 		beq.s      whichmode5
 		cmpi.l     #800,d3
-		bne.s      whichmode8
+		beq.s      whichmode5
+		bra        whichmode6
 whichmode5:
-		movem.l    a0-a6,-(a7)
-		lea.l      which_width(pc),a0
-		move.w     d3,(a0)
+		move.w     d3,d0
+		swap       d0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     modetable_offset-entry(a0),d2
+		adda.l     d2,a0
+		movem.l    d0-d2/a0-a6,-(a7)
+		lea.l      dev_flg(pc),a1
+		exg        d4,d1
 		bsr.s      getmode
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,d0-d2/a0-a6
 		clr.l      d2
-		jmp        (a1)
+		move.l     d3,-(a6)
+		rts
 whichmode6:
-		moveq.l    #4,d0
-		bra        printerr
-whichmode7:
-		moveq.l    #6,d0
-		bra        printerr
-whichmode8:
-		moveq.l    #5,d0
-		bra        printerr
+		moveq      #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
 
-which_width: dc.w 0
-which_height: dc.w 0
-which_nplanes: dc.w 0
 dev_flg: dc.w 0
 
 getmode:
-		cmpi.w     #MON_VGA,dev_flg-which_width(a1)
+		cmpi.w     #2,(a1)
 		beq.s      getmode6
-		cmpi.w     #MON_COLOR,dev_flg-which_width(a1)
+		cmpi.w     #1,(a1)
 		beq.s      getmode1
-		cmpi.w     #MON_TV,dev_flg-which_width(a1)
+		cmpi.w     #3,(a1)
 		beq.s      getmode1
-		movem.l    a0-a6,-(a7)
+		movem.l    d0-d6/a0-a6,-(a7)
 		move.w     #89,-(a7) /* VgetMonitor */
 		trap       #14
 		addq.l     #2,a7
-		andi.w     #3,d0
-		movem.l    (a7)+,a0-a6
-		cmp.w      #MON_VGA,d0
+		andi.l     #3,d0
+		move.l     d0,d7
+		movem.l    (a7)+,d0-d6/a0-a6
+		cmp.w      #MON_VGA,d7
 		beq.s      getmode6
 getmode1:
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
-		move.l     (a1),d0 /* width&height */
-		move.w     which_nplanes-which_width(a1),d1
+		movea.l    a0,a4
 getmode2:
-		cmpa.l     a4,a5
+		cmpi.l     #-1,(a4)
 		beq.s      getmode4
 		move.w     (a4),d3
 		btst       #4,d3 /* VGA-mode? */
@@ -908,17 +1167,12 @@ getmode3:
 getmode4:
 		move.l     #STMODES+PAL+COL80+BPS2,d3
 getmode5:
-		lea.l      params(pc),a1
-		move.w     d3,falcon_mode-params(a1)
 		andi.l     #0x0000FFFF,d3
 		rts
 getmode6:
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
-		move.l     (a1),d0 /* width&height */
-		move.w     which_nplanes-which_width(a1),d1
+		move.l     a0,a4
 getmode7:
-		cmpa.l     a4,a5
+		cmpi.l     #-1,(a4)
 		beq.s      getmode9
 		move.w     (a4),d3
 		btst       #4,d3 /* VGA-mode? */
@@ -933,26 +1187,23 @@ getmode8:
 getmode9:
 		move.l     #VERTFLAG+STMODES+PAL+VGA+COL80+BPS2,d3
 getmode10:
-		lea.l      params(pc),a1
-		move.w     d3,falcon_mode-params(a1)
 		andi.l     #0x0000FFFF,d3
 		rts
 
 /*
  * Syntax:   _get spritepalette
  */
+lib9:
+	dc.w lib9_1-lib9
+	dc.w	0
 get_spritepalette:
-		tst.w      d0
-		bne        syntax
-		move.w     vdo_cookie(pc),d0
-		subq.w     #3,d0
-		bne.s      get_spritepalette1
 		movem.l    a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VSetMode */
 		trap       #14
 		addq.l     #4,a7
 		movem.l    (a7)+,a0-a6
+		andi.l     #0xFFFF,d0
 		cmpi.w     #STMODES+PAL+BPS4,d0
 		beq.s      get_spritepalette1
 		cmpi.w     #STMODES+PAL+COL80+BPS2,d0
@@ -961,15 +1212,14 @@ get_spritepalette:
 		beq.s      get_spritepalette1
 		rts
 get_spritepalette1:
-		moveq.l    #1,d3
-		bsr        addrofbank
+		move.l     #1,-(a6)
+lib9_1:	jsr        L_addrofbank.l
 		movea.l    d3,a0
-		cmpi.l     #0x19861987,(a0)
-		bne        invalidbank
+		/* FIXME: check for valid bank removed */
 get_spritepalette2:
 		movem.l    a1-a6,-(a7)
 		move.l     a0,-(a7)
-		move.w     #2,-(a7) /* Physbase */
+		move.w     #2,-(a7) /* Physbase */ /* BUG: may clobber d2 */
 		trap       #14
 		addq.l     #2,a7
 		addi.l     #32000,d0
@@ -979,7 +1229,9 @@ get_spritepalette2:
 		lsr.l      #1,d2
 		subq.l     #1,d2
 get_spritepalette3:
-		move.l     (a0),d1
+		move.w     (a0),d1
+		swap       d1
+		move.w     2(a0),d1
 		addq.l     #2,a0
 		cmpi.l     #0x50414C54,d1 /* 'PALT' */
 		beq.s      get_spritepalette4
@@ -1003,33 +1255,58 @@ get_spritepalette6:
 /*
  * Syntax:   SCR_WIDTH=scr width
  */
+lib10:
+	dc.w	0			; no library calls
 scr_width:
-		tst.w      d0
-		bne        syntax
+		movem.l    a0-a6,-(a7)
+/* FIXME: just use always linea vars */
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VSetMode */
+		trap       #14
+		addq.l     #4,a7
+		movem.l    (a7)+,a0-a6
+		andi.l     #0x0000FFFF,d0
+		btst       #7,d0 /* ST-Compatible? */
+		bne.s      scr_width1
 		movem.l    a0-a6,-(a7)
 		dc.w       0xa000 /* linea_init */
-		moveq      #0,d3
+		movea.l    d0,a0
 		move.w     DEV_TAB(a0),d3
-		addq.w     #1,d3
+		/* addq.w     #1,d3 */
+		dc.w 0x0643,1 /* XXX */
+		andi.l     #0x0000FFFF,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
+scr_width1:
+		movem.l    a0-a6,-(a7)
+		move.w     #4,-(a7) /* Getrez */
+		trap       #14
+		addq.l     #2,a7
+		andi.l     #3,d0
+		asl.w      #1,d0
+		lea.l      scrwidth_tab(pc),a1
+		move.w     0(a1,d0.w),d3
+		andi.l     #0x0000FFFF,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+scrwidth_tab: dc.w 320,640,640
 
 /*
  * Syntax:   _hardphysic ADDR
  */
+lib11:
+	dc.w lib11_1-lib11
+	dc.w	0
 hardphysic:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      hardphysic1
-		bsr        addrofbank
+		move.l     d3,-(a6)
+lib11_1:	jsr        L_addrofbank.l
 hardphysic1:
 		movem.l    a0-a6,-(a7)
 		lea.l      hardphysic_addr(pc),a6
@@ -1045,14 +1322,15 @@ hardphysic1:
 		rts
 
 setphysaddr:
-		move.l     hardphysic_addr(pc),d0
-		move.l     d0,d1
+		move.l     hardphysic_addr(pc),d1
+		movea.l    #$00FF8200,a1 /* XXX */
 		swap       d1
-		move.b     d1,($FFFF8201).w
+		move.b     d1,1(a1)
 		swap       d1
-		lsr.l      #8,d0
-		move.b     d0,($FFFF8203).w
-		move.b     d1,($FFFF820D).w
+		asr.l      #8,d1
+		move.b     d1,3(a1)
+		asl.l      #8,d1 /* BUG: will always clear d1.b */
+		move.b     d1,13(a1)
 		rts
 
 hardphysic_addr: dc.l 0
@@ -1060,90 +1338,80 @@ hardphysic_addr: dc.l 0
 /*
  * Syntax:   SCR_HEIGHT=scr height
  */
+lib12:
+	dc.w	0			; no library calls
 scr_height:
-		tst.w      d0
-		bne        syntax
+		movem.l    a0-a6,-(a7)
+* FIXME: just use always linea vars */
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		movem.l    (a7)+,a0-a6
+		andi.l     #0x0000FFFF,d0
+		btst       #7,d0 /* ST-Compatible? */
+		bne.s      scr_height1
 		movem.l    a0-a6,-(a7)
 		dc.w       0xa000 /* linea_init */
-		moveq      #0,d3
+		movea.l    d0,a0
 		move.w     DEV_TAB+2(a0),d3
-		addq.w     #1,d3
+		/* addq.w     #1,d3 */
+		dc.w 0x0643,1 /* XXX */
+		andi.l     #0x0000FFFF,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
+scr_height1:
+		movem.l    a0-a6,-(a7)
+		move.w     #4,-(a7) /* Getrez */
+		trap       #14
+		addq.l     #2,a7
+		andi.l     #3,d0
+		asl.w      #1,d0
+		lea.l      scrheight_tab(pc),a1
+		move.w     0(a1,d0.w),d3
+		andi.l     #0x0000FFFF,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+
+scrheight_tab: dc.w 200,200,400
 
 /*
  * Syntax:   _setcolour C,RGB
  *           _setcolour C,RED,GREEN,BLUE
  */
+lib13:
+	dc.w	0			; no library calls
 setcolour:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #2,d0
+		cmpi.b     #1,d0
 		beq.s      setcolour2
-		subq.w     #2,d0
-		bne        syntax
+		cmpi.w     #2,d0
+		beq.s      setcolour1
+		rts
 setcolour1:
-		bsr        getinteger
-		andi.l     #63,d3
-		move.l     d3,d5
-		bsr        getinteger
-		andi.l     #63,d3
-		asl.l      #8,d3
-		or.l       d3,d5
-		bsr        getinteger
+		move.l     (a6)+,d5
+		andi.l     #63,d5
+		move.l     (a6)+,d4
+		andi.l     #63,d4
+		move.l     (a6)+,d3
 		andi.l     #63,d3
 		asl.l      #8,d3
 		asl.l      #8,d3
-		or.l       d3,d5
+		andi.l     #$003F0000,d3 /* FIXME: already done above */
+		asl.l      #8,d4
+		andi.l     #$00003F00,d4 /* FIXME: already done above */
+		or.l       d5,d4
+		or.l       d4,d3
 		bra.s      setcolour3
 setcolour2:
-		bsr        getinteger
-		move.l     d3,d5
+		move.l     (a6)+,d3
 setcolour3:
-		bsr        getinteger
-		movem.l    a0-a6,-(a7)
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		btst       #7,d0 /* ST-compatible? */
-		bne.s      setcolour4
-		andi.l     #$003F3F3F,d5
-		asl.l      #2,d5
-		move.l     d5,-(a7)
-		pea.l      (a7)
-		move.w     #1,-(a7)
-		move.w     d3,-(a7)
-		move.w     #93,-(a7) /* VsetRGB */
-		trap       #14
-		lea.l      14(a7),a7
-		movem.l    (a7)+,a0-a6
-		jmp        (a1)
-setcolour4:
-		andi.w     #0x00000FFF,d5
-		move.w     d5,-(a7)
-		move.w     d3,-(a7)
-		move.w     #7,-(a7) /* Setcolor */
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
-		jmp        (a1)
-
-/*
- * Syntax:   RGB=_getcolour (C)
- */
-getcolour:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		lea.l      setcolor_rgb(pc),a3
+		move.l     d3,(a3)
+		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
 		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
@@ -1151,6 +1419,50 @@ getcolour:
 		trap       #14
 		addq.l     #4,a7
 		move.l     (a7)+,d3
+		andi.l     #0x0000FFFF,d0 /* FIXME: useless */
+		btst       #7,d0 /* ST-compatible? */
+		bne.s      setcolour4
+		lea.l      setcolor_rgb(pc),a0
+		move.l     (a0),d0
+		andi.l     #$003F3F3F,d0
+		asl.l      #2,d0
+		move.l     d0,(a0)
+		pea.l      setcolor_rgb(pc)
+		move.w     #1,-(a7)
+		move.w     d3,-(a7)
+		move.w     #93,-(a7) /* VsetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		movem.l    (a7)+,a0-a6
+		rts
+setcolour4:
+		move.l     setcolor_rgb(pc),d0
+		andi.l     #0x00000FFF,d0
+		move.w     d0,-(a7)
+		move.w     d3,-(a7)
+		move.w     #7,-(a7) /* Setcolor */
+		trap       #14
+		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
+		rts
+
+setcolor_rgb: ds.l 1
+
+/*
+ * Syntax:   RGB=_getcolour (C)
+ */
+lib14:
+	dc.w	0			; no library calls
+getcolour:
+		move.l     (a6)+,d3
+		movem.l    a0-a6,-(a7)
+		move.l     d3,-(a7)
+		move.w     #-1,-(a7)
+		move.w     #88,-(a7) /* VsetMode */
+		trap       #14
+		addq.l     #4,a7
+		move.l     (a7)+,d3
+		andi.l     #0x0000FFFF,d0 /* FIXME: useless */
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      getcolour1
 		pea.l      getcolor_rgb(pc)
@@ -1163,6 +1475,7 @@ getcolour:
 		move.l     getcolor_rgb(pc),d3
 		andi.l     #0x00FCFCFC,d3
 		asr.l      #2,d3
+		move.l     d3,-(a6)
 		clr.l      d2
 		rts
 getcolour1:
@@ -1172,8 +1485,8 @@ getcolour1:
 		trap       #14
 		addq.l     #6,a7
 		movem.l    (a7)+,a0-a6
-		moveq      #0,d3
-		move.w     d0,d3
+		andi.l     #0x0000FFFF,d0
+		move.l     d0,-(a6)
 		clr.l      d2
 		rts
 
@@ -1182,28 +1495,30 @@ getcolor_rgb: dc.l 0
 /*
  * Syntax:   _get st palette BANK[,COL_REG]
  */
+lib15:
+	dc.w lib15_1-lib15
+	dc.w	0
 get_st_palette:
-		move.l     (a7)+,a1
-		moveq      #0,d3
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
+		lea        palette_colreg(pc),a1
+		move.l     #0,(a1)
+		cmpi.b     #1,d0
 		beq.s      get_st_palette2
-		subq.w     #1,d0
-		bne        syntax
+		cmpi.w     #2,d0
+		beq.s      get_st_palette1
+		rts
 get_st_palette1:
-		bsr        getinteger
+		move.l     (a6)+,d3
 		andi.l     #0x000000F0,d3
 		asl.w      #2,d3
+		move.l     d3,(a1)
 get_st_palette2:
-		lea        palette_colreg(pc),a0
-		move.l     d3,(a0)
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      get_st_palette3
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib15_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 get_st_palette3:
 		movem.l    a0-a6,-(a7)
 		addi.l     #32000,d3
@@ -1214,9 +1529,10 @@ get_st_palette3:
 		trap       #14
 		addq.l     #4,a7
 		movem.l    (a7)+,a0-a6
+		andi.l     #0x0000FFFF,d0 /* FIXME: useless */
 		btst       #7,d0 /* ST-compatible? */
 		bne        get_st_palette7
-		andi.w     #3,d0
+		andi.l     #3,d0
 		moveq.l    #1,d7
 		asl.l      d0,d7
 		cmpi.w     #8,d7
@@ -1224,48 +1540,57 @@ get_st_palette3:
 		cmpi.w     #16,d7
 		beq.s      get_st_palette6
 		lea        palette_colreg(pc),a1
-		clr.l      (a1)
+		move.l     #0,(a1)
 get_st_palette4:
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
-		bsr        getpalette
-		lea.l      rgbpalette(pc),a1
+		andi.l     #MAXPAL-1,d7
+		movem.l    a0-a2,-(a7)
+		lea.l      st_palette_rgb(pc),a0
+		move.l     a0,-(a7)
+		move.w     d7,-(a7)
+		move.w     #0,-(a7)
+		move.w     #94,-(a7) /* VgetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		movem.l    (a7)+,a0-a2
+		lea.l      st_palette_rgb(pc),a1
 		move.l     palette_colreg(pc),d0
 		adda.l     d0,a1
-		moveq      #16-1,d4
+		move.w     #16-1,d4
 get_st_palette5:
-		moveq.l    #0,d0
+		clr.l      d0
 		move.w     (a0)+,d0
-		bsr.s      convert2rgb
+		bsr.s      convert2rgb_st
 		move.l     d0,(a1)+
 		dbf        d4,get_st_palette5
-		pea.l      rgbpalette(pc)
+		pea.l      st_palette_rgb(pc)
 		move.w     d7,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
+		.IFNE 0 /* FIXME: missing */
 		move.w     #37,-(a7) /* Vsync */
 		trap       #14
 		addq.l     #2,a7
+		.ENDC
 get_st_palette6:
 		movem.l    (a7)+,a0-a6
 		rts
 get_st_palette7:
 		move.l     a0,-(a7)
-		move.w     #6,-(a7) /* Setpalette */
+		move.w     #6,-(a7) /* Setcolor */
 		trap       #14
 		addq.l     #6,a7
 		movem.l    (a7)+,a0-a6
 		rts
 
-palette_colreg: dc.l 0
-
-convert2rgb:
-		movem.l    d1-d3,-(a7)
-		moveq.l    #0,d2
-		moveq.l    #0,d3
+/* FIXME: duplicate code */
+convert2rgb_st:
+		clr.l      d2
+		clr.l      d3
 		move.w     d0,d1
 		move.w     d0,d2
 		move.w     d0,d3
@@ -1280,53 +1605,59 @@ convert2rgb:
 		or.l       d3,d2
 		or.l       d2,d1
 		move.l     d1,d0
-		movem.l    (a7)+,d1-d3
 		rts
+
+palette_colreg: dc.l 0
+st_palette_rgb: ds.l 256
 
 /*
  * Syntax:   NEW_RGB=_falc rgb(OLD_RGB)
  */
+lib16:
+	dc.w	0			; no library calls
 falc_rgb:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
+		movem.l    d1-d7/a0-a6,-(a7)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     convert2rgb_offset-entry(a0),d0
+		adda.l     d0,a0
 		move.l     d3,d0
 		andi.l     #0x00000777,d0
-		bsr        convert2rgb
-		move.l     d0,d3
-		asr.l      #2,d3
+		jsr        (a0)
+		movem.l    (a7)+,d1-d7/a0-a6
+		asr.l      #2,d0
+		move.l     d0,-(a6)
 		clr.l      d2
-		jmp        (a1)
+		rts
 
 /*
  * Syntax:   palfade in BANK
  */
+lib17:
+	dc.w	0			; no library calls
 palfade_in:
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		tst.w      d0
-		bne        syntax
-		movem.l    a0-a6,-(a7)
+		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		andi.w     #7,d0
-		movem.l    (a7)+,a0-a6
-		cmpi.w     #BPS8,d0
-		bne        palfade_in5
+		andi.l     #7,d0
+		movem.l    (a7)+,d1-d7/a0-a6
+		cmpi.w     #3,d0
+		beq.s      palfade_in1
+		rts
+palfade_in1:
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		lea.l      fade3tab-params(a6),a0
 		lea.l      fade2tab-params(a6),a1
 		move.w     #256-1,d7
 palfade_in2:
-		clr.l      (a0)+
+		move.l     #0,(a0)+
 		move.l     #0x00010101,(a1)+
 		dbf        d7,palfade_in2
 		move.w     #256-1,d6
@@ -1334,7 +1665,7 @@ palfade_in3:
 		lea.l      fade3tab-params(a6),a0
 		lea.l      fade2tab-params(a6),a1
 		lea.l      fade1tab-params(a6),a2
-		move.w     #256-1,d7
+		move.l     #256-1,d7
 palfade_in4:
 		move.l     (a0),d0
 		move.l     (a1),d1
@@ -1349,14 +1680,13 @@ palfade_in4:
 		movem.l    d0-d7/a0-a6,-(a7)
 		pea.l      fade3tab-params(a6)
 		move.w     #256,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		movem.l    (a7)+,d0-d7/a0-a6
 		dbf        d6,palfade_in3
 		movem.l    (a7)+,a0-a6
-palfade_in5:
 		rts
 
 fadein_red:
@@ -1395,66 +1725,67 @@ fadein_blue1:
 /*
  * Syntax:   X=_falc palt(ADDR,COUNT)
  */
+lib18:
+	dc.w	0			; no library calls
 falc_palt:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #2,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d7
-		bsr        getinteger
-		bsr        addrofbank
-falc_palt2:
+		move.l     (a6)+,d7
+		move.l     (a6)+,d3
 		movea.l    d3,a0
-falc_palt3:
+		/* BUG: missing bank translation */
+falc_palt1:
+		movem.l    d1-d6/a0-a6,-(a7)
 		move.l     (a0),d0
 		andi.l     #0x00000FFF,d0
-		bsr        convert2rgb
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     convert2rgb_offset-entry(a0),d2
+		adda.l     d2,a0
+		jsr        (a0)
+		movem.l    (a7)+,d1-d6/a0-a6
 		move.l     d0,(a0)+
-		dbf        d7,falc_palt3
+		dbf        d7,falc_palt1
 		moveq.l    #0,d3
 		clr.l      d2
-		jmp        (a1)
+		/* move.l     d3,-(a6) BUG: missing */
+		rts
 
 /*
  * Syntax:   palfade out
  */
+lib19:
+	dc.w	0			; no library calls
 palfade_out:
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		tst.w      d0
-		bne        syntax
 		movem.l    a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
 		btst       #7,d0 /* ST-compatible? */
-		bne        palfade_out7
-		lea.l      params(pc),a6
-		andi.w     #7,d0
+		bne.s      palfade_out1
+		andi.l     #7,d0
+		cmpi.w     #2,d0
+		beq.s      palfade_out2
 		cmpi.w     #BPS8,d0
 		beq        fadeout_256
-		cmpi.w     #BPS4,d0
-		bne        palfade_out7
-		lea.l      fade2tab-params(a6),a0
-		moveq      #16-1,d7
+palfade_out1:
+		movem.l    (a7)+,a0-a6
+		rts
+palfade_out2:
+		lea.l      fadeout2tab(pc),a0
+		move.w     #16-1,d7
 palfade_out3:
 		move.l     #0x00010101,(a0)+
 		dbf        d7,palfade_out3
-		pea.l      fade3tab-params(a6)
+		pea.l      fadeout3tab(pc)
 		move.w     #16,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		move.w     #256-1,d6
 palfade_out4:
-		lea.l      fade3tab-params(a6),a0
-		lea.l      fade2tab-params(a6),a1
+		lea.l      fadeout3tab(pc),a0
+		lea.l      fadeout2tab(pc),a1
 		moveq.l    #16-1,d7
 palfade_out5:
 		move.l     (a0),d0
@@ -1467,26 +1798,27 @@ palfade_out5:
 		move.l     d0,(a0)+
 		dbf        d7,palfade_out5
 		movem.l    d0-d7/a0-a6,-(a7)
-		/* FIXME: short delay */
 		move.l     #0x00001FFF,d6
 palfade_out6:
-		subq.l     #1,d6
+		/* subq.l     #1,d6 */
+		dc.w 0x0486,0,1 /* XXX */
 		bpl.s      palfade_out6
-		pea.l      fade3tab-params(a6)
+		pea.l      fadeout3tab(pc)
 		move.w     #16,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		movem.l    (a7)+,d0-d7/a0-a6
 		dbf        d6,palfade_out4
-palfade_out7:
 		movem.l    (a7)+,a0-a6
 		rts
 
 fadeout_red:
 		move.l     d0,d2
 		andi.l     #0x00FF0000,d2
+		/* tst.l      d2 */
+		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_red1
 		andi.l     #0x0000FFFF,d1
 fadeout_red1:
@@ -1495,6 +1827,8 @@ fadeout_red1:
 fadeout_green:
 		move.l     d0,d2
 		andi.l     #0x0000FF00,d2
+		/* tst.l      d2 */
+		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_green1
 		andi.l     #0x00FF00FF,d1
 fadeout_green1:
@@ -1503,28 +1837,30 @@ fadeout_green1:
 fadeout_blue:
 		move.l     d0,d2
 		andi.l     #0x000000FF,d2
+		/* tst.l      d2 */
+		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_blue1
 		andi.l     #0x00FFFF00,d1
 fadeout_blue1:
 		rts
 
 fadeout_256:
-		lea.l      fade2tab-params(a6),a0
+		lea.l      fadeout2tab(pc),a0
 		move.w     #256-1,d7
 fadeout_256_1:
 		move.l     #0x00010101,(a0)+
 		dbf        d7,fadeout_256_1
-		pea.l      fade3tab-params(a6)
+		pea.l      fadeout3tab(pc)
 		move.w     #256,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		move.w     #256-1,d6
 fadeout_256_2:
-		lea.l      fade3tab-params(a6),a0
-		lea.l      fade2tab-params(a6),a1
-		move.w     #256-1,d7
+		lea.l      fadeout3tab(pc),a0
+		lea.l      fadeout2tab(pc),a1
+		move.l     #256-1,d7
 fadeout_256_3:
 		move.l     (a0),d0
 		move.l     (a1),d1
@@ -1536,9 +1872,9 @@ fadeout_256_3:
 		move.l     d0,(a0)+
 		dbf        d7,fadeout_256_3
 		movem.l    d0-d7/a0-a6,-(a7)
-		pea.l      fade3tab-params(a6)
+		pea.l      fadeout3tab(pc)
 		move.w     #256,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
@@ -1550,6 +1886,8 @@ fadeout_256_3:
 fadeout_256_red:
 		move.l     d0,d2
 		andi.l     #0x00FF0000,d2
+		/* tst.l      d2 */
+		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_256_red1
 		andi.l     #0x0000FFFF,d1
 fadeout_256_red1:
@@ -1558,6 +1896,8 @@ fadeout_256_red1:
 fadeout_256_green:
 		move.l     d0,d2
 		andi.l     #0x0000FF00,d2
+		/* tst.l      d2 */
+		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_256_green1
 		andi.l     #0x00FF00FF,d1
 fadeout_256_green1:
@@ -1566,103 +1906,394 @@ fadeout_256_green1:
 fadeout_256_blue:
 		move.l     d0,d2
 		andi.l     #0x000000FF,d2
+		/* tst.l      d2 */
+		dc.w 0x0c82,0,0 /* XXX */
 		bne.s      fadeout_256_blue1
 		andi.l     #0x00FFFF00,d1
 fadeout_256_blue1:
 		rts
 
+fadeout2tab:
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+	dc.l 0x010101
+fadeout3tab: ds.l 256
+
 /*
  * Syntax:   D=darkest
  */
+lib20:
+	dc.w	0			; no library calls
 darkest:
-		tst.w      d0
-		bne        syntax
 		movem.l    d4-d7/a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		clr.l      d3
 		btst       #7,d0 /* ST-compatible? */
 		bne        darkest4
-		andi.w     #7,d0
-		cmpi.w     #BPS8,d0
-		bgt        darkest3
+		andi.l     #7,d0
 		moveq.l    #1,d7
-		asl.l      d0,d7
+		asl.l      d0,d7 /* BUG: wrong for chunky mode (BPS8C) and truecolor */
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
+		andi.l     #MAXPAL-1,d7 /* FIXME: useless */
 		cmpi.w     #16,d7
-		beq        darkest3
-		bsr        getpalette
-		lea.l      rgbpalette(pc),a0
-		moveq.l    #-1,d4
+		beq        darkest11
+		lea.l      darkest_table(pc),a0
+		move.l     a0,-(a7)
+		move.w     #256,-(a7)
+		move.w     #0,-(a7)
+		move.w     #94,-(a7) /* VgetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		lea.l      darkest_table(pc),a0
+		lea.l      darkest_color(pc),a1
+		move.l     #0x00010101,(a1)
 		clr.l      d2
+		clr.l      d3
 darkest1:
 		cmp.w      d7,d2
 		beq.s      darkest3
-		move.l     (a0)+,d0
-		cmp.l      d0,d4
-		bls.s      darkest2
-		move.l     d0,d4
+		move.l     (a0),d0
+		move.l     (a1),d1
+		sub.l      d1,d0
+		cmp.l      d1,d0
+		blt.s      darkest2
+		exg        d1,d0
 		move.l     d2,d3
 darkest2:
-		addq.w     #1,d2
+		addq.w     #1,d2 /* BUG: a0 not incremented, (a1) not updated */
 		bra.s      darkest1
 darkest3:
 		movem.l    (a7)+,d4-d7/a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
+
+darkest_color: dc.l 0x010101,0
+darkest_table: ds.l 256 /* FIXME */
 
 darkest4:
 		move.w     #4,-(a7) /* Getrez */
 		trap       #14
 		addq.l     #2,a7
 		moveq.l    #16,d7
-		tst.w      d0
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
 		beq.s      darkest5
 		moveq.l    #4,d7
-		subq.w     #1,d0
+		cmpi.w     #1,d0
 		beq.s      darkest5
 		moveq.l    #2,d7
 darkest5:
+		move.w     d7,-(a7)
 		move.w     #2,-(a7) /* Physbase */
 		trap       #14
 		addq.l     #2,a7
 		addi.l     #32000,d0
 		movea.l    d0,a0
-		clr.l      d2
+		move.w     (a7)+,d7
+		clr.l      d3
+		move.w     (a0)+,d0
+		move.w     (a0),d1
+		cmp.w      d0,d1
+		bgt.s      darkest6
+		move.w     d1,d2
+		addq.w     #1,d3
+		bra.s      darkest7
+darkest6:
+		move.w     d0,d2
+darkest7:
+		move.w     #1,d4
 darkest8:
 		move.w     (a0)+,d0
 		cmp.w      d0,d2
-		ble.s      darkest10
+		bgt.s      darkest9
+		bra.s      darkest10
+darkest9:
 		move.w     d0,d2
 		move.w     d4,d3
 darkest10:
 		addq.w     #1,d4
 		cmp.w      d7,d4
 		blt.s      darkest8
+		movem.l    (a7)+,d4-d7/a0-a6
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
 darkest11:
 		movem.l    (a7)+,d4-d7/a0-a6
 		clr.l      d2
+		move.l     #0,-(a6)
 		rts
 
 /*
  * Syntax:   quickwipe START_ADDRESS,LENGTH
  */
+lib21:
+	dc.w	0			; no library calls
 quickwipe:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
 		move.l     d3,d7
-		move.l     d3,d0
-		bsr        getinteger
+		move.l     (a6)+,d3
 		movea.l    d3,a0
 		adda.l     d7,a0
-		lsr.l      #7,d7
-		beq.s      quickwipe2
+		asr.l      #7,d7
 		subq.l     #1,d7
 		moveq.l    #0,d1
 		moveq.l    #0,d2
@@ -1678,45 +2309,44 @@ quickwipe1:
 		movem.l    d1-d4,-(a0)
 		movem.l    d1-d4,-(a0)
 		dbf        d7,quickwipe1
-quickwipe2:
-		and.w      #127,d0
-		beq.s      quickwipe4
-		subq.w     #1,d0
-quickwipe3:
-		move.b     d1,-(a0)
-		dbf        d0,quickwipe3
-quickwipe4:
 		movem.l    d0-d7/a0-a6,-(a7)
 		moveq.l    #0,d1
 		moveq.l    #S_falc_locate,d0
 		trap       #5
 		movem.l    (a7)+,d0-d7/a0-a6
-		jmp        (a1)
+		rts
 
 /*
  * Syntax:   B=brightest
  */
+lib22:
+	dc.w	0			; no library calls
 brightest:
-		tst.w      d0
-		bne        syntax
 		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		clr.l      d3
 		btst       #7,d0 /* ST-compatible? */
-		bne.s      brightest6
-		andi.w     #7,d0
-		cmp.w      #BPS8,d0
-		bgt        brightest14
+		bne        brightest6
+		andi.l     #7,d0
 		moveq.l    #1,d7
-		asl.l      d0,d7
+		asl.l      d0,d7 /* BUG: wrong for chunky mode (BPS8C) and truecolor */
+		cmpi.w     #16,d7
+		beq        brightest13
 		moveq.l    #1,d6
 		asl.l      d7,d6
 		move.l     d6,d7
-		bsr        getpalette
-		lea.l      rgbpalette(pc),a0
+		andi.l     #MAXPAL-1,d7 /* FIXME: useless */
+		move.l     d7,-(a7)
+		pea        brightest_table(pc)
+		move.w     d7,-(a7)
+		move.w     #0,-(a7)
+		move.w     #94,-(a7) /* VgetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		lea.l      brightest_table(pc),a0
+		move.l     (a7)+,d7
 		clr.l      d3
 		move.l     (a0)+,d0
 		move.l     (a0),d1
@@ -1732,7 +2362,9 @@ brightest2:
 brightest3:
 		move.l     (a0)+,d0
 		cmp.l      d0,d2
-		bge.s      brightest5
+		bmi.s      brightest4
+		bra.s      brightest5
+brightest4:
 		move.l     d0,d2
 		move.w     d4,d3
 brightest5:
@@ -1743,24 +2375,31 @@ brightest5:
 		movem.l    (a7)+,d1-d7/a0-a6
 		move.l     d0,d3
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
+
+brightest_table: ds.l 256 /* FIXME */
+
 brightest6:
 		move.w     #4,-(a7) /* Getrez */
 		trap       #14
 		addq.l     #2,a7
 		moveq.l    #16,d7
-		tst.w d0
+		/* tst.w d0 */
+		dc.w 0x0c40,0 /* XXX */
 		beq.s      brightest7
 		moveq.l    #4,d7
 		cmpi.w     #1,d0
 		beq.s      brightest7
 		moveq.l    #2,d7
 brightest7:
+		move.w     d7,-(a7)
 		move.w     #2,-(a7) /* Physbase */
 		trap       #14
 		addq.l     #2,a7
 		addi.l     #32000,d0
 		movea.l    d0,a0
+		move.w     (a7)+,d7
 		clr.l      d3
 		move.w     (a0)+,d0
 		move.w     (a0),d1
@@ -1785,38 +2424,50 @@ brightest12:
 		addq.w     #1,d4
 		cmp.w      d7,d4
 		blt.s      brightest10
-brightest13:
+		move.l     d3,d0
 		movem.l    (a7)+,d1-d7/a0-a6
 		clr.l      d2
+		move.l     d0,-(a6)
 		rts
-brightest14:
-		move.l     #0x0000FFDF,d3
-		bra.s      brightest13
+brightest13:
+		move.l     #0x0000FFDF,d0
+		movem.l    (a7)+,d1-d7/a0-a6
+		clr.l      d2
+		move.l     d0,-(a6)
+		rts
 
 /*
  * Syntax:   ilbmpalt S
  */
+lib23:
+	dc.w lib23_1-lib23
+	dc.w	0
 ilbmpalt:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
+		move.l     d3,d2
+		addi.l     #256,d2
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      ilbmpalt1
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib23_1:		jsr        L_addrofbank.l
+		/* BUG: d2 not updated */
+		movem.l    (a7)+,a0-a1
 ilbmpalt1:
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		move.l     d3,ilbm_addr-params(a6)
-		bsr        ilbm_find_form
-		bne.s      ilbmpalt2
-		bsr        ilbm_find_bmhd
-		bne.s      ilbmpalt2
-		bsr        ilbm_find_cmap
+		sub.l      d3,d2
+		move.l     d2,ilbm_size-params(a6)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     getilbmchunks_offset-entry(a0),d0
+		adda.l     d0,a0
+		jsr        (a0)
+		tst.l      d7
 		bne.s      ilbmpalt2
 		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     #-1,-(a7)
@@ -1827,22 +2478,22 @@ ilbmpalt1:
 		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      ilbmpalt4
-		bsr        ilbmpalt7
+		bra        ilbmpalt7
 ilbmpalt2:
 		movem.l    (a7)+,a0-a6
 		rts
-ilbmpalt3:
-		moveq.l    #5,d0
-		bra        printerr
 ilbmpalt4:
 		move.w     ilbm_planes-params(a6),d1
 		andi.l     #255,d1
 		cmpi.b     #4,d1
-		bgt.s      ilbmpalt2
+		ble.s      ilbmpalt5
+		movem.l    (a7)+,a0-a6
+		rts
+ilbmpalt5:
 		movea.l    ilbm_cmap-params(a6),a4
 		addq.l     #8,a4
 		move.w     ilbm_cmapsize-params(a6),d7
-		moveq.l    #0,d6
+		clr.w      d6
 ilbmpalt6:
 		move.b     (a4)+,d1
 		asr.b      #5,d1
@@ -1876,14 +2527,15 @@ ilbmpalt7:
 		cmpi.b     #4,d1
 		beq.s      ilbmpalt8
 		cmpi.b     #8,d1
-		beq.s      ilbmpalt10
+		beq        ilbmpalt10
+		movem.l    (a7)+,a0-a6
 		rts
 ilbmpalt8:
 		movea.l    ilbm_cmap-params(a6),a4
 		addq.l     #8,a4
 		lea.l      fade3tab-params(a6),a5
 		move.w     ilbm_cmapsize-params(a6),d7
-		moveq.l    #0,d6
+		clr.w      d6
 ilbmpalt9:
 		move.b     (a4)+,d1
 		asr.b      #5,d1
@@ -1900,29 +2552,47 @@ ilbmpalt9:
 		or.l       d3,d1
 		move.l     d1,d0
 		andi.l     #0x00000FFF,d0
-		bsr        convert2rgb
+		/* FIXME: duplicate code of convert2rgb */
+		clr.l      d2
+		clr.l      d3
+		move.w     d0,d1
+		move.w     d0,d2
+		move.w     d0,d3
+		andi.l     #0x00000F00,d1
+		lsl.l      #8,d1
+		lsl.l      #5,d1
+		andi.l     #0x000000F0,d2
+		lsl.l      #5,d2
+		lsl.l      #4,d2
+		andi.l     #15,d3
+		lsl.l      #5,d3
+		or.l       d3,d2
+		or.l       d2,d1
+		move.l     d1,d0
 		move.l     d0,(a5)+
 		addq.w     #1,d6
 		cmp.w      d6,d7
 		bne.s      ilbmpalt9
-		pea.l      fade3tab-params(a6)
+		lea.l      fade3tab-params(a6),a0
+		move.l     a0,-(a7)
 		move.w     d7,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		move.w     #37,-(a7) /* Vsync */
 		trap       #14
 		addq.l     #2,a7
+		movem.l    (a7)+,a0-a6
 		rts
 ilbmpalt10:
 		movea.l    ilbm_cmap-params(a6),a4
 		addq.l     #8,a4
 		lea.l      fade3tab-params(a6),a5
 		move.w     ilbm_cmapsize-params(a6),d7
-		moveq.l    #0,d6
+		clr.w      d6
 ilbmpalt11:
-		moveq.l    #0,d1
+		clr.l      d1
 		move.b     (a4)+,d1
 		asl.l      #8,d1
 		move.b     (a4)+,d1
@@ -1933,38 +2603,37 @@ ilbmpalt11:
 		addq.w     #1,d6
 		cmp.w      d6,d7
 		bne.s      ilbmpalt11
-		pea.l      fade3tab-params(a6)
+		lea.l      fade3tab-params(a6),a0
+		move.l     a0,-(a7)
 		move.w     d7,-(a7)
-		clr.w      -(a7)
+		move.w     #0,-(a7)
 		move.w     #93,-(a7) /* VsetRGB */
 		trap       #14
 		lea.l      10(a7),a7
 		move.w     #37,-(a7) /* Vsync */
 		trap       #14
 		addq.l     #2,a7
+		movem.l    (a7)+,a0-a6
 		rts
 
 /*
  * Syntax:   RED=_get red(COL_INDEX)
  */
+lib24:
+	dc.w	0			; no library calls
 get_red:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
+		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
+		move.l     (a7)+,d3
+		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      get_red2
 		andi.l     #7,d0
-		moveq.l    #0,d3
 		cmpi.w     #BPS16,d0
 		beq.s      get_red1
 		pea.l      get_red_rgb(pc)
@@ -1973,14 +2642,18 @@ get_red:
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		move.l     get_red_rgb(pc),d3
-		asr.l      #2,d3
-		asr.l      #8,d3
-		asr.l      #8,d3
-		andi.l     #0x0000003F,d3
+		lea.l      get_red_rgb(pc),a0
+		move.l     (a0),d0
+		asr.l      #2,d0
+		asr.l      #8,d0
+		asr.l      #8,d0
+		andi.l     #0x0000003F,d0
+		movem.l    (a7)+,a0-a6
+		move.l     d0,-(a6)
+		rts
 get_red1:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
+		move.l     #0,-(a6)
 		rts
 get_red2:
 		move.w     #-1,-(a7)
@@ -1991,8 +2664,7 @@ get_red2:
 		asr.l      #8,d0
 		andi.l     #15,d0
 		movem.l    (a7)+,a0-a6
-		move.l     d0,d3
-		clr.l      d2
+		move.l     d0,-(a6)
 		rts
 
 get_red_rgb: ds.l 1
@@ -2001,71 +2673,36 @@ get_red_rgb: ds.l 1
 /*
  * Syntax:   _shift off
  */
+lib25:
+	dc.w	0			; no library calls
 shift_off:
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		tst.w      d0
-		bne        syntax
-		movem.l    a0-a6,-(a7)
-		move.w     shift_flag(pc),d0
-		tst.w      d0
-		beq.s      shift_off1
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		andi.l     #7,d0
-		cmpi.w     #BPS8,d0
-		bne.s      shift_off1
-		bsr.s      restorevbl
-		pea.l      rgbpalette(pc)
-		move.w     #256,-(a7)
-		clr.w      -(a7)
-		move.w     #93,-(a7) /* VsetRGB */
-		trap       #14
-		lea.l      10(a7),a7
-shift_off1:
-		movem.l    (a7)+,a0-a6
-		rts
-
-restorevbl:
-		pea.l      srestorevbl(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		lea.l      shift_flag(pc),a0
-		clr.w      (a0)
-		rts
-
-srestorevbl:
-		movea.l    oldvbl(pc),a0
-		move.l     a0,$0070
-		lea        vblcount(pc),a1
-		clr.w      (a1)
+		movem.l    d1-d7/a0-a6,-(a7)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     restorevbl_offset-entry(a0),d0
+		adda.l     d0,a0
+		jsr        (a0)
+		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
 /*
  * Syntax:   GREEN=_get green(COL_INDEX)
  */
+lib26:
+	dc.w	0			; no library calls
 get_green:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
+		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
+		move.l     (a7)+,d3
+		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      get_green2
 		andi.l     #7,d0
-		moveq.l    #0,d3
 		cmpi.w     #BPS16,d0
 		beq.s      get_green1
 		pea.l      get_green_rgb(pc)
@@ -2074,13 +2711,17 @@ get_green:
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		move.l     get_green_rgb(pc),d3
-		asr.l      #2,d3
-		asr.l      #8,d3
-		andi.l     #0x0000003F,d3
+		lea.l      get_green_rgb(pc),a0
+		move.l     (a0),d0
+		asr.l      #2,d0
+		asr.l      #8,d0
+		andi.l     #0x0000003F,d0
+		movem.l    (a7)+,a0-a6
+		move.l     d0,-(a6)
+		rts
 get_green1:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
+		move.l     #0,-(a6)
 		rts
 get_green2:
 		move.w     #-1,-(a7)
@@ -2091,8 +2732,7 @@ get_green2:
 		asr.w      #4,d0
 		andi.l     #15,d0
 		movem.l    (a7)+,a0-a6
-		move.l     d0,d3
-		clr.l      d2
+		move.l     d0,-(a6)
 		rts
 
 get_green_rgb: dc.l 0
@@ -2100,122 +2740,55 @@ get_green_rgb: dc.l 0
 /*
  * Syntax:   _shift DELAY,START
  */
-shift:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #2,d0
-		bne        syntax
-		bsr        getinteger
+lib27:
+	dc.w	0			; no library calls
+_shift:
+		move.l     (a6)+,d3
 		tst.l      d3
-		bmi        illfunc
+		bmi        shift2
 		cmpi.l     #254,d3
-		bgt        illfunc
-		lea        vblstart(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
-		move.l     a1,-(a7)
+		bgt        shift2
+		lea        vblstart_param(pc),a0
+		move.w     d3,(a0)+
+		move.l     (a6)+,d3
 		andi.l     #127,d3
-		beq        illfunc
-		lea        vbldelay(pc),a0
-		move.w     d3,(a0)
+		tst.l      d3
+		beq        shift2
+		move.w     d3,(a0)+
 		movem.l    a0-a6,-(a7)
-		move.w     shift_flag(pc),d0
-		bne.s      shift1
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		andi.w     #7,d0
-		cmpi.w     #BPS8,d0
-		bne.s      shift1
-		andi.w     #3,d0
-		moveq.l    #1,d7
-		asl.l      d0,d7
-		moveq.l    #1,d6
-		asl.l      d7,d6
-		move.l     d6,d7
-		andi.l     #MAXPAL-1,d7
-		bsr        getpalette
-		bsr.s      installvbl
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     installvbl_offset-entry(a0),d2
+		adda.l     d2,a0
+		lea        vblstart_param(pc),a1
+		move.l     (a1),d0
+		jsr        (a0)
 shift1:
 		movem.l    (a7)+,a0-a6
+shift2:
 		rts
 
-installvbl:
-		pea.l      sinstallvbl(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		lea.l      shift_flag(pc),a0
-		move.w     #-1,(a0)
-		rts
-
-sinstallvbl:
-		lea.l      oldvbl(pc),a0
-		move.l     $00000070,(a0)
-		lea.l      newvbl(pc),a1
-		move.l     a1,$00000070
-		lea        vblcount(pc),a1
-		clr.w      (a1)
-		rts
-
-newvbl:
-		movem.l    d0-d7/a0-a6,-(a7)
-		lea.l      vblcount(pc),a4
-		addq.w     #1,(a4)
-		move.w     (a4),d0
-		cmp.w      vbldelay(pc),d0
-		blt.s      newvbl2
-		movea.l    #$ffff9800,a0
-		move.l     #255-1,d6
-		moveq.l    #0,d7
-		move.w     vblstart(pc),d7
-		sub.w      d7,d6
-		asl.l      #2,d7
-		adda.l     d7,a0
-		lea.l      4(a0),a1
-		move.l     (a0),d5
-newvbl1:
-		move.l     (a1)+,(a0)+
-		dbf        d6,newvbl1
-		move.l     d5,(a0)
-		clr.w      (a4)
-newvbl2:
-		movem.l    (a7)+,d0-d7/a0-a6
-		move.l     oldvbl(pc),-(a7)
-		rts
-
-oldvbl:   ds.l 1
-
-vblstart: dc.w 0
-vbldelay: dc.w 0
-vblcount: dc.w 0
-
-shift_flag: dc.w 0
+vblstart_param: dc.w 0
+vbldelay_param: dc.w 0
 
 /*
  * Syntax:   BLUE=_get blue(COL_INDEX)
  */
+lib28:
+	dc.w	0			; no library calls
 get_blue:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		movem.l    a0-a6,-(a7)
+		move.l     d3,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
+		move.l     (a7)+,d3
+		andi.l     #0x0000FFFF,d0
 		btst       #7,d0 /* ST-compatible? */
 		bne.s      get_blue2
 		andi.l     #7,d0
-		moveq.l    #0,d3
 		cmpi.w     #BPS16,d0
 		beq.s      get_blue1
 		pea.l      get_blue_rgb(pc)
@@ -2224,12 +2797,16 @@ get_blue:
 		move.w     #94,-(a7) /* VgetRGB */
 		trap       #14
 		lea.l      10(a7),a7
-		move.l     get_blue_rgb(pc),d3
-		asr.l      #2,d3
-		andi.l     #0x0000003F,d3
+		lea.l      get_blue_rgb(pc),a0
+		move.l     (a0),d0
+		asr.l      #2,d0
+		andi.l     #0x0000003F,d0
+		movem.l    (a7)+,a0-a6
+		move.l     d0,-(a6)
+		rts
 get_blue1:
 		movem.l    (a7)+,a0-a6
-		clr.l      d2
+		move.l     #0,-(a6)
 		rts
 get_blue2:
 		move.w     #-1,-(a7)
@@ -2239,54 +2816,75 @@ get_blue2:
 		addq.l     #6,a7
 		andi.l     #15,d0
 		movem.l    (a7)+,a0-a6
-		move.l     d0,d3
-		clr.l      d2
+		move.l     d0,-(a6)
 		rts
 
 get_blue_rgb: dc.l 0
 
+lib29:
+	dc.w	0			; no library calls
+	rts
+
 /*
  * Syntax:   VID_MDE=vget ilbm mode(ADDR[,MONTYPE])
  */
+lib30:
+	dc.w lib30_1-lib30
+	dc.w	0
 vget_ilbm_mode:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		moveq      #MON_MONO,d3
-		subq.w     #1,d0
+		lea.l      ilbm_mode_montype(pc),a1
+		move.w     #MON_MONO,(a1)
+		cmpi.b     #1,d0
 		beq.s      vget_ilbm_mode2
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		andi.w     #3,d3
+		cmpi.w     #2,d0
+		beq.s      vget_ilbm_mode1
+		rts
+vget_ilbm_mode1:
+		move.l     (a6)+,d3
+		lea.l      ilbm_mode_montype(pc),a1
+		andi.l     #3,d3
+		move.w     d3,(a1)
 vget_ilbm_mode2:
-		lea.l      ilbm_mode_montype(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
+		move.l     d3,d2
+		addi.l     #256,d2
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      vget_ilbm_mode3
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib30_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
+		/* BUG: d2 not updated */
 vget_ilbm_mode3:
-		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movem.l    d1/a0-a6,-(a7)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		move.l     d3,ilbm_addr-params(a6)
-		bsr        ilbm_find_form
+		sub.l      d3,d2
+		move.l     d2,ilbm_size-params(a6)
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     getilbmchunks_offset-entry(a0),d0
+		adda.l     d0,a0
+		jsr        (a0)
+		tst.l      d7
 		bne.s      vget_ilbm_mode4
-		bsr        ilbm_find_bmhd
-		bne.s      vget_ilbm_mode4
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     modetable_offset-entry(a0),d2
+		add.l      d2,a0
 		lea.l      ilbm_mode_montype(pc),a1
 		bsr.s      find_ilbm_mode
-		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		movem.l    (a7)+,d1/a0-a6
+		move.l     d3,-(a6)
 		rts
 vget_ilbm_mode4:
-		movem.l    a0-a6,-(a7)
 		move.w     #89,-(a7) /* VgetMonitor */
 		trap       #14
 		addq.l     #2,a7
-		movem.l    (a7)+,a0-a6
 		andi.l     #3,d0
 		cmp.w      #MON_VGA,d0
 		beq.s      vget_ilbm_mode5
@@ -2295,8 +2893,9 @@ vget_ilbm_mode4:
 vget_ilbm_mode5:
 		move.l     #VERTFLAG+STMODES+PAL+VGA+COL80+BPS2,d3
 vget_ilbm_mode6:
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,d1/a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 ilbm_mode_montype: dc.w 0
@@ -2308,22 +2907,21 @@ find_ilbm_mode:
 		beq.s      find_ilbm_mode1
 		cmpi.w     #MON_TV,(a1)
 		beq.s      find_ilbm_mode1
-		movem.l    a0-a6,-(a7)
+		movem.l    d0-d6/a0-a6,-(a7)
 		move.w     #89,-(a7) /* VgetMonitor */
 		trap       #14
 		addq.l     #2,a7
 		andi.l     #3,d0
-		movem.l    (a7)+,a0-a6
-		cmp.w      #MON_VGA,d0
+		move.l     d0,d7
+		movem.l    (a7)+,d0-d6/a0-a6
+		cmp.w      #MON_VGA,d7
 		beq.s      find_ilbm_mode6
 find_ilbm_mode1:
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
-		lea.l      params(pc),a1
-		move.l     ilbm_width-params(a1),d0
-		move.w     ilbm_planes-params(a1),d1
+		move.l     ilbm_width-params(a6),d0
+		move.w     ilbm_planes-params(a6),d1
+		move.l     a0,a4
 find_ilbm_mode2:
-		cmpa.l     a4,a5
+		cmpi.l     #-1,(a4)
 		beq.s      find_ilbm_mode4
 		move.w     (a4),d3
 		btst       #4,d3 /* VGA-mode? */
@@ -2338,18 +2936,14 @@ find_ilbm_mode3:
 find_ilbm_mode4:
 		move.l     #STMODES+PAL+COL80+BPS2,d3
 find_ilbm_mode5:
-		lea.l      params(pc),a1
-		move.w     d3,falcon_mode-params(a1)
 		andi.l     #0x0000FFFF,d3
 		rts
 find_ilbm_mode6:
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
-		lea.l      params(pc),a1
-		move.l     ilbm_width-params(a1),d0
-		move.w     ilbm_planes-params(a1),d1
+		move.l     ilbm_width-params(a6),d0
+		move.w     ilbm_planes-params(a6),d1
+		move.l     a0,a4
 find_ilbm_mode7:
-		cmpa.l     a4,a5
+		cmpi.l     #-1,(a4)
 		beq.s      find_ilbm_mode9
 		move.w     (a4),d3
 		btst       #4,d3 /* VGA-mode? */
@@ -2364,55 +2958,69 @@ find_ilbm_mode8:
 find_ilbm_mode9:
 		move.l     #VERTFLAG+STMODES+PAL+VGA+COL80+BPS2,d3
 find_ilbm_mode10:
-		lea.l      params(pc),a1
-		move.w     d3,falcon_mode-params(a1)
 		andi.l     #0x0000FFFF,d3
 		rts
+
+lib31:
+	dc.w	0			; no library calls
+	rts
 
 /*
  * Syntax:   X=dpack ilbm(SRC_ADDR,DEST_ADDR)
  */
+lib32:
+	dc.w lib32_1-lib32
+	dc.w lib32_2-lib32
+	dc.w	0
 dpack_ilbm:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #2,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      dpack_ilbm1
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib32_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 dpack_ilbm1:
-		lea.l      dpack_dst(pc),a0
-		move.l     d3,(a0)
-		bsr        getinteger
+		lea.l      dpack_dst(pc),a1
+		move.l     d3,(a1)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      dpack_ilbm2
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib32_2:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 dpack_ilbm2:
-		lea.l      dpack_src(pc),a0
-		move.l     d3,(a0)
-		move.l     a1,-(a7)
+		lea.l      dpack_src(pc),a1
+		move.l     d3,(a1)
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		move.l     d3,ilbm_addr-params(a6)
-		moveq.l    #-1,d3
+		sub.l      d3,d2 /* WTF? where was d2 set? */
+		move.l     d2,ilbm_size-params(a6)
 		lea.l      dpack_dst(pc),a1
 		move.l     (a1),dpack_ptr-params(a6)
-		bsr        ilbm_find_form
-		bne.s      dpack_ilbm3
-		bsr        ilbm_find_bmhd
-		bne.s      dpack_ilbm3
-		bsr        ilbm_find_cmap
-		bne.s      dpack_ilbm3
-		bsr        ilbm_find_body
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     getilbmchunks_offset-entry(a0),d0
+		add.l      d0,a0
+		jsr        (a0)
+		tst.l      d7
 		bne.s      dpack_ilbm3
 		bsr.s      unpack_ilbm
 		bsr.s      dpack_palette
-dpack_ilbm3:
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+dpack_ilbm3:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 dpack_src: dc.l 0
@@ -2420,14 +3028,9 @@ dpack_dst: dc.l 0
 
 unpack_ilbm:
 		bsr        ilbm_calc_params
-		cmp.b      #1,ilbm_compression-params(a6)
-		beq.s      uncompress_ilbm
 		tst.b      ilbm_compression-params(a6)
-		bne        unpack_ilbm1
-		moveq      #-1,d3
-		rts
-unpack_ilbm1:
-		moveq      #0,d3
+		bne.s      uncompress_ilbm
+		clr.l      d3
 		rts
 
 dpack_palette:
@@ -2439,18 +3042,18 @@ dpack_palette:
 dpack_palette1:
 		movea.l    ilbm_cmap-params(a6),a4
 		addq.l     #8,a4
-		lea.l      fade1tab-params(a6),a5
+		lea.l      fade1tab-params(a6),a3
 		move.w     ilbm_cmapsize-params(a6),d7
-		moveq.l    #0,d6
+		clr.w      d6
 dpack_palette2:
-		moveq.l    #0,d1
+		clr.l      d1
 		move.b     (a4)+,d1
 		asl.l      #8,d1
 		move.b     (a4)+,d1
 		asl.l      #8,d1
 		move.b     (a4)+,d1
 		andi.l     #0x00FFFFFF,d1
-		move.l     d1,(a5)+
+		move.l     d1,(a3)+
 		addq.w     #1,d6
 		cmp.w      d6,d7
 		bne.s      dpack_palette2
@@ -2464,19 +3067,19 @@ uncompress_ilbm:
 		movea.l    dpack_ptr-params(a6),a1
 		movea.l    a0,a2
 		movea.l    a1,a3
-		moveq.l    #0,d7
+		clr.l      d7
 uncompress_ilbm1:
-		moveq.l    #0,d1
+		clr.l      d1
 		movea.l    dpack_ptr-params(a6),a1
 		move.w     ilbm_bytes_lin-params(a6),d1
 		mulu.w     d7,d1
 		adda.l     d1,a1
 		movea.l    a1,a3
-		moveq.l    #0,d6
+		clr.l      d6
 uncompress_ilbm2:
-		moveq.l    #0,d5
+		clr.l      d5
 uncompress_ilbm3:
-		moveq.l    #0,d4
+		clr.l      d4
 		move.b     (a2),d4
 		ext.w      d4
 		ext.l      d4
@@ -2496,14 +3099,15 @@ uncompress_ilbm5:
 		addq.w     #1,d7
 		cmp.w      ilbm_height2-params(a6),d7
 		bne.s      uncompress_ilbm1
+		nop
 		movem.l    (a7)+,d1-d7/a0-a6
-		lea.l      params(pc),a0
+		moveq.l    #-1,d3
 		rts
 
 uncompress_literal:
 		addq.w     #1,d4
 		addq.l     #1,a2
-		moveq.l    #0,d3
+		clr.l      d3
 uncompress_literal1:
 		move.b     (a2),(a3)
 		move.l     a3,d2
@@ -2523,7 +3127,7 @@ uncompress_rle:
 		neg.l      d4
 		addq.w     #1,d4
 		addq.l     #1,a2
-		moveq.l    #0,d3
+		clr.l      d3
 uncompress_rle1:
 		move.b     (a2),(a3)
 		move.l     a3,d2
@@ -2540,110 +3144,11 @@ uncompress_rle2:
 		rts
 
 
-/* FIXME: walk through list of chunks instead */
-ilbm_find_form:
-		movea.l    ilbm_addr-params(a6),a0
-		moveq.l    #-1,d7
-		cmp.l      #0x464f524d,(a0)+ /* 'FORM' */
-		bne        ilbm_find_form2
-		move.l     (a0)+,d0
-		addq.l     #8,d0
-		cmp.l      #0x494c424d,(a0)+ /* 'ILBM' */
-		bne        ilbm_find_form2
-		move.l     d0,ilbm_size-params(a6)
-		moveq.l    #0,d7
-ilbm_find_form2:
-		rts
-
-/* FIXME: walk through list of chunks instead */
-ilbm_find_bmhd:
-		movea.l    ilbm_addr-params(a6),a0
-		move.l     ilbm_size-params(a6),d7
-ilbm_find_bmhd1:
-		tst.l      d7
-		beq.s      ilbm_find_bmhd2
-		subq.l     #1,d7
-		cmpi.b     #'B',(a0)+
-		bne.s      ilbm_find_bmhd1
-		cmpi.b     #'M',(a0)
-		bne.s      ilbm_find_bmhd1
-		cmpi.b     #'H',1(a0)
-		bne.s      ilbm_find_bmhd1
-		cmpi.b     #'D',2(a0)
-		bne.s      ilbm_find_bmhd1
-		subq.l     #1,a0
-		move.l     a0,ilbm_bmhd-params(a6)
-		move.w     8(a0),ilbm_width-params(a6)
-		move.w     10(a0),ilbm_height-params(a6)
-		move.w     10(a0),ilbm_height2-params(a6)
-		move.w     12(a0),ilbm_xorigin-params(a6)
-		move.w     14(a0),ilbm_yorigin-params(a6)
-		move.b     16(a0),d5
-		andi.w     #255,d5
-		move.w     d5,ilbm_planes-params(a6)
-		move.b     18(a0),ilbm_compression-params(a6)
-		moveq.l    #0,d7
-		rts
-ilbm_find_bmhd2:
-		moveq.l    #-1,d7
-		rts
-
-/* FIXME: walk through list of chunks instead */
-ilbm_find_cmap:
-		movea.l    ilbm_addr-params(a6),a0
-		move.l     ilbm_size-params(a6),d7
-ilbm_find_cmap1:
-		tst.l      d7
-		beq.s      ilbm_find_cmap2
-		subq.l     #1,d7
-		cmpi.b     #'C',(a0)+
-		bne.s      ilbm_find_cmap1
-		cmpi.b     #'M',(a0)
-		bne.s      ilbm_find_cmap1
-		cmpi.b     #'A',1(a0)
-		bne.s      ilbm_find_cmap1
-		cmpi.b     #'P',2(a0)
-		bne.s      ilbm_find_cmap1
-		subq.l     #1,a0
-		move.l     a0,ilbm_cmap-params(a6)
-		move.l     4(a0),d0
-		divu.w     #3,d0
-		move.w     d0,ilbm_cmapsize-params(a6)
-		moveq.l    #0,d7
-		rts
-ilbm_find_cmap2:
-		moveq.l    #-1,d7
-		rts
-
-/* FIXME: walk through list of chunks instead */
-ilbm_find_body:
-		movea.l    ilbm_addr-params(a6),a0
-		move.l     ilbm_size-params(a6),d7
-ilbm_find_body1:
-		tst.l      d7
-		beq.s      ilbm_find_body2
-		subq.l     #1,d7
-		cmpi.b     #'B',(a0)+
-		bne.s      ilbm_find_body1
-		cmpi.b     #'O',(a0)
-		bne.s      ilbm_find_body1
-		cmpi.b     #'D',1(a0)
-		bne.s      ilbm_find_body1
-		cmpi.b     #'Y',2(a0)
-		bne.s      ilbm_find_body1
-		subq.l     #1,a0
-		move.l     a0,ilbm_body-params(a6)
-		moveq.l    #0,d7
-		rts
-ilbm_find_body2:
-		moveq.l    #-1,d7
-		rts
-
 ilbm_calc_params:
 		movem.l    d1-d7/a0-a6,-(a7)
 		move.w     ilbm_height-params(a6),ilbm_height2-params(a6)
 		move.w     ilbm_planes-params(a6),d3
-		andi.w     #255,d3
+		andi.l     #255,d3
 		move.w     d3,ilbm_planes2-params(a6)
 		cmpi.w     #1,d3
 		beq.s      ilbm_calc_params1
@@ -2656,7 +3161,7 @@ ilbm_calc_params:
 ilbm_calc_params1:
 		move.w     #80,ilbm_bytes_lin-params(a6)
 		move.w     #80,ilbm_bytes-params(a6)
-		clr.l      ilbm_nxwd-params(a6)
+		move.l     #0,ilbm_nxwd-params(a6)
 		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 ilbm_calc_params2:
@@ -2687,75 +3192,107 @@ ilbm_calc_params4:
 		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
+lib33:
+	dc.w	0			; no library calls
+	rts
+
 /*
  * Syntax:   ADR=fmchunk(BANK)
  */
+lib34:
+	dc.w lib34_1-lib34
+	dc.w	0
 fmchunk:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      fmchunk1
-		bsr        addrofbank
+		move.l     d3,-(a6)
+lib34_1:	jsr        L_addrofbank.l
 fmchunk1:
-		move.l     a1,-(a7)
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		movea.l    d3,a0
-		moveq.l    #0,d3
-		cmp.l      #0x464f524d,(a0) /* 'FORM' */
-		bne        fmchunk5
+		
+/* FIXME: walk through list of chunks instead */
+		move.l     #256,d7
+fmchunk2:
+		tst.l      d7
+		beq.s      fmchunk3
+		subq.l     #1,d7
+		cmpi.b     #'F',(a0)+
+		bne.s      fmchunk2
+		cmpi.b     #'O',(a0)
+		bne.s      fmchunk2
+		cmpi.b     #'R',1(a0)
+		bne.s      fmchunk2
+		cmpi.b     #'M',2(a0)
+		bne.s      fmchunk2
+		subq.l     #1,a0
 		move.l     a0,ilbm_form-params(a6)
+		moveq.l    #0,d7
+		bra.s      fmchunk4
+fmchunk3:
+		moveq.l    #-1,d7
+fmchunk4:
+		tst.l      d7
+		bne.s      fmchunk5
 		move.l     a0,d3
-fmchunk5:
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
 		rts
+fmchunk5:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+
+lib35:
+	dc.w	0			; no library calls
+	rts
 
 /*
  * Syntax:   ZNE=_falc zone(N)
  */
+lib36:
+	dc.w	0			; no library calls
 falc_zone:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
-		move.l     d3,d1
+		move.l     (a6)+,d1
 		andi.l     #15,d1
 		move.w     #S_zone,d0
 		trap       #5
-		move.l     d1,d3
+		andi.l     #0x000003FF,d1 /* BUG */
 		clr.l      d2
+		move.l     d1,-(a6)
 		rts
+
+lib37:
+	dc.w	0			; no library calls
+	rts
 
 /*
  * Syntax:   ADR=ilbmchunk(BANK)
  */
+lib38:
+	dc.w lib38_1-lib38
+	dc.w	0
 ilbmchunk:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      ilbmchunk1
-		bsr        addrofbank
+		move.l     d3,-(a6)
+lib38_1:	jsr        L_addrofbank.l
 ilbmchunk1:
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		movea.l    d3,a0
-		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 ilbmchunk2:
@@ -2772,21 +3309,31 @@ ilbmchunk2:
 		bne.s      ilbmchunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_ilbm-params(a6)
-		move.l     a0,d3
+		moveq.l    #0,d7
+		bra.s      ilbmchunk4
 ilbmchunk3:
+		moveq.l    #-1,d7
+ilbmchunk4:
+		tst.l      d7
+		bne.s      ilbmchunk5
+		move.l     a0,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+ilbmchunk5:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 /*
  * Syntax:   _reset falc zone
  */
+lib39:
+	dc.w	0			; no library calls
 reset_falc_zone:
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		tst.w      d0
-		bne        syntax
 		movem.l    a0-a6,-(a7)
 		move.w     #S_initzones,d0
 		trap       #5
@@ -2796,23 +3343,22 @@ reset_falc_zone:
 /*
  * Syntax:   ADR=bmhdchunk(BANK)
  */
+lib40:
+	dc.w lib40_1-lib40
+	dc.w	0
 bmhdchunk:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      bmhdchunk1
-		bsr        addrofbank
+		move.l     d3,-(a6)
+lib40_1:		jsr        L_addrofbank.l
 bmhdchunk1:
-		move.l     a1,-(a7)
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		movea.l    d3,a0
-		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 bmhdchunk2:
@@ -2829,68 +3375,78 @@ bmhdchunk2:
 		bne.s      bmhdchunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_bmhd-params(a6)
-		move.l     a0,d3
+		moveq.l    #0,d7
+		bra.s      bmhdchunk4
 bmhdchunk3:
+		moveq.l    #-1,d7
+bmhdchunk4:
+		tst.l      d7
+		bne.s      bmhdchunk5
+		move.l     a0,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+bmhdchunk5:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 /*
  * Syntax:   _set falc zone ZNE,X1,Y1,X2,Y2
  */
+lib41:
+	dc.w	0			; no library calls
 set_falc_zone:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #5,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
 		lea.l      zone_params+8(pc),a0
 		addi.w     #400,d3
 		move.w     d3,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
 		lea.l      zone_params+4(pc),a0
 		addi.w     #640,d3
 		move.w     d3,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
 		lea.l      zone_params+6(pc),a0
 		addi.w     #400,d3
 		move.w     d3,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
 		lea.l      zone_params+2(pc),a0
 		addi.w     #640,d3
 		move.w     d3,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
+		movem.l    a0-a6,-(a7)
 		lea.l      zone_params(pc),a0
 		move.w     d3,(a0)
 		movem.w    (a0)+,d1-d5
 		move.w     #S_setzone,d0
 		trap       #5
-		jmp        (a1)
+		movem.l    (a7)+,a0-a6
+		rts
 
 zone_params: ds.w 5
 
 /*
  * Syntax:   ADR=cmapchunk(BANK)
  */
+lib42:
+	dc.w lib42_1-lib42
+	dc.w	0
 cmapchunk:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      cmapchunk1
-		bsr        addrofbank
+		move.l     d3,-(a6)
+lib42_1:	jsr        L_addrofbank.l
 cmapchunk1:
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		movea.l    d3,a0
-		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 cmapchunk2:
@@ -2907,104 +3463,127 @@ cmapchunk2:
 		bne.s      cmapchunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_cmap-params(a6)
-		move.l     a0,d3
+		moveq.l    #0,d7
+		bra.s      cmapchunk4
 cmapchunk3:
+		moveq.l    #-1,d7
+cmapchunk4:
+		tst.l      d7
+		bne.s      cmapchunk5
+		move.l     a0,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+cmapchunk5:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 /*
  * Syntax:   _paste pi1 SRCE,SX,SY,W,H,DEST,DX,DY[,COL_REG]
  */
+lib43:
+	dc.w lib43_1-lib43
+	dc.w lib43_2-lib43
+	dc.w	0
 paste_pi1:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		moveq      #0,d3
-		subq.w     #8,d0
+		lea.l      paste_colreg(pc),a1
+		move.w     #0,(a1)
+		cmpi.b     #1,d0
 		beq.s      paste_pi1_1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		andi.w     #0x00F0,d3
+		cmpi.w     #2,d0
+		beq.s      paste_pi0
+		rts
+paste_pi0:
+		lea.l      paste_colreg(pc),a1
+		move.l     (a6)+,d3
+		andi.l     #0x000000F0,d3
+		move.w     d3,(a1)
 paste_pi1_1:
-		lea.l      paste_colreg(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		lea.l      paste_dx(pc),a3
+		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      paste_pi1_2
-		moveq.l    #0,d3
+		clr.l      d3
 paste_pi1_2:
-		lea.l      paste_dy(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,paste_dy-paste_dx(a3)
+		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      paste_pi1_3
-		moveq.l    #0,d3
+		clr.l      d3
 paste_pi1_3:
-		lea.l      paste_dx(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,(a3)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      paste_pi1_4
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib43_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 paste_pi1_4:
-		lea.l      paste_dst(pc),a0
-		move.l     d3,(a0)
-		bsr        getinteger
+		lea.l      paste_dst(pc),a1
+		move.l     d3,(a1)
+		lea.l      paste_width(pc),a3
+		move.l     (a6)+,d3
 		cmpi.l     #200,d3
 		ble.s      paste_pi1_5
 		move.l     #200,d3
 paste_pi1_5:
-		lea.l      paste_height(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,paste_height-paste_width(a3)
+		move.l     (a6)+,d3
 		cmpi.l     #320,d3
 		ble.s      paste_pi1_6
 		move.l     #320,d3
 paste_pi1_6:
-		lea.l      paste_width(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,(a3)
+		lea.l      paste_sx(pc),a3
+		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      paste_pi1_7
-		moveq.l    #0,d3
+		clr.l      d3
 paste_pi1_7:
 		cmpi.l     #200-1,d3
 		ble.s      paste_pi1_8
 		move.l     #200-1,d3
 paste_pi1_8:
-		lea.l      paste_sy(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,paste_sy-paste_sx(a3)
+		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      paste_pi1_9
-		moveq.l    #0,d3
+		clr.l      d3
 paste_pi1_9:
 		cmpi.l     #320-1,d3
 		ble.s      paste_pi1_10
 		move.l     #320-1,d3
 paste_pi1_10:
-		lea.l      paste_sx(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		move.w     d3,(a3)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      paste_pi1_11
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib43_2:		jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 paste_pi1_11:
-		lea.l      paste_src(pc),a0
-		move.l     d3,(a0)
-		move.l     a1,-(a7)
+		lea.l      paste_src(pc),a1
+		move.l     d3,(a1)
 		movem.l    a0-a6,-(a7)
+		movem.l    d1/a5,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
 		trap       #14
 		addq.l     #4,a7
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
+		movem.l    (a7)+,d1/a5
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     modetable_offset-entry(a0),d2
+		adda.l     d2,a0
+		movea.l    a0,a4
 paste_pi1_12:
-		cmpa.l     a4,a5
+		cmpi.l     #-1,(a4)
 		beq.s      paste_pi1_14
 		cmp.w      (a4),d0
 		bne.s      paste_pi1_13
@@ -3019,16 +3598,20 @@ paste_pi1_14:
 		rts
 paste_pi1_15:
 		lea.l      paste_src(pc),a0
+		lea.l      bitblt(pc),a1
 		move.w     d2,d6
 		asl.w      #1,d2
-		movem.l    d2/d6/a0-a1,-(a7)
+		movem.l    d2/d6/a0-a3,-(a7)
 		dc.w       0xa000 /* linea_init */
+		movea.l    d0,a0
 		move.w     DEV_TAB(a0),d3
-		addq.w     #1,d3
+		/* addq.w     #1,d3  */
+		dc.w 0x0643,1 /* XXX */
 		andi.l     #0x0000FFFF,d3
 		move.w     DEV_TAB+2(a0),d4
-		addq.w     #1,d4
-		movem.l    (a7)+,d2/d6/a0-a1
+		/* addq.w     #1,d4 */
+		dc.w 0x0644,1 /* XXX */
+		movem.l    (a7)+,d2/d6/a0-a3
 		move.w     d3,d7
 		move.w     paste_dx-paste_src(a0),d0
 		move.w     paste_width-paste_src(a0),d5
@@ -3047,10 +3630,6 @@ paste_pi1_16:
 paste_pi1_17:
 		cmpi.w     #16,d6
 		beq        paste_hi
-		/* space for bitblit frame */
-		lea        -78(a7),a7
-		lea.l      (a7),a1
-		move.l     a1,a6
 		cmpi.w     #8,d6
 		blt.s      paste_pi1_18
 		movem.l    d0-d7/a0-a1,-(a7)
@@ -3064,7 +3643,8 @@ paste_pi1_17:
 		move.w     paste_sx-paste_src(a0),(a1)+ /* s_xmin */
 		move.w     paste_sy-paste_src(a0),(a1)+ /* s_ymin */
 		move.l     paste_dst-paste_src(a0),d6
-		addq.l     #8,d6
+		/* addq.l     #8,d6 */
+		dc.w 0x0686,0,8 /* XXX */
 		move.l     d6,(a1)+ /* s_form */
 		move.w     #8,(a1)+ /* s_nxwd */
 		move.w     #160,(a1)+ /* s_nxln */
@@ -3072,12 +3652,14 @@ paste_pi1_17:
 		move.w     paste_dx-paste_src(a0),(a1)+ /* d_xmin */
 		move.w     paste_dy-paste_src(a0),(a1)+ /* d_ymin */
 		move.l     paste_dst-paste_src(a0),d6
-		addq.l     #8,d6
+		/* addq.l     #8,d6 */
+		dc.w 0x0686,0,8 /* XXX */
 		move.l     d6,(a1)+ /* d_form */
 		move.w     d2,(a1)+ /* d_nxwd */
 		move.w     d1,(a1)+ /* d_nxln */
 		move.w     #2,(a1)+ /* d_nxpl */
-		clr.l      (a1)+ /* p_addr */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt(pc),a6
 		dc.w       0xa007 /* bit_blt */
 		movem.l    (a7)+,d0-d7/a0-a1
 paste_pi1_18:
@@ -3085,7 +3667,7 @@ paste_pi1_18:
 		move.w     paste_height-paste_src(a0),(a1)+ /* b_ht */
 		move.w     #4,(a1)+ /* plane_cnt */
 		move.w     #1,(a1)+ /* fg_col */
-		clr.w      (a1)+ /* bg_col */
+		move.w     #0,(a1)+ /* bg_col */
 		move.l     #0x03030303,(a1)+ /* op_tab 4 x S_ONLY */
 		move.w     paste_sx-paste_src(a0),(a1)+ /* s_xmin */
 		move.w     paste_sy-paste_src(a0),(a1)+ /* s_ymin */
@@ -3099,7 +3681,8 @@ paste_pi1_18:
 		move.w     d2,(a1)+ /* d_nxwd */
 		move.w     d1,(a1)+ /* d_nxln */
 		move.w     #2,(a1)+ /* d_nxpl */
-		clr.l      (a1)+ /* p_addr */
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt(pc),a6
 		dc.w       0xa007 /* bit_blt */
 		movem.l    (a7)+,a0-a6
 		rts
@@ -3157,8 +3740,8 @@ paste_hi:
 		move.w     #200-1,d7 /* BUG: ignores height */
 paste_hi1:
 		moveq.l    #0,d6
-		lea.l      (a1),a3
-		lea.l      (a2),a4
+		lea.l      ZERO(a1),a3
+		lea.l      ZERO(a2),a4
 paste_hi2:
 		moveq.l    #0,d5
 paste_hi3:
@@ -3203,26 +3786,27 @@ paste_hi7:
 		movem.l    (a7)+,a0-a6
 		rts
 
+bitblt: ds.b 78 /* 13fe8 */
+
 /*
  * Syntax:   ADR=bodychunk(BANK)
  */
+lib44:
+	dc.w lib44_1-lib44
+	dc.w	0
 bodychunk:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      bodychunk1
-		bsr        addrofbank
+		move.l     d3,-(a6)
+lib44_1:		jsr        L_addrofbank.l
 bodychunk1:
-		move.l     a1,-(a7)
 		movem.l    a0-a6,-(a7)
-		lea.l      params(pc),a6
+		movea.l    debut(a5),a0
+		movea.l    0(a0,d1.w),a6
+		move.l     params_offset-entry(a6),d4
+		adda.l     d4,a6
 		movea.l    d3,a0
-		moveq.l    #0,d3
 /* FIXME: walk through list of chunks instead */
 		move.l     #256,d7
 bodychunk2:
@@ -3239,92 +3823,115 @@ bodychunk2:
 		bne.s      bodychunk2
 		subq.l     #1,a0
 		move.l     a0,ilbm_body-params(a6)
-		move.l     a0,d3
+		moveq.l    #0,d7
+		bra.s      bodychunk4
 bodychunk3:
+		moveq.l    #-1,d7
+bodychunk4:
+		tst.l      d7
+		bne.s      bodychunk5
+		move.l     a0,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
+		move.l     d3,-(a6)
+		rts
+bodychunk5:
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
+		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 /*
  * Syntax:   _bitblit SOURCE,S_X,S_Y,WIDTH,HEIGHT,DEST,D_X,D_Y,OP
  */
+lib45:
+	dc.w lib45_1-lib45
+	dc.w lib45_2-lib45
+	dc.w	0
 bitblit:
-		move.l     (a7)+,a1
-		cmp.w      #9,d0
-		bne        syntax
-		bsr        getinteger
-		lea.l      bitblit_op(pc),a0
-		move.l     d3,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
+		lea.l      bitblit_op(pc),a1
+		move.l     d3,(a1)
+		move.l     (a6)+,d3
 		tst.l      d3
-		bpl.s      bitblit1
-		moveq.l    #0,d3
+		bpl.w      bitblit1 /* XXX */
+		clr.l      d3
 bitblit1:
-		lea.l      bitblit_dy(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		lea.l      bitblit_dy(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
 		tst.l      d3
-		bpl.s      bitblit2
-		moveq.l    #0,d3
+		bpl.w      bitblit2 /* XXX */
+		clr.l      d3
 bitblit2:
-		lea.l      bitblit_dx(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		lea.l      bitblit_dx(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      bitblit3
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib45_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 bitblit3:
-		lea.l      bitblit_dst(pc),a0
-		move.l     d3,(a0)
-		bsr        getinteger
-		lea.l      bitblit_height(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
-		lea.l      bitblit_width(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		lea.l      bitblit_dst(pc),a1
+		move.l     d3,(a1)
+		move.l     (a6)+,d3
+		lea.l      bitblit_height(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
+		lea.l      bitblit_width(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      bitblit4
-		moveq.l    #0,d3
+		clr.l      d3
 bitblit4:
 		cmpi.l     #200-1,d3
 		ble.s      bitblit5
 		move.l     #200-1,d3
 bitblit5:
-		lea.l      bitblit_sy(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		lea.l      bitblit_sy(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
 		tst.l      d3
 		bpl.s      bitblit6
-		moveq.l    #0,d3
+		clr.l      d3
 bitblit6:
 		cmpi.l     #320-1,d3
 		ble.s      bitblit7
 		move.l     #320-1,d3
 bitblit7:
-		lea.l      bitblit_sx(pc),a0
-		move.w     d3,(a0)
-		bsr        getinteger
+		lea.l      bitblit_sx(pc),a1
+		move.w     d3,(a1)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      bitblit8
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib45_2:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 bitblit8:
-		lea.l      bitblit_src(pc),a0
-		move.l     d3,(a0)
-		move.l     a1,-(a7)
+		lea.l      bitblit_src(pc),a1
+		move.l     d3,(a1)
 		movem.l    a0-a6,-(a7)
 		lea.l      bitblit_src(pc),a0
+		lea.l      bitblt2,a1 /* BUG: absolute address */
 		movem.l    a0-a1,-(a7)
-		dc.w       0xa000 /* linea_init */
+		dc.w       0xa000
+		movea.l    d0,a0
 		move.w     V_BYTES_LIN(a0),d1
-		move.w     LA_PLANES(a0),d2
+		move.w     ZERO(a0),d2 /* LA_PLANES */
 		move.w     d2,d6
 		asl.w      #1,d2
 		move.w     DEV_TAB(a0),d3
-		addq.w     #1,d3
+		/* addq.w     #1,d3 */
+		dc.w 0x0643,1 /* XXX */
 		andi.l     #0x0000FFFF,d3
 		move.w     DEV_TAB+2(a0),d4
-		addq.w     #1,d4
+		/* addq.w     #1,d4 */
+		dc.w 0x0644,1 /* XXX */
 		movem.l    (a7)+,a0-a1
 		move.w     d3,d7
 		move.w     bitblit_dx-bitblit_src(a0),d0
@@ -3343,11 +3950,11 @@ bitblit13:
 		move.w     d7,bitblit_height-bitblit_src(a0)
 bitblit14:
 		cmpi.w     #8,d6
-		bgt.s      bitblit15
+		ble.s      bitblit15
+		movem.l    (a7)+,a0-a6
+		rts
+bitblit15:
 		lea.l      bitblit_op(pc),a3
-		/* space for bitblit frame */
-		lea        -78(a7),a7
-		lea.l      (a7),a1
 		move.w     bitblit_width-bitblit_src(a0),(a1)+ /* b_wd */
 		move.w     bitblit_height-bitblit_src(a0),(a1)+ /* b_ht */
 		move.w     d6,(a1)+ /* plane_cnt */
@@ -3368,11 +3975,9 @@ bitblit14:
 		move.w     d2,(a1)+ /* d_nxwd */
 		move.w     d1,(a1)+ /* d_nxln */
 		move.w     #2,(a1)+ /* d_nxpl */
-		clr.l      (a1)+ /* p_addr */
-		lea.l      (a7),a6
+		move.l     #0,(a1)+ /* p_addr */
+		lea.l      bitblt2,a6 /* BUG: absolute address */
 		dc.w       0xa007 /* bit_blt */
-		lea        78(a7),a7
-bitblit15:
 		movem.l    (a7)+,a0-a6
 		rts
 
@@ -3404,39 +4009,52 @@ bitblit_optab:
            dc.b 14,14,14,14
            dc.b 15,15,15,15
 
+bitblt2: ds.b 78 /* 13fe8 */
+
+lib46:
+	dc.w	0			; no library calls
+	rts
+
 /*
  * Syntax:   _convert pi1 SRCE,DEST[,COL_REG]
  */
+lib47:
+	dc.w lib47_1-lib47
+	dc.w lib47_2-lib47
+	dc.w	0
 convert_pi1:
-		move.l     (a7)+,a1
-		move.w     vdo_cookie(pc),d6
-		subq.w     #3,d6
-		bne        illfalconfunc
-		moveq      #0,d3
-		subq.w     #2,d0
+		lea        convert_colreg(pc),a1
+		move.l     #0,(a1)
+		cmpi.b     #1,d0
 		beq.s      convert_pi1_1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		andi.w     #0x00F0,d3
+		cmpi.w     #2,d0
+		beq.s      convert_pi0
+		rts
+convert_pi0:
+		move.l     (a6)+,d3
+		andi.l     #0x000000F0,d3
+		move.b     d3,(a1)
 convert_pi1_1:
-		lea        convert_colreg(pc),a0
-		move.b     d3,(a0)
-		bsr        getinteger
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      convert_pi1_2
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib47_1:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 convert_pi1_2:
-		lea.l      convert_dst(pc),a0
-		move.l     d3,(a0)
-		bsr        getinteger
+		lea.l      convert_dst(pc),a1
+		move.l     d3,(a1)
+		move.l     (a6)+,d3
 		cmpi.l     #MAX_BANKS-1,d3
 		bgt.s      convert_pi1_3
-		bsr        addrofbank
+		movem.l    a0-a1,-(a7)
+		move.l     d3,-(a6)
+lib47_2:	jsr        L_addrofbank.l
+		movem.l    (a7)+,a0-a1
 convert_pi1_3:
-		lea.l      convert_src(pc),a0
-		move.l     d3,(a0)
-		move.l     a1,-(a7)
+		lea.l      convert_src(pc),a1
+		move.l     d3,(a1)
 		movem.l    d0-d7/a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #88,-(a7) /* VsetMode */
@@ -3468,7 +4086,7 @@ convert_pi1_6:
 		movea.l    d0,a2
 		movea.l    convert_src(pc),a0
 		movea.l    convert_dst(pc),a1
-		move.w     LA_PLANES(a2),d5
+		move.w     ZERO(a2),d5 /* LA_PLANES */
 		cmpi.w     #4,d5
 		beq.s      convert_4planes
 		cmpi.w     #8,d5
@@ -3485,7 +4103,9 @@ convert_pi1_7:
 		rts
 
 convert_src: dc.l 0
+	ds.w 4
 convert_dst: dc.l 0
+	dc.l 0
 convert_mousestat: dc.w 0
 
 convert_4planes:
@@ -3494,21 +4114,21 @@ convert_4planes:
 		moveq.l    #0,d6
 		moveq.l    #0,d7
 		move.l     #160,d4
-		move.w     LA_PLANES(a2),d2
+		move.w     ZERO(a2),d2 /* LA_PLANES */
 		asl.w      #1,d2
 		move.w     V_BYTES_LIN(a2),d6
 		move.w     #200,d7
 		subq.w     #1,d7
 convert_4planes1:
 		moveq.l    #4-1,d3
-		lea.l      (a0),a2
-		lea.l      (a1),a3
+		lea.l      ZERO(a0),a2
+		lea.l      ZERO(a1),a3
 convert_4planes2:
 		moveq.l    #20-1,d1
-		lea.l      (a2),a4
-		lea.l      (a3),a5
+		lea.l      ZERO(a2),a4
+		lea.l      ZERO(a3),a5
 convert_4planes3:
-		move.w     (a4),d0
+		move.w     ZERO(a4),d0
 		movem.l    d7,-(a7)
 		moveq.l    #15,d7
 		moveq.l    #0,d5
@@ -3554,7 +4174,7 @@ convert_8planes:
 		moveq.l    #0,d6
 		moveq.l    #0,d7
 		move.l     #160,d4
-		move.w     LA_PLANES(a2),d2
+		move.w     ZERO(a2),d2 /* LA_PLANES */
 		asl.w      #1,d2
 		move.w     V_BYTES_LIN(a2),d6
 		move.w     #200,d7
@@ -3562,16 +4182,16 @@ convert_8planes:
 		lea.l      plane8pixels(pc),a6
 convert_8planes1:
 		moveq.l    #3,d3
-		lea.l      (a0),a2
-		lea.l      (a1),a3
+		lea.l      ZERO(a0),a2
+		lea.l      ZERO(a1),a3
 convert_8planes2:
-		moveq.l    #20-1,d1
-		lea.l      (a2),a4
-		lea.l      (a3),a5
+		moveq.l    #19,d1
+		lea.l      ZERO(a2),a4
+		lea.l      ZERO(a3),a5
 convert_8planes3:
-		move.w     (a4),d0
+		move.w     ZERO(a4),d0
 		movem.l    d7,-(a7)
-		moveq.l    #16-1,d7
+		moveq.l    #15,d7
 		moveq.l    #0,d5
 convert_8planes4:
 		rol.w      #1,d0
@@ -3589,7 +4209,7 @@ convert_8planes6:
 		move.w     d5,(a5)
 		tst.w      d3
 		bne.s      convert_8planes7
-		move.w     (a6),2(a5)
+		move.w     ZERO(a6),2(a5)
 		move.w     2(a6),4(a5)
 		move.w     4(a6),6(a5)
 		move.w     6(a6),8(a5)
@@ -3599,7 +4219,7 @@ convert_8planes7:
 		move.w     d5,(a5)
 		tst.w      d3
 		bne.s      convert_8planes8
-		move.w     (a6),2(a5)
+		move.w     ZERO(a6),2(a5)
 		move.w     2(a6),4(a5)
 		move.w     4(a6),6(a5)
 		move.w     6(a6),8(a5)
@@ -3629,8 +4249,8 @@ convert_hi:
 		move.w     #200-1,d7
 convert_hi1:
 		moveq.l    #0,d6
-		lea.l      (a0),a2
-		lea.l      (a1),a3
+		lea.l      ZERO(a0),a2
+		lea.l      ZERO(a1),a3
 convert_hi2:
 		moveq.l    #0,d5
 convert_hi3:
@@ -3703,103 +4323,9 @@ convert_colreg: dc.b 0,0
 plane8pixels: ds.w 4
 	ds.l 1 /* unused */
 
-	.data
-modetable:
-          /* mode                            width,height, bytes,scanl,planes,hht,hbb,hbe, hdb,hde,hss, vft, vbb,vbe,vdb, vde, vss,vco, vmc */
-		dc.w STMODES+PAL+BPS4,                 320,   200,   160,   80,     4, 62, 50,  9, 575, 28, 52, 625, 613, 47,111, 511, 619,  0,$083
-		dc.w STMODES+PAL+COL80+BPS2,           640,   200,   160,   80,     2, 62, 50,  9, 575, 28, 52, 625, 613, 47,111, 511, 619,  4,$083
-		dc.w VERTFLAG+STMODES+PAL+COL80+BPS1,  640,   400,    80,   40,     1,510,409, 80,1007,160,434, 624, 613, 47,126, 526, 619,  6,$183
-		dc.w PAL+BPS8,                         320,   200,   320,  160,     8,254,203, 39,  28,125,216, 625, 613, 47,127, 527, 619,  0,$183
-		dc.w PAL+BPS16,                        320,   200,   640,  320,    16,254,203, 39,  46,143,216, 625, 613, 47,127, 527, 619,  0,$183
-		dc.w VERTFLAG+PAL+BPS4,                320,   400,   160,   80,     4,254,203, 39,  12,109,216, 624, 613, 47,126, 526, 619,  2,$183
-		dc.w VERTFLAG+PAL+BPS8,                320,   400,   320,  160,     8,254,203, 39,  28,125,216, 624, 613, 47,126, 526, 619,  2,$183
-		dc.w VERTFLAG+PAL+BPS16,               320,   400,   640,  320,    16,254,203, 39,  46,143,216, 624, 613, 47,126, 526, 619,  2,$183
-		dc.w PAL+OVERSCAN+BPS4,                384,   240,   192,   96,     4,254,203, 39, 748,141,216, 625, 613, 47, 87, 567, 619,  0,$183
-		dc.w PAL+OVERSCAN+BPS8,                384,   240,   384,  192,     8,254,203, 39, 764,157,216, 625, 613, 47, 87, 567, 619,  0,$183
-		dc.w PAL+OVERSCAN+BPS16,               384,   240,   768,  384,    16,254,203, 39,  14,175,216, 625, 613, 47, 87, 567, 619,  0,$183
-		dc.w VERTFLAG+PAL+OVERSCAN+BPS4,       384,   480,   192,   96,     4,254,203, 39, 748,141,216, 624, 613, 47, 86, 566, 619,  2,$183
-		dc.w VERTFLAG+PAL+OVERSCAN+BPS8,       384,   480,   384,  192,     8,254,203, 39, 764,157,216, 624, 613, 47, 86, 566, 619,  2,$183
-		dc.w VERTFLAG+PAL+OVERSCAN+BPS16,      384,   480,   768,  384,    16,254,203, 39,  14,175,216, 624, 613, 47, 86, 566, 619,  2,$183
-		dc.w PAL+COL80+BPS4,                   640,   200,   320,  160,     4,510,409, 80,  77,254,434, 625, 613, 47,127, 527, 619,  4,$183
-		dc.w PAL+COL80+BPS8,                   640,   200,   640,  320,     8,510,409, 80,  93,270,434, 625, 613, 47,127, 527, 619,  4,$183
-		dc.w PAL+COL80+BPS16,                  640,   200,  1280,  640,    16,510,409, 80, 113,290,434, 625, 613, 47,127, 527, 619,  4,$183
-		dc.w PAL+COL80+$1000+BPS4,             640,   240,   320,  160,     4,510,409, 80,  77,254,434, 625, 613, 47, 87, 567, 619,  4,$183
-		dc.w PAL+COL80+$1000+BPS8,             640,   240,   640,  320,     8,510,409, 80,  93,270,434, 625, 613, 47, 87, 567, 619,  4,$183
-		dc.w VERTFLAG+PAL+COL80+BPS2,          640,   400,   160,   80,     2, 62, 48,  8,   2, 32, 52, 624, 613, 47,126, 526, 619,  6,$183
-		dc.w VERTFLAG+PAL+COL80+BPS4,          640,   400,   320,  160,     4,510,409, 80,  77,254,434, 624, 613, 47,126, 526, 619,  6,$183
-		dc.w VERTFLAG+PAL+COL80+BPS8,          640,   400,   640,  320,     8,510,409, 80,  93,270,434, 624, 613, 47,126, 526, 619,  6,$183
-		dc.w VERTFLAG+PAL+COL80+BPS16,         640,   400,  1280,  640,    16,510,409, 80, 113,290,434, 624, 613, 47,126, 526, 619,  6,$183
-		dc.w VERTFLAG+PAL+COL80+$1000+BPS4,    640,   480,   320,  160,     4,510,409, 80,  77,254,434, 672, 577, 97, 96, 576, 669,  6,$183
-		dc.w VERTFLAG+PAL+COL80+$1000+BPS8,    640,   480,   640,  320,     8,510,409, 80,  93,270,434, 672, 577, 97, 96, 576, 669,  6,$183
-		dc.w VERTFLAG+PAL+COL80+$1000+BPS16,   640,   480,  1280,  640,    16,510,409, 80, 113,290,434, 672, 576, 97, 96, 576, 669,  6,$183
-		dc.w PAL+COL80+OVERSCAN+BPS4,          768,   240,   384,  192,     4,510,360, 80,  13,318,418, 625, 613, 47, 87, 567, 624,  4,$183
-		dc.w PAL+COL80+OVERSCAN+BPS8,          768,   240,   768,  384,     8,510,409, 80,  35,340,422, 625, 613, 47, 87, 567, 619,  4,$183
-		dc.w PAL+COL80+OVERSCAN+BPS16,         768,   240,  1536,  768,    16,510,409, 80,  49,354,434, 625, 613, 47, 87, 567, 619,  4,$183
-		dc.w VERTFLAG+PAL+COL80+OVERSCAN+BPS4, 768,   480,   384,  192,     4,510,409, 80,  13,318,434, 624, 613, 47, 86, 566, 619,  6,$183
-		dc.w VERTFLAG+PAL+COL80+OVERSCAN+BPS8, 768,   480,   768,  384,     8,510,409, 80,  29,334,434, 624, 613, 47, 86, 566, 619,  6,$183
-		dc.w VERTFLAG+PAL+COL80+OVERSCAN+BPS16,768,   480,  1536,  768,    16,510,409, 80,  49,354,434, 624, 613, 47, 86, 566, 619,  6,$183
-		dc.w VERTFLAG+PAL+VGA+BPS4,            320,   240,   160,   80,     4,198,141, 21, 650,107,150,1049,1023, 63, 63,1023,1045,  5,$186
-		dc.w VERTFLAG+PAL+VGA+BPS8,            320,   240,   320,  160,     8,198,141, 21, 666,123,150,1049,1023, 63, 63,1023,1045,  5,$186
-		dc.w VERTFLAG+PAL+VGA+BPS16,           320,   240,   640,  320,    16,198,141, 21, 684,145,150,1049,1023, 63, 63,1023,1045,  5,$186
-		dc.w PAL+VGA+BPS4,                     320,   480,   160,   80,     4,198,141, 21, 650,107,150,1049,1023, 63, 63,1023,1045,  4,$186
-		dc.w PAL+VGA+BPS8,                     320,   480,   320,  160,     8,198,141, 21, 666,123,150,1049,1023, 63, 63,1023,1045,  4,$186
-		dc.w PAL+VGA+BPS16,                    320,   480,   640,  320,    16,198,141, 21, 684,145,150,1049,1023, 63, 63,1023,1045,  4,$186
-		dc.w VERTFLAG+PAL+VGA+COL80+BPS2,      640,   240,   160,   80,     2, 23, 18,  1, 526, 13, 17,1049,1023, 63, 63,1023,1045,  9,$186
-		dc.w VERTFLAG+PAL+VGA+COL80+BPS4,      640,   240,   320,  160,     4,198,141, 21, 675,124,140,1049,1023, 63, 63,1023,1045,  9,$186
-		dc.w VERTFLAG+PAL+VGA+COL80+BPS8,      640,   240,   640,  320,     8,198,141, 21, 683,132,140,1049,1023, 63, 63,1023,1045,  9,$186
-		dc.w PAL+VGA+COL80+BPS1,               640,   480,    80,   40,     1,198,141, 21, 627, 80,150,1049,1023, 63, 63,1023,1045,  8,$186
-		dc.w PAL+VGA+COL80+BPS2,               640,   480,   160,   80,     2, 23, 18,  1, 526, 13, 17,1049,1023, 63, 63,1023,1045,  8,$186
-		dc.w PAL+VGA+COL80+BPS4,               640,   480,   320,  160,     4,198,141, 21, 675,124,140,1049,1023, 63, 63,1023,1045,  8,$186
-		dc.w PAL+VGA+COL80+BPS8,               640,   480,   640,  320,     8,198,141, 21, 683,132,140,1049,1023, 63, 63,1023,1045,  8,$186
-		dc.w PAL+VGA+$2000+BPS16,              640,   480,  1280,  640,    16,386,295, 43, 894,295,293,1033,1025, 65, 65,1025,1029,  4,$182
-		dc.w VERTFLAG+PAL+VGA+COL80+$2000+BPS4,768,   240,   384,  192,     4,236,178, 23, 724,168,172,1049,1023, 63, 63,1023,1045,  9,$182
-		dc.w VERTFLAG+PAL+VGA+COL80+$2000+BPS8,768,   240,   768,  384,     8,236,171, 23, 725,168,160,1049,1023, 63, 63,1023,1045,  9,$182
-		dc.w PAL+VGA+COL80+$2000+BPS4,         768,   480,   384,  192,     4,236,177, 23, 723,168,172,1049,1023, 63, 63,1023,1045,  8,$182
-		dc.w PAL+VGA+COL80+$2000+BPS8,         768,   480,   768,  384,     8,236,169, 23, 723,168,161,1049,1023, 63, 63,1023,1045,  8,$182
-		dc.w VERTFLAG+PAL+VGA+COL80+$3000+BPS4,800,   320,   400,  200,     4,240,181, 23, 719,168,173,1345,1305, 15, 25,1306,1306,  9,$182
-		dc.w VERTFLAG+PAL+VGA+COL80+$3000+BPS8,800,   320,   800,  400,     8,241,180, 23, 728,171,172,1345,1329, 45, 49,1330,1332,  9,$182
-modetable_end:
-		dc.l 0
 
-	.bss
 
-table: ds.l 1
-vdo_cookie: ds.l 1
-mode: ds.l 1
-rgbpalette: ds.l 256
+libex:
+	ds.w 1
 
-falcon_screensize: ds.l 1
-
-params:
-ilbm_form: ds.l 1
-ilbm_ilbm: ds.l 1
-ilbm_bmhd: ds.l 1
-ilbm_cmap: ds.l 1
-ilbm_body: ds.l 1
-ilbm_width: ds.w 1 /* 20 */
-ilbm_height: ds.w 1 /* 22 */
-ilbm_xorigin: ds.w 1 /* 24 */
-ilbm_yorigin: ds.w 1 /* 26 */
-ilbm_planes: ds.w 1 /* 28 */
-ilbm_compression: ds.b 2 /* 30 */
-ilbm_cmapsize: ds.w 1 /* 32 */
-ilbm_size:	ds.l 1 /* 34 */
-	ds.l 1 /* unused */
-ilbm_addr: ds.l 1 /* 42 */
-dpack_ptr: ds.l 1
-ilbm_height2: ds.w 1 /* 50 */
-ilbm_bytes: ds.w 1 /* 52 */
-ilbm_bytes_lin: ds.w 1 /* 54 */
-ilbm_planes2: ds.w 1
-ilbm_nxwd: ds.l 1 /* 58 */
-	ds.w 1 /* unused */
-
-falcon_mode: ds.w 1
-	ds.l 1
-
-fade1tab: ds.l 256
-fade2tab: ds.l 256
-fade3tab: ds.l 256
-
-finprg:
-	ds.l 1
+ZERO equ 0
