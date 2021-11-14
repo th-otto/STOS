@@ -135,9 +135,9 @@ jumps:  dc.w 47
 		
 welcome:
 		dc.b 10
-		dc.b "Falcon 030 VIDEO (III) Extension v0.4 ",$bd," Anthony Hoskin.",0
+		dc.b "Falcon 030 VIDEO (III) Extension v0.5 ",$bd," Anthony Hoskin.",0
 		dc.b 10
-		dc.b "Falcon 030 Extension de VIDEO (III) v0.4 ",$bd," Anthony Hoskin.",0
+		dc.b "Falcon 030 Extension de VIDEO (III) v0.5 ",$bd," Anthony Hoskin.",0
 		.even
 
 load:
@@ -513,12 +513,12 @@ errormsgs:
 		dc.b "Cette banque ne conteint pas de donn",$82,"es sprite",0
 		dc.b 13,10,C_inverse
 		dc.b "Extension ERROR - the 'SPRIT101.BIN' file version in the STOS folder",13,10
-		dc.b "is incompatible with the Falcon 030 VIDEO (III) Extension v0.4.           ",13,10
+		dc.b "is incompatible with the Falcon 030 VIDEO (III) Extension v0.5.           ",13,10
 		dc.b "Please re-boot your system with the 'SPRIT101.BIN' version 5.8 file ",13,10
 		dc.b "in the STOS folder.",C_normal,13,10,0
 		dc.b 13,10,C_inverse
 		dc.b "Extension ERROR - the 'SPRIT101.BIN' file version in the STOS folder        ",13,10
-		dc.b "is incompatible with the Falcon 030 VIDEO (III) Extension v0.4. ",13,10
+		dc.b "is incompatible with the Falcon 030 VIDEO (III) Extension v0.5. ",13,10
 		dc.b "Please re-boot your system with the 'SPRIT101.BIN' version 5.8 file ",13,10
 		dc.b "in the STOS folder.",C_normal,13,10,0
 		.even
@@ -3739,9 +3739,6 @@ bodychunk5:
  */
 bitblit:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #9,d0
 		bne        syntax
 		bsr        getinteger
@@ -3804,35 +3801,15 @@ bitblit8:
 		lea.l      bitblit_src(pc),a1
 		move.l     d3,(a1)
 		movem.l    a0-a6,-(a7)
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		lea.l      modetable(pc),a4
-		lea.l      modetable_end(pc),a5
-bitblit9:
-		cmpa.l     a4,a5
-		beq.s      bitblit11
-		cmp.w      (a4),d0
-		bne.s      bitblit10
-		move.w     6(a4),d1
-		move.w     10(a4),d2
-		bra.s      bitblit12
-bitblit10:
-		lea.l      40(a4),a4
-		bra.s      bitblit9
-bitblit11:
-		movem.l    (a7)+,a0-a6
-		movea.l    returnpc(pc),a0
-		jmp        (a0)
-bitblit12:
 		lea.l      bitblit_src(pc),a0
 		lea.l      bitblt(pc),a1
+		movem.l    a0-a1,-(a7)
+		dc.w       0xa000
+		movea.l    d0,a0
+		move.w     V_BYTES_LIN(a0),d1
+		move.w     ZERO(a0),d2 /* LA_PLANES */
 		move.w     d2,d6
 		asl.w      #1,d2
-		movem.l    d2/d6/a0-a1,-(a7)
-		dc.w       0xa000 /* linea_init */
-		movea.l    d0,a0
 		move.w     DEV_TAB(a0),d3
 		/* addq.w     #1,d3 */
 		dc.w 0x0643,1 /* XXX */
@@ -3840,7 +3817,7 @@ bitblit12:
 		move.w     DEV_TAB+2(a0),d4
 		/* addq.w     #1,d4 */
 		dc.w 0x0644,1 /* XXX */
-		movem.l    (a7)+,d2/d6/a0-a1
+		movem.l    (a7)+,a0-a1
 		move.w     d3,d7
 		move.w     bitblit_dx-bitblit_src(a0),d0
 		move.w     bitblit_width-bitblit_src(a0),d5
@@ -3867,8 +3844,8 @@ bitblit15:
 		move.w     bitblit_width-bitblit_src(a0),(a1)+ /* b_wd */
 		move.w     bitblit_height-bitblit_src(a0),(a1)+ /* b_ht */
 		move.w     d6,(a1)+ /* plane_cnt */
-		move.w     #1,(a1)+ /* fg_col */
-		move.w     #0,(a1)+ /* bg_col */
+		move.w     #12,(a1)+ /* fg_col */
+		move.w     #10,(a1)+ /* bg_col */
 		move.l     (a3),d0
 		asl.l      #2,d0
 		move.l     bitblit_optab-bitblit_op(a3,d0.l),(a1)+ /* op_tab */
@@ -4330,3 +4307,5 @@ fade3tab: ds.l 256
 	ds.b 458 /* unused */
 finprg: /* 14e4a */
 	ds.l 1
+
+ZERO equ 0

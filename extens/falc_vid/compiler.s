@@ -3916,39 +3916,15 @@ bitblit8:
 		lea.l      bitblit_src(pc),a1
 		move.l     d3,(a1)
 		movem.l    a0-a6,-(a7)
-		movem.l    d1/a5,-(a7)
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		movem.l    (a7)+,d1/a5
-		movea.l    debut(a5),a0
-		movea.l    0(a0,d1.w),a0
-		move.l     modetable_offset-entry(a0),d2
-		adda.l     d2,a0
-		movea.l    a0,a4
-bitblit9:
-		cmpi.l     #-1,(a4)
-		beq.s      bitblit11
-		cmp.w      (a4),d0
-		bne.s      bitblit10
-		move.w     6(a4),d1
-		move.w     10(a4),d2
-		bra.s      bitblit12
-bitblit10:
-		lea.l      40(a4),a4
-		bra.s      bitblit9
-bitblit11:
-		movem.l    (a7)+,a0-a6
-		rts
-bitblit12:
 		lea.l      bitblit_src(pc),a0
 		lea.l      bitblt2,a1 /* BUG: absolute address */
+		movem.l    a0-a1,-(a7)
+		dc.w       0xa000
+		movea.l    d0,a0
+		move.w     V_BYTES_LIN(a0),d1
+		move.w     ZERO(a0),d2 /* LA_PLANES */
 		move.w     d2,d6
 		asl.w      #1,d2
-		movem.l    d2/d6/a0-a1,-(a7)
-		dc.w       0xa000 /* linea_init */
-		movea.l    d0,a0
 		move.w     DEV_TAB(a0),d3
 		/* addq.w     #1,d3 */
 		dc.w 0x0643,1 /* XXX */
@@ -3956,7 +3932,7 @@ bitblit12:
 		move.w     DEV_TAB+2(a0),d4
 		/* addq.w     #1,d4 */
 		dc.w 0x0644,1 /* XXX */
-		movem.l    (a7)+,d2/d6/a0-a1
+		movem.l    (a7)+,a0-a1
 		move.w     d3,d7
 		move.w     bitblit_dx-bitblit_src(a0),d0
 		move.w     bitblit_width-bitblit_src(a0),d5
@@ -3982,8 +3958,8 @@ bitblit15:
 		move.w     bitblit_width-bitblit_src(a0),(a1)+ /* b_wd */
 		move.w     bitblit_height-bitblit_src(a0),(a1)+ /* b_ht */
 		move.w     d6,(a1)+ /* plane_cnt */
-		move.w     #1,(a1)+ /* fg_col */
-		move.w     #0,(a1)+ /* bg_col */
+		move.w     #12,(a1)+ /* fg_col */
+		move.w     #10,(a1)+ /* bg_col */
 		move.l     (a3),d0
 		asl.l      #2,d0
 		move.l     bitblit_optab-bitblit_op(a3,d0.l),(a1)+ /* op_tab */
