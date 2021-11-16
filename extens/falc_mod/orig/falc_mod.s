@@ -2505,569 +2505,566 @@ drawhi_horline3:
 hiline_coords: ds.w 4
 
 draw_horline:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     la_planes(pc),d5
-		subq.w     #1,d5
-		move.w     la_bytes_line(pc),d6
-		movea.l    a2,a4
-		movea.l    a3,a5
-		cmpa.l     a2,a3
-		beq.s      draw_horline11
-		suba.l     a4,a5
-		cmpa.w     d7,a5
-		beq        draw_horline15
-		bsr        calc_bitstartpos
-		move.w     scope_currcolor(pc),d4
-		move.w     scope_colormask(pc),d3
-		movem.l    d3-d7,-(a7)
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	bsr        calc_screenaddr
+	bsr        calc_endaddr
+	movem.l    d0-d7/a0-a6,-(a7)
+	move.w     la_planes(pc),d5
+	subq.w     #1,d5
+	move.w     la_bytes_line(pc),d6
+	movea.l    a2,a4
+	movea.l    a3,a5
+	cmpa.l     a2,a3
+	beq        draw_horline11
+	suba.l     a4,a5
+	cmpa.w     d7,a5
+	beq        draw_horline15
+	bsr        calc_bitstartpos
+	move.w     scope_currcolor(pc),d4
+	move.w     scope_colormask(pc),d3
+	movem.l    d3-d7,-(a7)
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_horline1:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline2
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline3
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_horline2
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
+	bra.w      draw_horline3 /* XXX */
 draw_horline2:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
 draw_horline3:
-		dbf        d5,draw_horline1
-		movem.l    (a7)+,d3-d7
+	dbf        d5,draw_horline1
+	movem.l    (a7)+,d3-d7
 draw_horline4:
-		movem.l    d3-d7,-(a7)
+	movem.l    d3-d7,-(a7)
 draw_horline5:
-		lsr.w      #1,d4
-		bcs.s      draw_horline6
-		move.w     #0,(a2)+
-		bra.s      draw_horline7
+	lsr.w      #1,d4
+	bcs.s      draw_horline6
+	move.w     #0,(a2)+
+	bra.w      draw_horline7 /* XXX */
 draw_horline6:
-		move.w     d3,(a2)+
+	move.w     d3,(a2)+
 draw_horline7:
-		dbf        d5,draw_horline5
-		movem.l    (a7)+,d3-d7
-		cmpa.l     a2,a3
-		bne.s      draw_horline4
-		bsr        calc_bitendpos
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	dbf        d5,draw_horline5
+	movem.l    (a7)+,d3-d7
+	cmpa.l     a2,a3
+	bne.w      draw_horline4 /* XXX */
+	bsr        calc_bitendpos
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_horline8:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline9
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_horline10
+	move.w     (a3),d0
+	lsr.w      #1,d4
+	bcs.s      draw_horline9
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a3)+
+	bra.w      draw_horline10 /* XXX */
 draw_horline9:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	move.w     d0,(a3)+
 draw_horline10:
-		dbf        d5,draw_horline8
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	dbf        d5,draw_horline8
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 draw_horline11:
-		move.w     d0,d6
-		move.w     d2,d7
-		sub.w      d6,d7
-		addq.w     #1,d7
-		divu.w     #16,d6
-		swap       d6
-		addi.w     #16,d6
-		move.w     scope_currcolor(pc),d4
-		move.w     scope_colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	move.w     d0,d6
+	move.w     d2,d7
+	sub.w      d6,d7
+	addq.w     #1,d7
+	divu.w     #16,d6
+	swap       d6
+	addi.w     #16,d6
+	move.w     scope_currcolor(pc),d4
+	move.w     scope_colormask(pc),d3
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_horline12:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline13
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline14
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_horline13
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
+	bra.w      draw_horline14 /* XXX */
 draw_horline13:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
 draw_horline14:
-		dbf        d5,draw_horline12
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	dbf        d5,draw_horline12
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 draw_horline15:
-		bsr        calc_bitstartpos
-		lea.l      horline_params(pc),a4
-		movem.w    d6-d7,(a4)
-		bsr        calc_bitendpos
-		movem.w    d6-d7,4(a4)
-		movem.l    d0-d7/a0-a6,-(a7)
-		movem.w    (a4),d6-d7
-		move.w     scope_currcolor(pc),d4
-		move.w     scope_colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	bsr        calc_bitstartpos
+	lea.l      horline_params(pc),a4
+	movem.w    d6-d7,(a4)
+	bsr        calc_bitendpos
+	movem.w    d6-d7,4(a4)
+	movem.l    d0-d7/a0-a6,-(a7)
+	movem.w    (a4),d6-d7
+	move.w     scope_currcolor(pc),d4
+	move.w     scope_colormask(pc),d3
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_horline16:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline17
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline18
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_horline17
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
+	bra.w      draw_horline18 /* XXX */
 draw_horline17:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
 draw_horline18:
-		dbf        d5,draw_horline16
-		movem.l    (a7)+,d0-d7/a0-a6
-		movem.w    4(a4),d6-d7
-		move.w     scope_currcolor(pc),d4
-		move.w     scope_colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	dbf        d5,draw_horline16
+	movem.l    (a7)+,d0-d7/a0-a6
+	movem.w    4(a4),d6-d7
+	move.w     scope_currcolor(pc),d4
+	move.w     scope_colormask(pc),d3
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_horline19:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline20
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_horline21
+	move.w     (a3),d0
+	lsr.w      #1,d4
+	bcs.s      draw_horline20
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a3)+
+	bra.w      draw_horline21 /* XXX */
 draw_horline20:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	move.w     d0,(a3)+
 draw_horline21:
-		dbf        d5,draw_horline19
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
+	dbf        d5,draw_horline19
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 horline_params: ds.w 16
 
 draw_vertline:
-		movem.l    d0-d7/a0-a6,-(a7)
-		bsr        calc_bitstartpos
-		moveq.l    #1,d7
-		bsr        calc_scopeaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     scope_currcolor(pc),d4
-		move.w     la_planes(pc),d5
-		subq.w     #1,d5
+	movem.l    d0-d7/a0-a6,-(a7)
+	bsr        calc_bitstartpos
+	moveq.l    #1,d7
+	bsr        calc_scopeaddr
+	move.w     d0,d4
+	swap       d4
+	move.w     scope_currcolor(pc),d4
+	move.w     la_planes(pc),d5
+	subq.w     #1,d5
 draw_vertline1:
-		movem.l    d0-d7/a2-a3,-(a7)
-		andi.w     #15,d1
-		neg.w      d1
-		addi.w     #31,d1
-		move.w     d1,d6
-		moveq.l    #0,d1
-		move.w     scope_colormask(pc),d3
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	movem.l    d0-d7/a2-a3,-(a7)
+	andi.w     #15,d1
+	neg.w      d1
+	addi.w     #31,d1
+	move.w     d1,d6
+	moveq.l    #0,d1
+	move.w     scope_colormask(pc),d3
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_vertline2:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_vertline3
-		swap       d4
-		bclr       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-		bra.s      draw_vertline5
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_vertline3
+	swap       d4
+	bclr       d4,d0
+	swap       d4
+	move.w     d0,(a2)+
+	bra.w      draw_vertline5
 draw_vertline3:
-		swap       d4
-		bclr       d4,d0
-		btst       #0,d1
-		beq.s      draw_vertline4
-		bset       d4,d0
+	swap       d4
+	bclr       d4,d0
+	btst       #0,d1
+	beq.w      draw_vertline4
+	bset       d4,d0
 draw_vertline4:
-		swap       d4
-		move.w     d0,(a2)+
+	swap       d4
+	move.w     d0,(a2)+
 draw_vertline5:
-		dbf        d5,draw_vertline2
-		movem.l    (a7)+,d0-d7/a2-a3
-		adda.w     la_bytes_line(pc),a2
-		addq.w     #1,d1
-		cmp.w      d1,d3
-		bne.s      draw_vertline1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	dbf        d5,draw_vertline2
+	movem.l    (a7)+,d0-d7/a2-a3
+	adda.w     la_bytes_line(pc),a2
+	addq.w     #1,d1
+	cmp.w      d1,d3
+	bne.w      draw_vertline1
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 
 setpixel:
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     la_planes(pc),d5
-		cmpi.w     #16,d5
-		beq.s      sethipixel
-		bsr        calc_scopeaddr
-		subq.w     #1,d5
-		move.w     scope_currcolor(pc),d2
+	movem.l    d0-d7/a0-a6,-(a7)
+	move.w     la_planes(pc),d5
+	cmpi.w     #16,d5
+	beq.w      sethipixel /* XXX */
+	bsr        calc_scopeaddr
+	subq.w     #1,d5
+	move.w     scope_currcolor(pc),d2
 setpixel1:
-		move.w     (a0),d1
-		lsr.w      #1,d2
-		bcs.s      setpixel2
-		bclr       d0,d1
-		bra.s      setpixel3
+	move.w     (a0),d1
+	lsr.w      #1,d2
+	bcs.s      setpixel2
+	bclr       d0,d1
+	bra.s      setpixel3
 setpixel2:
-		bset       d0,d1
+	bset       d0,d1
 setpixel3:
-		move.w     d1,(a0)+
-		dbf        d5,setpixel1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	move.w     d1,(a0)+
+	dbf        d5,setpixel1
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 sethipixel:
-		moveq.l    #0,d6
-		move.w     la_bytes_line(pc),d6
-		mulu.w     d6,d1
-		movea.l    scope_screen(pc),a0
-		adda.l     d1,a0
-		asl.w      #1,d0
-		adda.l     d0,a0
-		move.w     scope_currcolor(pc),(a0)
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	moveq.l    #0,d6
+	move.w     la_bytes_line(pc),d6
+	mulu.w     d6,d1
+	movea.l    scope_screen(pc),a0
+	adda.l     d1,a0
+	asl.w      #1,d0
+	adda.l     d0,a0
+	move.w     scope_currcolor(pc),(a0)
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 
 
 draw_back:
-		movem.l    d0-d7/a0-a6,-(a7)
-		movea.l    scope_screen(pc),a0
-		move.w     la_planes(pc),d5
-		cmpi.w     #16,d5
-		beq        drawhi_back
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		movea.l    stipple_ptr(pc),a1
-		subq.w     #1,d5
-		move.w     la_bytes_line(pc),d6
-		movea.l    a2,a4
-		movea.l    a3,a5
-		cmpa.l     a2,a3
-		beq        draw_back11
-		suba.l     a4,a5
-		cmpa.w     d7,a5
-		beq        draw_back15
-		bsr        calc_bitstartpos
-		bsr        calc_scopeaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     scope_currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		movem.l    d3-d7,-(a7)
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	movem.l    d0-d7/a0-a6,-(a7)
+	movea.l    scope_screen(pc),a0
+	move.w     la_planes(pc),d5
+	cmpi.w     #16,d5
+	beq        drawhi_back
+	bsr        calc_screenaddr
+	bsr        calc_endaddr
+	movea.l    x12d66(pc),a1
+	subq.w     #1,d5
+	move.w     la_bytes_line(pc),d6
+	movea.l    a2,a4
+	movea.l    a3,a5
+	cmpa.l     a2,a3
+	beq        draw_back8
+	suba.l     a4,a5
+	cmpa.w     d7,a5
+	beq        draw_back12
+	bsr        calc_bitstartpos
+	bsr        calc_scopeaddr
+	move.w     d0,d4
+	swap       d4
+	move.w     scope_currcolor(pc),d4
+	and.w      x12d6a(pc),d1
+	move.w     0(a1,d1.w*2),d3 ; 68020+ only
+	movem.l    d3-d7,-(a7)
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_back1:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back2
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back3
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_back2
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
+	bra.w      draw_back2_2 /* XXX */
 draw_back2:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	swap       d4
+	bset       d4,d0
+	swap       d4
+	move.w     d0,(a2)+
+draw_back2_2:
+	dbf        d5,draw_back1
+	movem.l    (a7)+,d3-d7
 draw_back3:
-		dbf        d5,draw_back1
-		movem.l    (a7)+,d3-d7
+	movem.l    d3-d7,-(a7)
+draw_back3_2:
+	lsr.w      #1,d4
+	bcs.s      draw_back4
+	move.w     #0,(a2)+
+	bra.w      draw_back5 /* XXX */
 draw_back4:
-		movem.l    d3-d7,-(a7)
+	move.w     d3,(a2)+
 draw_back5:
-		lsr.w      #1,d4
-		bcs.s      draw_back6
-		move.w     #0,(a2)+
-		bra.s      draw_back7
+	dbf        d5,draw_back3_2
+	movem.l    (a7)+,d3-d7
+	cmpa.l     a2,a3
+	bne.w      draw_back3 /* XXX */
+	bsr        calc_bitendpos
+	move.w     d2,d0
+	bsr        calc_scopeaddr
+	move.w     d0,d2
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_back6:
-		move.w     d3,(a2)+
+	move.w     (a3),d0
+	lsr.w      #1,d4
+	bcs.s      draw_back7
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a3)+
+	bra.w      draw_back7_2 /* XXX */
 draw_back7:
-		dbf        d5,draw_back5
-		movem.l    (a7)+,d3-d7
-		cmpa.l     a2,a3
-		bne.s      draw_back4
-		bsr        calc_bitendpos
-		move.w     d2,d0
-		bsr        calc_scopeaddr
-		move.w     d0,d2
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	bset       d2,d0
+	move.w     d0,(a3)+
+draw_back7_2:
+	dbf        d5,draw_back6
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 draw_back8:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back9
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_back10
+	move.w     d0,d6
+	move.w     d2,d7
+	sub.w      d6,d7
+	addq.w     #1,d7
+	divu.w     #16,d6
+	swap       d6
+	addi.w     #16,d6
+	bsr        calc_scopeaddr
+	move.w     d0,d4
+	swap       d4
+	move.w     d2,d0
+	bsr        calc_scopeaddr
+	move.w     d0,d2
+	move.w     scope_currcolor(pc),d4
+	and.w      x12d6a(pc),d1
+	move.w     0(a1,d1.w*2),d3 ; 68020+ only
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_back9:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		bset       d2,d0
-		move.w     d0,(a3)+
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_back10
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
+	bra.w      draw_back11 /* XXX */
 draw_back10:
-		dbf        d5,draw_back8
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	swap       d4
+	bset       d4,d0
+	bset       d2,d0
+	swap       d4
+	move.w     d0,(a2)+
 draw_back11:
-		move.w     d0,d6
-		move.w     d2,d7
-		sub.w      d6,d7
-		addq.w     #1,d7
-		divu.w     #16,d6
-		swap       d6
-		addi.w     #16,d6
-		bsr        calc_scopeaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     d2,d0
-		bsr        calc_scopeaddr
-		move.w     d0,d2
-		move.w     scope_currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	dbf        d5,draw_back9
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 draw_back12:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back13
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back14
+	bsr        calc_bitstartpos
+	lea.l      drawback_params(pc),a4
+	movem.w    d6-d7,(a4)
+	bsr        calc_bitendpos
+	movem.w    d6-d7,4(a4)
+	movem.l    d0-d7/a0-a6,-(a7)
+	movem.w    (a4),d6-d7
+	bsr        calc_scopeaddr
+	move.w     d0,d4
+	swap       d4
+	move.w     scope_currcolor(pc),d4
+	and.w      x12d6a(pc),d1
+	move.w     0(a1,d1.w*2),d3 ; 68020+ only
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_back13:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		bset       d2,d0
-		swap       d4
-		move.w     d0,(a2)+
+	move.w     (a2),d0
+	lsr.w      #1,d4
+	bcs.s      draw_back14
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a2)+
+	bra.w      draw_back15 /* XXX */
 draw_back14:
-		dbf        d5,draw_back12
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	swap       d4
+	bset       d4,d0
+	swap       d4
+	move.w     d0,(a2)+
 draw_back15:
-		bsr        calc_bitstartpos
-		lea.l      drawback_params(pc),a4
-		movem.w    d6-d7,(a4)
-		bsr        calc_bitendpos
-		movem.w    d6-d7,4(a4)
-		movem.l    d0-d7/a0-a6,-(a7)
-		movem.w    (a4),d6-d7
-		bsr        calc_scopeaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     scope_currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
+	dbf        d5,draw_back13
+	movem.l    (a7)+,d0-d7/a0-a6
+	move.w     d2,d0
+	bsr        calc_scopeaddr
+	move.w     d0,d2
+	movem.w    4(a4),d6-d7
+	move.w     scope_currcolor(pc),d4
+	and.w      x12d6a(pc),d1
+	move.w     0(a1,d1.w*2),d3 ; 68020+ only
+	moveq.l    #0,d1
+	bfextu     d3{d6:d7},d1 ; 68020+ only
 draw_back16:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back17
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back18
+	move.w     (a3),d0
+	lsr.w      #1,d4
+	bcs.s      draw_back17
+	bfclr      d0{d6:d7} ; 68020+ only
+	move.w     d0,(a3)+
+	bra.w      draw_back18 /* XXX */
 draw_back17:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
+	bfins      d1,d0{d6:d7} ; 68020+ only
+	bset       d2,d0
+	move.w     d0,(a3)+
 draw_back18:
-		dbf        d5,draw_back16
-		movem.l    (a7)+,d0-d7/a0-a6
-		move.w     d2,d0
-		bsr        calc_scopeaddr
-		move.w     d0,d2
-		movem.w    4(a4),d6-d7
-		move.w     scope_currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back19:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back20
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_back21
-draw_back20:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		bset       d2,d0
-		move.w     d0,(a3)+
-draw_back21:
-		dbf        d5,draw_back19
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
+	dbf        d5,draw_back16
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
 drawback_params: ds.w 16
 
 drawhi_back:
-		lea.l      drawhiback_coords(pc),a0
-		movem.w    d0-d3,(a0)
-		movea.l    lineavars(pc),a0
-		cmpi.w     #16,LA_PLANES(a0)
-		bne.s      drawhi_back3
-		move.w     #3,-(a7) /* Logbase */
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
-		moveq.l    #0,d4
-		moveq.l    #0,d5
-		moveq.l    #0,d6
-		moveq.l    #0,d7
-		move.w     drawhiback_coords+0(pc),d4
-		move.w     drawhiback_coords+2(pc),d5
-		move.w     drawhiback_coords+4(pc),d6
-		move.w     drawhiback_coords+6(pc),d7
-		cmp.w      d4,d6
-		bcc.s      drawhi_back1
-		exg        d4,d6
-drawhi_back1:
-		cmp.w      d5,d7
-		bcc.s      drawhi_back2
-		exg        d5,d7
-drawhi_back2:
-		cmp.w      d5,d7
-		beq.s      drawhi_back4
-drawhi_back3:
-		nop
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-drawhi_back4:
-		movea.l    stipple_ptr(pc),a2
-		movea.l    lineavars(pc),a1
-		move.w     d4,d0
-		sub.w      d4,d6
-		subq.w     #2,d6
-		move.w     d5,d2
-		mulu.w     la_bytes_line(pc),d2
-		adda.l     d2,a0
-		asl.w      #1,d4
-		adda.l     d4,a0
-		and.w      stipple_mask(pc),d5
-		move.w     0(a2,d5.w*2),d3 ; 68020+ only
-		move.w     scope_currcolor(pc),(a0)+
-drawhi_back5:
-		move.w     scope_currcolor(pc),d1
-		move.w     d0,d4
-		andi.w     #15,d4
-		neg.w      d4
-		addi.w     #15,d4
-		btst       d4,d3
-		bne.s      drawhi_back6
-		move.w     #0,(a0)+
-		bra.s      drawhi_back7
-drawhi_back6:
-		move.w     d1,(a0)+
-drawhi_back7:
-		addq.w     #1,d0
-		dbf        d6,drawhi_back5
-		move.w     scope_currcolor(pc),(a0)+
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawhiback_coords: ds.w 4
+	lea.l      drawhiback_ccords(pc),a0
+	movem.w    d0-d3,(a0)
+	movea.l    lineavars(pc),a0
+	cmpi.w     #16,(a0)
+	bne.w      draw_hiback3
+	move.w     #3,-(a7) /* Logbase */
+	trap       #14
+	addq.l     #2,a7
+	movea.l    d0,a0
+	moveq.l    #0,d4
+	moveq.l    #0,d5
+	moveq.l    #0,d6
+	moveq.l    #0,d7
+	move.w     drawhiback_ccords+0(pc),d4
+	move.w     drawhiback_ccords+2(pc),d5
+	move.w     drawhiback_ccords+4(pc),d6
+	move.w     drawhiback_ccords+6(pc),d7
+	cmp.w      d4,d6
+	bcc.s      draw_hiback1
+	exg        d4,d6
+draw_hiback1:
+	cmp.w      d5,d7
+	bcc.s      draw_hiback2
+	exg        d5,d7
+draw_hiback2:
+	cmp.w      d5,d7
+	beq.w      draw_hiback4 /* XXX */
+draw_hiback3:
+	nop
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
+draw_hiback4:
+	movea.l    x12d66(pc),a2
+	movea.l    lineavars(pc),a1
+	move.w     d4,d0
+	sub.w      d4,d6
+	subq.w     #2,d6
+	move.w     d5,d2
+	mulu.w     la_bytes_line(pc),d2
+	adda.l     d2,a0
+	asl.w      #1,d4
+	adda.l     d4,a0
+	and.w      x12d6a(pc),d5
+	move.w     0(a2,d5.w*2),d3 ; 68020+ only
+	move.w     scope_currcolor(pc),(a0)+
+draw_hiback5:
+	move.w     scope_currcolor(pc),d1
+	move.w     d0,d4
+	andi.w     #15,d4
+	neg.w      d4
+	addi.w     #15,d4
+	btst       d4,d3
+	bne.s      draw_hiback6
+	move.w     #0,(a0)+
+	bra.s      draw_hiback7
+draw_hiback6:
+	move.w     d1,(a0)+
+draw_hiback7:
+	addq.w     #1,d0
+	dbf        d6,draw_hiback5
+	move.w     scope_currcolor(pc),(a0)+
+	movem.l    (a7)+,d0-d7/a0-a6
+	rts
+drawhiback_ccords: ds.w 4
 
 calc_screenaddr:
-		movem.l    d0-d6/a0-a1,-(a7)
-		move.w     la_planes(pc),d5
-		subq.w     #1,d5
-		move.w     la_bytes_line(pc),d6
-		moveq.l    #0,d7
-		move.w     d0,d7
-		asr.l      #4,d7
-		cmpi.w     #1,d5
-		beq.s      calc_screenaddr1
-		cmpi.w     #3,d5
-		beq.s      calc_screenaddr2
-		cmpi.w     #7,d5
-		beq.s      calc_screenaddr3
-		movea.l    a0,a2
-		moveq.l    #2,d7
-		movem.l    (a7)+,d0-d6/a0-a1
-		rts
+	movem.l    d0-d6/a0-a1,-(a7)
+	move.w     la_planes(pc),d5
+	subq.w     #1,d5
+	move.w     la_bytes_line(pc),d6
+	moveq.l    #0,d7
+	move.w     d0,d7
+	asr.l      #4,d7
+	cmpi.w     #1,d5
+	beq.s      calc_screenaddr1
+	cmpi.w     #3,d5
+	beq.s      calc_screenaddr2
+	cmpi.w     #7,d5
+	beq.s      calc_screenaddr3
+	movea.l    a0,a2
+	moveq.l    #2,d7
+	movem.l    (a7)+,d0-d6/a0-a1
+	rts
 calc_screenaddr1:
-		asl.l      #1,d7
-		bra.s      calc_screenaddr4
+	asl.l      #1,d7
+	bra.s      calc_screenaddr4
 calc_screenaddr2:
-		asl.l      #2,d7
-		bra.s      calc_screenaddr4
+	asl.l      #2,d7
+	bra.s      calc_screenaddr4
 calc_screenaddr3:
-		asl.l      #3,d7
+	asl.l      #3,d7
 calc_screenaddr4:
-		move.w     d5,d4
-		addq.w     #1,d4
-		asl.w      #1,d4
-		mulu.w     d6,d1
-		add.l      d7,d1
-		add.l      d7,d1
-		adda.l     d1,a0
-		movea.l    a0,a2
-		moveq.l    #0,d7
-		move.w     d4,d7
-		movem.l    (a7)+,d0-d6/a0-a1
-		rts
+	move.w     d5,d4
+	addq.w     #1,d4
+	asl.w      #1,d4
+	mulu.w     d6,d1
+	add.l      d7,d1
+	add.l      d7,d1
+	adda.l     d1,a0
+	movea.l    a0,a2
+	moveq.l    #0,d7
+	move.w     d4,d7
+	movem.l    (a7)+,d0-d6/a0-a1
+	rts
 
 calc_endaddr:
-		movem.l    d0-d7/a0-a1,-(a7)
-		move.w     la_planes(pc),d5
-		subq.w     #1,d5
-		move.w     la_bytes_line(pc),d6
-		moveq.l    #0,d7
-		move.w     d2,d7
-		asr.l      #4,d7
-		cmpi.w     #1,d5
-		beq.s      calc_endaddr1
-		cmpi.w     #3,d5
-		beq.s      calc_endaddr2
-		cmpi.w     #7,d5
-		beq.s      calc_endaddr3
-		movea.l    a0,a3
-		movem.l    (a7)+,d0-d7/a0-a1
-		rts
+	movem.l    d0-d7/a0-a1,-(a7)
+	move.w     la_planes(pc),d5
+	subq.w     #1,d5
+	move.w     la_bytes_line(pc),d6
+	moveq.l    #0,d7
+	move.w     d2,d7
+	asr.l      #4,d7
+	cmpi.w     #1,d5
+	beq.s      calc_endaddr1
+	cmpi.w     #3,d5
+	beq.s      calc_endaddr2
+	cmpi.w     #7,d5
+	beq.s      calc_endaddr3
+	movea.l    a0,a3
+	movem.l    (a7)+,d0-d7/a0-a1
+	rts
 calc_endaddr1:
-		asl.l      #1,d7
-		bra.s      calc_endaddr4
+	asl.l      #1,d7
+	bra.s      calc_endaddr4
 calc_endaddr2:
-		asl.l      #2,d7
-		bra.s      calc_endaddr4
+	asl.l      #2,d7
+	bra.s      calc_endaddr4
 calc_endaddr3:
-		asl.l      #3,d7
+	asl.l      #3,d7
 calc_endaddr4:
-		mulu.w     d6,d3
-		add.l      d7,d3
-		add.l      d7,d3
-		adda.l     d3,a0
-		movea.l    a0,a3
-		movem.l    (a7)+,d0-d7/a0-a1
-		rts
+	mulu.w     d6,d3
+	add.l      d7,d3
+	add.l      d7,d3
+	adda.l     d3,a0
+	movea.l    a0,a3
+	movem.l    (a7)+,d0-d7/a0-a1
+	rts
 
 *
 * calculate bitpos in d6/d7 for bfextu
 * for the starting x-coordinate
 *
 calc_bitstartpos:
-		movem.l    d0-d5,-(a7)
-		moveq.l    #16,d7
-		move.w     d0,d6
-		divu.w     #16,d6
-		swap       d6
-		sub.w      d6,d7
-		addq.w     #1,d7
-		addi.w     #16,d6
-		movem.l    (a7)+,d0-d5
-		rts
+	movem.l    d0-d5,-(a7)
+	moveq.l    #16,d7
+	move.w     d0,d6
+	divu.w     #16,d6
+	swap       d6
+	sub.w      d6,d7
+	addq.w     #1,d7
+	addi.w     #16,d6
+	movem.l    (a7)+,d0-d5
+	rts
 
 *
 * calculate bitpos in d6/d7 for bfextu
 * for the ending x-coordinate
 *
 calc_bitendpos:
-		movem.l    d0-d5,-(a7)
-		move.w     d2,d0
-		andi.w     #0xFFF0,d0
-		sub.w      d0,d2
-		move.w     d2,d7
-		addq.w     #1,d7
-		moveq.l    #16,d6
-		movem.l    (a7)+,d0-d5
-		rts
+	movem.l    d0-d5,-(a7)
+	move.w     d2,d0
+	andi.w     #0xFFF0,d0
+	sub.w      d0,d2
+	move.w     d2,d7
+	addq.w     #1,d7
+	moveq.l    #16,d6
+	movem.l    (a7)+,d0-d5
+	rts
 
 calc_scopeaddr:
 	movem.l    d1-d7/a1-a6,-(a7)
@@ -3106,7 +3103,7 @@ calc_scopeaddr4:
 	movem.l    (a7)+,d1-d7/a1-a6
 	rts
 
-get_logic: /* unused */
+set_screenaddr: /* unused */
 	movem.l    d0-d7/a0-a6,-(a7)
 	move.w     #3,-(a7) /* Logbase */
 	trap       #14
@@ -3305,11 +3302,11 @@ scope_active: ds.w 1
 undraw_flag: ds.w 1
 cliprect: ds.w 4
 scope_currcolor: ds.w 1
-wrt_mode: ds.w 1 /* unused */
+        ds.w 1 /* unused */
 scope_colormask: ds.w 1
-stipple_ptr: ds.l 1
-stipple_mask: ds.w 1
-stipple_default: ds.l 1 /* unused */
+x12d66: ds.l 1
+x12d6a: ds.w 1
+        ds.l 1 /* unused */
 zeroflag: ds.w 1
 stringbuf: ds.b 160 /* BUG: too short for pattern info */
 

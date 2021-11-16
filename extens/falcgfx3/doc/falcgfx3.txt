@@ -601,7 +601,7 @@ Important :-   Currently  not yet supported in TRUE-COLOUR modes.  In  the
 Command   :-   _falc contourfill
 Machine   :-   Falcon 030's only - but compatible with ST resolutions.
 Version   :-   All GRAFIX (III) versions.
-Syntax    :-   _falc contourfill X,Y
+Syntax    :-   _falc contourfill X,Y,COLOR
 Action    :-   Fills the contour starting at the coordinates X,Y. The fill 
                pattern is that determined by _def stipple (by  default,  a 
                solid fill).

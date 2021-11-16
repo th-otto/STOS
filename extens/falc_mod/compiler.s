@@ -1024,7 +1024,7 @@ draw_back:
 	beq        drawhi_back
 	bsr        calc_screenaddr
 	bsr        calc_endaddr
-	movea.l    x12d66(pc),a1
+	movea.l    stipple_ptr(pc),a1
 	subq.w     #1,d5
 	move.w     la_bytes_line(pc),d6
 	movea.l    a2,a4
@@ -1039,7 +1039,7 @@ draw_back:
 	move.w     d0,d4
 	swap       d4
 	move.w     scope_currcolor(pc),d4
-	and.w      x12d6a(pc),d1
+	and.w      stipple_mask(pc),d1
 	move.w     0(a1,d1.w*2),d3 ; 68020+ only
 	movem.l    d3-d7,-(a7)
 	moveq.l    #0,d1
@@ -1110,7 +1110,7 @@ draw_back8:
 	bsr        calc_scopeaddr
 	move.w     d0,d2
 	move.w     scope_currcolor(pc),d4
-	and.w      x12d6a(pc),d1
+	and.w      stipple_mask(pc),d1
 	move.w     0(a1,d1.w*2),d3 ; 68020+ only
 	moveq.l    #0,d1
 	bfextu     d3{d6:d7},d1 ; 68020+ only
@@ -1144,7 +1144,7 @@ draw_back12:
 	move.w     d0,d4
 	swap       d4
 	move.w     scope_currcolor(pc),d4
-	and.w      x12d6a(pc),d1
+	and.w      stipple_mask(pc),d1
 	move.w     0(a1,d1.w*2),d3 ; 68020+ only
 	moveq.l    #0,d1
 	bfextu     d3{d6:d7},d1 ; 68020+ only
@@ -1169,7 +1169,7 @@ draw_back15:
 	move.w     d0,d2
 	movem.w    4(a4),d6-d7
 	move.w     scope_currcolor(pc),d4
-	and.w      x12d6a(pc),d1
+	and.w      stipple_mask(pc),d1
 	move.w     0(a1,d1.w*2),d3 ; 68020+ only
 	moveq.l    #0,d1
 	bfextu     d3{d6:d7},d1 ; 68020+ only
@@ -1223,7 +1223,7 @@ draw_hiback3:
 	movem.l    (a7)+,d0-d7/a0-a6
 	rts
 draw_hiback4:
-	movea.l    x12d66(pc),a2
+	movea.l    stipple_ptr(pc),a2
 	movea.l    lineavars(pc),a1
 	move.w     d4,d0
 	sub.w      d4,d6
@@ -1233,7 +1233,7 @@ draw_hiback4:
 	adda.l     d2,a0
 	asl.w      #1,d4
 	adda.l     d4,a0
-	and.w      x12d6a(pc),d5
+	and.w      stipple_mask(pc),d5
 	move.w     0(a2,d5.w*2),d3 ; 68020+ only
 	move.w     scope_currcolor(pc),(a0)+
 draw_hiback5:
@@ -1432,9 +1432,9 @@ scope_currcolor: ds.w 1
 scope_colormask: ds.w 1
 
 
-x12d66: ds.l 1
-x12d6a: ds.w 1
-        ds.l 1 /* unused */
+stipple_ptr: ds.l 1
+stipple_mask: ds.w 1
+stipple_default:   ds.l 1 /* unused */
 
 init:
 	lea        exit(pc),a2
