@@ -966,9 +966,9 @@ drawbox1:
 		exg        d1,d3
 drawbox2:
 		lea.l      cliprect(pc),a1
-		cmp.w      ZERO(a1),d0
+		cmp.w      (a1),d0
 		bcc.s      drawbox3
-		move.w     ZERO(a1),d0
+		move.w     (a1),d0
 drawbox3:
 		cmp.w      4(a1),d2
 		bcs.s      drawbox4
@@ -985,13 +985,13 @@ drawbox6:
 		lea.l      drawbox_coords(pc),a4
 * left line
 		movem.w    d0-d3,(a4)
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		move.w     2(a4),d1
-		move.w     ZERO(a4),d2
+		move.w     (a4),d2
 		move.w     6(a4),d3
 		bsr        drawline
 * top line
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		move.w     2(a4),d1
 		move.w     4(a4),d2
 		move.w     2(a4),d3
@@ -1003,7 +1003,7 @@ drawbox6:
 		move.w     6(a4),d3
 		bsr        drawline
 * bottom line
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		move.w     6(a4),d1
 		move.w     4(a4),d2
 		move.w     6(a4),d3
@@ -1029,9 +1029,9 @@ drawbar1:
 		exg        d1,d3
 drawbar2:
 		lea.l      cliprect(pc),a1
-		cmp.w      ZERO(a1),d0
+		cmp.w      (a1),d0
 		bcc.s      drawbar3
-		move.w     ZERO(a1),d0
+		move.w     (a1),d0
 drawbar3:
 		cmp.w      4(a1),d2
 		bcs.s      drawbar4
@@ -1045,33 +1045,70 @@ drawbar5:
 		bcs.s      drawbar6
 		move.w     6(a1),d3
 drawbar6:
-		lea.l      drawbar_coords(pc),a4
-		movem.w    d0-d3,(a4)
+		movea.l    stipple_ptr(pc),a2
+		cmpi.l     #-1,(a2)
+		beq.s      drawbar7
+		bra.s      drawbar12
+drawbar7:
+		movea.l    logic(pc),a0
+		movea.l    lineavars(pc),a1
 		cmp.w      d0,d2
 		beq.s      drawbar8
 		cmp.w      d1,d3
 		beq.s      drawbar8
-		move.w     ZERO(a4),d0
+		bra.s      drawbar9
+drawbar8:
+		bsr        drawline
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+drawbar9:
+		moveq.l    #0,d4
+		moveq.l    #0,d5
+		move.w     currcolor(pc),d6
+		sub.w      d1,d3
+		subq.w     #1,d3
+		move.w     V_BYTES_LIN(a1),d5
+		mulu.w     d5,d1
+		adda.l     d1,a0
+drawbar10:
+		move.w     d0,d4
+drawbar11:
+		move.w     d6,0(a0,d4.l*2) ; 68020+ only
+		addq.w     #1,d4
+		cmp.w      d4,d2
+		bgt.s      drawbar11
+		adda.l     d5,a0
+		dbf        d3,drawbar10
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+drawbar12:
+		lea.l      drawbar_coords(pc),a4
+		movem.w    d0-d3,(a4)
+		cmp.w      d0,d2
+		beq.s      drawbar14
+		cmp.w      d1,d3
+		beq.s      drawbar14
+		move.w     0(a4),d0
 		move.w     2(a4),d1
 		move.w     4(a4),d2
 		move.w     2(a4),d3
 		bsr.s      drawline
-drawbar7:
+drawbar13:
 		addq.w     #1,2(a4)
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		move.w     2(a4),d1
 		move.w     4(a4),d2
 		move.w     2(a4),d3
 		bsr        draw_back
 		move.w     6(a4),d0
 		cmp.w      2(a4),d0
-		bne.s      drawbar7
-		move.w     ZERO(a4),d0
+		bne.s      drawbar13
+		move.w     (a4),d0
 		move.w     6(a4),d1
 		move.w     4(a4),d2
 		move.w     6(a4),d3
 		bsr.s      drawline
-drawbar8:
+drawbar14:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -1086,145 +1123,35 @@ drawline:
 		andi.l     #0x0000FFFF,d3
 		movea.l    logic(pc),a0
 		movea.l    lineavars(pc),a6
-		cmpi.w     #16,LA_PLANES(a6)
-		beq        drawline_hi
-		cmp.w      d1,d3
-		bne.s      drawline3
 		cmp.w      d0,d2
-		bcc.s      drawline1
-		exg        d0,d2
+		beq.s      drawline1
+		cmp.w      d1,d2 /* BUG: should be d3 */
+		beq.s      drawline1
+		bra        drawline_hi1
 drawline1:
-		cmp.w      d1,d3
-		bcc.s      drawline2
-		exg        d1,d3
-drawline2:
-		bsr        draw_horline
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-drawline3:
-		cmp.w      d0,d2
-		bne.s      drawline6
-		cmp.w      d0,d2
-		bcc.s      drawline4
-		exg        d0,d2
-drawline4:
-		cmp.w      d1,d3
-		bcc.s      drawline5
-		exg        d1,d3
-drawline5:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		bsr        draw_vertline
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-* diagonal draw
-drawline6:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
 		lea.l      line_coords(pc),a0
 		movem.w    d0-d3,(a0)
+		movea.l    logic(pc),a0
 		moveq.l    #0,d4
 		moveq.l    #0,d5
 		moveq.l    #0,d6
 		moveq.l    #0,d7
-		lea.l      line_dirs(pc),a3
-		move.w     line_coords(pc),d0
-		move.w     line_coords+2(pc),d1
-		move.w     line_coords+4(pc),d2
-		move.w     line_coords+6(pc),d3
-		sub.w      d0,d2
-		sub.w      d1,d3
-		move.w     d2,d4
-		move.w     d3,d5
-		move.w     line_coords(pc),d0
-		move.w     line_coords+2(pc),d1
-		tst.w      d4
-		bpl.s      drawline7
-		neg.w      d4
-		move.w     #-1,(a3)
-		bra.s      drawline8
-drawline7:
-		move.w     #1,(a3)
-drawline8:
-		tst.w      d5
-		bpl.s      drawline9
-		neg.w      d5
-		move.w     #-1,2(a3)
-		bra.s      drawline10
-drawline9:
-		move.w     #1,2(a3)
-drawline10:
-		tst.w      d5
-		bne.s      drawline11
-		move.w     #-1,4(a3)
-		bra.s      drawline12
-drawline11:
-		move.w     #0,4(a3)
-drawline12:
-		cmp.w      line_coords+4(pc),d0
-		bne.s      drawline13
-		cmp.w      line_coords+6(pc),d1
-		beq.s      drawline16
-drawline13:
-		move.w     4(a3),d6
-		tst.w      d6
-		bge.s      drawline14
-		add.w      ZERO(a3),d0
-		add.w      d5,4(a3)
-		bra.s      drawline15
-drawline14:
-		add.w      2(a3),d1
-		sub.w      d4,4(a3)
-drawline15:
-		bsr        setpixel
-		bra.s      drawline12
-drawline16:
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-line_coords: ds.w 4
-line_dirs: ds.w 3
-
-
-drawline_hi:
-		cmp.w      d0,d2
-		beq.s      drawline_hi1
-		cmp.w      d1,d2 /* BUG: should be d3 */
-		beq.s      drawline_hi1
-		bra        drawline6
-drawline_hi1:
-		lea.l      drawline_ccords(pc),a0
-		movem.w    d0-d3,(a0)
-		movea.l    lineavars(pc),a0
-		cmpi.w     #16,LA_PLANES(a0)
-		bne.s      drawline_hi4
-		move.w     #3,-(a7) /* Logbase */
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
-		moveq.l    #0,d4
-		moveq.l    #0,d5
-		moveq.l    #0,d6
-		moveq.l    #0,d7
-		move.w     drawline_ccords(pc),d4
-		move.w     drawline_ccords+2(pc),d5
-		move.w     drawline_ccords+4(pc),d6
-		move.w     drawline_ccords+6(pc),d7
+		move.w     line_coords(pc),d4
+		move.w     line_coords+2(pc),d5
+		move.w     line_coords+4(pc),d6
+		move.w     line_coords+6(pc),d7
 		cmp.w      d4,d6
-		bcc.s      drawline_hi2
+		bcc.s      drawline2
 		exg        d4,d6
-drawline_hi2:
+drawline2:
 		cmp.w      d5,d7
-		bcc.s      drawline_hi3
+		bcc.s      drawline3
 		exg        d5,d7
-drawline_hi3:
+drawline3:
 		cmp.w      d4,d6
 		beq.s      drawline_hi_ver
 		cmp.w      d5,d7
 		beq.s      drawline_hi_hor
-drawline_hi4:
-		nop
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -1242,6 +1169,8 @@ drawline_hi_ver:
 		move.w     colormask(pc),d3
 drawline_hi_ver1:
 		move.w     currcolor(pc),d2
+		cmpi.w     #-1,d3
+		beq.s      drawline_hi_ver2
 		move.w     d0,d4
 		andi.w     #15,d4
 		neg.w      d4
@@ -1273,6 +1202,8 @@ drawline_hi_hor:
 		move.w     colormask(pc),d3
 drawline_hi_hor1:
 		move.w     currcolor(pc),d1
+		cmpi.w     #-1,d3
+		beq.s      drawline_hi_hor2
 		move.w     d0,d4
 		andi.w     #15,d4
 		neg.w      d4
@@ -1290,217 +1221,78 @@ drawline_hi_hor3:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
-drawline_ccords: ds.w 4
+line_coords: ds.w 4
 
-draw_horline:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		movea.l    a2,a4
-		movea.l    a3,a5
-		cmpa.l     a2,a3
-		beq.s      draw_horline11
-		suba.l     a4,a5
-		cmpa.w     d7,a5
-		beq        draw_horline15
-		bsr        calc_bitstartpos
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		movem.l    d3-d7,-(a7)
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline1:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline2
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline3
-draw_horline2:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-draw_horline3:
-		dbf        d5,draw_horline1
-		movem.l    (a7)+,d3-d7
-draw_horline4:
-		movem.l    d3-d7,-(a7)
-draw_horline5:
-		lsr.w      #1,d4
-		bcs.s      draw_horline6
-		move.w     #0,(a2)+
-		bra.s      draw_horline7
-draw_horline6:
-		move.w     d3,(a2)+
-draw_horline7:
-		dbf        d5,draw_horline5
-		movem.l    (a7)+,d3-d7
-		cmpa.l     a2,a3
-		bne.s      draw_horline4
-		bsr        calc_bitendpos
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline8:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline9
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_horline10
-draw_horline9:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-draw_horline10:
-		dbf        d5,draw_horline8
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_horline11:
-		move.w     d0,d6
-		move.w     d2,d7
-		sub.w      d6,d7
-		addq.w     #1,d7
-		divu.w     #16,d6
-		swap       d6
-		addi.w     #16,d6
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline12:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline13
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline14
-draw_horline13:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-draw_horline14:
-		dbf        d5,draw_horline12
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_horline15:
-		bsr        calc_bitstartpos
-		lea.l      horline_params(pc),a4
-		movem.w    d6-d7,(a4)
-		bsr        calc_bitendpos
-		movem.w    d6-d7,4(a4)
-		movem.l    d0-d7/a0-a6,-(a7)
-		movem.w    (a4),d6-d7
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline16:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline17
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline18
-draw_horline17:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-draw_horline18:
-		dbf        d5,draw_horline16
-		movem.l    (a7)+,d0-d7/a0-a6
-		movem.w    4(a4),d6-d7
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline19:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline20
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_horline21
-draw_horline20:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-draw_horline21:
-		dbf        d5,draw_horline19
+* diagonal draw
+drawline_hi1:
+		lea.l      drawline_coords(pc),a0
+		movem.w    d0-d3,(a0)
+		moveq.l    #0,d4
+		moveq.l    #0,d5
+		moveq.l    #0,d6
+		moveq.l    #0,d7
+		lea        line_dirs(pc),a3
+		move.w     drawline_coords(pc),d0
+		move.w     drawline_coords+2(pc),d1
+		move.w     drawline_coords+4(pc),d2
+		move.w     drawline_coords+6(pc),d3
+		sub.w      d0,d2
+		sub.w      d1,d3
+		move.w     d2,d4
+		move.w     d3,d5
+		move.w     drawline_coords(pc),d0
+		move.w     drawline_coords+2(pc),d1
+		tst.w      d4
+		bpl.s      drawline7
+		neg.w      d4
+		move.w     #-1,(a3)
+		bra.s      drawline8
+drawline7:
+		move.w     #1,(a3)
+drawline8:
+		tst.w      d5
+		bpl.s      drawline9
+		neg.w      d5
+		move.w     #-1,2(a3)
+		bra.s      drawline10
+drawline9:
+		move.w     #1,2(a3)
+drawline10:
+		tst.w      d5
+		bne.s      drawline11
+		move.w     #-1,4(a3)
+		bra.s      drawline12
+drawline11:
+		move.w     #0,4(a3)
+drawline12:
+		cmp.w      drawline_coords+4(pc),d0
+		bne.s      drawline13
+		cmp.w      drawline_coords+6(pc),d1
+		beq.s      drawline16
+drawline13:
+		move.w     4(a3),d6
+		tst.w      d6
+		bge.s      drawline14
+		add.w      (a3),d0
+		add.w      d5,4(a3)
+		bra.s      drawline15
+drawline14:
+		add.w      2(a3),d1
+		sub.w      d4,4(a3)
+drawline15:
+		bsr.s      setpixel
+		bra.s      drawline12
+drawline16:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
-horline_params: ds.w 16
+drawline_coords: ds.w 4
+line_dirs: ds.w 3
 
-
-draw_vertline:
-		movem.l    d0-d7/a0-a6,-(a7)
-		bsr        calc_bitstartpos
-		moveq.l    #1,d7
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     currcolor(pc),d4
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-draw_vertline1:
-		movem.l    d0-d7/a2-a3,-(a7)
-		andi.w     #15,d1
-		neg.w      d1
-		addi.w     #31,d1
-		move.w     d1,d6
-		moveq.l    #0,d1
-		move.w     colormask(pc),d3
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_vertline2:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_vertline3
-		swap       d4
-		bclr       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-		bra.s      draw_vertline5
-draw_vertline3:
-		swap       d4
-		bclr       d4,d0
-		btst       #0,d1
-		beq.s      draw_vertline4
-		bset       d4,d0
-draw_vertline4:
-		swap       d4
-		move.w     d0,(a2)+
-draw_vertline5:
-		dbf        d5,draw_vertline2
-		movem.l    (a7)+,d0-d7/a2-a3
-		adda.w     V_BYTES_LIN(a6),a2
-		addq.w     #1,d1
-		cmp.w      d1,d3
-		bne.s      draw_vertline1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
 
 setpixel:
 		movem.l    d0-d7/a0-a6,-(a7)
 		movea.l    lineavars(pc),a6
-		cmpi.w     #16,LA_PLANES(a6)
-		beq.s      sethipixel
-		bsr        get_screenaddr
-		movea.l    lineavars(pc),a6
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     currcolor(pc),d2
-setpixel1:
-		move.w     (a0),d1
-		lsr.w      #1,d2
-		bcs.s      setpixel2
-		bclr       d0,d1
-		bra.s      setpixel3
-setpixel2:
-		bset       d0,d1
-setpixel3:
-		move.w     d1,(a0)+
-		dbf        d5,setpixel1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-sethipixel:
 		moveq.l    #0,d6
 		move.w     V_BYTES_LIN(a6),d6
 		mulu.w     d6,d1
@@ -1514,190 +1306,9 @@ sethipixel:
 
 draw_back:
 		movem.l    d0-d7/a0-a6,-(a7)
-		movea.l    logic(pc),a0
-		movea.l    lineavars(pc),a6
-		cmpi.w     #16,LA_PLANES(a6)
-		beq        drawhi_back
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		movea.l    stipple_ptr(pc),a1
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		movea.l    a2,a4
-		movea.l    a3,a5
-		cmpa.l     a2,a3
-		beq        draw_back11
-		suba.l     a4,a5
-		cmpa.w     d7,a5
-		beq        draw_back15
-		bsr        calc_bitstartpos
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		movem.l    d3-d7,-(a7)
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back1:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back2
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back3
-draw_back2:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-draw_back3:
-		dbf        d5,draw_back1
-		movem.l    (a7)+,d3-d7
-draw_back4:
-		movem.l    d3-d7,-(a7)
-draw_back5:
-		lsr.w      #1,d4
-		bcs.s      draw_back6
-		move.w     #0,(a2)+
-		bra.s      draw_back7
-draw_back6:
-		move.w     d3,(a2)+
-draw_back7:
-		dbf        d5,draw_back5
-		movem.l    (a7)+,d3-d7
-		cmpa.l     a2,a3
-		bne.s      draw_back4
-		bsr        calc_bitendpos
-		move.w     d2,d0
-		bsr        get_screenaddr
-		move.w     d0,d2
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back8:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back9
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_back10
-draw_back9:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		bset       d2,d0
-		move.w     d0,(a3)+
-draw_back10:
-		dbf        d5,draw_back8
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_back11:
-		move.w     d0,d6
-		move.w     d2,d7
-		sub.w      d6,d7
-		addq.w     #1,d7
-		divu.w     #16,d6
-		swap       d6
-		addi.w     #16,d6
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     d2,d0
-		bsr        get_screenaddr
-		move.w     d0,d2
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back12:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back13
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back14
-draw_back13:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		bset       d2,d0
-		swap       d4
-		move.w     d0,(a2)+
-draw_back14:
-		dbf        d5,draw_back12
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_back15:
-		bsr        calc_bitstartpos
-		lea.l      drawback_params(pc),a4
-		movem.w    d6-d7,(a4)
-		bsr        calc_bitendpos
-		movem.w    d6-d7,4(a4)
-		movem.l    d0-d7/a0-a6,-(a7)
-		movem.w    (a4),d6-d7
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back16:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back17
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back18
-draw_back17:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-draw_back18:
-		dbf        d5,draw_back16
-		movem.l    (a7)+,d0-d7/a0-a6
-		move.w     d2,d0
-		bsr        get_screenaddr
-		move.w     d0,d2
-		movem.w    4(a4),d6-d7
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back19:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back20
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_back21
-draw_back20:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		bset       d2,d0
-		move.w     d0,(a3)+
-draw_back21:
-		dbf        d5,draw_back19
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawback_params: ds.w 16
-
-drawhi_back:
 		lea.l      drawhiback_coords(pc),a0
 		movem.w    d0-d3,(a0)
-		movea.l    lineavars(pc),a0
-		cmpi.w     #16,LA_PLANES(a0)
-		bne.s      drawhi_back3
-		move.w     #3,-(a7) /* Logbase */
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
+		movea.l    logic(pc),a0
 		moveq.l    #0,d4
 		moveq.l    #0,d5
 		moveq.l    #0,d6
@@ -1717,7 +1328,6 @@ drawhi_back2:
 		cmp.w      d5,d7
 		beq.s      drawhi_back4
 drawhi_back3:
-		nop
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 drawhi_back4:
@@ -1753,137 +1363,7 @@ drawhi_back7:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
-drawhiback_coords: ds.w 4
-
-calc_screenaddr:
-		movem.l    d0-d6/a0-a1,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		moveq.l    #0,d7
-		move.w     d0,d7
-		asr.l      #4,d7
-		cmpi.w     #3,d5
-		beq.s      calc_screenaddr2
-		cmpi.w     #7,d5
-		beq.s      calc_screenaddr3
-* BUG: does not handle monochrome/medium
-		movea.l    a0,a2
-		moveq.l    #2,d7
-		movem.l    (a7)+,d0-d6/a0-a1
-		rts
-calc_screenaddr2:
-		asl.l      #2,d7
-		bra.s      calc_screenaddr4
-calc_screenaddr3:
-		asl.l      #3,d7
-calc_screenaddr4:
-		move.w     d5,d4
-		addq.w     #1,d4
-		asl.w      #1,d4
-		mulu.w     d6,d1
-		add.l      d7,d1
-		add.l      d7,d1
-		adda.l     d1,a0
-		movea.l    a0,a2
-		moveq.l    #0,d7
-		move.w     d4,d7
-		movem.l    (a7)+,d0-d6/a0-a1
-		rts
-
-calc_endaddr:
-		movem.l    d0-d7/a0-a1,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		moveq.l    #0,d7
-		move.w     d2,d7
-		asr.l      #4,d7
-		cmpi.w     #3,d5
-		beq.s      calc_endaddr2
-		cmpi.w     #7,d5
-		beq.s      calc_endaddr3
-* BUG: does not handle monochrome/medium
-		movea.l    a0,a3
-		movem.l    (a7)+,d0-d7/a0-a1
-		rts
-calc_endaddr2:
-		asl.l      #2,d7
-		bra.s      calc_endaddr4
-calc_endaddr3:
-		asl.l      #3,d7
-calc_endaddr4:
-		mulu.w     d6,d3
-		add.l      d7,d3
-		add.l      d7,d3
-		adda.l     d3,a0
-		movea.l    a0,a3
-		movem.l    (a7)+,d0-d7/a0-a1
-		rts
-
-*
-* calculate bitpos in d6/d7 for bfextu
-* for the starting x-coordinate
-*
-calc_bitstartpos:
-		movem.l    d0-d5,-(a7)
-		moveq.l    #16,d7
-		move.w     d0,d6
-		divu.w     #16,d6
-		swap       d6
-		sub.w      d6,d7
-		addq.w     #1,d7
-		addi.w     #16,d6
-		movem.l    (a7)+,d0-d5
-		rts
-
-*
-* calculate bitpos in d6/d7 for bfextu
-* for the ending x-coordinate
-*
-calc_bitendpos:
-		movem.l    d0-d5,-(a7)
-		move.w     d2,d0
-		andi.w     #0xFFF0,d0
-		sub.w      d0,d2
-		move.w     d2,d7
-		addq.w     #1,d7
-		moveq.l    #16,d6
-		movem.l    (a7)+,d0-d5
-		rts
-
-get_screenaddr:
-		movem.l    d1-d7/a1-a6,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		movea.l    logic(pc),a0
-		moveq.l    #0,d7
-		move.w     d0,d7
-		asr.l      #4,d7
-		cmpi.w     #3,d5
-		beq.s      get_screenaddr1
-		cmpi.w     #7,d5
-		beq.s      get_screenaddr2
-* BUG: does not handle monochrome/medium
-		moveq.l    #0,d0
-		movem.l    (a7)+,d1-d7/a1-a6
-		rts
-get_screenaddr1:
-		asl.l      #2,d7
-		bra.s      get_screenaddr3
-get_screenaddr2:
-		asl.l      #3,d7
-get_screenaddr3:
-		mulu.w     d6,d1
-		add.l      d7,d1
-		add.l      d7,d1
-		adda.l     d1,a0
-		andi.w     #15,d0
-		neg.w      d0
-		addi.w     #15,d0
-		movem.l    (a7)+,d1-d7/a1-a6
-		rts
+drawhiback_coords: ds.w 4 /* FIXME */
 
 get_logic:
 		movem.l    d0-d7/a0-a6,-(a7)
@@ -2138,7 +1618,7 @@ lib13:
 	dc.w	0			; no library calls
 falc_multipen_on:
 		lea.l      multipen_on_params(pc),a1
-		move.w     #1,ZERO(a1)
+		move.w     #1,(a1)
 		move.w     #1,2(a1)
 		move.w     #1,4(a1)
 		/* cmpi.b     #1,d0 */
@@ -2160,10 +1640,10 @@ falc_multipen_on1:
 		andi.l     #255,d2
 falc_multipen_on2:
 		lea.l      multipen_on_params(pc),a1
-		move.w     d2,ZERO(a1) /* FIXME: useless */
+		move.w     d2,(a1) /* FIXME: useless */
 		move.w     d3,2(a1)
 		move.w     d4,4(a1)
-		move.w     ZERO(a1),d2
+		move.w     (a1),d2
 		move.w     2(a1),d3
 		move.w     4(a1),d4
 		moveq.l    #S_multipen_on,d0
@@ -2192,10 +1672,10 @@ tc_rgb:
 		asl.w      #6,d3
 		asl.w      #5,d3
 		lea.l      tc_rgb_colors(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		moveq.l    #0,d3
 		lea.l      tc_rgb_colors(pc),a0
-		or.w       ZERO(a0),d3
+		or.w       (a0),d3
 		or.w       2(a0),d3
 		or.w       4(a0),d3
 		clr.l      d2
@@ -2468,8 +1948,8 @@ falc_line:
 		move.l     params_offset-entry(a6),d4
 		adda.l     d4,a6
 		movea.l    lineavars-params(a6),a0
-		cmpi.w     #4,LA_PLANES(a0)
-		bne.s      falc_line1
+		cmpi.w     #16,LA_PLANES(a0)
+		beq.s      falc_line1
 		move.w     currcolor-params(a6),d0
 		bsr.s      linea_setcolor
 		lea.l      falc_line_coords(pc),a1
@@ -2490,7 +1970,7 @@ falc_line1:
 		move.l     drawline_offset-entry(a0),d0
 		adda.l     d0,a0
 		lea.l      falc_line_coords(pc),a1
-		move.w     ZERO(a1),d0
+		move.w     (a1),d0
 		move.w     2(a1),d1
 		move.w     4(a1),d2
 		move.w     6(a1),d3
@@ -2516,26 +1996,29 @@ linea_setcolor2:
 		bset       #0,LA_FG_3+1(a0)
 linea_setcolor3:
 		btst       #3,d0
-		beq.s      linea_setcolor8
+		beq.s      linea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 linea_setcolor4:
-		rts
-/* dead code */
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      linea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
 		btst       #4,d0
-		beq.s      linea_setcolor2
-		bset       #1,LA_FG_2+1(a0)
+		beq.s      linea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
 linea_setcolor5:
 		btst       #5,d0
-		beq.s      linea_setcolor3
-		bset       #1,LA_FG_3+1(a0)
+		beq.s      linea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
 linea_setcolor6:
 		btst       #6,d0
 		beq.s      linea_setcolor7
-		bset       #1,LA_FG_3+1(a0)
+		bset       #0,LA_FG_7+1(a0)
 linea_setcolor7:
 		btst       #7,d0
 		beq.s      linea_setcolor8
-		bset       #1,LA_FG_4+1(a0)
+		bset       #0,LA_FG_8+1(a0)
 linea_setcolor8:
 		rts
 
@@ -2572,12 +2055,63 @@ falc_box:
 		move.w     #0,(a1)+
 		move.w     DEV_TAB(a0),(a1)+
 		move.w     DEV_TAB+2(a0),(a1)+
+		cmpi.w     #16,LA_PLANES(a0)
+		beq        falc_box_hi
+		move.w     currcolor-params(a6),d0
+		bsr        blinea_setcolor
+		lea.l      falc_box_coords(pc),a1
+* left line
+		move.w     (a1),d1
+		move.w     2(a1),d2
+		move.w     (a1),d3
+		move.w     6(a1),d4
+		bsr.s      linea_drawline
+* top line
+		move.w     (a1),d1
+		move.w     2(a1),d2
+		move.w     4(a1),d3
+		move.w     2(a1),d4
+		bsr.s      linea_drawline
+* right line
+		move.w     4(a1),d1
+		move.w     2(a1),d2
+		move.w     4(a1),d3
+		move.w     6(a1),d4
+		bsr.s      linea_drawline
+* bottom line
+		move.w     (a1),d1
+		move.w     6(a1),d2
+		move.w     4(a1),d3
+		move.w     6(a1),d4
+		bsr.s      linea_drawline
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+linea_drawline:
+		movem.l    a0-a1,-(a7)
+		move.w     d1,LA_X1(a0)
+		move.w     d2,LA_Y1(a0)
+		move.w     d3,LA_X2(a0)
+		move.w     d4,LA_Y2(a0)
+		move.w     d1,LA_XMN_CLIP(a0)
+		move.w     d2,LA_YMN_CLIP(a0)
+		move.w     d3,LA_XMX_CLIP(a0)
+		move.w     d4,LA_YMX_CLIP(a0)
+		move.w     #0,LA_LSTLIN(a0)
+		move.w     colormask-params(a6),LA_LN_MASK(a0)
+		move.w     wrt_mode-params(a6),LA_WRT_MODE(a0)
+		move.w     #1,LA_CLIP(a0)
+		dc.w       0xa003 /* draw_line */
+		movem.l    (a7)+,a0-a1
+		rts
+
+falc_box_hi:
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
 		move.l     drawbox_offset-entry(a0),d0
 		adda.l     d0,a0
 		lea.l      falc_box_coords(pc),a1
-		move.w     ZERO(a1),d0
+		move.w     (a1),d0
 		move.w     2(a1),d1
 		move.w     4(a1),d2
 		move.w     6(a1),d3
@@ -2586,6 +2120,50 @@ falc_box:
 		rts
 
 falc_box_coords: ds.w 4
+
+/* FIXME */
+blinea_setcolor:
+		clr.l      LA_FG_1(a0)
+		clr.l      LA_FG_3(a0)
+		btst       #0,d0
+		beq.s      blinea_setcolor1
+		bset       #0,LA_FG_1+1(a0)
+blinea_setcolor1:
+		btst       #1,d0
+		beq.s      blinea_setcolor2
+		bset       #0,LA_FG_2+1(a0)
+blinea_setcolor2:
+		btst       #2,d0
+		beq.s      blinea_setcolor3
+		bset       #0,LA_FG_3+1(a0)
+blinea_setcolor3:
+		btst       #3,d0
+		beq.s      blinea_setcolor4
+		bset       #0,LA_FG_4+1(a0)
+blinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      blinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      blinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+blinea_setcolor5:
+		btst       #5,d0
+		beq.s      blinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+blinea_setcolor6:
+		btst       #6,d0
+		beq.s      blinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+blinea_setcolor7:
+		btst       #7,d0
+		beq.s      blinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+blinea_setcolor8:
+		rts
+
 
 lib28:
 	dc.w	0			; no library calls
@@ -2620,12 +2198,39 @@ falc_bar:
 		move.w     #0,(a1)+
 		move.w     DEV_TAB(a0),(a1)+
 		move.w     DEV_TAB+2(a0),(a1)+
+		cmpi.w     #16,LA_PLANES(a0)
+		beq.s      falc_bar_hi
+
+		move.w     currcolor-params(a6),d0
+		bsr        balinea_setcolor
+		lea.l      falc_bar_coords+0(pc),a4
+		move.w     (a4),LA_X1(a0)
+		move.w     2(a4),LA_Y1(a0)
+		move.w     4(a4),LA_X2(a0)
+		move.w     6(a4),LA_Y2(a0)
+		move.w     (a4),LA_XMN_CLIP(a0)
+		move.w     2(a4),LA_YMN_CLIP(a0)
+		move.w     4(a4),LA_XMX_CLIP(a0)
+		move.w     6(a4),LA_YMX_CLIP(a0)
+
+		move.w     wrt_mode-params(a6),LA_WRT_MODE(a0)
+		movea.l    stipple_ptr-params(a6),a5
+		move.w     stipple_mask-params(a6),d0
+		move.l     a5,LA_PATPTR(a0)
+		move.w     d0,LA_PATMSK(a0)
+		move.w     #0,LA_MULTIFILL(a0)
+		move.w     #1,LA_CLIP(a0)
+		dc.w       0xa005 /* filled_rect */
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+falc_bar_hi:
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
 		move.l     drawbar_offset-entry(a0),d0
 		adda.l     d0,a0
 		lea.l      falc_bar_coords(pc),a1
-		move.w     ZERO(a1),d0
+		move.w     (a1),d0
 		move.w     2(a1),d1
 		move.w     4(a1),d2
 		move.w     6(a1),d3
@@ -2634,6 +2239,50 @@ falc_bar:
 		rts
 
 falc_bar_coords: ds.w 4
+
+/* FIXME */
+balinea_setcolor:
+		clr.l      LA_FG_1(a0)
+		clr.l      LA_FG_3(a0)
+		btst       #0,d0
+		beq.s      balinea_setcolor1
+		bset       #0,LA_FG_1+1(a0)
+balinea_setcolor1:
+		btst       #1,d0
+		beq.s      balinea_setcolor2
+		bset       #0,LA_FG_2+1(a0)
+balinea_setcolor2:
+		btst       #2,d0
+		beq.s      balinea_setcolor3
+		bset       #0,LA_FG_3+1(a0)
+balinea_setcolor3:
+		btst       #3,d0
+		beq.s      balinea_setcolor4
+		bset       #0,LA_FG_4+1(a0)
+balinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      balinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      balinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+balinea_setcolor5:
+		btst       #5,d0
+		beq.s      balinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+balinea_setcolor6:
+		btst       #6,d0
+		beq.s      balinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+balinea_setcolor7:
+		btst       #7,d0
+		beq.s      balinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+balinea_setcolor8:
+		rts
+
 
 lib30:
 	dc.w	0			; no library calls
@@ -2686,6 +2335,7 @@ falc_polyline1:
 		movem.l    (a7)+,d0-d7/a0-a6
 		addq.l     #8,a1
 		dbf        d7,falc_polyline1
+falc_polyline3:
 		movem.l    (a7)+,a0-a6
 falc_polyline2:
 		rts
@@ -2710,6 +2360,27 @@ plinea_setcolor3:
 		beq.s      plinea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 plinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      plinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      plinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+plinea_setcolor5:
+		btst       #5,d0
+		beq.s      plinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+plinea_setcolor6:
+		btst       #6,d0
+		beq.s      plinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+plinea_setcolor7:
+		btst       #7,d0
+		beq.s      plinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+plinea_setcolor8:
 		rts
 
 polyline_pts: ds.l 1
@@ -2821,6 +2492,7 @@ falc_polyfill3:
 		movem.l    (a7)+,d0-d7/a0-a6
 		addq.l     #8,a1
 		dbf        d7,falc_polyfill3
+falc_polyfill5:
 		movem.l    (a7)+,a0-a6
 falc_polyfill4:
 		rts
@@ -2845,6 +2517,27 @@ pplinea_setcolor3:
 		beq.s      pplinea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 pplinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      falc_polyfill5
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      pplinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+pplinea_setcolor5:
+		btst       #5,d0
+		beq.s      pplinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+pplinea_setcolor6:
+		btst       #6,d0
+		beq.s      pplinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+pplinea_setcolor7:
+		btst       #7,d0
+		beq.s      pplinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+pplinea_setcolor8:
 		rts
 
 find_miny:
@@ -2969,7 +2662,7 @@ falc_circle:
 		move.l     (a6)+,d3
 		andi.l     #255,d3 /* BUG: why clamp? */
 		lea.l      circle_rad(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		move.w     d3,2(a0)
 		move.l     (a6)+,d3
 		lea.l      circle_y(pc),a0
@@ -3030,7 +2723,7 @@ falc_circle2:
 		divs.w     #1000,d1
 		add.w      circle_x(pc),d0
 		add.w      circle_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     0(a4,d6.w),d2
 		neg.w      d2
@@ -3075,7 +2768,7 @@ falc_circle3:
 		divs.w     #1000,d1
 		add.w      circle_x(pc),d0
 		add.w      circle_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -3126,6 +2819,27 @@ clinea_setcolor3:
 		beq.s      clinea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 clinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      clinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      clinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+clinea_setcolor5:
+		btst       #5,d0
+		beq.s      clinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+clinea_setcolor6:
+		btst       #6,d0
+		beq.s      clinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+clinea_setcolor7:
+		btst       #7,d0
+		beq.s      clinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+clinea_setcolor8:
 		rts
 
 circle_rad: ds.w 2
@@ -3210,7 +2924,7 @@ falc_ellipse2:
 		divs.w     #1000,d1
 		add.w      ellipse_x(pc),d0
 		add.w      ellipse_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     0(a4,d6.w),d2
 		neg.w      d2
@@ -3255,7 +2969,7 @@ falc_ellipse3:
 		divs.w     #1000,d1
 		add.w      ellipse_x(pc),d0
 		add.w      ellipse_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -3306,6 +3020,27 @@ elinea_setcolor3:
 		beq.s      elinea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 elinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      elinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      elinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+elinea_setcolor5:
+		btst       #5,d0
+		beq.s      elinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+elinea_setcolor6:
+		btst       #6,d0
+		beq.s      elinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+elinea_setcolor7:
+		btst       #7,d0
+		beq.s      elinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+elinea_setcolor8:
 		rts
 
 ellipse_rad: ds.w 2
@@ -3398,7 +3133,7 @@ falc_earc2:
 		divs.w     #1000,d1
 		add.w      earc_x(pc),d0
 		add.w      earc_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -3450,6 +3185,27 @@ ealinea_setcolor3:
 		beq.s      ealinea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 ealinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      ealinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      ealinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+ealinea_setcolor5:
+		btst       #5,d0
+		beq.s      ealinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+ealinea_setcolor6:
+		btst       #6,d0
+		beq.s      ealinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+ealinea_setcolor7:
+		btst       #7,d0
+		beq.s      ealinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+ealinea_setcolor8:
 		rts
 
 earc_beg_angle: ds.w 1
@@ -3489,7 +3245,7 @@ falc_arc:
 		move.l     (a6)+,d3
 		andi.l     #511,d3 /* BUG: why clamp? */
 		lea.l      arc_rad(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		move.w     d3,2(a0)
 		move.l     (a6)+,d3
 		tst.l      d3
@@ -3542,7 +3298,7 @@ falc_arc2:
 		divs.w     #1000,d1
 		add.w      arc_x(pc),d0
 		add.w      arc_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -3594,6 +3350,27 @@ alinea_setcolor3:
 		beq.s      alinea_setcolor4
 		bset       #0,LA_FG_4+1(a0)
 alinea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      alinea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      alinea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+alinea_setcolor5:
+		btst       #5,d0
+		beq.s      alinea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+alinea_setcolor6:
+		btst       #6,d0
+		beq.s      alinea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+alinea_setcolor7:
+		btst       #7,d0
+		beq.s      alinea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+alinea_setcolor8:
 		rts
 
 arc_beg_angle: ds.w 1

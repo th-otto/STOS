@@ -110,16 +110,16 @@ jumps:  dc.w 45
 
 welcome:
 		dc.b 10
-		dc.b "Falcon 030 GRAFIX (III) Extension v0.2 ",$bd," Anthony Hoskin.",0
+		dc.b "Falcon 030 GRAFIX (III) Extension v0.32",$9e," ",$bd," Anthony Hoskin.",0
 		dc.b 10
-		dc.b "Falcon 030 Extension de GRAFIX (III) v0.2 ",$bd," Anthony Hoskin.",0
+		dc.b "Falcon 030 Extension de GRAFIX (III) v0.32",$9e," ",$bd," Anthony Hoskin.",0
 		.even
 
 table: dc.l 0
 returnpc: dc.l 0
 	ds.w 1 /* unused */
 mch_cookie: dc.l 0
-vdo_cookie: dc.l 0
+vdo_cookie: dc.l 0 /* FIXME: no longer used */
 snd_cookie: dc.l 0
 cookieid: dc.l 0
 cookievalue: dc.l 0
@@ -215,8 +215,8 @@ cold4:
 
 check_spritelib:
 		movem.l    d0-d6/a0-a6,-(a7)
-		movea.l    0x00000094.l,a1 ; vector for trap #5 /* XXX */
-		suba.l     #(spritelib_id_end-spritelib_id),a1
+		movea.l    0x00000094,a1 ; vector for trap #5
+		suba.w     #(spritelib_id_end-spritelib_id),a1
 		lea.l      spritelib_id(pc),a0
 		moveq.l    #spritelib_id_end-spritelib_id-1,d7
 check_spritelib1:
@@ -253,8 +253,7 @@ warm:
 		rts
 
 getcookie:
-		/* movea.l    #0x000005A0.l,a0 */
-		dc.w 0x207c,0,0x5a0 /* XXX */
+		movea.l    #0x000005A0,a0
 		lea.l      cookievalue(pc),a5
 		clr.l      (a5)
 		lea.l      cookieid(pc),a1
@@ -280,131 +279,6 @@ getcookie2:
 getcookie3:
 		rts
 
-drawbox:
-		movem.l    d0-d7/a0-a6,-(a7)
-		andi.l     #0x000003FF,d0 /* WTF; why clamp coordinates? */
-		andi.l     #0x000001FF,d1
-		andi.l     #0x000003FF,d2
-		andi.l     #0x000001FF,d3
-		cmp.w      d0,d2
-		bcc.s      drawbox1
-		exg        d0,d2
-drawbox1:
-		cmp.w      d1,d3
-		bcc.s      drawbox2
-		exg        d1,d3
-drawbox2:
-		lea.l      cliprect(pc),a1
-		cmp.w      ZERO(a1),d0
-		bcc.s      drawbox3
-		move.w     ZERO(a1),d0
-drawbox3:
-		cmp.w      4(a1),d2
-		bcs.s      drawbox4
-		move.w     4(a1),d2
-drawbox4:
-		cmp.w      2(a1),d1
-		bcc.s      drawbox5
-		move.w     2(a1),d1
-drawbox5:
-		cmp.w      6(a1),d3
-		bcs.s      drawbox6
-		move.w     6(a1),d3
-drawbox6:
-		lea.l      drawbox_coords(pc),a4
-* left line
-		movem.w    d0-d3,(a4)
-		move.w     ZERO(a4),d0
-		move.w     2(a4),d1
-		move.w     ZERO(a4),d2
-		move.w     6(a4),d3
-		bsr        drawline
-* top line
-		move.w     ZERO(a4),d0
-		move.w     2(a4),d1
-		move.w     4(a4),d2
-		move.w     2(a4),d3
-		bsr        drawline
-* right line
-		move.w     4(a4),d0
-		move.w     2(a4),d1
-		move.w     4(a4),d2
-		move.w     6(a4),d3
-		bsr        drawline
-* bottom line
-		move.w     ZERO(a4),d0
-		move.w     6(a4),d1
-		move.w     4(a4),d2
-		move.w     6(a4),d3
-		bsr        drawline
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawbox_coords: ds.w 4
-
-drawbar:
-		movem.l    d0-d7/a0-a6,-(a7)
-		andi.l     #0x000003FF,d0 /* WTF; why clamp coordinates? */
-		andi.l     #0x000001FF,d1
-		andi.l     #0x000003FF,d2
-		andi.l     #0x000001FF,d3
-		cmp.w      d0,d2
-		bcc.s      drawbar1
-		exg        d0,d2
-drawbar1:
-		cmp.w      d1,d3
-		bcc.s      drawbar2
-		exg        d1,d3
-drawbar2:
-		lea.l      cliprect(pc),a1
-		cmp.w      ZERO(a1),d0
-		bcc.s      drawbar3
-		move.w     ZERO(a1),d0
-drawbar3:
-		cmp.w      4(a1),d2
-		bcs.s      drawbar4
-		move.w     4(a1),d2
-drawbar4:
-		cmp.w      2(a1),d1
-		bcc.s      drawbar5
-		move.w     2(a1),d1
-drawbar5:
-		cmp.w      6(a1),d3
-		bcs.s      drawbar6
-		move.w     6(a1),d3
-drawbar6:
-		lea.l      drawbar_coords(pc),a4
-		movem.w    d0-d3,(a4)
-		cmp.w      d0,d2
-		beq.s      drawbar8
-		cmp.w      d1,d3
-		beq.s      drawbar8
-		move.w     ZERO(a4),d0
-		move.w     2(a4),d1
-		move.w     4(a4),d2
-		move.w     2(a4),d3
-		bsr.s      drawline
-drawbar7:
-		addq.w     #1,2(a4)
-		move.w     ZERO(a4),d0
-		move.w     2(a4),d1
-		move.w     4(a4),d2
-		move.w     2(a4),d3
-		bsr        draw_back
-		move.w     6(a4),d0
-		cmp.w      2(a4),d0
-		bne.s      drawbar7
-		move.w     ZERO(a4),d0
-		move.w     6(a4),d1
-		move.w     4(a4),d2
-		move.w     6(a4),d3
-		bsr.s      drawline
-drawbar8:
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawbar_coords: ds.w 4
-
 drawline:
 		movem.l    d0-d7/a0-a6,-(a7)
 		andi.l     #0x0000FFFF,d0
@@ -413,59 +287,124 @@ drawline:
 		andi.l     #0x0000FFFF,d3
 		movea.l    logic(pc),a0
 		movea.l    lineavars(pc),a6
-		cmpi.w     #16,LA_PLANES(a6)
-		beq        drawline_hi
-		cmp.w      d1,d3
-		bne.s      drawline3
 		cmp.w      d0,d2
-		bcc.s      drawline1
-		exg        d0,d2
+		beq.s      drawline1
+		cmp.w      d1,d2 /* BUG: should be d3 */
+		beq.s      drawline1
+		bra        drawline_hi1
 drawline1:
-		cmp.w      d1,d3
+		lea.l      line_coords(pc),a0
+		movem.w    d0-d3,(a0)
+		movea.l    logic(pc),a0
+		moveq.l    #0,d4
+		moveq.l    #0,d5
+		moveq.l    #0,d6
+		moveq.l    #0,d7
+		move.w     line_coords(pc),d4
+		move.w     line_coords+2(pc),d5
+		move.w     line_coords+4(pc),d6
+		move.w     line_coords+6(pc),d7
+		cmp.w      d4,d6
 		bcc.s      drawline2
-		exg        d1,d3
+		exg        d4,d6
 drawline2:
-		bsr        draw_horline
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
+		cmp.w      d5,d7
+		bcc.s      drawline3
+		exg        d5,d7
 drawline3:
-		cmp.w      d0,d2
-		bne.s      drawline6
-		cmp.w      d0,d2
-		bcc.s      drawline4
-		exg        d0,d2
-drawline4:
-		cmp.w      d1,d3
-		bcc.s      drawline5
-		exg        d1,d3
-drawline5:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		bsr        draw_vertline
+		cmp.w      d4,d6
+		beq.s      drawline_hi_ver
+		cmp.w      d5,d7
+		beq.s      drawline_hi_hor
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
+drawline_hi_ver:
+		movea.l    lineavars(pc),a1
+		move.w     d5,d0
+		sub.w      d5,d7
+		move.w     d5,d2
+		moveq.l    #0,d1
+		move.w     V_BYTES_LIN(a1),d1
+		mulu.w     d1,d2
+		adda.l     d2,a0
+		asl.w      #1,d4
+		adda.l     d4,a0
+		move.w     colormask(pc),d3
+drawline_hi_ver1:
+		move.w     currcolor(pc),d2
+		cmpi.w     #-1,d3
+		beq.s      drawline_hi_ver2
+		move.w     d0,d4
+		andi.w     #15,d4
+		neg.w      d4
+		addi.w     #15,d4
+		btst       d4,d3
+		bne.s      drawline_hi_ver2
+		not.w      d2
+		move.w     d2,(a0)
+		bra.s      drawline_hi_ver3
+drawline_hi_ver2:
+		move.w     d2,(a0)
+drawline_hi_ver3:
+		addq.w     #1,d0
+		adda.w     d1,a0
+		dbf        d7,drawline_hi_ver1
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+drawline_hi_hor:
+		movea.l    lineavars(pc),a1
+		move.w     d4,d0
+		sub.w      d4,d6
+		move.w     d5,d2
+		mulu.w     V_BYTES_LIN(a1),d2
+		adda.l     d2,a0
+		asl.w      #1,d4
+		adda.l     d4,a0
+		move.w     colormask(pc),d3
+drawline_hi_hor1:
+		move.w     currcolor(pc),d1
+		cmpi.w     #-1,d3
+		beq.s      drawline_hi_hor2
+		move.w     d0,d4
+		andi.w     #15,d4
+		neg.w      d4
+		addi.w     #15,d4
+		btst       d4,d3
+		bne.s      drawline_hi_hor2
+		not.w      d1
+		move.w     d1,(a0)+
+		bra.s      drawline_hi_hor3
+drawline_hi_hor2:
+		move.w     d1,(a0)+
+drawline_hi_hor3:
+		addq.w     #1,d0
+		dbf        d6,drawline_hi_hor1
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+line_coords: ds.w 4
+
 * diagonal draw
-drawline6:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		lea.l      line_coords(pc),a0
+drawline_hi1:
+		lea.l      drawline_coords(pc),a0
 		movem.w    d0-d3,(a0)
 		moveq.l    #0,d4
 		moveq.l    #0,d5
 		moveq.l    #0,d6
 		moveq.l    #0,d7
-		lea.l      line_dirs(pc),a3
-		move.w     line_coords(pc),d0
-		move.w     line_coords+2(pc),d1
-		move.w     line_coords+4(pc),d2
-		move.w     line_coords+6(pc),d3
+		lea        line_dirs(pc),a3
+		move.w     drawline_coords(pc),d0
+		move.w     drawline_coords+2(pc),d1
+		move.w     drawline_coords+4(pc),d2
+		move.w     drawline_coords+6(pc),d3
 		sub.w      d0,d2
 		sub.w      d1,d3
 		move.w     d2,d4
 		move.w     d3,d5
-		move.w     line_coords(pc),d0
-		move.w     line_coords+2(pc),d1
+		move.w     drawline_coords(pc),d0
+		move.w     drawline_coords+2(pc),d1
 		tst.w      d4
 		bpl.s      drawline7
 		neg.w      d4
@@ -489,345 +428,33 @@ drawline10:
 drawline11:
 		move.w     #0,4(a3)
 drawline12:
-		cmp.w      line_coords+4(pc),d0
+		cmp.w      drawline_coords+4(pc),d0
 		bne.s      drawline13
-		cmp.w      line_coords+6(pc),d1
+		cmp.w      drawline_coords+6(pc),d1
 		beq.s      drawline16
 drawline13:
 		move.w     4(a3),d6
 		tst.w      d6
 		bge.s      drawline14
-		add.w      ZERO(a3),d0
+		add.w      (a3),d0
 		add.w      d5,4(a3)
 		bra.s      drawline15
 drawline14:
 		add.w      2(a3),d1
 		sub.w      d4,4(a3)
 drawline15:
-		bsr        setpixel
+		bsr.s      setpixel
 		bra.s      drawline12
 drawline16:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
-line_coords: ds.w 4
+drawline_coords: ds.w 4
 line_dirs: ds.w 3
 
 
-drawline_hi:
-		cmp.w      d0,d2
-		beq.s      drawline_hi1
-		cmp.w      d1,d2 /* BUG: should be d3 */
-		beq.s      drawline_hi1
-		bra        drawline6
-drawline_hi1:
-		lea.l      drawline_ccords(pc),a0
-		movem.w    d0-d3,(a0)
-		movea.l    lineavars(pc),a0
-		cmpi.w     #16,LA_PLANES(a0)
-		bne.s      drawline_hi4
-		move.w     #3,-(a7) /* Logbase */
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
-		moveq.l    #0,d4
-		moveq.l    #0,d5
-		moveq.l    #0,d6
-		moveq.l    #0,d7
-		move.w     drawline_ccords(pc),d4
-		move.w     drawline_ccords+2(pc),d5
-		move.w     drawline_ccords+4(pc),d6
-		move.w     drawline_ccords+6(pc),d7
-		cmp.w      d4,d6
-		bcc.s      drawline_hi2
-		exg        d4,d6
-drawline_hi2:
-		cmp.w      d5,d7
-		bcc.s      drawline_hi3
-		exg        d5,d7
-drawline_hi3:
-		cmp.w      d4,d6
-		beq.s      drawline_hi_ver
-		cmp.w      d5,d7
-		beq.s      drawline_hi_hor
-drawline_hi4:
-		nop
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawline_hi_ver:
-		movea.l    lineavars(pc),a1
-		move.w     d5,d0
-		sub.w      d5,d7
-		move.w     d5,d2
-		moveq.l    #0,d1
-		move.w     V_BYTES_LIN(a1),d1
-		mulu.w     d1,d2
-		adda.l     d2,a0
-		asl.w      #1,d4
-		adda.l     d4,a0
-		move.w     colormask(pc),d3
-drawline_hi_ver1:
-		move.w     currcolor(pc),d2
-		move.w     d0,d4
-		andi.w     #15,d4
-		neg.w      d4
-		addi.w     #15,d4
-		btst       d4,d3
-		bne.s      drawline_hi_ver2
-		not.w      d2
-		move.w     d2,(a0)
-		bra.s      drawline_hi_ver3
-drawline_hi_ver2:
-		move.w     d2,(a0)
-drawline_hi_ver3:
-		nop
-		addq.w     #1,d0
-		adda.w     d1,a0
-		dbf        d7,drawline_hi_ver1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawline_hi_hor:
-		movea.l    lineavars(pc),a1
-		move.w     d4,d0
-		sub.w      d4,d6
-		move.w     d5,d2
-		mulu.w     V_BYTES_LIN(a1),d2
-		adda.l     d2,a0
-		asl.w      #1,d4
-		adda.l     d4,a0
-		move.w     colormask(pc),d3
-drawline_hi_hor1:
-		move.w     currcolor(pc),d1
-		move.w     d0,d4
-		andi.w     #15,d4
-		neg.w      d4
-		addi.w     #15,d4
-		btst       d4,d3
-		bne.s      drawline_hi_hor2
-		not.w      d1
-		move.w     d1,(a0)+
-		bra.s      drawline_hi_hor3
-drawline_hi_hor2:
-		move.w     d1,(a0)+
-drawline_hi_hor3:
-		addq.w     #1,d0
-		dbf        d6,drawline_hi_hor1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawline_ccords: ds.w 4
-
-draw_horline:
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		movea.l    a2,a4
-		movea.l    a3,a5
-		cmpa.l     a2,a3
-		beq.s      draw_horline11
-		suba.l     a4,a5
-		cmpa.w     d7,a5
-		beq        draw_horline15
-		bsr        calc_bitstartpos
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		movem.l    d3-d7,-(a7)
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline1:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline2
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline3
-draw_horline2:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-draw_horline3:
-		dbf        d5,draw_horline1
-		movem.l    (a7)+,d3-d7
-draw_horline4:
-		movem.l    d3-d7,-(a7)
-draw_horline5:
-		lsr.w      #1,d4
-		bcs.s      draw_horline6
-		move.w     #0,(a2)+
-		bra.s      draw_horline7
-draw_horline6:
-		move.w     d3,(a2)+
-draw_horline7:
-		dbf        d5,draw_horline5
-		movem.l    (a7)+,d3-d7
-		cmpa.l     a2,a3
-		bne.s      draw_horline4
-		bsr        calc_bitendpos
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline8:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline9
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_horline10
-draw_horline9:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-draw_horline10:
-		dbf        d5,draw_horline8
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_horline11:
-		move.w     d0,d6
-		move.w     d2,d7
-		sub.w      d6,d7
-		addq.w     #1,d7
-		divu.w     #16,d6
-		swap       d6
-		addi.w     #16,d6
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline12:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline13
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline14
-draw_horline13:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-draw_horline14:
-		dbf        d5,draw_horline12
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_horline15:
-		bsr        calc_bitstartpos
-		lea.l      horline_params(pc),a4
-		movem.w    d6-d7,(a4)
-		bsr        calc_bitendpos
-		movem.w    d6-d7,4(a4)
-		movem.l    d0-d7/a0-a6,-(a7)
-		movem.w    (a4),d6-d7
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline16:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline17
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_horline18
-draw_horline17:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-draw_horline18:
-		dbf        d5,draw_horline16
-		movem.l    (a7)+,d0-d7/a0-a6
-		movem.w    4(a4),d6-d7
-		move.w     currcolor(pc),d4
-		move.w     colormask(pc),d3
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_horline19:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_horline20
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_horline21
-draw_horline20:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-draw_horline21:
-		dbf        d5,draw_horline19
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-horline_params: ds.w 16
-
-
-draw_vertline:
-		movem.l    d0-d7/a0-a6,-(a7)
-		bsr        calc_bitstartpos
-		moveq.l    #1,d7
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     currcolor(pc),d4
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-draw_vertline1:
-		movem.l    d0-d7/a2-a3,-(a7)
-		andi.w     #15,d1
-		neg.w      d1
-		addi.w     #31,d1
-		move.w     d1,d6
-		moveq.l    #0,d1
-		move.w     colormask(pc),d3
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_vertline2:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_vertline3
-		swap       d4
-		bclr       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-		bra.s      draw_vertline5
-draw_vertline3:
-		swap       d4
-		bclr       d4,d0
-		btst       #0,d1
-		beq.s      draw_vertline4
-		bset       d4,d0
-draw_vertline4:
-		swap       d4
-		move.w     d0,(a2)+
-draw_vertline5:
-		dbf        d5,draw_vertline2
-		movem.l    (a7)+,d0-d7/a2-a3
-		adda.w     V_BYTES_LIN(a6),a2
-		addq.w     #1,d1
-		cmp.w      d1,d3
-		bne.s      draw_vertline1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
 setpixel:
 		movem.l    d0-d7/a0-a6,-(a7)
-		movea.l    lineavars(pc),a6
-		cmpi.w     #16,LA_PLANES(a6)
-		beq.s      sethipixel
-		bsr        get_screenaddr
-		movea.l    lineavars(pc),a6
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     currcolor(pc),d2
-setpixel1:
-		move.w     (a0),d1
-		lsr.w      #1,d2
-		bcs.s      setpixel2
-		bclr       d0,d1
-		bra.s      setpixel3
-setpixel2:
-		bset       d0,d1
-setpixel3:
-		move.w     d1,(a0)+
-		dbf        d5,setpixel1
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-sethipixel:
 		moveq.l    #0,d6
 		move.w     V_BYTES_LIN(a6),d6
 		mulu.w     d6,d1
@@ -839,215 +466,124 @@ sethipixel:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
-draw_back:
+linea_setcolor:
+		clr.l      LA_FG_1(a0)
+		clr.l      LA_FG_3(a0)
+		btst       #0,d0
+		beq.s      linea_setcolor1
+		bset       #0,LA_FG_1+1(a0)
+linea_setcolor1:
+		btst       #1,d0
+		beq.s      linea_setcolor2
+		bset       #0,LA_FG_2+1(a0)
+linea_setcolor2:
+		btst       #2,d0
+		beq.s      linea_setcolor3
+		bset       #0,LA_FG_3+1(a0)
+linea_setcolor3:
+		btst       #3,d0
+		beq.s      linea_setcolor4
+		bset       #0,LA_FG_4+1(a0)
+linea_setcolor4:
+		cmpi.w     #8,LA_PLANES(a0)
+		bne.s      linea_setcolor8
+		/* BUG: must also set FG_B_PLANES */
+		clr.l      LA_FG_5(a0)
+		clr.l      LA_FG_7(a0)
+		btst       #4,d0
+		beq.s      linea_setcolor5
+		bset       #0,LA_FG_5+1(a0)
+linea_setcolor5:
+		btst       #5,d0
+		beq.s      linea_setcolor6
+		bset       #0,LA_FG_6+1(a0)
+linea_setcolor6:
+		btst       #6,d0
+		beq.s      linea_setcolor7
+		bset       #0,LA_FG_7+1(a0)
+linea_setcolor7:
+		btst       #7,d0
+		beq.s      linea_setcolor8
+		bset       #0,LA_FG_8+1(a0)
+linea_setcolor8:
+		rts
+
+drawbar:
 		movem.l    d0-d7/a0-a6,-(a7)
+		movea.l    stipple_ptr(pc),a2
+		cmpi.l     #-1,(a2)
+		beq.s      drawbar1
+		bra.s      drawbar6
+drawbar1:
+		movea.l    logic(pc),a0
+		movea.l    lineavars(pc),a1
+		cmp.w      d0,d2
+		beq.s      drawbar2
+		cmp.w      d1,d3
+		beq.s      drawbar2
+		bra.s      drawbar3
+drawbar2:
+		bsr        drawline
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+drawbar3:
+		moveq.l    #0,d4
+		moveq.l    #0,d5
+		move.w     currcolor(pc),d6
+		sub.w      d1,d3
+		subq.w     #1,d3
+		move.w     V_BYTES_LIN(a1),d5
+		mulu.w     d5,d1
+		adda.l     d1,a0
+drawbar4:
+		move.w     d0,d4
+drawbar5:
+		move.w     d6,0(a0,d4.l*2) ; 68020+ only
+		addq.w     #1,d4
+		cmp.w      d4,d2
+		bgt.s      drawbar5
+		adda.l     d5,a0
+		dbf        d3,drawbar4
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+drawbar6:
 		movea.l    logic(pc),a0
 		movea.l    lineavars(pc),a6
-		cmpi.w     #16,LA_PLANES(a6)
-		beq        drawhi_back
-		bsr        calc_screenaddr
-		bsr        calc_endaddr
-		movea.l    stipple_ptr(pc),a1
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		movea.l    a2,a4
-		movea.l    a3,a5
-		cmpa.l     a2,a3
-		beq        draw_back11
-		suba.l     a4,a5
-		cmpa.w     d7,a5
-		beq        draw_back15
-		bsr        calc_bitstartpos
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		movem.l    d3-d7,-(a7)
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back1:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back2
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back3
-draw_back2:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-draw_back3:
-		dbf        d5,draw_back1
-		movem.l    (a7)+,d3-d7
-draw_back4:
-		movem.l    d3-d7,-(a7)
-draw_back5:
-		lsr.w      #1,d4
-		bcs.s      draw_back6
-		move.w     #0,(a2)+
-		bra.s      draw_back7
-draw_back6:
-		move.w     d3,(a2)+
-draw_back7:
-		dbf        d5,draw_back5
-		movem.l    (a7)+,d3-d7
-		cmpa.l     a2,a3
-		bne.s      draw_back4
-		bsr        calc_bitendpos
-		move.w     d2,d0
-		bsr        get_screenaddr
-		move.w     d0,d2
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back8:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back9
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_back10
-draw_back9:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		bset       d2,d0
-		move.w     d0,(a3)+
-draw_back10:
-		dbf        d5,draw_back8
+		lea.l      drawbar_coords(pc),a4
+		movem.w    d0-d3,(a4)
+		move.w     0(a4),d0
+		move.w     2(a4),d1
+		move.w     4(a4),d2
+		move.w     2(a4),d3
+		bsr        drawline
+drawbar7:
+		addq.w     #1,2(a4)
+		move.w     (a4),d0
+		move.w     2(a4),d1
+		move.w     4(a4),d2
+		move.w     2(a4),d3
+		bsr        draw_back
+		move.w     6(a4),d0
+		cmp.w      2(a4),d0
+		bne.s      drawbar7
+		move.w     (a4),d0
+		move.w     6(a4),d1
+		move.w     4(a4),d2
+		move.w     6(a4),d3
+		bsr        drawline
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
-draw_back11:
-		move.w     d0,d6
-		move.w     d2,d7
-		sub.w      d6,d7
-		addq.w     #1,d7
-		divu.w     #16,d6
-		swap       d6
-		addi.w     #16,d6
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     d2,d0
-		bsr        get_screenaddr
-		move.w     d0,d2
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back12:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back13
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back14
-draw_back13:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		bset       d2,d0
-		swap       d4
-		move.w     d0,(a2)+
-draw_back14:
-		dbf        d5,draw_back12
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-draw_back15:
-		bsr        calc_bitstartpos
-		lea.l      drawback_params(pc),a4
-		movem.w    d6-d7,(a4)
-		bsr        calc_bitendpos
-		movem.w    d6-d7,4(a4)
+
+draw_back:
 		movem.l    d0-d7/a0-a6,-(a7)
-		movem.w    (a4),d6-d7
-		bsr        get_screenaddr
-		move.w     d0,d4
-		swap       d4
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back16:
-		move.w     (a2),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back17
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a2)+
-		bra.s      draw_back18
-draw_back17:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		swap       d4
-		bset       d4,d0
-		swap       d4
-		move.w     d0,(a2)+
-draw_back18:
-		dbf        d5,draw_back16
-		movem.l    (a7)+,d0-d7/a0-a6
-		move.w     d2,d0
-		bsr        get_screenaddr
-		move.w     d0,d2
-		movem.w    4(a4),d6-d7
-		move.w     currcolor(pc),d4
-		and.w      stipple_mask(pc),d1
-		move.w     0(a1,d1.w*2),d3 ; 68020+ only
-		moveq.l    #0,d1
-		bfextu     d3{d6:d7},d1 ; 68020+ only
-draw_back19:
-		move.w     (a3),d0
-		lsr.w      #1,d4
-		bcs.s      draw_back20
-		bfclr      d0{d6:d7} ; 68020+ only
-		move.w     d0,(a3)+
-		bra.s      draw_back21
-draw_back20:
-		bfins      d1,d0{d6:d7} ; 68020+ only
-		bset       d2,d0
-		move.w     d0,(a3)+
-draw_back21:
-		dbf        d5,draw_back19
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-drawback_params: ds.w 16
-
-drawhi_back:
-		lea.l      drawhiback_coords(pc),a0
-		movem.w    d0-d3,(a0)
-		movea.l    lineavars(pc),a0
-		cmpi.w     #16,LA_PLANES(a0)
-		bne.s      drawhi_back3
-		move.w     #3,-(a7) /* Logbase */
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
 		moveq.l    #0,d4
 		moveq.l    #0,d5
 		moveq.l    #0,d6
 		moveq.l    #0,d7
-		move.w     drawhiback_coords+0(pc),d4
-		move.w     drawhiback_coords+2(pc),d5
-		move.w     drawhiback_coords+4(pc),d6
-		move.w     drawhiback_coords+6(pc),d7
-		cmp.w      d4,d6
-		bcc.s      drawhi_back1
-		exg        d4,d6
-drawhi_back1:
-		cmp.w      d5,d7
-		bcc.s      drawhi_back2
-		exg        d5,d7
-drawhi_back2:
-		cmp.w      d5,d7
-		beq.s      drawhi_back4
-drawhi_back3:
-		nop
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-drawhi_back4:
+		move.w     d0,d4
+		move.w     d1,d5
+		move.w     d2,d6
+		move.w     d3,d7
 		movea.l    stipple_ptr(pc),a2
 		movea.l    lineavars(pc),a1
 		move.w     d4,d0
@@ -1080,137 +616,7 @@ drawhi_back7:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
-drawhiback_coords: ds.w 4
-
-calc_screenaddr:
-		movem.l    d0-d6/a0-a1,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		moveq.l    #0,d7
-		move.w     d0,d7
-		asr.l      #4,d7
-		cmpi.w     #3,d5
-		beq.s      calc_screenaddr2
-		cmpi.w     #7,d5
-		beq.s      calc_screenaddr3
-* BUG: does not handle monochrome/medium
-		movea.l    a0,a2
-		moveq.l    #2,d7
-		movem.l    (a7)+,d0-d6/a0-a1
-		rts
-calc_screenaddr2:
-		asl.l      #2,d7
-		bra.s      calc_screenaddr4
-calc_screenaddr3:
-		asl.l      #3,d7
-calc_screenaddr4:
-		move.w     d5,d4
-		addq.w     #1,d4
-		asl.w      #1,d4
-		mulu.w     d6,d1
-		add.l      d7,d1
-		add.l      d7,d1
-		adda.l     d1,a0
-		movea.l    a0,a2
-		moveq.l    #0,d7
-		move.w     d4,d7
-		movem.l    (a7)+,d0-d6/a0-a1
-		rts
-
-calc_endaddr:
-		movem.l    d0-d7/a0-a1,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		moveq.l    #0,d7
-		move.w     d2,d7
-		asr.l      #4,d7
-		cmpi.w     #3,d5
-		beq.s      calc_endaddr2
-		cmpi.w     #7,d5
-		beq.s      calc_endaddr3
-* BUG: does not handle monochrome/medium
-		movea.l    a0,a3
-		movem.l    (a7)+,d0-d7/a0-a1
-		rts
-calc_endaddr2:
-		asl.l      #2,d7
-		bra.s      calc_endaddr4
-calc_endaddr3:
-		asl.l      #3,d7
-calc_endaddr4:
-		mulu.w     d6,d3
-		add.l      d7,d3
-		add.l      d7,d3
-		adda.l     d3,a0
-		movea.l    a0,a3
-		movem.l    (a7)+,d0-d7/a0-a1
-		rts
-
-*
-* calculate bitpos in d6/d7 for bfextu
-* for the starting x-coordinate
-*
-calc_bitstartpos:
-		movem.l    d0-d5,-(a7)
-		moveq.l    #16,d7
-		move.w     d0,d6
-		divu.w     #16,d6
-		swap       d6
-		sub.w      d6,d7
-		addq.w     #1,d7
-		addi.w     #16,d6
-		movem.l    (a7)+,d0-d5
-		rts
-
-*
-* calculate bitpos in d6/d7 for bfextu
-* for the ending x-coordinate
-*
-calc_bitendpos:
-		movem.l    d0-d5,-(a7)
-		move.w     d2,d0
-		andi.w     #0xFFF0,d0
-		sub.w      d0,d2
-		move.w     d2,d7
-		addq.w     #1,d7
-		moveq.l    #16,d6
-		movem.l    (a7)+,d0-d5
-		rts
-
-get_screenaddr:
-		movem.l    d1-d7/a1-a6,-(a7)
-		move.w     LA_PLANES(a6),d5
-		subq.w     #1,d5
-		move.w     V_BYTES_LIN(a6),d6
-		movea.l    logic(pc),a0
-		moveq.l    #0,d7
-		move.w     d0,d7
-		asr.l      #4,d7
-		cmpi.w     #3,d5
-		beq.s      get_screenaddr1
-		cmpi.w     #7,d5
-		beq.s      get_screenaddr2
-* BUG: does not handle monochrome/medium
-		moveq.l    #0,d0
-		movem.l    (a7)+,d1-d7/a1-a6
-		rts
-get_screenaddr1:
-		asl.l      #2,d7
-		bra.s      get_screenaddr3
-get_screenaddr2:
-		asl.l      #3,d7
-get_screenaddr3:
-		mulu.w     d6,d1
-		add.l      d7,d1
-		add.l      d7,d1
-		adda.l     d1,a0
-		andi.w     #15,d0
-		neg.w      d0
-		addi.w     #15,d0
-		movem.l    (a7)+,d1-d7/a1-a6
-		rts
+drawbar_coords: ds.w 4
 
 get_logic:
 		movem.l    d0-d7/a0-a6,-(a7)
@@ -1336,12 +742,12 @@ errormsgs:
 		dc.b 0
 		dc.b 13,10,C_inverse
 		dc.b "Extension ERROR - the 'SPRIT101.BIN' file version in the STOS folder",13,10
-		dc.b "is incompatible with the Falcon 030 GRAFIX (III) Extension v0.2.           ",13,10
+		dc.b "is incompatible with the Falcon 030 GRAFIX (III) Extension v0.32",$9e,".           ",13,10
 		dc.b "Please re-boot your system with the 'SPRIT101.BIN' version 5.8 file ",13,10
 		dc.b "in the STOS folder.",C_normal,13,10,0
 		dc.b 13,10,C_inverse
 		dc.b "Extension ERROR - the 'SPRIT101.BIN' file version in the STOS folder        ",13,10
-		dc.b "is incompatible with the Falcon 030 GRAFIX (III) Extension v0.2. ",13,10
+		dc.b "is incompatible with the Falcon 030 GRAFIX (III) Extension v0.32",$9e,". ",13,10
 		dc.b "Please re-boot your system with the 'SPRIT101.BIN' version 5.8 file ",13,10
 		dc.b "in the STOS folder.",C_normal,13,10,0
 		dc.b "Command/Function not supported by video hardware",0
@@ -1374,7 +780,7 @@ falc_pen1:
 		rol.w      #6,d3
 		rol.w      #5,d3
 		lea.l      falc_pen_rgb(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		movem.w    (a0)+,d1-d3
 		or.w       d1,d2
 		or.w       d2,d3
@@ -1433,7 +839,7 @@ falc_paper1:
 		rol.w      #6,d3
 		rol.w      #5,d3
 		lea.l      falc_paper_rgb(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		movem.w    (a0)+,d1-d3
 		or.w       d1,d2
 		or.w       d2,d3
@@ -1608,7 +1014,7 @@ charset_addr2:
 falc_multipen_on:
 		move.l     (a7)+,returnpc
 		lea.l      multipen_on_params(pc),a1
-		move.w     #1,ZERO(a1)
+		move.w     #1,(a1)
 		move.w     #1,2(a1)
 		move.w     #1,4(a1)
 		cmp.w      #1,d0
@@ -1623,15 +1029,15 @@ falc_multipen_on:
 		move.w     d3,2(a1)
 		bsr        getinteger
 		andi.l     #31,d3
-		move.w     d3,ZERO(a1)
+		move.w     d3,(a1)
 		bra.s      falc_multipen_on2
 falc_multipen_on1:
 		bsr        getinteger
 		andi.l     #255,d3
-		move.w     d3,ZERO(a1)
+		move.w     d3,(a1)
 falc_multipen_on2:
 		lea.l      multipen_on_params(pc),a1
-		move.w     ZERO(a1),d2
+		move.w     (a1),d2
 		move.w     2(a1),d3
 		move.w     4(a1),d4
 		moveq.l    #S_multipen_on,d0
@@ -1646,9 +1052,6 @@ multipen_on_params: ds.w 3
  */
 tc_rgb:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #3,d0
 		bne        syntax
 		bsr        getinteger
@@ -1665,10 +1068,10 @@ tc_rgb:
 		asl.w      #6,d3
 		asl.w      #5,d3
 		lea.l      tc_rgb_colors(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		moveq.l    #0,d3
 		lea.l      tc_rgb_colors(pc),a0
-		or.w       ZERO(a0),d3
+		or.w       (a0),d3
 		or.w       2(a0),d3
 		or.w       4(a0),d3
 		clr.l      d2
@@ -1683,9 +1086,6 @@ tc_rgb_colors: ds.w 4
  */
 falc_ink:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #1,d0
 		beq.s      falc_ink2
 		cmp.w      #3,d0
@@ -1706,7 +1106,7 @@ falc_ink1:
 		rol.w      #6,d3
 		rol.w      #5,d3
 		lea.l      falc_ink_colors(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		movem.w    (a0)+,d1-d3
 		or.w       d1,d2
 		or.w       d2,d3
@@ -1728,9 +1128,6 @@ falc_ink_colors: ds.w 4
  */
 falc_draw_mode:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
@@ -1749,9 +1146,6 @@ falc_draw_mode1:
  */
 get_pixel:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #2,d0
 		bne        syntax
 		bsr        getinteger
@@ -1801,9 +1195,6 @@ get_pixel_y: ds.w 1
  */
 def_linepattern:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
@@ -1817,9 +1208,6 @@ def_linepattern:
  */
 def_stipple:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
@@ -1853,9 +1241,6 @@ def_stipple1:
  */
 falc_plot:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #2,d0
 		bne        syntax
 		bsr        getinteger
@@ -1904,9 +1289,6 @@ falc_plot_y: ds.w 1
  */
 falc_line:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #4,d0
 		bne        syntax
 		bsr        getinteger
@@ -1923,10 +1305,10 @@ falc_line:
 		move.w     d3,(a0)
 		movem.l    d0-d7/a0-a6,-(a7)
 		movea.l    lineavars(pc),a0
-		cmpi.w     #4,LA_PLANES(a0)
-		bne.s      falc_line1
+		cmpi.w     #16,LA_PLANES(a0)
+		beq.s      falc_line1
 		move.w     currcolor(pc),d0
-		bsr.s      linea_setcolor
+		bsr        linea_setcolor
 		lea.l      falc_line_coords(pc),a1
 		move.w     (a1)+,LA_X1(a0)
 		move.w     (a1)+,LA_Y1(a0)
@@ -1935,14 +1317,15 @@ falc_line:
 		move.w     #0,LA_LSTLIN(a0)
 		move.w     colormask(pc),LA_LN_MASK(a0)
 		move.w     wrt_mode(pc),LA_WRT_MODE(a0)
-		move.w     #1,LA_CLIP(a0)
+		move.w     #1,LA_CLIP(a0) /* BUG: clip coords not set */
 		dc.w       0xa003 /* draw_line */
 		movem.l    (a7)+,d0-d7/a0-a6
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 falc_line1:
+		bsr        get_logic
 		lea.l      falc_line_coords(pc),a4
-		move.w     ZERO(a4),d0
+		move.w     (a4),d0
 		move.w     2(a4),d1
 		move.w     4(a4),d2
 		move.w     6(a4),d3
@@ -1953,82 +1336,148 @@ falc_line1:
 
 falc_line_coords: ds.w 4
 
-linea_setcolor:
-		clr.l      LA_FG_1(a0)
-		clr.l      LA_FG_3(a0)
-		btst       #0,d0
-		beq.s      linea_setcolor1
-		bset       #0,LA_FG_1+1(a0)
-linea_setcolor1:
-		btst       #1,d0
-		beq.s      linea_setcolor2
-		bset       #0,LA_FG_2+1(a0)
-linea_setcolor2:
-		btst       #2,d0
-		beq.s      linea_setcolor3
-		bset       #0,LA_FG_3+1(a0)
-linea_setcolor3:
-		btst       #3,d0
-		beq.s      linea_setcolor8
-		bset       #0,LA_FG_4+1(a0)
-linea_setcolor4:
-		rts
-/* dead code */
-		btst       #4,d0
-		beq.s      linea_setcolor2
-		bset       #4,LA_FG_2+1(a0)
-linea_setcolor5:
-		btst       #5,d0
-		beq.s      linea_setcolor3
-		bset       #4,LA_FG_3+1(a0)
-linea_setcolor6:
-		btst       #6,d0
-		beq.s      linea_setcolor7
-		bset       #4,LA_FG_3+1(a0)
-linea_setcolor7:
-		btst       #7,d0
-		beq.s      linea_setcolor8
-		bset       #4,LA_FG_4+1(a0)
-linea_setcolor8:
-		rts
-
 /*
  * Syntax:   _falc box X1,Y1,X2,Y2
  */
 falc_box:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #4,d0
 		bne        syntax
 		bsr        getinteger
-		lea.l      falc_box_coords+6(pc),a0
+		lea.l      drawbox_coords+6(pc),a0
 		move.w     d3,(a0)
 		bsr        getinteger
-		lea.l      falc_box_coords+4(pc),a0
+		lea.l      drawbox_coords+4(pc),a0
 		move.w     d3,(a0)
 		bsr        getinteger
-		lea.l      falc_box_coords+2(pc),a0
+		lea.l      drawbox_coords+2(pc),a0
 		move.w     d3,(a0)
 		bsr        getinteger
-		lea.l      falc_box_coords+0(pc),a0
+		lea.l      drawbox_coords+0(pc),a0
 		move.w     d3,(a0)
-		movem.l    a0-a6,-(a7)
+		movem.l    d1-d7/a0-a6,-(a7)
 		movea.l    lineavars(pc),a0
 		lea.l      cliprect(pc),a1
 		move.w     #0,(a1)+
 		move.w     #0,(a1)+
 		move.w     DEV_TAB(a0),(a1)+
 		move.w     DEV_TAB+2(a0),(a1)+
-		bsr        get_logic
-		lea.l      falc_box_coords(pc),a4
-		movem.w    (a4)+,d0-d3
-		bsr        drawbox
-		movem.l    (a7)+,a0-a6
+		cmpi.w     #16,LA_PLANES(a0)
+		beq        falc_box_hi
+		move.w     currcolor(pc),d0
+		bsr        linea_setcolor
+		lea.l      drawbox_coords(pc),a1
+* left line
+		move.w     (a1),d1
+		move.w     2(a1),d2
+		move.w     (a1),d3
+		move.w     6(a1),d4
+		bsr.s      linea_drawline
+* top line
+		move.w     (a1),d1
+		move.w     2(a1),d2
+		move.w     4(a1),d3
+		move.w     2(a1),d4
+		bsr.s      linea_drawline
+* right line
+		move.w     4(a1),d1
+		move.w     2(a1),d2
+		move.w     4(a1),d3
+		move.w     6(a1),d4
+		bsr.s      linea_drawline
+* bottom line
+		move.w     (a1),d1
+		move.w     6(a1),d2
+		move.w     4(a1),d3
+		move.w     6(a1),d4
+		bsr.s      linea_drawline
+		movem.l    (a7)+,d1-d7/a0-a6
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 
+linea_drawline:
+		movem.l    a0-a1,-(a7)
+		move.w     d1,LA_X1(a0)
+		move.w     d2,LA_Y1(a0)
+		move.w     d3,LA_X2(a0)
+		move.w     d4,LA_Y2(a0)
+		move.w     d1,LA_XMN_CLIP(a0)
+		move.w     d2,LA_YMN_CLIP(a0)
+		move.w     d3,LA_XMX_CLIP(a0)
+		move.w     d4,LA_YMX_CLIP(a0)
+		move.w     #0,LA_LSTLIN(a0)
+		move.w     colormask(pc),LA_LN_MASK(a0)
+		move.w     wrt_mode(pc),LA_WRT_MODE(a0)
+		move.w     #1,LA_CLIP(a0)
+		dc.w       0xa003 /* draw_line */
+		movem.l    (a7)+,a0-a1
+		rts
+
+falc_box_hi:
+		bsr        get_logic
+		lea.l      drawbox_coords(pc),a4
+		movem.w    (a4)+,d0-d3
+		andi.l     #0x000003FF,d0 /* WTF; why clamp coordinates? */
+		andi.l     #0x000001FF,d1
+		andi.l     #0x000003FF,d2
+		andi.l     #0x000001FF,d3
+		cmp.w      d0,d2
+		bcc.s      drawbox1
+		exg        d0,d2
+drawbox1:
+		cmp.w      d1,d3
+		bcc.s      drawbox2
+		exg        d1,d3
+drawbox2:
+		lea.l      cliprect(pc),a1
+		cmp.w      (a1),d0
+		bcc.s      drawbox3
+		move.w     (a1),d0
+drawbox3:
+		cmp.w      4(a1),d2
+		bcs.s      drawbox4
+		move.w     4(a1),d2
+drawbox4:
+		cmp.w      2(a1),d1
+		bcc.s      drawbox5
+		move.w     2(a1),d1
+drawbox5:
+		cmp.w      6(a1),d3
+		bcs.s      drawbox6
+		move.w     6(a1),d3
+drawbox6:
+		lea.l      falc_box_coords(pc),a4
+* left line
+		movem.w    d0-d3,(a4)
+		move.w     (a4),d0
+		move.w     2(a4),d1
+		move.w     (a4),d2
+		move.w     6(a4),d3
+		bsr        drawline
+* top line
+		move.w     (a4),d0
+		move.w     2(a4),d1
+		move.w     4(a4),d2
+		move.w     2(a4),d3
+		bsr        drawline
+* right line
+		move.w     4(a4),d0
+		move.w     2(a4),d1
+		move.w     4(a4),d2
+		move.w     6(a4),d3
+		bsr        drawline
+* bottom line
+		move.w     (a4),d0
+		move.w     6(a4),d1
+		move.w     4(a4),d2
+		move.w     6(a4),d3
+		bsr        drawline
+		movem.l    (a7)+,d1-d7/a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+
+drawbox_coords: ds.w 4
 falc_box_coords: ds.w 4
 
 /*
@@ -2036,9 +1485,6 @@ falc_box_coords: ds.w 4
  */
 falc_bar:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #4,d0
 		bne        syntax
 		bsr        getinteger
@@ -2053,31 +1499,91 @@ falc_bar:
 		bsr        getinteger
 		lea.l      falc_bar_coords+0(pc),a0
 		move.w     d3,(a0)
-		movem.l    a0-a6,-(a7)
+		movem.l    d1-d7/a0-a6,-(a7)
 		movea.l    lineavars(pc),a0
 		lea.l      cliprect(pc),a1
 		move.w     #0,(a1)+
 		move.w     #0,(a1)+
 		move.w     DEV_TAB(a0),(a1)+
 		move.w     DEV_TAB+2(a0),(a1)+
+		cmpi.w     #16,LA_PLANES(a0)
+		beq.s      falc_bar_hi
+		move.w     currcolor(pc),d0
+		bsr        linea_setcolor
+		lea.l      falc_bar_coords+0(pc),a4
+		move.w     (a4),LA_X1(a0)
+		move.w     2(a4),LA_Y1(a0)
+		move.w     4(a4),LA_X2(a0)
+		move.w     6(a4),LA_Y2(a0)
+		move.w     (a4),LA_XMN_CLIP(a0)
+		move.w     2(a4),LA_YMN_CLIP(a0)
+		move.w     4(a4),LA_XMX_CLIP(a0)
+		move.w     6(a4),LA_YMX_CLIP(a0)
+
+		move.w     wrt_mode(pc),LA_WRT_MODE(a0)
+		move.w     #1,LA_CLIP(a0)
+		movea.l    stipple_ptr(pc),a5
+		move.w     stipple_mask(pc),d0
+		move.l     a5,LA_PATPTR(a0)
+		move.w     d0,LA_PATMSK(a0)
+		move.w     #0,LA_MULTIFILL(a0)
+		dc.w       0xa005 /* filled_rect */
+		movem.l    (a7)+,d1-d7/a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+falc_bar_hi:
 		bsr        get_logic
 		lea.l      falc_bar_coords(pc),a4
 		movem.w    (a4)+,d0-d3
+		andi.l     #0x000003FF,d0 /* WTF; why clamp coordinates? */
+		andi.l     #0x000001FF,d1
+		andi.l     #0x000003FF,d2
+		andi.l     #0x000001FF,d3
+		cmp.w      d0,d2
+		bcc.s      drawbarhi1
+		exg        d0,d2
+drawbarhi1:
+		cmp.w      d1,d3
+		bcc.s      drawbarhi2
+		exg        d1,d3
+drawbarhi2:
+		lea.l      cliprect(pc),a1
+		cmp.w      (a1),d0
+		bcc.s      drawbarhi3
+		move.w     (a1),d0
+drawbarhi3:
+		cmp.w      4(a1),d2
+		bcs.s      drawbarhi4
+		move.w     4(a1),d2
+drawbarhi4:
+		cmp.w      2(a1),d1
+		bcc.s      drawbarhi5
+		move.w     2(a1),d1
+drawbarhi5:
+		cmp.w      6(a1),d3
+		bcs.s      drawbarhi6
+		move.w     6(a1),d3
+drawbarhi6:
+		lea.l      drawbarhi_coords(pc),a4
+		movem.w    d0-d3,(a4)
+		move.w     0(a4),d0 /* FIXME: useless */
+		move.w     2(a4),d1
+		move.w     4(a4),d2
+		move.w     6(a4),d3
 		bsr        drawbar
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,d1-d7/a0-a6
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 
 falc_bar_coords: ds.w 4
+drawbarhi_coords: ds.w 4
 
 /*
  * Syntax:   _falc polyline varptr(XY_ARRAY(0)),PTS
  */
 falc_polyline:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #2,d0
 		bne        syntax
 		bsr        getinteger
@@ -2143,9 +1649,6 @@ falc_centre:
  */
 falc_polyfill:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #2,d0
 		bne        syntax
 		bsr        getinteger
@@ -2280,9 +1783,6 @@ polyfill_maxy: ds.w 1
  */
 falc_contourfill:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #3,d0
 		bne        syntax
 		bsr        getinteger
@@ -2312,7 +1812,7 @@ falc_contourfill:
 		move.w     d0,LA_PATMSK(a0)
 		move.w     DEV_TAB(a0),d0
 		move.w     DEV_TAB+2(a0),d1
-		move.w     #1,LA_CLIP(a0)
+		move.w     #1,LA_CLIP(a0) /* BUG: clip coords not set */
 		move.w     #0,LA_XMN_CLIP(a0)
 		move.w     #0,LA_YMN_CLIP(a0)
 		move.w     d0,LA_XMX_CLIP(a0)
@@ -2337,15 +1837,12 @@ contourfill_work: ds.w 16
  */
 falc_circle:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #3,d0
 		bne        syntax
 		bsr        getinteger
 		andi.l     #255,d3 /* BUG: why clamp? */
 		lea.l      circle_rad(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		move.w     d3,2(a0)
 		bsr        getinteger
 		lea.l      circle_y(pc),a0
@@ -2399,7 +1896,7 @@ falc_circle2:
 		divs.w     #1000,d1
 		add.w      circle_x(pc),d0
 		add.w      circle_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     0(a4,d6.w),d2
 		neg.w      d2
@@ -2445,7 +1942,7 @@ falc_circle3:
 		divs.w     #1000,d1
 		add.w      circle_x(pc),d0
 		add.w      circle_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -2487,9 +1984,6 @@ circle_coords: ds.w 4
  */
 falc_ellipse:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #4,d0
 		bne        syntax
 		bsr        getinteger
@@ -2552,7 +2046,7 @@ falc_ellipse2:
 		divs.w     #1000,d1
 		add.w      ellipse_x(pc),d0
 		add.w      ellipse_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     0(a4,d6.w),d2
 		neg.w      d2
@@ -2598,7 +2092,7 @@ falc_ellipse3:
 		divs.w     #1000,d1
 		add.w      ellipse_x(pc),d0
 		add.w      ellipse_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -2640,9 +2134,6 @@ ellipse_coords: ds.w 4
  */
 falc_earc:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #6,d0
 		bne        syntax
 		bsr        getinteger
@@ -2713,7 +2204,7 @@ falc_earc2:
 		divs.w     #1000,d1
 		add.w      earc_x(pc),d0
 		add.w      earc_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -2758,9 +2249,6 @@ earc_coords: ds.w 4
  */
 falc_arc:
 		move.l     (a7)+,returnpc
-		move.w     vdo_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
 		cmp.w      #5,d0
 		bne        syntax
 		bsr        getinteger
@@ -2782,7 +2270,7 @@ falc_arc:
 		bsr        getinteger
 		andi.l     #511,d3 /* BUG: why clamp? */
 		lea.l      arc_rad(pc),a0
-		move.w     d3,ZERO(a0)
+		move.w     d3,(a0)
 		move.w     d3,2(a0)
 		bsr        getinteger
 		tst.l      d3
@@ -2828,7 +2316,7 @@ falc_arc2:
 		divs.w     #1000,d1
 		add.w      arc_x(pc),d0
 		add.w      arc_y(pc),d1
-		move.w     d0,ZERO(a3)
+		move.w     d0,(a3)
 		move.w     d1,2(a3)
 		move.w     4(a4,d6.w),d3
 		move.w     6(a4,d6.w),d2
@@ -2895,546 +2383,546 @@ patterns:
 	dc.w 0x2222,0x4444,0xffff,0x8888,0x4444,0x2222,0xffff,0x1111,0x2222,0x4444,0xffff,0x8888,0x4444,0x2222,0xffff,0x1111
 
 sintab:
-	dc.w 65535,1000
-	dc.w 65527,999
-	dc.w 65518,999
-	dc.w 65509,999
-	dc.w 65501,999
-	dc.w 65492,999
-	dc.w 65483,998
-	dc.w 65474,998
-	dc.w 65466,997
-	dc.w 65457,996
-	dc.w 65448,996
-	dc.w 65440,995
-	dc.w 65431,994
-	dc.w 65422,993
-	dc.w 65414,992
-	dc.w 65405,991
-	dc.w 65396,990
-	dc.w 65388,989
-	dc.w 65379,987
-	dc.w 65370,986
-	dc.w 65362,984
-	dc.w 65353,983
-	dc.w 65345,981
-	dc.w 65336,979
-	dc.w 65328,978
-	dc.w 65319,976
-	dc.w 65311,974
-	dc.w 65302,972
-	dc.w 65294,970
-	dc.w 65285,968
-	dc.w 65277,965
-	dc.w 65268,963
-	dc.w 65260,961
-	dc.w 65251,958
-	dc.w 65243,956
-	dc.w 65235,953
-	dc.w 65226,951
-	dc.w 65218,948
-	dc.w 65210,945
-	dc.w 65202,942
-	dc.w 65193,939
-	dc.w 65185,936
-	dc.w 65177,933
-	dc.w 65169,930
-	dc.w 65161,927
-	dc.w 65153,923
-	dc.w 65145,920
-	dc.w 65137,917
-	dc.w 65129,913
-	dc.w 65121,909
-	dc.w 65113,906
-	dc.w 65105,902
-	dc.w 65097,898
-	dc.w 65089,894
-	dc.w 65082,891
-	dc.w 65074,887
-	dc.w 65066,882
-	dc.w 65058,878
-	dc.w 65051,874
-	dc.w 65043,870
-	dc.w 65035,866
-	dc.w 65028,861
-	dc.w 65020,857
-	dc.w 65013,852
-	dc.w 65006,848
-	dc.w 64998,843
-	dc.w 64991,838
-	dc.w 64984,833
-	dc.w 64976,829
-	dc.w 64969,824
-	dc.w 64962,819
-	dc.w 64955,814
-	dc.w 64948,809
-	dc.w 64941,803
-	dc.w 64934,798
-	dc.w 64927,793
-	dc.w 64920,788
-	dc.w 64913,782
-	dc.w 64906,777
-	dc.w 64899,771
-	dc.w 64893,766
-	dc.w 64886,760
-	dc.w 64879,754
-	dc.w 64873,748
-	dc.w 64866,743
-	dc.w 64860,737
-	dc.w 64853,731
-	dc.w 64847,725
-	dc.w 64841,719
-	dc.w 64835,713
-	dc.w 64828,707
-	dc.w 64822,700
-	dc.w 64816,694
-	dc.w 64810,688
-	dc.w 64804,681
-	dc.w 64798,675
-	dc.w 64792,669
-	dc.w 64787,662
-	dc.w 64781,656
-	dc.w 64775,649
-	dc.w 64769,642
-	dc.w 64764,636
-	dc.w 64758,629
-	dc.w 64753,622
-	dc.w 64747,615
-	dc.w 64742,608
-	dc.w 64737,601
-	dc.w 64732,594
-	dc.w 64726,587
-	dc.w 64721,580
-	dc.w 64716,573
-	dc.w 64711,566
-	dc.w 64706,559
-	dc.w 64702,551
-	dc.w 64697,544
-	dc.w 64692,537
-	dc.w 64687,529
-	dc.w 64683,522
-	dc.w 64678,515
-	dc.w 64674,507
-	dc.w 64669,499
-	dc.w 64665,492
-	dc.w 64661,484
-	dc.w 64657,477
-	dc.w 64653,469
-	dc.w 64648,461
-	dc.w 64644,453
-	dc.w 64641,446
-	dc.w 64637,438
-	dc.w 64633,430
-	dc.w 64629,422
-	dc.w 64626,414
-	dc.w 64622,406
-	dc.w 64618,398
-	dc.w 64615,390
-	dc.w 64612,382
-	dc.w 64608,374
-	dc.w 64605,366
-	dc.w 64602,358
-	dc.w 64599,350
-	dc.w 64596,342
-	dc.w 64593,333
-	dc.w 64590,325
-	dc.w 64587,317
-	dc.w 64584,309
-	dc.w 64582,300
-	dc.w 64579,292
-	dc.w 64577,284
-	dc.w 64574,275
-	dc.w 64572,267
-	dc.w 64570,258
-	dc.w 64567,250
-	dc.w 64565,241
-	dc.w 64563,233
-	dc.w 64561,224
-	dc.w 64559,216
-	dc.w 64557,207
-	dc.w 64556,199
-	dc.w 64554,190
-	dc.w 64552,182
-	dc.w 64551,173
-	dc.w 64549,165
-	dc.w 64548,156
-	dc.w 64546,147
-	dc.w 64545,139
-	dc.w 64544,130
-	dc.w 64543,121
-	dc.w 64542,113
-	dc.w 64541,104
-	dc.w 64540,95
-	dc.w 64539,87
-	dc.w 64539,78
-	dc.w 64538,69
-	dc.w 64537,61
-	dc.w 64537,52
-	dc.w 64536,43
-	dc.w 64536,34
-	dc.w 64536,26
-	dc.w 64536,17
-	dc.w 64536,8
-	dc.w 64535,65535
-	dc.w 64536,65527
-	dc.w 64536,65518
-	dc.w 64536,65509
-	dc.w 64536,65501
-	dc.w 64536,65492
-	dc.w 64537,65483
-	dc.w 64537,65474
-	dc.w 64538,65466
-	dc.w 64539,65457
-	dc.w 64539,65448
-	dc.w 64540,65440
-	dc.w 64541,65431
-	dc.w 64542,65422
-	dc.w 64543,65414
-	dc.w 64544,65405
-	dc.w 64545,65396
-	dc.w 64546,65388
-	dc.w 64548,65379
-	dc.w 64549,65370
-	dc.w 64551,65362
-	dc.w 64552,65353
-	dc.w 64554,65345
-	dc.w 64556,65336
-	dc.w 64557,65328
-	dc.w 64559,65319
-	dc.w 64561,65311
-	dc.w 64563,65302
-	dc.w 64565,65294
-	dc.w 64567,65285
-	dc.w 64570,65277
-	dc.w 64572,65268
-	dc.w 64574,65260
-	dc.w 64577,65251
-	dc.w 64579,65243
-	dc.w 64582,65235
-	dc.w 64584,65226
-	dc.w 64587,65218
-	dc.w 64590,65210
-	dc.w 64593,65202
-	dc.w 64596,65193
-	dc.w 64599,65185
-	dc.w 64602,65177
-	dc.w 64605,65169
-	dc.w 64608,65161
-	dc.w 64612,65153
-	dc.w 64615,65145
-	dc.w 64618,65137
-	dc.w 64622,65129
-	dc.w 64626,65121
-	dc.w 64629,65113
-	dc.w 64633,65105
-	dc.w 64637,65097
-	dc.w 64641,65089
-	dc.w 64644,65082
-	dc.w 64648,65074
-	dc.w 64653,65066
-	dc.w 64657,65058
-	dc.w 64661,65051
-	dc.w 64665,65043
-	dc.w 64669,65035
-	dc.w 64674,65028
-	dc.w 64678,65020
-	dc.w 64683,65013
-	dc.w 64687,65006
-	dc.w 64692,64998
-	dc.w 64697,64991
-	dc.w 64702,64984
-	dc.w 64706,64976
-	dc.w 64711,64969
-	dc.w 64716,64962
-	dc.w 64721,64955
-	dc.w 64726,64948
-	dc.w 64732,64941
-	dc.w 64737,64934
-	dc.w 64742,64927
-	dc.w 64747,64920
-	dc.w 64753,64913
-	dc.w 64758,64906
-	dc.w 64764,64899
-	dc.w 64769,64893
-	dc.w 64775,64886
-	dc.w 64781,64879
-	dc.w 64787,64873
-	dc.w 64792,64866
-	dc.w 64798,64860
-	dc.w 64804,64853
-	dc.w 64810,64847
-	dc.w 64816,64841
-	dc.w 64822,64835
-	dc.w 64828,64828
-	dc.w 64835,64822
-	dc.w 64841,64816
-	dc.w 64847,64810
-	dc.w 64854,64804
-	dc.w 64860,64798
-	dc.w 64866,64792
-	dc.w 64873,64787
-	dc.w 64879,64781
-	dc.w 64886,64775
-	dc.w 64893,64769
-	dc.w 64899,64764
-	dc.w 64906,64758
-	dc.w 64913,64753
-	dc.w 64920,64747
-	dc.w 64927,64742
-	dc.w 64934,64737
-	dc.w 64941,64732
-	dc.w 64948,64726
-	dc.w 64955,64721
-	dc.w 64962,64716
-	dc.w 64969,64711
-	dc.w 64976,64706
-	dc.w 64984,64702
-	dc.w 64991,64697
-	dc.w 64998,64692
-	dc.w 65006,64687
-	dc.w 65013,64683
-	dc.w 65020,64678
-	dc.w 65028,64674
-	dc.w 65036,64669
-	dc.w 65043,64665
-	dc.w 65051,64661
-	dc.w 65058,64657
-	dc.w 65066,64653
-	dc.w 65074,64648
-	dc.w 65082,64644
-	dc.w 65089,64641
-	dc.w 65097,64637
-	dc.w 65105,64633
-	dc.w 65113,64629
-	dc.w 65121,64626
-	dc.w 65129,64622
-	dc.w 65137,64618
-	dc.w 65145,64615
-	dc.w 65153,64612
-	dc.w 65161,64608
-	dc.w 65169,64605
-	dc.w 65177,64602
-	dc.w 65185,64599
-	dc.w 65193,64596
-	dc.w 65202,64593
-	dc.w 65210,64590
-	dc.w 65218,64587
-	dc.w 65226,64584
-	dc.w 65235,64582
-	dc.w 65243,64579
-	dc.w 65251,64577
-	dc.w 65260,64574
-	dc.w 65268,64572
-	dc.w 65277,64570
-	dc.w 65285,64567
-	dc.w 65294,64565
-	dc.w 65302,64563
-	dc.w 65311,64561
-	dc.w 65319,64559
-	dc.w 65328,64557
-	dc.w 65336,64556
-	dc.w 65345,64554
-	dc.w 65353,64552
-	dc.w 65362,64551
-	dc.w 65370,64549
-	dc.w 65379,64548
-	dc.w 65388,64546
-	dc.w 65396,64545
-	dc.w 65405,64544
-	dc.w 65414,64543
-	dc.w 65422,64542
-	dc.w 65431,64541
-	dc.w 65440,64540
-	dc.w 65448,64539
-	dc.w 65457,64539
-	dc.w 65466,64538
-	dc.w 65474,64537
-	dc.w 65483,64537
-	dc.w 65492,64536
-	dc.w 65501,64536
-	dc.w 65509,64536
-	dc.w 65518,64536
-	dc.w 65527,64536
-	dc.w 0,64535
-	dc.w 8,64536
-	dc.w 17,64536
-	dc.w 26,64536
-	dc.w 34,64536
-	dc.w 43,64536
-	dc.w 52,64537
-	dc.w 61,64537
-	dc.w 69,64538
-	dc.w 78,64539
-	dc.w 87,64539
-	dc.w 95,64540
-	dc.w 104,64541
-	dc.w 113,64542
-	dc.w 121,64543
-	dc.w 130,64544
-	dc.w 139,64545
-	dc.w 147,64546
-	dc.w 156,64548
-	dc.w 165,64549
-	dc.w 173,64551
-	dc.w 182,64552
-	dc.w 190,64554
-	dc.w 199,64556
-	dc.w 207,64557
-	dc.w 216,64559
-	dc.w 224,64561
-	dc.w 233,64563
-	dc.w 241,64565
-	dc.w 250,64567
-	dc.w 258,64570
-	dc.w 267,64572
-	dc.w 275,64574
-	dc.w 284,64577
-	dc.w 292,64579
-	dc.w 300,64582
-	dc.w 309,64584
-	dc.w 317,64587
-	dc.w 325,64590
-	dc.w 333,64593
-	dc.w 342,64596
-	dc.w 350,64599
-	dc.w 358,64602
-	dc.w 366,64605
-	dc.w 374,64608
-	dc.w 382,64612
-	dc.w 390,64615
-	dc.w 398,64618
-	dc.w 406,64622
-	dc.w 414,64626
-	dc.w 422,64629
-	dc.w 430,64633
-	dc.w 438,64637
-	dc.w 446,64641
-	dc.w 453,64644
-	dc.w 461,64648
-	dc.w 469,64653
-	dc.w 477,64657
-	dc.w 484,64661
-	dc.w 492,64665
-	dc.w 500,64669
-	dc.w 507,64674
-	dc.w 515,64678
-	dc.w 522,64683
-	dc.w 529,64687
-	dc.w 537,64692
-	dc.w 544,64697
-	dc.w 551,64702
-	dc.w 559,64706
-	dc.w 566,64711
-	dc.w 573,64716
-	dc.w 580,64721
-	dc.w 587,64726
-	dc.w 594,64732
-	dc.w 601,64737
-	dc.w 608,64742
-	dc.w 615,64747
-	dc.w 622,64753
-	dc.w 629,64758
-	dc.w 636,64764
-	dc.w 642,64769
-	dc.w 649,64775
-	dc.w 656,64781
-	dc.w 662,64787
-	dc.w 669,64792
-	dc.w 675,64798
-	dc.w 682,64804
-	dc.w 688,64810
-	dc.w 694,64816
-	dc.w 700,64822
-	dc.w 707,64828
-	dc.w 713,64835
-	dc.w 719,64841
-	dc.w 725,64847
-	dc.w 731,64854
-	dc.w 737,64860
-	dc.w 743,64866
-	dc.w 748,64873
-	dc.w 754,64879
-	dc.w 760,64886
-	dc.w 766,64893
-	dc.w 771,64899
-	dc.w 777,64906
-	dc.w 782,64913
-	dc.w 788,64920
-	dc.w 793,64927
-	dc.w 798,64934
-	dc.w 803,64941
-	dc.w 809,64948
-	dc.w 814,64955
-	dc.w 819,64962
-	dc.w 824,64969
-	dc.w 829,64976
-	dc.w 833,64984
-	dc.w 838,64991
-	dc.w 843,64998
-	dc.w 848,65006
-	dc.w 852,65013
-	dc.w 857,65020
-	dc.w 861,65028
-	dc.w 866,65036
-	dc.w 870,65043
-	dc.w 874,65051
-	dc.w 878,65058
-	dc.w 882,65066
-	dc.w 887,65074
-	dc.w 891,65082
-	dc.w 894,65089
-	dc.w 898,65097
-	dc.w 902,65105
-	dc.w 906,65113
-	dc.w 909,65121
-	dc.w 913,65129
-	dc.w 917,65137
-	dc.w 920,65145
-	dc.w 923,65153
-	dc.w 927,65161
-	dc.w 930,65169
-	dc.w 933,65177
-	dc.w 936,65185
-	dc.w 939,65193
-	dc.w 942,65202
-	dc.w 945,65210
-	dc.w 948,65218
-	dc.w 951,65226
-	dc.w 953,65235
-	dc.w 956,65243
-	dc.w 958,65251
-	dc.w 961,65260
-	dc.w 963,65268
-	dc.w 965,65277
-	dc.w 968,65285
-	dc.w 970,65294
-	dc.w 972,65302
-	dc.w 974,65311
-	dc.w 976,65319
-	dc.w 978,65328
-	dc.w 979,65336
-	dc.w 981,65345
-	dc.w 983,65353
-	dc.w 984,65362
-	dc.w 986,65370
-	dc.w 987,65379
-	dc.w 989,65388
-	dc.w 990,65396
-	dc.w 991,65405
-	dc.w 992,65414
-	dc.w 993,65422
-	dc.w 994,65431
-	dc.w 995,65440
-	dc.w 996,65448
-	dc.w 996,65457
-	dc.w 997,65466
-	dc.w 998,65474
-	dc.w 998,65483
-	dc.w 999,65492
-	dc.w 999,65501
-	dc.w 999,65509
-	dc.w 999,65518
-	dc.w 999,65527
+	dc.w -1,1000
+	dc.w -9,999
+	dc.w -18,999
+	dc.w -27,999
+	dc.w -35,999
+	dc.w -44,999
+	dc.w -53,998
+	dc.w -62,998
+	dc.w -70,997
+	dc.w -79,996
+	dc.w -88,996
+	dc.w -96,995
+	dc.w -105,994
+	dc.w -114,993
+	dc.w -122,992
+	dc.w -131,991
+	dc.w -140,990
+	dc.w -148,989
+	dc.w -157,987
+	dc.w -166,986
+	dc.w -174,984
+	dc.w -183,983
+	dc.w -191,981
+	dc.w -200,979
+	dc.w -208,978
+	dc.w -217,976
+	dc.w -225,974
+	dc.w -234,972
+	dc.w -242,970
+	dc.w -251,968
+	dc.w -259,965
+	dc.w -268,963
+	dc.w -276,961
+	dc.w -285,958
+	dc.w -293,956
+	dc.w -301,953
+	dc.w -310,951
+	dc.w -318,948
+	dc.w -326,945
+	dc.w -334,942
+	dc.w -343,939
+	dc.w -351,936
+	dc.w -359,933
+	dc.w -367,930
+	dc.w -375,927
+	dc.w -383,923
+	dc.w -391,920
+	dc.w -399,917
+	dc.w -407,913
+	dc.w -415,909
+	dc.w -423,906
+	dc.w -431,902
+	dc.w -439,898
+	dc.w -447,894
+	dc.w -454,891
+	dc.w -462,887
+	dc.w -470,882
+	dc.w -478,878
+	dc.w -485,874
+	dc.w -493,870
+	dc.w -501,866
+	dc.w -508,861
+	dc.w -516,857
+	dc.w -523,852
+	dc.w -530,848
+	dc.w -538,843
+	dc.w -545,838
+	dc.w -552,833
+	dc.w -560,829
+	dc.w -567,824
+	dc.w -574,819
+	dc.w -581,814
+	dc.w -588,809
+	dc.w -595,803
+	dc.w -602,798
+	dc.w -609,793
+	dc.w -616,788
+	dc.w -623,782
+	dc.w -630,777
+	dc.w -637,771
+	dc.w -643,766
+	dc.w -650,760
+	dc.w -657,754
+	dc.w -663,748
+	dc.w -670,743
+	dc.w -676,737
+	dc.w -683,731
+	dc.w -689,725
+	dc.w -695,719
+	dc.w -701,713
+	dc.w -708,707
+	dc.w -714,700
+	dc.w -720,694
+	dc.w -726,688
+	dc.w -732,681
+	dc.w -738,675
+	dc.w -744,669
+	dc.w -749,662
+	dc.w -755,656
+	dc.w -761,649
+	dc.w -767,642
+	dc.w -772,636
+	dc.w -778,629
+	dc.w -783,622
+	dc.w -789,615
+	dc.w -794,608
+	dc.w -799,601
+	dc.w -804,594
+	dc.w -810,587
+	dc.w -815,580
+	dc.w -820,573
+	dc.w -825,566
+	dc.w -830,559
+	dc.w -834,551
+	dc.w -839,544
+	dc.w -844,537
+	dc.w -849,529
+	dc.w -853,522
+	dc.w -858,515
+	dc.w -862,507
+	dc.w -867,499
+	dc.w -871,492
+	dc.w -875,484
+	dc.w -879,477
+	dc.w -883,469
+	dc.w -888,461
+	dc.w -892,453
+	dc.w -895,446
+	dc.w -899,438
+	dc.w -903,430
+	dc.w -907,422
+	dc.w -910,414
+	dc.w -914,406
+	dc.w -918,398
+	dc.w -921,390
+	dc.w -924,382
+	dc.w -928,374
+	dc.w -931,366
+	dc.w -934,358
+	dc.w -937,350
+	dc.w -940,342
+	dc.w -943,333
+	dc.w -946,325
+	dc.w -949,317
+	dc.w -952,309
+	dc.w -954,300
+	dc.w -957,292
+	dc.w -959,284
+	dc.w -962,275
+	dc.w -964,267
+	dc.w -966,258
+	dc.w -969,250
+	dc.w -971,241
+	dc.w -973,233
+	dc.w -975,224
+	dc.w -977,216
+	dc.w -979,207
+	dc.w -980,199
+	dc.w -982,190
+	dc.w -984,182
+	dc.w -985,173
+	dc.w -987,165
+	dc.w -988,156
+	dc.w -990,147
+	dc.w -991,139
+	dc.w -992,130
+	dc.w -993,121
+	dc.w -994,113
+	dc.w -995,104
+	dc.w -996,95
+	dc.w -997,87
+	dc.w -997,78
+	dc.w -998,69
+	dc.w -999,61
+	dc.w -999,52
+	dc.w -1000,43
+	dc.w -1000,34
+	dc.w -1000,26
+	dc.w -1000,17
+	dc.w -1000,8
+	dc.w -1001,-1
+	dc.w -1000,-9
+	dc.w -1000,-18
+	dc.w -1000,-27
+	dc.w -1000,-35
+	dc.w -1000,-44
+	dc.w -999,-53
+	dc.w -999,-62
+	dc.w -998,-70
+	dc.w -997,-79
+	dc.w -997,-88
+	dc.w -996,-96
+	dc.w -995,-105
+	dc.w -994,-114
+	dc.w -993,-122
+	dc.w -992,-131
+	dc.w -991,-140
+	dc.w -990,-148
+	dc.w -988,-157
+	dc.w -987,-166
+	dc.w -985,-174
+	dc.w -984,-183
+	dc.w -982,-191
+	dc.w -980,-200
+	dc.w -979,-208
+	dc.w -977,-217
+	dc.w -975,-225
+	dc.w -973,-234
+	dc.w -971,-242
+	dc.w -969,-251
+	dc.w -966,-259
+	dc.w -964,-268
+	dc.w -962,-276
+	dc.w -959,-285
+	dc.w -957,-293
+	dc.w -954,-301
+	dc.w -952,-310
+	dc.w -949,-318
+	dc.w -946,-326
+	dc.w -943,-334
+	dc.w -940,-343
+	dc.w -937,-351
+	dc.w -934,-359
+	dc.w -931,-367
+	dc.w -928,-375
+	dc.w -924,-383
+	dc.w -921,-391
+	dc.w -918,-399
+	dc.w -914,-407
+	dc.w -910,-415
+	dc.w -907,-423
+	dc.w -903,-431
+	dc.w -899,-439
+	dc.w -895,-447
+	dc.w -892,-454
+	dc.w -888,-462
+	dc.w -883,-470
+	dc.w -879,-478
+	dc.w -875,-485
+	dc.w -871,-493
+	dc.w -867,-501
+	dc.w -862,-508
+	dc.w -858,-516
+	dc.w -853,-523
+	dc.w -849,-530
+	dc.w -844,-538
+	dc.w -839,-545
+	dc.w -834,-552
+	dc.w -830,-560
+	dc.w -825,-567
+	dc.w -820,-574
+	dc.w -815,-581
+	dc.w -810,-588
+	dc.w -804,-595
+	dc.w -799,-602
+	dc.w -794,-609
+	dc.w -789,-616
+	dc.w -783,-623
+	dc.w -778,-630
+	dc.w -772,-637
+	dc.w -767,-643
+	dc.w -761,-650
+	dc.w -755,-657
+	dc.w -749,-663
+	dc.w -744,-670
+	dc.w -738,-676
+	dc.w -732,-683
+	dc.w -726,-689
+	dc.w -720,-695
+	dc.w -714,-701
+	dc.w -708,-708
+	dc.w -701,-714
+	dc.w -695,-720
+	dc.w -689,-726
+	dc.w -682,-732
+	dc.w -676,-738
+	dc.w -670,-744
+	dc.w -663,-749
+	dc.w -657,-755
+	dc.w -650,-761
+	dc.w -643,-767
+	dc.w -637,-772
+	dc.w -630,-778
+	dc.w -623,-783
+	dc.w -616,-789
+	dc.w -609,-794
+	dc.w -602,-799
+	dc.w -595,-804
+	dc.w -588,-810
+	dc.w -581,-815
+	dc.w -574,-820
+	dc.w -567,-825
+	dc.w -560,-830
+	dc.w -552,-834
+	dc.w -545,-839
+	dc.w -538,-844
+	dc.w -530,-849
+	dc.w -523,-853
+	dc.w -516,-858
+	dc.w -508,-862
+	dc.w -500,-867
+	dc.w -493,-871
+	dc.w -485,-875
+	dc.w -478,-879
+	dc.w -470,-883
+	dc.w -462,-888
+	dc.w -454,-892
+	dc.w -447,-895
+	dc.w -439,-899
+	dc.w -431,-903
+	dc.w -423,-907
+	dc.w -415,-910
+	dc.w -407,-914
+	dc.w -399,-918
+	dc.w -391,-921
+	dc.w -383,-924
+	dc.w -375,-928
+	dc.w -367,-931
+	dc.w -359,-934
+	dc.w -351,-937
+	dc.w -343,-940
+	dc.w -334,-943
+	dc.w -326,-946
+	dc.w -318,-949
+	dc.w -310,-952
+	dc.w -301,-954
+	dc.w -293,-957
+	dc.w -285,-959
+	dc.w -276,-962
+	dc.w -268,-964
+	dc.w -259,-966
+	dc.w -251,-969
+	dc.w -242,-971
+	dc.w -234,-973
+	dc.w -225,-975
+	dc.w -217,-977
+	dc.w -208,-979
+	dc.w -200,-980
+	dc.w -191,-982
+	dc.w -183,-984
+	dc.w -174,-985
+	dc.w -166,-987
+	dc.w -157,-988
+	dc.w -148,-990
+	dc.w -140,-991
+	dc.w -131,-992
+	dc.w -122,-993
+	dc.w -114,-994
+	dc.w -105,-995
+	dc.w -96,-996
+	dc.w -88,-997
+	dc.w -79,-997
+	dc.w -70,-998
+	dc.w -62,-999
+	dc.w -53,-999
+	dc.w -44,-1000
+	dc.w -35,-1000
+	dc.w -27,-1000
+	dc.w -18,-1000
+	dc.w -9,-1000
+	dc.w 0,-1001
+	dc.w 8,-1000
+	dc.w 17,-1000
+	dc.w 26,-1000
+	dc.w 34,-1000
+	dc.w 43,-1000
+	dc.w 52,-999
+	dc.w 61,-999
+	dc.w 69,-998
+	dc.w 78,-997
+	dc.w 87,-997
+	dc.w 95,-996
+	dc.w 104,-995
+	dc.w 113,-994
+	dc.w 121,-993
+	dc.w 130,-992
+	dc.w 139,-991
+	dc.w 147,-990
+	dc.w 156,-988
+	dc.w 165,-987
+	dc.w 173,-985
+	dc.w 182,-984
+	dc.w 190,-982
+	dc.w 199,-980
+	dc.w 207,-979
+	dc.w 216,-977
+	dc.w 224,-975
+	dc.w 233,-973
+	dc.w 241,-971
+	dc.w 250,-969
+	dc.w 258,-966
+	dc.w 267,-964
+	dc.w 275,-962
+	dc.w 284,-959
+	dc.w 292,-957
+	dc.w 300,-954
+	dc.w 309,-952
+	dc.w 317,-949
+	dc.w 325,-946
+	dc.w 333,-943
+	dc.w 342,-940
+	dc.w 350,-937
+	dc.w 358,-934
+	dc.w 366,-931
+	dc.w 374,-928
+	dc.w 382,-924
+	dc.w 390,-921
+	dc.w 398,-918
+	dc.w 406,-914
+	dc.w 414,-910
+	dc.w 422,-907
+	dc.w 430,-903
+	dc.w 438,-899
+	dc.w 446,-895
+	dc.w 453,-892
+	dc.w 461,-888
+	dc.w 469,-883
+	dc.w 477,-879
+	dc.w 484,-875
+	dc.w 492,-871
+	dc.w 500,-867
+	dc.w 507,-862
+	dc.w 515,-858
+	dc.w 522,-853
+	dc.w 529,-849
+	dc.w 537,-844
+	dc.w 544,-839
+	dc.w 551,-834
+	dc.w 559,-830
+	dc.w 566,-825
+	dc.w 573,-820
+	dc.w 580,-815
+	dc.w 587,-810
+	dc.w 594,-804
+	dc.w 601,-799
+	dc.w 608,-794
+	dc.w 615,-789
+	dc.w 622,-783
+	dc.w 629,-778
+	dc.w 636,-772
+	dc.w 642,-767
+	dc.w 649,-761
+	dc.w 656,-755
+	dc.w 662,-749
+	dc.w 669,-744
+	dc.w 675,-738
+	dc.w 682,-732
+	dc.w 688,-726
+	dc.w 694,-720
+	dc.w 700,-714
+	dc.w 707,-708
+	dc.w 713,-701
+	dc.w 719,-695
+	dc.w 725,-689
+	dc.w 731,-682
+	dc.w 737,-676
+	dc.w 743,-670
+	dc.w 748,-663
+	dc.w 754,-657
+	dc.w 760,-650
+	dc.w 766,-643
+	dc.w 771,-637
+	dc.w 777,-630
+	dc.w 782,-623
+	dc.w 788,-616
+	dc.w 793,-609
+	dc.w 798,-602
+	dc.w 803,-595
+	dc.w 809,-588
+	dc.w 814,-581
+	dc.w 819,-574
+	dc.w 824,-567
+	dc.w 829,-560
+	dc.w 833,-552
+	dc.w 838,-545
+	dc.w 843,-538
+	dc.w 848,-530
+	dc.w 852,-523
+	dc.w 857,-516
+	dc.w 861,-508
+	dc.w 866,-500
+	dc.w 870,-493
+	dc.w 874,-485
+	dc.w 878,-478
+	dc.w 882,-470
+	dc.w 887,-462
+	dc.w 891,-454
+	dc.w 894,-447
+	dc.w 898,-439
+	dc.w 902,-431
+	dc.w 906,-423
+	dc.w 909,-415
+	dc.w 913,-407
+	dc.w 917,-399
+	dc.w 920,-391
+	dc.w 923,-383
+	dc.w 927,-375
+	dc.w 930,-367
+	dc.w 933,-359
+	dc.w 936,-351
+	dc.w 939,-343
+	dc.w 942,-334
+	dc.w 945,-326
+	dc.w 948,-318
+	dc.w 951,-310
+	dc.w 953,-301
+	dc.w 956,-293
+	dc.w 958,-285
+	dc.w 961,-276
+	dc.w 963,-268
+	dc.w 965,-259
+	dc.w 968,-251
+	dc.w 970,-242
+	dc.w 972,-234
+	dc.w 974,-225
+	dc.w 976,-217
+	dc.w 978,-208
+	dc.w 979,-200
+	dc.w 981,-191
+	dc.w 983,-183
+	dc.w 984,-174
+	dc.w 986,-166
+	dc.w 987,-157
+	dc.w 989,-148
+	dc.w 990,-140
+	dc.w 991,-131
+	dc.w 992,-122
+	dc.w 993,-114
+	dc.w 994,-105
+	dc.w 995,-96
+	dc.w 996,-88
+	dc.w 996,-79
+	dc.w 997,-70
+	dc.w 998,-62
+	dc.w 998,-53
+	dc.w 999,-44
+	dc.w 999,-35
+	dc.w 999,-27
+	dc.w 999,-18
+	dc.w 999,-9
 	dc.w 1000,0
 	dc.w 999,8
 	dc.w 999,17
