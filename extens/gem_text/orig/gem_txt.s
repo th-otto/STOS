@@ -66,9 +66,9 @@ jumps:  dc.w 19
 
 welcome:
 		dc.b 10
-		dc.b "ST(e)/TT/Falcon 030 Gemtext v0.9b ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
+		dc.b "ST(e)/TT/Falcon 030 Gemtext v0.9 ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
 		dc.b 10
-		dc.b "ST(e)/TT/Falcon 030 GemText v0.9b ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
+		dc.b "ST(e)/TT/Falcon 030 GemText v0.9 ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
 		.even
 
 load:
@@ -78,20 +78,63 @@ load:
 
 cold:
 		move.l     a0,table
-		move.w     #4,-(a7) /* Getrez */
-		trap       #14
-		addq.l     #2,a7
-		lea.l      mode(pc),a0
-		move.w     d0,(a0)
-		bsr        warm
 		lea.l      welcome(pc),a0
 		lea.l      warm(pc),a1
 		lea.l      tokens(pc),a2
 		lea.l      jumps(pc),a3
-		rts
+		movem.l    d0-d7/a0-a6,-(a7)
+		move.w     #4,-(a7)
+		trap       #14
+		addq.l     #2,a7
+		andi.l     #3,d0
+		swap       d0
+		lea.l      mode(pc),a0
+		move.l     d0,(a0)
+		lea.l      mch_cookie(pc),a0
+		clr.l      (a0)+
+		clr.l      (a0)+
+		move.l     #1,(a0)+
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F4D4348,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold1
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F56444F,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold2
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+cold2:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F534E44,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7)
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold3
+		lea.l      cookievalue(pc),a1
+		lea.l      snd_cookie(pc),a0
+		move.l     (a1),(a0)
+cold3:
+		bra.s      warm0
 
 warm:
-		move.l     a0,-(a7)
+		movem.l    d0-d7/a0-a6,-(a7)
+warm0:
 		lea.l      fontptr(pc),a0
 		clr.l      (a0)+
 		move.l     #0x00040000,(a0)+ /* fontnum/text_style */
@@ -99,7 +142,36 @@ warm:
 		clr.l      (a0)+             /* wrt_mode/text_rotation */
 		clr.w      (a0)+             /* text_double */
 		clr.l      (a0)+             /* string_x/string_y */
-		movea.l    (a7)+,a0
+		movem.l    (a7)+,d0-d7/a0-a6
+		rts
+
+getcookie:
+		movea.w    #0x05A0,a0
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
+		tst.l      d0
+		beq.s      getcookie3
+		movea.l    d0,a0
+		moveq.l    #0,d4
+getcookie1:
+		move.l     (a0)+,d0
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.s      getcookie3
+		cmp.l      d3,d0
+		beq.s      getcookie2
+		addq.w     #1,d4
+		bra.s      getcookie1
+getcookie2:
+		/* cmpa.w     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.s      getcookie3
+		move.l     d1,(a5)
+getcookie3:
 		rts
 
 getinteger:
@@ -143,7 +215,11 @@ erase:
 		rts
 
 dummy:
+		move.l     (a7)+,returnpc
+		bra.s      syntax
 
+		clr.l      d0
+		bra.s      goerror
 syntax:
 		moveq.l    #E_syntax,d0
 		bra.s      goerror
@@ -156,12 +232,18 @@ typemismatch:
 enoent:
 		moveq.l    #E_noent,d0
 		bra.s      goerror
+e_charset: /* unused */
+		movem.l    (a7)+,a1-a6
+		moveq.l    #E_character_set,d0
+		bra.s      goerror
+		nop
 diskerror:
 		moveq.l    #E_diskerror,d0
 
 goerror:
 		movem.l    d0-d7/a0-a6,-(a7)
-		move.w     mode(pc),d0
+		lea.l      mode(pc),a0
+		move.w     (a0),d0
 		cmpi.w     #2,d0
 		beq.s      goerror1
 		move.w     d0,-(a7)
@@ -184,7 +266,9 @@ goerror1:
  * Syntax:   gemtext init
  */
 gemtext_init:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne.s      syntax
 		movem.l    a0-a6,-(a7)
 		lea.l      fontbankptr(pc),a0
@@ -197,19 +281,23 @@ gemtext_init:
 		clr.w      (a0)+             /* text_double */
 		clr.l      (a0)+             /* string_x/string_y */
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   NAME$=gemfont name$
  */
 gemfont_name:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0x0c40,0 /* XXX */
 		bne        syntax
 		movem.l    a1-a6,-(a7)
 		dc.w 0xa000 /* linea_init */
 		move.w     fontnum(pc),d0
 		movea.l    0(a1,d0.w),a2
 		move.l     fontptr(pc),d1
+		tst.l      d1
 		beq.s      gemfont_name1
 		movea.l    d1,a2
 gemfont_name1:
@@ -218,7 +306,8 @@ gemfont_name1:
 		lea.l      scratchbuf(pc),a0
 		movea.l    a0,a1
 		moveq.l    #0,d3
-		tst.b     (a2)
+		/* tst.b     (a2) */
+		dc.w 0x0c12,0
 		bne.s      gemfont_name2
 		move.w     #1,(a0)+
 		move.b     #' ',(a0)+
@@ -226,29 +315,32 @@ gemfont_name1:
 gemfont_name2:
 		cmpi.w     #' ',d3
 		beq.s      gemfont_name3
-		tst.b     (a2)+
+		/* tst.b     (a2)+ */
+		dc.w 0x0c1a,0
 		beq.s      gemfont_name3
 		addq.w     #1,d3
 		bra.s      gemfont_name2
 gemfont_name3:
+		andi.l     #255,d3
 		move.w     d3,(a0)+
 		subq.w     #1,d3
 gemfont_name4:
 		move.b     (a3)+,(a0)+
 		dbf        d3,gemfont_name4
 gemfont_name5:
-		clr.b      (a0)+
+		move.b     #0,(a0)+ /* XXX */
 		move.l     a1,d3
 		move.w     #128,d2 ; returns string
 		movem.l    (a7)+,a1-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext color FG,BG
  */
 gemtext_color:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
 		bne        syntax
 		bsr        getinteger
 		tst.l      d3
@@ -258,12 +350,14 @@ gemtext_color:
 		tst.l      d3
 		bmi        illfunc
 		move.w     d3,fgcolor
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   W=gemfont cellwidth
  */
 gemfont_cellwidth:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		movem.l    a1-a6,-(a7)
@@ -275,7 +369,7 @@ gemfont_cellwidth:
 		beq.s      gemfont_cellwidth1
 		movea.l    d1,a3
 gemfont_cellwidth1:
-		moveq      #0,d3
+		/* BUG: upper 16 bit not cleared */
 		move.w     font_max_cell_width(a3),d3
 		tst.w      text_double
 		beq.s      gemfont_cellwidth2
@@ -283,27 +377,30 @@ gemfont_cellwidth1:
 gemfont_cellwidth2:
 		movem.l    (a7)+,a1-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext mode N
  */
 gemtext_mode:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
 		tst.l      d3
 		bmi        illfunc
-		cmpi.w     #3,d3
+		cmpi.w     #19,d3 /* BUG: should be 3 */
 		bgt        illfunc
 		move.w     d3,wrt_mode
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   H=gemfont cellheight
  */
 gemfont_cellheight:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		movem.l    a1-a6,-(a7)
@@ -315,7 +412,7 @@ gemfont_cellheight:
 		beq.s      gemfont_cellheight1
 		movea.l    d1,a3
 gemfont_cellheight1:
-		moveq      #0,d3
+		/* BUG: upper 16 bit not cleared */
 		move.w     font_form_height(a3),d3
 		tst.w      text_double
 		beq.s      gemfont_cellheight2
@@ -323,59 +420,65 @@ gemfont_cellheight1:
 gemfont_cellheight2:
 		movem.l    (a7)+,a1-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext style N
  */
 gemtext_style:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
 		tst.l      d3
 		bmi        illfunc
-		cmpi.w     #31,d3
+		cmpi.w     #29,d3 /* BUG: should be 31 */
 		bgt        illfunc
 		move.w     d3,text_style
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   STRW=gemtext stringwidth(A$)
  */
 gemtext_stringwidth:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getstring
-		move.l     a1,-(a7)
+		movea.l    d3,a0
+		move.w     (a0)+,d7
+		move.w     d7,string_len
+		move.l     a0,string_ptr
 		movem.l    a1-a6,-(a7)
-		movea.l    d3,a4
-		move.w     (a4)+,d7
 		dc.w 0xa000 /* linea_init */
 		move.w     fontnum(pc),d0
-		movea.l    0(a1,d0.w),a5
+		movea.l    0(a1,d0.w),a3
 		move.l     fontptr(pc),d1
+		tst.l      d1 /* XXX */
 		beq.s      gemtext_stringwidth1
-		movea.l    d1,a5
+		movea.l    d1,a3
 gemtext_stringwidth1:
-		move.l     font_off_table(a5),d0
+		move.l     font_off_table(a3),d0
 		add.l      d1,d0
 		movea.l    d0,a2
+		lea.l      string_len(pc),a4
+		movea.l    string_ptr(pc),a6
 		moveq.l    #0,d3
 gemtext_stringwidth2:
-		tst.w      d7
+		tst.w      (a4)
 		beq.s      gemtext_stringwidth5
-		subq.w     #1,d7
-		moveq      #0,d0
-		move.b     (a4)+,d0
-		cmp.w      font_last_ade(a5),d0
+		subq.w     #1,(a4)
+		move.b     (a6)+,d0
+		andi.l     #255,d0
+		cmp.w      font_last_ade(a3),d0
 		bgt.s      gemtext_stringwidth2
-		sub.w      font_first_ade(a5),d0
+		sub.w      font_first_ade(a3),d0
 		blt.s      gemtext_stringwidth2
-		btst       #FONTF_MONOSPACED,font_flags+1(a5) /* monospaced? */
+		btst       #3,font_flags+1(a3) /* monospaced? */
 		beq.s      gemtext_stringwidth3
-		add.w      font_max_cell_width(a5),d3
+		add.w      font_max_cell_width(a3),d3
 		bra.s      gemtext_stringwidth4
 gemtext_stringwidth3:
 		asl.w      #1,d0
@@ -385,20 +488,21 @@ gemtext_stringwidth3:
 gemtext_stringwidth4:
 		bra.s      gemtext_stringwidth2
 gemtext_stringwidth5:
-		move.w     text_double(pc),d2
+		tst.w      text_double
 		beq.s      gemtext_stringwidth6
 		asl.w      #1,d3
 gemtext_stringwidth6:
 		movem.l    (a7)+,a1-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext angle N
  */
 gemtext_angle:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
 		tst.l      d3
@@ -413,19 +517,19 @@ gemtext_angle:
 		bne        illfunc
 		mulu.w     #10,d3
 		move.w     d3,text_rotation
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   Z=gemfont convert(BNK)
  */
 gemfont_convert:
-		move.l     (a7)+,a1
-		subq.w      #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		tst.l      d3
-		ble        illfunc
+		bmi        illfunc
 		cmpi.l     #3,d3
 		blt        illfunc
 		cmpi.l     #15,d3
@@ -438,7 +542,8 @@ gemfont_convert:
 		cmpi.l     #0x56444946,(a0) /* 'VDIF' */
 		bne.s      gemfont_convert1
 		cmpi.w     #0x6E54,4(a0) /* 'nT' */
-		beq        gemfont_convert4 /* already converted */
+		bne.s      gemfont_convert1
+		bra        gemfont_convert4 /* already converted */
 gemfont_convert1:
 		lea.l      gemtext_id(pc),a5
 		move.w     #(gemtext_id_end-gemtext_id-1),d7
@@ -459,10 +564,13 @@ gemfont_convert2:
 		move.l     font_dat_table(a0),d0
 		subi.l     #22,d0
 		move.l     d0,font_dat_table(a0)
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		moveq.l    #0,d2
+		moveq.l    #0,d3
 		move.w     font_form_width(a0),d0
 		mulu.w     font_form_height(a0),d0
 		addi.l     #sizeof_FONTHDR+2,d0
-		moveq.l    #0,d3
 		move.w     font_last_ade(a0),d3
 		sub.w      font_first_ade(a0),d3
 		addq.w     #1,d3
@@ -491,22 +599,22 @@ gemfont_convert4:
 gemfont_convert5:
 		movem.l    (a7)+,a1-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext font N
  *           gemtext font B,N
  */
 gemtext_font:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		beq.s      gemtext_font1
-		subq.w     #1,d0
+		cmp.w      #2,d0
 		beq        gemtext_font5
 		bra        syntax
 gemtext_font1:
 		bsr        getinteger
-		move.l     a1,-(a7)
 		tst.l      d3
 		bmi        illfunc
 		cmpi.l     #1,d3
@@ -514,7 +622,7 @@ gemtext_font1:
 		cmpi.l     #15,d3
 		bgt        illfunc
 		movem.l    a1-a6,-(a7)
-		andi.w     #15,d3
+		andi.l     #15,d3
 		cmpi.w     #3,d3
 		ble.s      gemtext_font3
 		bsr        addrofbank
@@ -529,7 +637,7 @@ gemtext_font1:
 		movea.l    8(a1),a2 /* get offset to data */
 		adda.l     a2,a1
 		move.l     a1,(a0)+
-		clr.w      (a0) /* fontnum */
+		move.w     #0,(a0) /* fontnum */
 		bra.s      gemtext_font4
 gemtext_font2:
 		lea.l      fontbankptr(pc),a0
@@ -548,11 +656,12 @@ gemtext_font3:
 		move.w     d3,(a0)
 gemtext_font4:
 		movem.l    (a7)+,a1-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 gemtext_font5:
 		bsr        getinteger
 		tst.l      d3
-		ble        illfunc
+		bmi        illfunc
 		cmpi.l     #1,d3
 		blt        illfunc
 		cmpi.l     #15,d3
@@ -560,9 +669,8 @@ gemtext_font5:
 		andi.l     #15,d3
 		move.l     d3,d5
 		bsr        getinteger
-		move.l     a1,-(a7)
 		tst.l      d3
-		ble        illfunc
+		bmi        illfunc
 		cmpi.l     #1,d3
 		blt        illfunc
 		cmpi.l     #15,d3
@@ -595,15 +703,17 @@ gemtext_font8:
 		movea.l    8(a1,d5.w),a2 /* get offset to data */
 		adda.l     a2,a1
 		move.l     a1,(a0)+
-		clr.w      (a0) /* fontnum */
+		move.w     #0,(a0) /* fontnum */
 gemtext_font9:
 		movem.l    (a7)+,a1-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
- * Syntax:   X=gemfont info
+ * Syntax:   gemfont info
  */
 gemfont_info:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		movem.l    a1-a6,-(a7)
@@ -611,52 +721,62 @@ gemfont_info:
 		move.w     fontnum(pc),d0
 		move.l     0(a1,d0.w),d3
 		move.l     fontptr(pc),d1
+		tst.l      d1
 		beq.s      gemfont_info1
 		move.l     d1,d3
 gemfont_info1:
 		movem.l    (a7)+,a1-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext scale N
  */
 gemtext_scale:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
 		move.w     d3,text_double
-		jmp        (a1)
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax:   gemtext X,Y,A$
  */
 gemtext:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #3,d0
 		bne        syntax
 		bsr        getstring
 		movea.l    d3,a0
 		move.w     (a0)+,d7
+		move.w     d7,string_len
 		move.l     a0,string_ptr
 		bsr        getinteger
-		tst.w      d3
+		ext.l      d3
+		tst.l      d3
 		bmi        illfunc
 		move.w     d3,string_y
 		bsr        getinteger
-		tst.w      d3
+		ext.l      d3
+		tst.l      d3
 		bmi        illfunc
 		move.w     d3,string_x
-		move.l     a1,-(a7)
+		movem.l    a1-a6,-(a7)
 		dc.w 0xa000 /* linea_init */
+		movem.l    (a7)+,a1-a6
+		movea.l    d0,a0
 		cmpi.w     #16,LA_PLANES(a0)
 		bne.s      gemtext1
 		bsr.s      gemtexthi
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 gemtext1:
 		bsr        gemtextplanes
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 gemtexthi:
 		movem.l    a1-a6,-(a7)
@@ -665,12 +785,16 @@ gemtexthi:
 		addq.l     #2,a7
 		lea.l      fontptrhi(pc),a2
 		move.l     d0,logic-fontptrhi(a2)
+		movem.l    a2-a6,-(a7)
 		dc.w 0xa000 /* linea_init */
-		lea.l      fontptrhi(pc),a2
+		movem.l    (a7)+,a2-a6
 		move.w     V_BYTES_LIN(a0),bytes_lin-fontptrhi(a2)
-		movem.w    DEV_TAB(a0),d0-d1
+		move.w     DEV_TAB(a0),d0
+		andi.l     #0x0000FFFF,d0 /* FIXME useless */
 		move.w     d0,maxx-fontptrhi(a2)
-		move.w     d1,maxy-fontptrhi(a2)
+		move.w     DEV_TAB+2(a0),d0
+		andi.l     #0x0000FFFF,d0 /* FIXME useless */
+		move.w     d0,maxy-fontptrhi(a2)
 		move.w     fontnum(pc),d0
 		movea.l    0(a1,d0.w),a3
 		move.l     fontptr(pc),d1
@@ -692,11 +816,12 @@ gemtexthi1:
 		lea.l      string_x(pc),a5
 		movea.l    string_ptr(pc),a6
 gemtexthi2:
-		tst.w      d7
+		tst.w      string_len(pc) /* BUG 68020 only addressing mode */
 		beq        gemtexthi10
-		subq.w     #1,d7
-		moveq      #0,d0
+		lea.l      string_len(pc),a4
+		subq.w     #1,(a4)
 		move.b     (a6)+,d0
+		andi.l     #255,d0
 		cmp.w      font_last_ade(a3),d0
 		bgt.s      gemtexthi2
 		sub.w      font_first_ade(a3),d0
@@ -704,15 +829,14 @@ gemtexthi2:
 		lea.l      fontptrhi(pc),a2
 		movea.l    logic-fontptrhi(a2),a1
 		movea.l    offtablehi-fontptrhi(a2),a4
-		add.w      d0,d0
-		move.w     0(a4,d0.w),charoffhi-fontptrhi(a2)
-		btst       #FONTF_MONOSPACED,font_flags+1(a3) /* monospaced? */
+		move.w     0(a4,d0.w*2),charoffhi-fontptrhi(a2) /* BUG 68020 only addressing mode */
+		btst       #3,font_flags+1(a3) /* monospaced? */
 		beq.s      gemtexthi3
 		move.w     font_max_cell_width(a3),charwhi-fontptrhi(a2)
 		bra.s      gemtexthi4
 gemtexthi3:
-		move.w     2(a4,d0.w),d1
-		sub.w      0(a4,d0.w),d1
+		move.w     2(a4,d0.w*2),d1 ; 68020+ only
+		sub.w      0(a4,d0.w*2),d1 ; 68020+ only
 		move.w     d1,charwhi-fontptrhi(a2)
 gemtexthi4:
 		movem.l    d6-d7/a2-a6,-(a7)
@@ -738,7 +862,7 @@ gemtexthi5:
 		subq.w     #1,d7
 gemtexthi6:
 		bsr.s      drawchar
-		move.w     text_double(pc),d1
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      gemtexthi7
 		adda.w     bytes_lin(pc),a1
 		bsr.s      drawchar
@@ -756,7 +880,7 @@ gemtexthi8:
 		movem.l    (a7)+,d6-d7/a2-a6
 		move.w     charwhi(pc),d1
 		add.w      d1,(a5)
-		move.w     text_double(pc),d0
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq        gemtexthi2
 		add.w      d1,(a5)
 		bra        gemtexthi2
@@ -777,6 +901,7 @@ charwhi: ds.w 1
 formwhi: ds.w 1
 formhhi: ds.w 1
 charoffhi: ds.w 1
+charnum: ds.w 1 /* unused */
 
 drawchar:
 		movem.l    d4-d5/a1,-(a7)
@@ -792,24 +917,25 @@ drawchar:
 		asr.l      #1,d1
 		or.l       d1,d2
 drawchar1:
-		move.w     text_double(pc),d5
 		subq.w     #1,d3
-		move.w     wrt_mode(pc),d5
+		/* tst.w     bgcolor(pc) */ ; BUG: 68020 only addressing mode
+		dc.w 0x0c7a,0,wrt_mode-sbss+etext-stext+edata-sdata-(*-stext)-4 /* XXX */
 		beq.s      drawchar_repl
-		subq.w     #1,d5
+		cmpi.w     #1,wrt_mode(pc) ; BUG: 68020 only addressing mode
 		beq.s      drawchar_trans
-		subq.w     #1,d5
+		cmpi.w     #2,wrt_mode(pc) ; BUG: 68020 only addressing mode
 		beq        drawchar_xor
-		subq.w     #1,d5
+		cmpi.w     #3,wrt_mode(pc) ; BUG: 68020 only addressing mode
 		beq        drawchar_erase
 
 drawchar_repl:
+		nop
 drawchar_repl1:
 		btst       d3,d2
 		beq.s      drawchar_repl2
 		move.w     fgcolor(pc),(a1)+
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_repl3
 		move.w     fgcolor(pc),(a1)+
 		addq.w     #1,d4
@@ -817,7 +943,7 @@ drawchar_repl1:
 drawchar_repl2:
 		move.w     bgcolor(pc),(a1)+
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_repl3
 		move.w     bgcolor(pc),(a1)+
 		addq.w     #1,d4
@@ -831,12 +957,13 @@ drawchar_repl4:
 		rts
 
 drawchar_trans:
+		nop
 drawchar_trans1:
 		btst       d3,d2
 		beq.s      drawchar_trans2
 		move.w     fgcolor(pc),(a1)+
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_trans3
 		move.w     fgcolor(pc),(a1)+
 		addq.w     #1,d4
@@ -844,7 +971,7 @@ drawchar_trans1:
 drawchar_trans2:
 		addq.l     #2,a1
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_trans3
 		addq.l     #2,a1
 		addq.w     #1,d4
@@ -858,13 +985,14 @@ drawchar_trans4:
 		rts
 
 drawchar_xor:
+		nop
 drawchar_xor1:
 		btst       d3,d2
 		beq.s      drawchar_xor2
 		move.w     fgcolor(pc),d1
 		eor.w      d1,(a1)+
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_xor3
 		eor.w      d1,(a1)+
 		addq.w     #1,d4
@@ -873,7 +1001,7 @@ drawchar_xor2:
 		move.w     bgcolor(pc),d1
 		eor.w      d1,(a1)+
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_xor3
 		eor.w      d1,(a1)+
 		addq.w     #1,d4
@@ -887,12 +1015,13 @@ drawchar_xor4:
 		rts
 
 drawchar_erase:
+		nop
 drawchar_erase1:
 		btst       d3,d2
 		beq.s      drawchar_erase2
 		addq.l     #2,a1
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_erase3
 		addq.l     #2,a1
 		addq.w     #1,d4
@@ -900,7 +1029,7 @@ drawchar_erase1:
 drawchar_erase2:
 		move.w     fgcolor(pc),(a1)+
 		addq.w     #1,d4
-		tst.w      d5
+		tst.w      text_double(pc) /* BUG 68020 only addressing mode */
 		beq.s      drawchar_erase3
 		move.w     fgcolor(pc),(a1)+
 		addq.w     #1,d4
@@ -915,6 +1044,7 @@ drawchar_erase4:
 
 gemtextplanes:
 		movem.l    a1-a6,-(a7)
+		dc.w 0xa000 /* linea_init */ /* FIXME: already done above */
 		move.w     fontnum(pc),d0
 		movea.l    0(a1,d0.w),a3
 		move.l     fontptr(pc),d1
@@ -953,15 +1083,16 @@ gemtextplanes2:
 		move.w     #SCRATCHBUF_SIZE,LA_SCRPT2(a0)
 		lea.l      save_clip(pc),a6
 		move.w     LA_CLIP(a0),(a6)
-		clr.l      LA_XMN_CLIP(a0)
-		movem.w    DEV_TAB(a0),d0-d1
-		movem.w    d0-d1,LA_XMX_CLIP(a0)
+		move.w     #0,LA_XMN_CLIP(a0)
+		move.w     #0,LA_YMN_CLIP(a0)
+		move.w     DEV_TAB(a0),LA_XMX_CLIP(a0)
+		move.w     DEV_TAB+2(a0),LA_YMX_CLIP(a0)
 		move.w     #-1,LA_CLIP(a0)
 		movea.l    string_ptr(pc),a6
 gemtextplanes3:
-		tst.w      d7
+		tst.w      string_len
 		beq        gemtextplanes7
-		subq.w     #1,d7
+		subq.w     #1,string_len
 		move.b     (a6)+,d0
 		andi.l     #255,d0
 		cmp.w      font_last_ade(a3),d0
@@ -973,7 +1104,7 @@ gemtextplanes3:
 		movea.l    font_off_table(a3),a4
 		adda.l     d1,a4
 		move.w     0(a4,d0.w),LA_SRCX(a0)
-		btst       #FONTF_MONOSPACED,LA_MONO_STAT+1(a0) /* monospaced? */
+		btst       #3,LA_MONO_STAT+1(a0) /* monospaced? */
 		beq.s      gemtextplanes4
 		move.w     font_max_cell_width(a3),LA_DELX(a0)
 		bra.s      gemtextplanes5
@@ -983,6 +1114,8 @@ gemtextplanes4:
 		move.w     d1,LA_DELX(a0)
 gemtextplanes5:
 		move.l     font_hor_table(a3),d2
+		bra.s      gemtextplanes6
+/* dead code */
 		beq.s      gemtextplanes6
 		move.l     fontptr(pc),d1
 		add.l      d1,d2
@@ -1003,7 +1136,8 @@ gemtextplanes6:
 gemtextplanes7:
 		lea.l      save_clip(pc),a6
 		move.w     (a6),LA_CLIP(a0)
-		.IFNE 0
+		bra.s      gemtextplanes8
+/* dead code */
 		move.w     #S_hide,d0
 		move.w     #1,d1
 		trap       #5
@@ -1012,7 +1146,7 @@ gemtextplanes7:
 		move.w     #S_show,d0
 		move.w     #1,d1
 		trap       #5
-		.ENDC
+gemtextplanes8:
 		movem.l    (a7)+,a1-a6
 		rts
 
@@ -1051,8 +1185,8 @@ incxpos4:
  * Syntax:   gemfont load FILENAME$,BNK
  */
 gemfont_load:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
 		bne        syntax
 		bsr        getinteger
 		tst.l      d3
@@ -1063,7 +1197,6 @@ gemfont_load:
 		lea.l      loadbnk(pc),a0
 		move.w     d3,(a0)
 		bsr        getstring
-		move.l     a1,-(a7)
 		movea.l    d3,a0
 		moveq.l    #0,d3
 		move.w     (a0)+,d3
@@ -1072,7 +1205,7 @@ gemfont_load:
 gemfont_load1:
 		move.b     (a0)+,(a1)+
 		dbf        d3,gemfont_load1
-		clr.b      (a1)
+		move.b     #0,(a1)
 		movem.l    a0-a6,-(a7)
 		moveq.l    #0,d3
 		move.w     loadbnk(pc),d3
@@ -1096,6 +1229,7 @@ gemfont_load2:
 		beq        gemfont_load4
 		movea.l    dtaptr(pc),a0
 		move.l     26(a0),d3
+		andi.l     #0x7FFFFFFF,d3 /* FIXME: useless */
 		lea.l      filesize(pc),a0
 		move.l     d3,(a0)
 		lea.l      filename(pc),a0
@@ -1122,7 +1256,7 @@ gemfont_load2:
 		movea.l    a0,a1
 		moveq.l    #31,d7
 gemfont_load3:
-		clr.l      (a1)+
+		move.l     #0,(a1)+
 		dbf        d7,gemfont_load3
 		move.b     #'V',(a0)+
 		move.b     #'D',(a0)+
@@ -1142,18 +1276,18 @@ gemfont_load3:
 		move.w     #63,-(a7) /* Fread */
 		trap       #1
 		lea.l      12(a7),a7
-		move.l     d0,d3
+		tst.l      d0
+		bmi.s      gemfont_load5 /* BUG: filehandle not closed */
 		move.w     filehandle(pc),-(a7)
 		move.w     #62,-(a7) /* Fclose */
 		trap       #1
 		addq.l     #4,a7
-		tst.l      d3
-		bmi.s      gemfont_load5
 		movea.l    loadbnkptr(pc),a0
 		lea.l      16(a0),a0
 		bsr.s      swap_font
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 gemfont_load4:
 		movem.l    (a7)+,a0-a6
 		bra        enoent
@@ -1163,13 +1297,13 @@ gemfont_load5:
 
 
 swap_font:
-		btst       #FONTF_BIGENDIAN,font_flags+1(a0) /* motorola format? */
+		btst       #2,font_flags+1(a0) /* motorola format? */
 		beq.s      swap_font1
 		rts
 swap_font1:
-		move.w     font_id(a0),d0
+		move.w     ZERO(a0),d0 /* XXX font_id */
 		ror.w      #8,d0
-		move.w     d0,font_id(a0)
+		move.w     d0,ZERO(a0)
 		move.w     font_point(a0),d0
 		ror.w      #8,d0
 		move.w     d0,font_point(a0)
@@ -1243,6 +1377,7 @@ swap_font1:
 		adda.l     a0,a1
 		move.w     font_last_ade(a0),d7
 		sub.w      font_first_ade(a0),d7
+		subq.w     #1,d7 /* BUG */
 swap_font2:
 		move.w     (a1),d0
 		ror.w      #8,d0
@@ -1254,7 +1389,9 @@ swap_font2:
  * Syntax:   gemfont cmds
  */
 gemfont_cmds:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		movem.l    d1-d7/a0-a6,-(a7)
 		lea.l      helpmsgs(pc),a0
@@ -1284,7 +1421,8 @@ gemfont_cmds3:
 		bne.s      gemfont_cmds3
 gemfont_cmds4:
 		movem.l    (a7)+,d1-d7/a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 etext:
 
@@ -1300,7 +1438,7 @@ gemtext_id_end:
 
 helpmsgs:
 		dc.b 13,10
-		dc.b 'ST(e)/TT/Falcon Gemtext Extension v0.9b command reference ',$bd,' 1996, 1997, 1998',13,10
+		dc.b 'ST(e)/TT/Falcon Gemtext Extension v0.9 command reference ',$bd,' 1996, 1997, 1998',13,10
 		dc.b 13,10
 		dc.b '                       Anthony Hoskin.',13,10
 		dc.b '                       45 Wythburn Road,',13,10
@@ -1534,31 +1672,41 @@ edata:
 	.bss
 sbss:
 
-table: ds.l 1
-loadbnk: ds.w 1
-loadbnkptr: ds.l 1
-dtaptr: ds.l 1
-filehandle: ds.w 1
-filesize: ds.l 1
-filename: ds.b 128
+table: ds.l 1 /* 137e8 */
+returnpc: ds.l 1 /* 137ec */
+loadbnk: ds.w 1 /* 137f0 */
+loadbnkptr: ds.l 1 /* 137f2 */
+dtaptr: ds.l 1 /* 137f6 */
+filehandle: ds.w 1 /* 137fa */
+filesize: ds.l 1 /* 137fc */
+filename: ds.b 182
 
-mode: ds.w 1
+mch_cookie: ds.l 1 /* 138b6 */
+vdo_cookie: ds.l 1 /* 138ba */
+snd_cookie: ds.l 1 /* 138be */
+cookieid: ds.l 1 /* 138c2 */
+cookievalue: ds.l 1 /* 138c6 */
 
-fontbankptr: ds.l 1
-fontptr: ds.l 1
-fontnum: ds.w 1
-text_style: ds.w 1
-fgcolor: ds.w 1
-bgcolor: ds.w 1
-wrt_mode: ds.w 1
-text_rotation: ds.w 1
-text_double: ds.w 1
-string_x: ds.w 1
-string_y: ds.w 1
+mode: ds.l 1 /* 138ca */
+
+fontbankptr: ds.l 1 /* 138ce */
+fontptr: ds.l 1 /* 138d2 */
+fontnum: ds.w 1 /* 138d6 */
+text_style: ds.w 1 /* 138d8 */
+fgcolor: ds.w 1 /* 138da */
+bgcolor: ds.w 1 /* 138dc */
+wrt_mode: ds.w 1 /* 138de */
+text_rotation: ds.w 1 /* 138e0 */
+text_double: ds.w 1 /* 138e2 */
+string_x: ds.w 1 /* 138e4 */
+string_y: ds.w 1 /* 138e6 */
 save_clip: ds.w 1
-string_ptr: ds.l 1
+string_len: ds.w 1 /* 138ea */
+string_ptr: ds.l 1 /* 138ec */
 scratchbuf: ds.w SCRATCHBUF_SIZE
 
 
-finprg:
+ZERO equ 0
+
+finprg: /* 140f0 */
 	ds.l 1

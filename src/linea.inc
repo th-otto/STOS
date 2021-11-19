@@ -188,3 +188,11 @@ font_form_height: ds.w 1   /* 82 height of font image in pixel */
 font_next_font:   ds.l 1   /* 84 pointer to next font */
 sizeof_FONTHDR:          /* 88 */
 
+* definitions for flags
+FONTF_SYSTEM     = 0            ; Default system font
+FONTF_HORTABLE   = 1            ; Use horizontal offsets table
+FONTF_BIGENDIAN  = 2            ; Font image is in byteswapped format
+FONTF_MONOSPACED = 3            ; Font is monospaced
+FONTF_EXTENDED   = 5            ; Extended font header
+FONTF_COMPRESSED = 5
+FONTF_FULLID     = 13           ; Use 'full font ID'
