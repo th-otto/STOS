@@ -66,9 +66,9 @@ jumps:  dc.w 19
 
 welcome:
 		dc.b 10
-		dc.b "ST(e)/TT/Falcon 030 Gemtext v0.8 ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
+		dc.b "ST(e)/TT/Falcon 030 Gemtext v0.9 ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
 		dc.b 10
-		dc.b "ST(e)/TT/Falcon 030 GemText v0.8 ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
+		dc.b "ST(e)/TT/Falcon 030 GemText v0.9 ",$bd," Anthony Hoskin. [type 'gemfont cmds']",0
 		.even
 
 load:
@@ -543,14 +543,14 @@ gemfont_convert:
 		bne.s      gemfont_convert1
 		cmpi.w     #0x6E54,4(a0) /* 'nT' */
 		bne.s      gemfont_convert1
-		bra.s      gemfont_convert4 /* already converted */
+		bra        gemfont_convert4 /* already converted */
 gemfont_convert1:
 		lea.l      gemtext_id(pc),a5
 		move.w     #(gemtext_id_end-gemtext_id-1),d7
 		addq.l     #2,a0
 gemfont_convert2:
 		cmpm.b     (a0)+,(a5)+
-		bne.s      gemfont_convert5
+		bne        gemfont_convert5
 		subq.w     #1,d7
 		bne.s      gemfont_convert2
 		movea.l    a1,a0
@@ -564,9 +564,23 @@ gemfont_convert2:
 		move.l     font_dat_table(a0),d0
 		subi.l     #22,d0
 		move.l     d0,font_dat_table(a0)
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		moveq.l    #0,d2
+		moveq.l    #0,d3
 		move.w     font_form_width(a0),d0
 		mulu.w     font_form_height(a0),d0
-		addi.l     #sizeof_FONTHDR,d0
+		addi.l     #sizeof_FONTHDR+2,d0
+		move.w     font_last_ade(a0),d3
+		sub.w      font_first_ade(a0),d3
+		addq.w     #1,d3
+		move.l     font_hor_table(a0),d1
+		beq.s      gemfont_convert2_1
+		add.l      d3,d0
+gemfont_convert2_1:
+		move.l     font_off_table(a0),d2
+		add.l      d3,d0
+		add.l      d3,d0
 		move.b     #'V',(a1)+
 		move.b     #'D',(a1)+
 		move.b     #'I',(a1)+
@@ -576,7 +590,6 @@ gemfont_convert2:
 		move.w     #1,(a1)+ /* number of fonts */
 		move.l     #16,(a1)+ /* size of header */
 		move.l     d0,(a1)+ /* size of data */
-		/* BUG? this only copies header+data, but not the offset table */
 gemfont_convert3:
 		move.b     (a0)+,(a1)+
 		subq.l     #1,d0
@@ -1425,7 +1438,7 @@ gemtext_id_end:
 
 helpmsgs:
 		dc.b 13,10
-		dc.b 'ST(e)/TT/Falcon Gemtext Extension v0.8 command reference ',$bd,' 1996, 1997, 1998',13,10
+		dc.b 'ST(e)/TT/Falcon Gemtext Extension v0.9 command reference ',$bd,' 1996, 1997, 1998',13,10
 		dc.b 13,10
 		dc.b '                       Anthony Hoskin.',13,10
 		dc.b '                       45 Wythburn Road,',13,10

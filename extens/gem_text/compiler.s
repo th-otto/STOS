@@ -901,14 +901,14 @@ lib10_1:		jsr        L_addrofbank.l
 		bne.s      gemfont_convert1
 		cmpi.w     #0x6E54,4(a0) /* 'nT' */
 		bne.s      gemfont_convert1
-		bra.w      gemfont_convert4 /* already converted */ /* XXX */
+		bra        gemfont_convert4 /* already converted */
 gemfont_convert1:
 		lea.l      gemtext_id(pc),a5
 		move.w     #(gemtext_id_end-gemtext_id-1),d7
 		addq.l     #2,a0
 gemfont_convert2:
 		cmpm.b     (a0)+,(a5)+
-		bne.w      gemfont_convert5 /* XXX */
+		bne        gemfont_convert5
 		subq.w     #1,d7
 		bne.s      gemfont_convert2
 		movea.l    a1,a0
@@ -922,9 +922,23 @@ gemfont_convert2:
 		move.l     font_dat_table(a0),d0
 		subi.l     #22,d0
 		move.l     d0,font_dat_table(a0)
+		moveq.l    #0,d0
+		moveq.l    #0,d1
+		moveq.l    #0,d2
+		moveq.l    #0,d3
 		move.w     font_form_width(a0),d0
 		mulu.w     font_form_height(a0),d0
-		addi.l     #sizeof_FONTHDR,d0
+		addi.l     #sizeof_FONTHDR+2,d0
+		move.w     font_last_ade(a0),d3
+		sub.w      font_first_ade(a0),d3
+		addq.w     #1,d3
+		move.l     font_hor_table(a0),d1
+		beq.s      gemfont_convert2_1
+		add.l      d3,d0
+gemfont_convert2_1:
+		move.l     font_off_table(a0),d2
+		add.l      d3,d0
+		add.l      d3,d0
 		move.b     #'V',(a1)+
 		move.b     #'D',(a1)+
 		move.b     #'I',(a1)+
@@ -934,7 +948,6 @@ gemfont_convert2:
 		move.w     #1,(a1)+ /* number of fonts */
 		move.l     #16,(a1)+ /* size of header */
 		move.l     d0,(a1)+ /* size of data */
-		/* BUG? this only copies header+data, but not the offset table */
 gemfont_convert3:
 		move.b     (a0)+,(a1)+
 		subq.l     #1,d0
