@@ -71,11 +71,15 @@ tokens:
 		dc.b "_jagpad option",$b7
 		/* $b8 unused */
 		dc.b "_jagpad key$",$b9
-		dc.b "sys cmds",$ba
+		dc.b "_joysticks on",$ba
+		dc.b "_joyfire",$bb
+		dc.b "_joysticks off",$bc
+		dc.b "_joystick",$bd
+		dc.b "sys cmds",$be
         dc.b 0
         even
 
-jumps:  dc.w 59
+jumps:  dc.w 63
 		dc.l coldboot
 		dc.l cookieptr
 		dc.l warmboot
@@ -134,14 +138,18 @@ jumps:  dc.w 59
 		dc.l jagpad_option
 		dc.l dummy
 		dc.l jagpad_key
+		dc.l joysticks_on
+		dc.l joyfire
+		dc.l joysticks_off
+		dc.l joystick
 		dc.l sys_cmds
 
 
 welcome:
 		dc.b 10
-		dc.b "ST(e)/TT/Falcon 030 System Control v0.9 ",$bd," A.Hoskin. - type 'sys cmds'",0
+		dc.b "ST(e)/TT/Falcon 030 System Control v1.02 ",$bd," A.Hoskin. - type 'sys cmds'",0
 		dc.b 10
-		dc.b "ST(e)/TT/Falcon 030 System Control v0.9 ",$bd," A.Hoskin. - type 'sys cmds'",0
+		dc.b "ST(e)/TT/Falcon 030 System Control v1.02 ",$bd," A.Hoskin. - type 'sys cmds'",0
 		.even
 
 table: ds.l 1
@@ -249,8 +257,8 @@ cold5:
 check_spritelib:
 		movem.l    d0-d6/a0-a6,-(a7)
 		move.w     #0,spritelib_ok
-		movea.l    0x00000094.l,a1 ; vector for trap #5 /* XXX */
-		suba.l     #(spritelib_id_end-spritelib_id),a1
+		movea.l    0x00000094,a1 ; vector for trap #5
+		lea        -(spritelib_id_end-spritelib_id)(a1),a1
 		lea.l      spritelib_id(pc),a0
 		moveq.l    #spritelib_id_end-spritelib_id-1,d7
 check_spritelib1:
@@ -269,17 +277,31 @@ spritelib_id_end:
 
 warm:
 		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      warm2
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      (0xFFFFFC00).w,a1
+warm1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      warm1
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+warm2:
 		move.w     mch_cookie(pc),d6
 		cmpi.w     #3,d6
-		bne.s      warm1
+		bne.s      warm3
 		tst.w      bootflag
-		bne.s      warm1
+		bne.s      warm3
 		move.w     #-1,bootflag
 		pea.l      dowarm(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-warm1:
+warm3:
 		movem.l    (a7)+,d0-d7/a0-a6
 		rts
 
@@ -311,16 +333,14 @@ dowarm3:
 		dc.w 0x4e7b,2 /* movec      d0,cacr */ /* BUG: must only do this for 030+ */
 		move.l     #0x00003111,d0
 		dc.w 0x4e7b,2 /* movec      d0,cacr */ /* BUG: must only do this for 030+ */
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bclr       #0,(a0)
 		bset       #2,(a0)
 		bset       #5,(a0)
 		rts
 
 getcookie:
-		/* movea.l    #0x000005A0,a0 */
-		dc.w 0x207c,0,0x05a0 /* XXX */
+		movea.l    #0x000005A0,a0
 		lea.l      cookievalue(pc),a5
 		clr.l      (a5)
 		lea.l      cookieid(pc),a1
@@ -423,10 +443,24 @@ diskerror:
 
 goerror:
 		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      goerror2
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      ($FFFFFC00).w,a1
+goerror1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      goerror1
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+goerror2:
 		lea.l      mode(pc),a0
 		move.w     (a0),d0
 		cmpi.w     #2,d0
-		beq.s      goerror1
+		beq.s      goerror3
 		move.w     d0,-(a7)
 		move.l     #-1,-(a7)
 		move.l     #-1,-(a7)
@@ -437,7 +471,7 @@ goerror:
 		trap       #5
 		moveq.l    #W_initmode,d7
 		trap       #3
-goerror1:
+goerror3:
 		movem.l    (a7)+,d0-d7/a0-a6
 		movea.l    table(pc),a0
 		movea.l    sys_error(a0),a0
@@ -462,6 +496,20 @@ blitterspeederr:
 
 printerr:
 		movem.l    d0-d7/a0-a6,-(a7)
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      printerr4
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      ($FFFFFC00).w,a1
+printerr3:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      printerr3
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+printerr4:
 		tst.w      d0
 		beq.s      printerr1
 		lea.l      mode(pc),a0
@@ -518,7 +566,7 @@ coldboot:
 		rts
 docoldboot:
 		clr.l      0x00000420.l ; clear memvalid flag /* XXX */
-		lea.l      0x00000004.l,a0 /* XXX */
+		lea.l      0x00000004,a0 /* XXX */
 		movea.l    (a0),a0
 		jmp        (a0)
 
@@ -530,8 +578,7 @@ cookieptr:
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		/* movea.l    #0x000005A0,a0 */
-		dc.w 0x207c,0,0x05a0 /* XXX */
+		movea.l    #0x000005A0,a0
 		move.l     (a0),d3
 		clr.l      d2
 		movea.l    returnpc(pc),a0
@@ -550,7 +597,7 @@ warmboot:
 		addq.l     #6,a7
 		rts
 dowarmboot:
-		lea.l      0x00000004.l,a0 /* XXX */
+		lea.l      0x00000004,a0 /* XXX */
 		movea.l    (a0),a0
 		jmp        (a0)
 
@@ -647,8 +694,7 @@ tosstr:
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 get_tosvers:
-		/* movea.l    #0x000004F2,a0 */
-		dc.w 0x207c,0,0x04f2 /* XXX */
+		movea.l    #0x000004F2,a0
 		movea.l    (a0),a0
 		move.w     2(a0),d0
 		andi.l     #0x00000FFF,d0 /* WTF */
@@ -693,7 +739,7 @@ phystop:
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 get_phystop:
-		lea.l      0x0000042E.l,a0 /* XXX */
+		lea.l      0x0000042E,a0 /* XXX */
 		lea.l      phystop_val(pc),a1
 		move.l     (a0),(a1)
 		rts
@@ -803,8 +849,7 @@ cpuspeed_set8_2:
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
 cpuspeed_set8_3:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bclr       #0,(a0)
 		rts
 
@@ -827,8 +872,7 @@ cpuspeed_set16_2:
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
 cpuspeed_set16_3:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bset       #0,(a0)
 		rts
 
@@ -902,7 +946,7 @@ memtop:
 		jmp        (a0)
 
 get_memtop:
-		lea.l      0x00000436.l,a0 /* XXX */
+		lea.l      0x00000436,a0 /* XXX */
 		lea.l      memtop_val(pc),a1
 		move.l     (a0),(a1)
 		rts
@@ -965,14 +1009,12 @@ blitterspeed4:
 		jmp        (a0)
 
 blitter_set8:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bclr       #2,(a0)
 		rts
 
 blitter_set16:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bset       #2,(a0)
 		rts
 
@@ -1024,8 +1066,7 @@ busmode1:
 		jmp        (a0)
 
 get_busmode:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		move.b     (a0),d0
 		andi.l     #0x0000FFFF,d0 /* FIXME; useless */
 		rts
@@ -1051,8 +1092,7 @@ stebus1:
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 stebus_on:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bclr       #5,(a0)
 		rts
 
@@ -1108,8 +1148,7 @@ falconbus1:
 		movea.l    returnpc(pc),a0
 		jmp        (a0)
 stebus_off:
-		/* movea.l    #0xFFFF8007,a0 */
-		dc.w 0x207c,-1,0x8007 /* XXX */
+		movea.l    #0xFFFF8007,a0
 		bset       #5,(a0)
 		rts
 
@@ -2355,6 +2394,123 @@ readmasks: dc.w 0xfffd,0xfffb,0xfff7
 readchars: dc.b "*7410852#963"
 
 /*
+ * Syntax: _joysticks on
+ */
+joysticks_on:
+		move.l     (a7)+,returnpc
+		tst.w      d0
+		bne        syntax
+		movem.l    a0-a6,-(a7)
+		move.w     #34,-(a7) ; Kbdvbase
+		trap       #14
+		addq.l     #2,a7
+		lea.l      kbdvbase(pc),a0
+		move.l     d0,(a0)
+		movea.l    d0,a0
+		lea.l      oldjoyvec(pc),a1
+		move.l     24(a0),(a1)
+		lea.l      myjoyvec(pc),a1
+		move.l     a1,24(a0)
+		lea.l      (0xFFFFFC00).w,a1
+joysticks_on1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      joysticks_on1
+		move.b     #0x14,2(a1) ; SET JOYSTICK EVENT REPORTING
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+myjoyvec:
+		move.l     a1,-(a7)
+		lea.l      joybuf(pc),a1
+		move.b     1(a0),(a1)
+		move.b     2(a0),1(a1)
+		movea.l    (a7)+,a1
+		rts
+
+oldjoyvec: ds.l 1
+   ds.l 1 /* unused */
+kbdvbase: ds.l 1
+joybuf: ds.b 2
+
+/*
+ * Syntax: F=_joyfire(P)
+ */
+joyfire:
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
+		bne        syntax
+		bsr        getinteger
+		subq.w     #1,d3
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #3,d3
+		move.l     d3,d0
+		lea.l      joybuf(pc),a0
+		move.b     0(a0,d0.w),d3
+		andi.l     #0x80,d3
+		tst.l      d3
+		beq.s      joyfire1
+		moveq.l    #-1,d3
+joyfire1:
+		moveq.l    #0,d2
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+
+/*
+ * Syntax: _joysticks off
+ */
+joysticks_off:
+		move.l     (a7)+,returnpc
+		tst.w      d0
+		bne        syntax
+		movem.l    a0-a6,-(a7)
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      joysticks_off2
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      ($FFFFFC00).w,a1
+joysticks_off1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      joysticks_off1
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+joysticks_off2:
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+
+/*
+ * Syntax: J=_joystick(P)
+ */
+joystick:
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
+		bne        syntax
+		bsr        getinteger
+		subq.w     #1,d3
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #3,d3
+		move.l     d3,d0
+		lea.l      joybuf(pc),a0
+		move.b     0(a0,d0.w),d3
+		andi.l     #0x7F,d3
+		moveq.l    #0,d2
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+
+
+/*
  * Syntax: sys cmds
  */
 sys_cmds:
@@ -2397,7 +2553,7 @@ sys_cmds4:
 
 helpmsgs:
 		dc.b 13,10
-		dc.b 'Quick reference for the ST(e)/TT/Falcon 030 System Control Extension v0.9',13,10
+		dc.b 'Quick reference for the ST(e)/TT/Falcon 030 System Control Extension v1.02',13,10
 		dc.b 10
 		dc.b '    ',$bd,' 1996, 1997, 1998 Anthony Hoskin.',13,10
 		dc.b '                       45 Wythburn Road,',13,10
@@ -2568,6 +2724,52 @@ helpmsgs:
 		dc.b 'Command   :-   X=st mouse stat',13,10
 		dc.b 'Action    :-   Returns X=TRUE if ST mouse enabled otherwise FALSE.',13,10
 		dc.b 13,10
+		dc.b 'More.... Y/N',13,0
+		dc.b '-------------------------- Dual Joystick Commands ------------------------',13,10
+		dc.b 13,10
+		dc.b 'This group of commands allows BOTH the standard ST joysticks ports to be',13,10
+		dc.b 'accessed by STOS.',13,10
+		dc.b 13,10
+		dc.b "Machine   :-   All ST's/TT's/Falcon 030's.",13,10
+		dc.b 'Command   :-   _joysticks on',13,10
+		dc.b 'Action    :-   Enables the Dual ST joystick ports [you should always HIDE',13,10
+		dc.b '               the STOS mouse pointer before invoking this command].',13,10
+		dc.b 13,10
+		dc.b "Machine   :-   All ST's/TT's/Falcon 030's.",13,10
+		dc.b 'Command   :-   _joysticks off',13,10
+		dc.b 'Action    :-   Disables the Dual ST joystick ports [returns the mouse',13,10
+		dc.b '               reporting to normal, the STOS mouse pointer may now be',13,10
+		dc.b '               reSHOWn].',13,10
+		dc.b 13,10
+		dc.b 'More.... Y/N',13,0
+		dc.b "Machine   :-   All ST's/TT's/Falcon 030's.",13,10
+		dc.b 'Command   :-   F=_joyfire(P)',13,10
+		dc.b 'Action    :-   Returns the status of the firebutton of joystick(P).',13,10
+		dc.b "               where P = 1 or 2 and the returned value 'F' = TRUE (-1)",13,10
+		dc.b '               if pressed, otherwise FALSE (0).',13,10
+		dc.b 13,10
+		dc.b "Machine   :-   All ST's/TT's/Falcon 030's.",13,10
+		dc.b 'Command   :-   J=_joystick(P)',13,10
+		dc.b "Action    :-   Returns the value 'J' with the direction of joystick 'P'",13,10
+		dc.b '               where P = 1 = joystick 1',13,10
+		dc.b '                     P = 2 = joystick 2',13,10
+		dc.b 13,10
+		dc.b 'More.... Y/N',13,0
+		dc.b "               The directions 'J' correspond as follows:-",13,10
+		dc.b 13,10
+		dc.b '                              1    ',13,10
+		dc.b '                         5    |    9',13,10
+		dc.b '                          \   |   /       Note;   Neutral position returns',13,10
+		dc.b '                           \  |  /                a value of zero.',13,10
+		dc.b '                            \ | /',13,10
+		dc.b '                             \|/',13,10
+		dc.b '                        4-----+-----8',13,10
+		dc.b '                             /|\',13,10
+		dc.b '                            / | \',13,10
+		dc.b '                           /  |  \',13,10
+		dc.b '                          /   |   \',13,10
+		dc.b '                         6    |    10',13,10
+		dc.b '                              2   ',13,10
 		dc.b 'More.... Y/N',13,0
 		dc.b '--------------------- Jaguar Controller Pad Commands ---------------------',13,10
 		dc.b 13,10
@@ -3001,6 +3203,7 @@ helpmsgs:
 		dc.b 'End of command reference... Press N to exit.',13,10
 		dc.b 0
 		.even
+		dc.w 0
 		dc.w 0
 
 	.bss

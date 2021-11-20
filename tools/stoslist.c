@@ -1083,7 +1083,11 @@ static struct extension const external_extensions[] = {
 	{ 'W', 0xb7, EXTIF_SYSCTRL, "_jagpad option" },
 	/* 0xb8 unused */
 	{ 'W', 0xb9, EXTIF_SYSCTRL, "_jagpad key$" },
-	{ 'W', 0xba, EXTIF_SYSCTRL, "sys cmds" },
+	{ 'W', 0xba, EXTIF_SYSCTRL, "_joysticks on" },
+	{ 'W', 0xbb, EXTIF_SYSCTRL, "_joyfire" },
+	{ 'W', 0xbc, EXTIF_SYSCTRL, "_joysticks off" },
+	{ 'W', 0xbd, EXTIF_SYSCTRL, "_joystick" },
+	{ 'W', 0xbe, EXTIF_SYSCTRL, "sys cmds" },
 
 	/* Falcon video */
 	{ 'X', 0x80, 0, "vsetmode" },
