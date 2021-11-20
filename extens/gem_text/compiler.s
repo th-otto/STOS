@@ -16,8 +16,6 @@ TXT_LIGHT = 2
 
 		.text
 
-stext:
-
 * Define extension addresses
 
 start:

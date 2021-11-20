@@ -14,8 +14,6 @@ TXT_LIGHT = 2
 
 		.text
 
-stext:
-
         bra.w load
 
         dc.b $80
