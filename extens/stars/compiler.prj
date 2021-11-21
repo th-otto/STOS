@@ -1,4 +1,4 @@
-compiler\stars.ech
+..\..\dist\compiler\stars.ech
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

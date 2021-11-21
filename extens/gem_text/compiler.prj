@@ -1,4 +1,4 @@
-compiler\gem_txt.ecl
+..\..\dist\compiler\gem_txt.ecl
 .L[-S=0]
 .S[-2]
 .S[-DCOMPILER=1]

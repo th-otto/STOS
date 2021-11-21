@@ -1,4 +1,4 @@
-compiler\falc_mod.ecz
+..\..\dist\compiler\falc_mod.ecz
 .L[-S=0]
 .S[-2]
 .S[-DCOMPILER=1]

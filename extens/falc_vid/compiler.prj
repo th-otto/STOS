@@ -1,4 +1,4 @@
-compiler\falc_vid.ecx
+..\..\dist\compiler\falc_vid.ecx
 .S[-S]
 .S[-2]
 .L[-S=0]

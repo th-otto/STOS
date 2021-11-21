@@ -1,4 +1,4 @@
-stos\3d_menu.exu
+..\..\dist\stos\3d_menu.exu
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]

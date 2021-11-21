@@ -1,4 +1,4 @@
-compiler\ste_extn.ecf
+..\..\dist\compiler\ste_extn.ecf
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

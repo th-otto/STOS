@@ -1,4 +1,4 @@
-compiler\falc_snd.ecy
+..\..\dist\compiler\falc_snd.ecy
 .L[-S=0]
 .S[-DCOMPILER=1]
 .S[-I..\..\src]

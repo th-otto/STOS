@@ -1,4 +1,4 @@
-stos\falc_snd.exy
+..\..\dist\stos\falc_snd.exy
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]

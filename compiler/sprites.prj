@@ -1,4 +1,4 @@
-compiler\sprit101.lib
+..\dist\compiler\sprit101.lib
 .L[-S=0]
 .S[-S]
 .S[-I..\src]

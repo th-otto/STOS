@@ -1,4 +1,4 @@
-compiler\3d_menu.ecu
+..\..\dist\compiler\3d_menu.ecu
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

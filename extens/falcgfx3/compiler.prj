@@ -1,4 +1,4 @@
-compiler\falcgfx3.ecv
+..\..\dist\compiler\falcgfx3.ecv
 .L[-S=0]
 .S[-2]
 .S[-DCOMPILER=1]

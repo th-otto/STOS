@@ -1,4 +1,4 @@
-compiler\blitter.ecg
+..\..\dist\compiler\blitter.ecg
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

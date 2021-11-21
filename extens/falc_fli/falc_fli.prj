@@ -1,4 +1,4 @@
-stos\falc_fli.exp
+..\..\dist\stos\falc_fli.exp
 .L[-S=0]
 .S[-2]
 .S[-S]

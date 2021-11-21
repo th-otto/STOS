@@ -1,4 +1,4 @@
-stos\blitter.exg
+..\..\dist\stos\blitter.exg
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]

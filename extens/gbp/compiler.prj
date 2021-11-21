@@ -1,4 +1,4 @@
-compiler\gbp.ecp
+..\..\dist\compiler\gbp.ecp
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

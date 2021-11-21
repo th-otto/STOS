@@ -1,4 +1,4 @@
-stosfix.prg
+..\dist\stosfix.prg
 .L[-S=2048]
 .S[-S]
 .S[-I..\src]

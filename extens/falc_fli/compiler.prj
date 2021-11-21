@@ -1,4 +1,4 @@
-compiler\falc_fli.ecp
+..\..\dist\compiler\falc_fli.ecp
 .S[-2]
 .S[-S]
 .L[-S=0]

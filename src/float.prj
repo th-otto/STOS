@@ -1,5 +1,6 @@
-stos\float102.bin
+..\dist\stos\float102.bin
 .L[-S=0]
 .S[-S]
+.S[-DCOMPILER=0]
 =
 float.s

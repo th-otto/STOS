@@ -1,4 +1,4 @@
-stos\compiler.exc
+..\dist\stos\compiler.exc
 .L[-S=0]
 =
 compiler.s

@@ -3,7 +3,7 @@
 ; Does not work because Pure-C always generates
 ; a GEMDOS program header
 ;
-stos\mouse.spr
+..\dist\stos\mouse.spr
 .L[-S=0]
 .S[-S]
 =

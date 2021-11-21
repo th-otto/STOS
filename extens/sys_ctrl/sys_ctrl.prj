@@ -1,4 +1,4 @@
-stos\sys_ctrl.exw
+..\..\dist\stos\sys_ctrl.exw
 .L[-S=0]
 .S[-2-]
 .S[-S]

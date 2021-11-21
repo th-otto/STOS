@@ -1,4 +1,4 @@
-compiler\basic209.lib
+..\dist\compiler\basic209.lib
 .L[-S=0]
 .S[-S]
 .S[-I..\src]

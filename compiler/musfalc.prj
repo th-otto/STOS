@@ -1,4 +1,4 @@
-compiler\music101.lib
+..\dist\compiler\music101.lib
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

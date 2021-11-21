@@ -13,11 +13,13 @@ flagem	equ	$9a0
 
 * Define extension addresses
 
-start	dc.l	para-start		; parameter definitions
+start:
+	dc.l	para-start		; parameter definitions
 	dc.l	data-start		; reserve data area for program
 	dc.l	lib1-start		; start of library
 	
-catalog	dc.w	lib2-lib1		; length of routine 1  (blit sinc)
+catalog:
+	dc.w	lib2-lib1		; length of routine 1  (blit sinc)
 	dc.w	lib3-lib2		; length of routine 2  (blit clr)
 	dc.w	lib4-lib3		; length of routine 3  (blit dinc)
 	dc.w	lib5-lib4		; length of routine 4  (blit fskopy)  
@@ -49,7 +51,8 @@ catalog	dc.w	lib2-lib1		; length of routine 1  (blit sinc)
 	dc.w	lib31-lib30		; length of routine 30
 	dc.w	libex-lib31		; length of routine 31 (blit cls)			
 	
-para	dc.w	31			; number of library routines
+para:
+	dc.w	31			; number of library routines
 	dc.w	31			; number of extension commands
 
 	dc.w	l001-para		; offset for blit sinc
@@ -94,37 +97,37 @@ S	equ	$80
 * 1   indicates the end of one set of parameters for an instrucion
 * 1,0 indicates the end of the commands entire parameter definition
 
-l001	dc.b	0,I,",",I,1,1,0		; Blit sinc
-l002	dc.b	0,I,1,1,0		; Blit clr
-l003	dc.b	0,I,",",I,1,1,0		; Blit dinc
-l004	dc.b	0,I,",",I,1,1,0         ; Blit fskopy
-l005	dc.b	0,I,",",I,1,1,0		; Blit address 
-l006	dc.b	0,1,1,0			; 
-l007	dc.b	0,I,",",I,",",I,1,1,0	; Blit mask 
-l008	dc.b	0,1,1,0		; 
-l009	dc.b	0,I,",",I,1,1,0		; Blit count
-l010	dc.b	0,1,1,0			; 
-l011	dc.b	0,I,1,1,0		; Blit hop
-l012	dc.b	0,1,1,0			; 
-l013	dc.b	0,I,1,1,0		; Blit op
-l014	dc.b	0,1,1,0			; 
-l015	dc.b	0,I,1,1,0		; Blit skew
-l016	dc.b	0,1,1,0			; 
-l017	dc.b	0,I,1,1,0		; Blit nfsr
-l018	dc.b	0,1,1,0			; 
-l019	dc.b	0,I,1,1,0		; Blit fxsr
-l020	dc.b	0,I,1,1,0		; 
-l021	dc.b	0,I,1,1,0		; Blit line
-l022 	dc.b	0,1,1,0			; 
-l023	dc.b	0,I,1,1,0		; Blit smudge
-l024	dc.b	0,1,1,0			;
-l025	dc.b	0,I,1,1,0		; Blit hog
-l026	dc.b	0,1,1,0			;
-l027	dc.b	0,1,1,0			; Blit it
-l028	dc.b	0,1,1,0			;
-l029	dc.b	0,I,",",I,1,1,0		; Blit fcopy
-l030	dc.b	0,1,1,0			;
-l031	dc.b	0,I,1,1,0		; Blit cls
+l001:	dc.b	0,I,",",I,1,1,0		; Blit sinc
+l002:	dc.b	0,I,1,1,0		; Blit clr
+l003:	dc.b	0,I,",",I,1,1,0		; Blit dinc
+l004:	dc.b	0,I,",",I,1,1,0         ; Blit fskopy
+l005:	dc.b	0,I,",",I,1,1,0		; Blit address 
+l006:	dc.b	0,1,1,0			; 
+l007:	dc.b	0,I,",",I,",",I,1,1,0	; Blit mask 
+l008:	dc.b	0,1,1,0		; 
+l009:	dc.b	0,I,",",I,1,1,0		; Blit count
+l010:	dc.b	0,1,1,0			; 
+l011:	dc.b	0,I,1,1,0		; Blit hop
+l012:	dc.b	0,1,1,0			; 
+l013:	dc.b	0,I,1,1,0		; Blit op
+l014:	dc.b	0,1,1,0			; 
+l015:	dc.b	0,I,1,1,0		; Blit skew
+l016:	dc.b	0,1,1,0			; 
+l017:	dc.b	0,I,1,1,0		; Blit nfsr
+l018:	dc.b	0,1,1,0			; 
+l019:	dc.b	0,I,1,1,0		; Blit fxsr
+l020:	dc.b	0,I,1,1,0		; 
+l021:	dc.b	0,I,1,1,0		; Blit line
+l022: 	dc.b	0,1,1,0			; 
+l023:	dc.b	0,I,1,1,0		; Blit smudge
+l024:	dc.b	0,1,1,0			;
+l025:	dc.b	0,I,1,1,0		; Blit hog
+l026:	dc.b	0,1,1,0			;
+l027:	dc.b	0,1,1,0			; Blit it
+l028:	dc.b	0,1,1,0			;
+l029:	dc.b	0,I,",",I,1,1,0		; Blit fcopy
+l030:	dc.b	0,1,1,0			;
+l031:	dc.b	0,I,1,1,0		; Blit cls
 
 * End of parameter definition
 
@@ -134,12 +137,14 @@ l031	dc.b	0,I,1,1,0		; Blit cls
 * This code is loaded into memory during initialisation
 * It can be accessed using address placed in the DEBUT variable
 
-data	bra	init
+data:
+	bra	init
 
-init	lea	end(pc),a2		; load position of end into A2
+init:	lea	end(pc),a2		; load position of end into A2
 	rts
 	
-end	rts
+end:
+	rts
 
 
 
@@ -149,7 +154,8 @@ end	rts
 
 * Blit sinc
 
-lib1	dc.w	0			; no library calls
+lib1:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.l	(a6)+,d4
 	move.w	d3,$ff8a22		; Source y inc
@@ -160,7 +166,8 @@ lib1	dc.w	0			; no library calls
 	
 * blit clr
 	
-lib2	dc.w	0			; no library calls
+lib2:
+	dc.w	0			; no library calls
 	move.l	(a6)+,a1		; destination screen
 	move.l	a1,a0			; source screen
 	move.w	#8,$ff8a20		; Source x inc
@@ -185,7 +192,8 @@ lib2	dc.w	0			; no library calls
 	
 * Blit dinc 
 
-lib3	dc.w	0			; no library calls
+lib3:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.l	(a6)+,d4
 	move.w	d3,$ff8a30		; Dest y inc
@@ -196,7 +204,8 @@ lib3	dc.w	0			; no library calls
 
 * Blit fskopy 
 
-lib4	dc.w	0			; no library calls
+lib4:
+	dc.w	0			; no library calls
 	move.l	(a6)+,a1		; destination screen
 	move.l	(a6)+,a0		; source screen
 	move.w	#8,$ff8a20		; Source x inc
@@ -220,7 +229,8 @@ lib4	dc.w	0			; no library calls
 	
 * blit address
 
-lib5	dc.w	0			; no library calls
+lib5:
+	dc.w	0			; no library calls
 	move.l	(a6)+,$ff8a32		; dest address
 	move.l	(a6)+,$ff8a24		; source address
 	rts
@@ -228,14 +238,16 @@ lib5	dc.w	0			; no library calls
 
 * 
 
-lib6	dc.w	0			; No library calls
+lib6:
+	dc.w	0			; No library calls
 	rts
 
 
 
 * Blit mask
 
-lib7	dc.w	0			; no library calls
+lib7:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3		
 	move.l	(a6)+,d4
 	move.l	(a6)+,d5
@@ -248,14 +260,16 @@ lib7	dc.w	0			; no library calls
 	
 * 
 
-lib8	dc.w	0			; No library calls
+lib8:
+	dc.w	0			; No library calls
 	rts
 	
 	
 	
 * blit count
 
-lib9	dc.w	0			; no library calls
+lib9:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.l	(a6)+,d4
 	move.w	d3,$ff8a38		; y count
@@ -267,14 +281,16 @@ lib9	dc.w	0			; no library calls
 	
 *
 
-lib10	dc.w	0			; no library calls
+lib10:
+	dc.w	0			; no library calls
 	rts
 
 
 	
 * blit hop
 
-lib11	dc.w	0			; no library calls
+lib11:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.b	d3,$ff8a3a		; blit hop	
 	rts
@@ -283,7 +299,8 @@ lib11	dc.w	0			; no library calls
 
 * 
 
-lib12	dc.w	0			; no library calls
+lib12:
+	dc.w	0			; no library calls
 	rts
 	
 
@@ -291,7 +308,8 @@ lib12	dc.w	0			; no library calls
 
 * blit op
 
-lib13	dc.w	0			; no library calls
+lib13:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.b	d3,$ff8a3b		; Blit op
 	rts
@@ -300,7 +318,8 @@ lib13	dc.w	0			; no library calls
 
 * 
 
-lib14	dc.w	0			; no library calls
+lib14:
+	dc.w	0			; no library calls
 	rts
 	
 	
@@ -308,7 +327,8 @@ lib14	dc.w	0			; no library calls
 	
 * Blit skew
 
-lib15	dc.w	0			; no library calls
+lib15:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.b	d3,$ff8a3d		; Skew value
 	rts				
@@ -317,14 +337,16 @@ lib15	dc.w	0			; no library calls
 
 * 
 
-lib16	dc.w	0			; no library calls
+lib16:
+	dc.w	0			; no library calls
 	rts
 
 
 	
 * blit nfsr
 
-lib17	dc.w	0			; no library calls
+lib17:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	
 	btst	#0,d3
@@ -333,16 +355,17 @@ lib17	dc.w	0			; no library calls
 	bset	#6,$ff8a3d		; Set bit
 	bra	.out
 	
-.set_to_zero
+.set_to_zero:
 	bclr	#6,$ff8a3d
-.out	rts
+.out:	rts
 
 
 
 
 * 
 
-lib18	dc.w	0			; no library calls
+lib18:
+	dc.w	0			; no library calls
 	rts
 	
 	
@@ -350,7 +373,8 @@ lib18	dc.w	0			; no library calls
 	
 * blit fxsr
 
-lib19	dc.w	0			; no library calls
+lib19:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	
 	btst	#0,d3
@@ -359,23 +383,25 @@ lib19	dc.w	0			; no library calls
 	bset	#7,$ff8a3d		; Set bit
 	bra	.out
 	
-.set_to_zero
+.set_to_zero:
 	bclr	#7,$ff8a3d
-.out	rts
+.out:	rts
 
 
 
 
 *
 
-lib20	dc.w	0			; no library calls
+lib20:
+	dc.w	0			; no library calls
 	rts
 
 
 
 * blit line
 
-lib21	dc.w	0			; no library calls
+lib21:
+	dc.w	0			; no library calls
 	move.l	(a6)+,d3
 	move.b	d3,$ff8a3c		; blit line start
 	rts
@@ -384,7 +410,8 @@ lib21	dc.w	0			; no library calls
 
 *
 
-lib22	dc.w	0			; No library calls
+lib22:
+	dc.w	0			; No library calls
 	rts
 
 
@@ -392,7 +419,8 @@ lib22	dc.w	0			; No library calls
 
 * blit smudge
 
-lib23	dc.w	0			; No library calls
+lib23:
+	dc.w	0			; No library calls
 	move.l	(a6)+,d3
 	
 	btst	#0,d3
@@ -401,23 +429,26 @@ lib23	dc.w	0			; No library calls
 	bset	#5,$ff8a3c		; Set bit
 	bra	.out
 	
-.set_to_zero
+.set_to_zero:
 	bclr	#5,$ff8a3c
-.out	rts
+.out:
+	rts
 
 
 
 
 * 
 
-lib24	dc.w	0			; No library calls
+lib24:
+	dc.w	0			; No library calls
 	rts
 
 
 
 * blit hog	
 
-lib25	dc.w	0
+lib25:
+	dc.w	0
 	move.l	(a6)+,d3
 	
 	btst	#0,d3
@@ -426,37 +457,41 @@ lib25	dc.w	0
 	bset	#6,$ff8a3c		; Set bit
 	bra	.out
 	
-.set_to_zero
+.set_to_zero:
 	bclr	#6,$ff8a3c
-.out	rts
+.out:	rts
 	
 	
 	
 	
 * 
 
-lib26	dc.w	0			; no library calls
+lib26:
+	dc.w	0			; no library calls
 	rts
 
 
 
 * blit it
 
-lib27	dc.w	0			; No library calls
+lib27:
+	dc.w	0			; No library calls
 	bset	#7,$ff8a3c		; Set bit
 	rts				
 
 
 *
 
-lib28	dc.w	0			; no library calls
+lib28:
+	dc.w	0			; no library calls
 	rts
 
 
 
 * blitfcopy
 	
-lib29	dc.w	0			; no library calls
+lib29:
+	dc.w	0			; no library calls
 	move.l	(a6)+,a1		; destination screen
 	move.l	(a6)+,a0		; source screen
 	move.w	#2,$ff8a20		; Source x inc
@@ -479,14 +514,16 @@ lib29	dc.w	0			; no library calls
 
 *
 
-lib30	dc.w	0			; no library calls
+lib30:
+	dc.w	0			; no library calls
 	rts
 	
 
 
 * blitcls
 	
-lib31	dc.w	0			; no library calls
+lib31:
+	dc.w	0			; no library calls
 	move.l	(a6)+,a1		; destination screen
 	move.l	a1,a0			; source screen
 	move.w	#2,$ff8a20		; Source x inc
@@ -509,4 +546,5 @@ lib31	dc.w	0			; no library calls
 	rts
 
 
-libex	dc.w	0			; end of library  
+libex:
+	dc.w	0			; end of library  

@@ -1,4 +1,4 @@
-stos\ste_extn.exf
+..\..\dist\stos\ste_extn.exf
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]

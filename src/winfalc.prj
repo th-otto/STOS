@@ -1,4 +1,4 @@
-stos\winfalc.bin
+..\dist\stos\windo102.bin
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]

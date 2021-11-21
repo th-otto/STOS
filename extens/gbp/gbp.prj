@@ -1,4 +1,4 @@
-stos\gbp.exp
+..\..\dist\stos\gbp.exp
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=0]

@@ -1,4 +1,4 @@
-compiler\windo102.lib
+..\dist\compiler\windo102.lib
 .L[-S=0]
 .S[-S]
 .S[-DCOMPILER=1]

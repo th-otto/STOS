@@ -1,4 +1,4 @@
-basload.prg
+..\dist\basload.prg
 .S[-S]
 .L[-R]
 .L[-M]
