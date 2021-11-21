@@ -159,23 +159,23 @@ cpu_cookie: ds.l 1
 nemesis_cookie:
 	ds.l 1 ; current value
 	ds.l 1 ; original value
-bootflag: ds.w 1
 mode: ds.w 1
+spritelib_ok: ds.w 1
 
 load:
 		lea.l      finprg,a0
-		lea.l      cold,a1
+		lea.l      cold(pc),a1
 		rts
 
 cold:
-		move.l     a0,table
+		lea        table(pc),a1
+		move.l     a0,(a1)
 		move.w     #4,-(a7) /* Getrez */
 		trap       #14
 		addq.l     #2,a7
 		andi.l     #3,d0
 		lea.l      mode(pc),a0
 		move.w     d0,(a0)
-		clr.w      bootflag-mode(a0)
 		move.l     #0x5F4D4348,d3 /* '_MCH' */
 		bsr        getcookie
 		lea.l      mch_cookie(pc),a0
@@ -189,16 +189,17 @@ cold:
 		lea.l      nemesis_cookie(pc),a0
 		move.l     d0,(a0)+
 		move.l     d0,(a0)
-		lea.l      welcome,a0
-		lea.l      warm,a1
-		lea.l      tokens,a2
-		lea.l      jumps,a3
+		lea.l      welcome(pc),a0
+		lea.l      warm(pc),a1
+		lea.l      tokens(pc),a2
+		lea.l      jumps(pc),a3
 		bsr.s      check_spritelib
 		rts
 
 check_spritelib:
 		movem.l    d0-d6/a0-a6,-(a7)
-		move.w     #0,spritelib_ok
+		lea        spritelib_ok(pc),a2
+		clr.w      (a2)
 		movea.l    0x00000094,a1 ; vector for trap #5
 		lea        -(spritelib_id_end-spritelib_id)(a1),a1
 		lea.l      spritelib_id(pc),a0
@@ -207,7 +208,7 @@ check_spritelib1:
 		cmpm.b     (a0)+,(a1)+
 		bne.s      check_spritelib2
 		dbf        d7,check_spritelib1
-		move.w     #-1,spritelib_ok
+		move.w     #-1,(a2)
 check_spritelib2:
 		movem.l    (a7)+,d0-d6/a0-a6
 		rts
@@ -238,12 +239,9 @@ restore_joyvec2:
 warm:
 		movem.l    d0-d7/a0-a6,-(a7)
 		bsr        restore_joyvec
-		move.w     mch_cookie(pc),d6
-		cmpi.w     #3,d6
+		move.w     mch_cookie(pc),d0
+		subq.w     #3,d0
 		bne.s      warm3
-		tst.w      bootflag
-		bne.s      warm3
-		move.w     #-1,bootflag
 		pea.l      dowarm(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
@@ -264,7 +262,7 @@ dowarm:
 		move.b     #0x96,(a0)
 dowarm3:
 		lea.l      nemesis_cookie(pc),a0
-		move.l     #0,(a0)
+		clr.l      (a0)
 		move.l     cpu_cookie(pc),d0
 		cmp.w      #30,d0
 		bne.s      dowarm4
@@ -470,7 +468,6 @@ docoldboot:
  * Syntax: P_COOKIE=cookieptr
  */
 cookieptr:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		pea        getjar(pc)
@@ -499,7 +496,6 @@ dowarmboot:
  */
 cookie:
 		move.l     (a7)+,a1
-		move.w     #0,bootflag
 		subq.w     #1,d0
 		bne        syntax
 		bsr        getstring
@@ -529,7 +525,6 @@ cookie3:
  * Syntax: caps on
  */
 caps_on:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		movem.l    a0-a2,-(a7)
@@ -544,7 +539,6 @@ caps_on:
  * Syntax: A$=_tos$
  */
 tosstr:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		pea.l      get_tosvers(pc)
@@ -584,11 +578,10 @@ tosverstr: ds.b 8
  * Syntax: caps off
  */
 caps_off:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		movem.l    a0-a2,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
@@ -599,7 +592,6 @@ caps_off:
  * Syntax: X=_phystop
  */
 phystop:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		pea.l      get_phystop(pc)
@@ -618,7 +610,6 @@ get_phystop:
  */
 cpuspeed:
 		move.l     (a7)+,a1
-		move.w     #0,bootflag
 		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
@@ -727,7 +718,6 @@ cpuspeed_set24:
  * Syntax: X=_memtop
  */
 memtop:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.w     #38,-(a7) /* Supexec */
@@ -748,7 +738,6 @@ blitterspeed:
 		move.l     (a7)+,a1
 		subq.w     #1,d0
 		bne        syntax
-		move.w     #0,bootflag
 		move.w     mch_cookie(pc),d0
 		subq.w     #3,d0
 		bne        illfalconfunc
@@ -788,7 +777,6 @@ blitter_set16:
  * Syntax: B=_busmode
  */
 busmode:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		moveq.l    #0,d3
@@ -815,7 +803,6 @@ get_busmode:
  * Syntax: _stebus
  */
 stebus:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.w     mch_cookie(pc),d0
@@ -838,7 +825,6 @@ stebus_on:
  */
 paddle_x:
 		move.l     (a7)+,a1
-		move.w     #0,bootflag
 		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
@@ -866,7 +852,6 @@ paddle_x2:
  * Syntax: _falconbus
  */
 falconbus:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.w     mch_cookie(pc),d0
@@ -889,7 +874,6 @@ stebus_off:
  */
 paddle_y:
 		move.l     (a7)+,a1
-		move.w     #0,bootflag
 		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
@@ -917,7 +901,6 @@ paddle_y2:
  * Syntax: _cpucache on
  */
 cpucache_on:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.l     cpu_cookie(pc),d6
@@ -944,7 +927,6 @@ cache_on:
  * Syntax: X=_cpucache stat
  */
 cpucache_stat:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		moveq.l    #0,d3
@@ -969,7 +951,6 @@ cache_get:
  * Syntax: _cpucache off
  */
 cpucache_off:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.l     cpu_cookie(pc),d6
@@ -994,7 +975,6 @@ cache_off:
  * Syntax: X=lpen x
  */
 lpen_x:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		moveq.l    #0,d3
@@ -1030,7 +1010,6 @@ ide_on:
  * Syntax: Y=lpen y
  */
 lpen_y:
-		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		moveq.l    #0,d0
@@ -1241,12 +1220,12 @@ file_exist1:
 		cmpi.b     #'*',2(a2,d7.w)
 		beq        badfilename
 		dbf        d7,file_exist1
-		lea.l      file_existname,a1
+		lea.l      file_existname(pc),a1
 		move.w     #(256/4)-1,d7
 file_exist2:
 		clr.l      (a1)+
 		dbf        d7,file_exist2
-		lea.l      file_existname,a1
+		lea.l      file_existname(pc),a1
 		move.w     (a2)+,d7
 		subq.w     #1,d7
 file_exist3:
@@ -2103,8 +2082,6 @@ sys_cmds4:
 		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
-	.data
-
 helpmsgs:
 		dc.b 13,10
 		dc.b 'Quick reference for the ST(e)/TT/Falcon 030 System Control Extension v1.02',13,10
@@ -2757,10 +2734,6 @@ helpmsgs:
 		dc.b 'End of command reference... Press N to exit.',13,10,0
 		dc.b 0
 		.even
-
-	.bss
-
-spritelib_ok: ds.w 1
 
 finprg:
 	ds.l 1

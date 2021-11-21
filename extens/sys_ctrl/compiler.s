@@ -589,7 +589,7 @@ lib7:
 	dc.w	0			; no library calls
 caps_off:
 		movem.l    a0-a2,-(a7)
-		move.w     #0,-(a7)
+		clr.w      -(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
