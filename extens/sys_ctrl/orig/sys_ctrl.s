@@ -153,14 +153,18 @@ welcome:
 		.even
 
 table: ds.l 1
+returnpc: ds.l 1
 tosver: ds.w 1
 mch_cookie: ds.l 1
 cpu_cookie: ds.l 1
-nemesis_cookie:
-	ds.l 1 ; current value
-	ds.l 1 ; original value
+vdo_cookie: ds.l 1
+snd_cookie: ds.l 1
+nemesis_cookie: ds.l 1
+cookieid: ds.l 1
+cookievalue: ds.l 1
 bootflag: ds.w 1
-mode: ds.w 1
+	ds.w 1 /* unused */
+mode: ds.l 1
 
 load:
 		lea.l      finprg,a0
@@ -173,22 +177,76 @@ cold:
 		trap       #14
 		addq.l     #2,a7
 		andi.l     #3,d0
+		swap       d0
 		lea.l      mode(pc),a0
-		move.w     d0,(a0)
-		clr.w      bootflag-mode(a0)
-		move.l     #0x5F4D4348,d3 /* '_MCH' */
-		bsr        getcookie
+		move.l     d0,(a0)
+		move.w     #0,bootflag
 		lea.l      mch_cookie(pc),a0
-		move.l     d0,(a0)
-		move.l     #0x5F435055,d3 /* '_CPU' */
-		bsr        getcookie
+		clr.l      (a0)+
+		clr.l      (a0)+
+		clr.l      (a0)+
+		move.l     #1,(a0)+
+		clr.l      (a0)+
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F4D4348,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold1
+		lea.l      cookievalue(pc),a1
+		lea.l      mch_cookie(pc),a0
+		move.l     (a1),(a0)
+cold1:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F435055,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold2
+		lea.l      cookievalue(pc),a1
 		lea.l      cpu_cookie(pc),a0
-		move.l     d0,(a0)
-		move.l     #COOK_NEMESIS,d3
-		bsr        getcookie
+		move.l     (a1),(a0)
+cold2:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F56444F,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold3
+		lea.l      cookievalue(pc),a1
+		lea.l      vdo_cookie(pc),a0
+		move.l     (a1),(a0)
+cold3:
+		lea.l      cookieid(pc),a1
+		move.l     #0x5F534E44,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold4
+		lea.l      cookievalue(pc),a1
+		lea.l      snd_cookie(pc),a0
+		move.l     (a1),(a0)
+cold4:
+		lea.l      cookieid(pc),a1
+		move.l     #COOK_NEMESIS,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		tst.l      d0
+		beq.s      cold5
+		lea.l      cookievalue(pc),a1
 		lea.l      nemesis_cookie(pc),a0
-		move.l     d0,(a0)+
-		move.l     d0,(a0)
+		move.l     (a1),(a0)
+cold5:
 		lea.l      welcome,a0
 		lea.l      warm,a1
 		lea.l      tokens,a2
@@ -217,27 +275,22 @@ spritelib_id:
 spritelib_id_end:
 
 
-restore_joyvec:
-		movem.l    d0-d1/a0-a1,-(a7)
-		lea.l      kbdvbase(pc),a0
-		move.l     (a0),d1
-		beq.s      restore_joyvec2
-		movea.l    d1,a1
-		clr.l      (a0)
-		move.l     oldjoyvec(pc),24(a1)
-		lea.l      (0xFFFFFC00).w,a1
-restore_joyvec1:
-		move.b     (a1),d1
-		btst       #1,d1
-		beq.s      restore_joyvec1
-		move.b     #8,2(a1) ; restore to normal mouse reporting
-restore_joyvec2:
-		movem.l    (a7)+,d0-d1/a0-a1
-		rts
-
 warm:
 		movem.l    d0-d7/a0-a6,-(a7)
-		bsr        restore_joyvec
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      warm2
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      (0xFFFFFC00).w,a1
+warm1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      warm1
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+warm2:
 		move.w     mch_cookie(pc),d6
 		cmpi.w     #3,d6
 		bne.s      warm3
@@ -253,8 +306,17 @@ warm3:
 		rts
 
 dowarm:
-		moveq      #0,d0
-		bsr        set_nemesis_cookie
+		movea.l    (0x000005A0).w,a0
+		move.l     #COOK_NEMESIS,d0
+dowarm1:
+		move.l     (a0),d1
+		beq.s      dowarm3
+		cmp.l      d0,d1
+		beq.s      dowarm2
+		addq.l     #8,a0
+		bra.s      dowarm1
+dowarm2:
+		move.l     #0,4(a0)
 		/* set nemesis back to 8Mhz */
 		lea.l      (0xFFFFFC04).w,a0
 		move.b     #0x03,(a0)
@@ -265,66 +327,58 @@ dowarm:
 dowarm3:
 		lea.l      nemesis_cookie(pc),a0
 		move.l     #0,(a0)
-		move.l     cpu_cookie(pc),d0
-		cmp.w      #30,d0
-		bne.s      dowarm4
 		move.l     #0x00000A0A,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
+		dc.w 0x4e7b,2 /* movec      d0,cacr */ /* BUG: must only do this for 030+ */
 		move.l     #0x00003919,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
+		dc.w 0x4e7b,2 /* movec      d0,cacr */ /* BUG: must only do this for 030+ */
 		move.l     #0x00003111,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-dowarm4:
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
-		bne.s      dowarm5
+		dc.w 0x4e7b,2 /* movec      d0,cacr */ /* BUG: must only do this for 030+ */
 		movea.l    #0xFFFF8007,a0
-		bclr       #0,(a0) ; CPU 8Mhz
-		bset       #2,(a0) ; blitter 16Mhz
-		bset       #5,(a0) ; STe bus emulation off
-dowarm5:
+		bclr       #0,(a0)
+		bset       #2,(a0)
+		bset       #5,(a0)
 		rts
 
-set_nemesis_cookie:
-		movea.l    0x000005A0,a0
-		move.l     #COOK_NEMESIS,d2
-set_nemesis_cookie1:
-		move.l     (a0)+,d1
-		beq.s      set_nemesis_cookie3
-		cmp.l      d2,d1
-		beq.s      set_nemesis_cookie2
-		addq.l     #4,a0
-		bra.s      set_nemesis_cookie1
-set_nemesis_cookie2:
-		move.l     d0,(a0)
-		lea        nemesis_cookie(pc),a0
-		move.l     d0,(a0)
-		tst.l      d2
-set_nemesis_cookie3:
-		rts
-
-
-getjar:
-		move.l     0x000005A0,d0
-		rts
 getcookie:
-		pea        getjar(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
+		movea.l    #0x000005A0,a0
+		lea.l      cookievalue(pc),a5
+		clr.l      (a5)
+		lea.l      cookieid(pc),a1
+		move.l     (a1),d3
+		move.l     (a0),d0
 		tst.l      d0
 		beq.s      getcookie3
 		movea.l    d0,a0
+		clr.l      d4
 getcookie1:
-		move.l     (a0)+,d1
-		beq.s      getcookie3
 		move.l     (a0)+,d0
-		cmp.l      d3,d1
-		bne.s      getcookie1
-		tst.l      d0
-		rts
+		move.l     (a0)+,d1
+		/* tst.l      d0 */
+		dc.w 0xb0bc,0,0 /* XXX */
+		beq.s      getcookie3
+		cmp.l      d3,d0
+		beq.s      getcookie2
+		addq.w     #1,d4
+		bra.s      getcookie1
+getcookie2:
+		/* cmpa.l     #0,a5 */
+		dc.w 0xbbfc,0,0 /* XXX */
+		beq.s      getcookie3
+		move.l     d1,(a5)
 getcookie3:
-		moveq      #0,d0
+		move.l     d0,d7
+		rts
+
+getpalette: /* unused */
+		movem.l    d1-d7/a0-a6,-(a7)
+		lea.l      rgbpalette,a0
+		move.l     a0,-(a7)
+		move.w     d7,-(a7)
+		move.w     #0,-(a7)
+		move.w     #94,-(a7) /* VgetRGB */
+		trap       #14
+		lea.l      10(a7),a7
+		movem.l    (a7)+,d1-d7/a0-a6
 		rts
 
 getinteger:
@@ -356,7 +410,12 @@ malloc:
 		rts
 
 dummy:
+		move.l     (a7)+,returnpc
+		bra.s      syntax
 
+/* unused */
+		clr.l      d0
+		bra.s      goerror
 syntax:
 		moveq.l    #E_syntax,d0
 		bra.s      goerror
@@ -365,6 +424,13 @@ illfunc:
 		bra.s      goerror
 typemismatch:
 		moveq.l    #E_typemismatch,d0
+		bra.s      goerror
+string_too_long: /* unused */
+		moveq.l    #E_string_too_long,d0
+		bra.s      goerror
+e_charset: /* unused */
+		movem.l    (a7)+,a1-a6
+		moveq.l    #E_character_set,d0
 		bra.s      goerror
 badfilename:
 		moveq.l    #E_badfilename,d0
@@ -377,8 +443,22 @@ diskerror:
 
 goerror:
 		movem.l    d0-d7/a0-a6,-(a7)
-		bsr        restore_joyvec
-		move.w     mode(pc),d0
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      goerror2
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      ($FFFFFC00).w,a1
+goerror1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      goerror1
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+goerror2:
+		lea.l      mode(pc),a0
+		move.w     (a0),d0
 		cmpi.w     #2,d0
 		beq.s      goerror3
 		move.w     d0,-(a7)
@@ -408,13 +488,32 @@ cpuspeederr:
 		bra.s      printerr
 blitterspeederr:
 		moveq.l    #3,d0
+		bra.s      printerr
+/* dead code */
+		moveq.l    #0,d0
+		bra.s      printerr
+		nop
 
 printerr:
 		movem.l    d0-d7/a0-a6,-(a7)
-		bsr        restore_joyvec
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      printerr4
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      ($FFFFFC00).w,a1
+printerr3:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      printerr3
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+printerr4:
 		tst.w      d0
 		beq.s      printerr1
-		move.w     mode(pc),d0
+		lea.l      mode(pc),a0
+		move.w     (a0),d0
 		cmpi.w     #2,d0
 		beq.s      printerr1
 		move.w     d0,-(a7)
@@ -432,7 +531,8 @@ printerr1:
 		lea.l      errormsgs(pc),a2
 		lsl.w      #1,d0
 printerr2:
-		tst.b     (a2)+
+		/* tst.b     (a2)+ */
+		dc.w 0x0c1a,0 /* XXX */
 		bne.s      printerr2
 		subq.w     #1,d0
 		bpl.s      printerr2
@@ -456,94 +556,112 @@ errormsgs:
  * Syntax: coldboot
  */
 coldboot:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		pea.l      docoldboot(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
+		addq.l     #6,a7
+		rts
 docoldboot:
-		clr.l      0x00000420 ; clear memvalid flag
-		movea.l    4.w,a0
+		clr.l      0x00000420.l ; clear memvalid flag /* XXX */
+		lea.l      0x00000004,a0 /* XXX */
+		movea.l    (a0),a0
 		jmp        (a0)
 
 /*
  * Syntax: P_COOKIE=cookieptr
  */
 cookieptr:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		pea        getjar(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		move.l     0,d3
+		movea.l    #0x000005A0,a0
+		move.l     (a0),d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: warmboot
  */
 warmboot:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		pea.l      dowarmboot(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
+		addq.l     #6,a7
+		rts
 dowarmboot:
-		movea.l    4.w,a0
+		lea.l      0x00000004,a0 /* XXX */
+		movea.l    (a0),a0
 		jmp        (a0)
 
 /*
  * Syntax: COOKIE_VAL=cookie(ID$)
  */
 cookie:
-		move.l     (a7)+,a1
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
-		subq.w     #1,d0
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getstring
-		move.l     a1,-(a7)
 		movea.l    d3,a2
-		move.w     (a2)+,d3
-		subq.w     #4,d3
+		move.w     (a2),d3
+		cmpi.w     #4,(a2)
 		bne        cookieerr
-		subq.l     #4,a7
-		move.l     a7,a0
-		move.b     (a2)+,(a0)+
-		move.b     (a2)+,(a0)+
-		move.b     (a2)+,(a0)+
-		move.b     (a2)+,(a0)+
-		move.l     (a7)+,d3
-		bsr        getcookie
-		cmpi.l     #0x5F435055,d3 /* '_CPU' */
-		bne.s      cookie3
-		andi.l     #255,d0
-		addi.l     #68000,d0
-cookie3:
+		addq.l     #2,a2
+		lea.l      cookieid(pc),a1
+		subq.w     #1,d3
+cookie1:
+		move.b     (a2)+,(a1)+
+		dbf        d3,cookie1
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		lea.l      cookievalue(pc),a1
+		move.l     (a1),d3
+		tst.l      d0
+		bne.s      cookie2
 		move.l     d0,d3
+cookie2:
+		lea.l      cookieid(pc),a1
+		cmpi.l     #0x5F435055,(a1) /* '_CPU' */
+		bne.s      cookie3
+		andi.l     #255,d3 /* WTF */
+		addi.l     #68000,d3
+cookie3:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: caps on
  */
 caps_on:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #16,-(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: A$=_tos$
  */
 tosstr:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
@@ -552,82 +670,103 @@ tosstr:
 		trap       #14
 		addq.l     #6,a7
 		moveq.l    #5,d3
-		lea        tosverstr(pc),a0
-		move.l     a0,a1
+		jsr        malloc /* FIXME */
 		move.w     d3,(a0)+
-		andi.w     #0x0FFF,d0
+		lea.l      tosver(pc),a2
+		move.w     (a2),d0
+		andi.l     #0x0FFF,d0
 		move.l     d0,d2
-		move.b     #' ',(a0)+
-		lsr.w      #8,d0
+		move.b     #' ',(a0)
+		ror.w      #8,d0
 		addi.b     #'0',d0
-		move.b     d0,(a0)+
-		move.b     #'.',(a0)+
+		move.b     d0,1(a0)
+		move.b     #'.',2(a0)
 		move.w     d2,d0
-		andi.w     #0xF0,d0
-		lsr.w      #4,d0
+		andi.l     #0xF0,d0
+		ror.w      #4,d0
 		addi.b     #'0',d0
-		move.b     d0,(a0)+
-		andi.w     #15,d2
+		move.b     d0,3(a0)
+		andi.l     #15,d2
 		addi.b     #'0',d2
-		move.b     d2,(a0)+
+		move.b     d2,4(a0)
 		move.l     a1,d3
 		move.w     #128,d2 ; returns string
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 get_tosvers:
-		movea.l    0x000004F2,a0
+		movea.l    #0x000004F2,a0
+		movea.l    (a0),a0
 		move.w     2(a0),d0
+		andi.l     #0x00000FFF,d0 /* WTF */
+		lea.l      tosver(pc),a0
+		move.w     d0,(a0)
 		rts
-
-tosverstr: ds.b 8
 
 /*
  * Syntax: caps off
  */
 caps_off:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #0,-(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: X=_phystop
  */
 phystop:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
+		movem.l    a0-a6,-(a7)
 		pea.l      get_phystop(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		move.l     d0,d3
+		lea.l      phystop_val(pc),a1
+		move.l     (a1),d3
 		clr.l      d2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 get_phystop:
-		move.l     0x0000042E,d0
+		lea.l      0x0000042E,a0 /* XXX */
+		lea.l      phystop_val(pc),a1
+		move.l     (a0),(a1)
 		rts
+phystop_val: ds.l 1
 
 /*
  * Syntax: _cpuspeed N
  */
 cpuspeed:
-		move.l     (a7)+,a1
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
-		subq.w     #1,d0
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
-		bne.s      cpuspeed6
-		move.l     nemesis_cookie+4(pc),d0
+		lea.l      cpu_setspeed(pc),a0
+		move.l     d3,(a0)
+		movem.l    a0-a6,-(a7)
+		lea.l      cookieid(pc),a1
+		move.l     #COOK_NEMESIS,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
+		tst.l      d0
 		beq.s      cpuspeed1
+		move.l     cpu_setspeed(pc),d3
 		cmpi.l     #8,d3
 		beq.s      cpuspeed2
 		cmpi.l     #16,d3
@@ -638,41 +777,71 @@ cpuspeed:
 		beq.s      cpuspeed5
 		bra        cpuspeederr
 cpuspeed1:
+		move.l     cpu_setspeed(pc),d3
 		cmpi.l     #8,d3
 		beq.s      cpuspeed2
 		cmpi.l     #16,d3
 		beq.s      cpuspeed3
 		bra        cpuspeederr
 cpuspeed2:
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      cpuspeed6
+		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set8(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
 		bra.s      cpuspeed6
 cpuspeed3:
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      cpuspeed6
+		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set16(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
 		bra.s      cpuspeed6
 cpuspeed4:
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      cpuspeed6
+		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set20(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
 		bra.s      cpuspeed6
 cpuspeed5:
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      cpuspeed6
+		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set24(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
 cpuspeed6:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 cpuspeed_set8:
-		moveq      #0,d0
-		bsr        set_nemesis_cookie
-		beq        cpuspeed_set8_3
+		movea.l    (0x000005A0).w,a0
+		move.l     #COOK_NEMESIS,d0
+cpuspeed_set8_1:
+		move.l     (a0),d1
+		beq.s      cpuspeed_set8_3
+		cmp.l      d0,d1
+		beq.s      cpuspeed_set8_2
+		addq.l     #8,a0
+		bra.s      cpuspeed_set8_1
+cpuspeed_set8_2:
+		move.l     #0,4(a0)
 		lea.l      (0xFFFFFC04).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0x95,(a0)
@@ -680,13 +849,22 @@ cpuspeed_set8:
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
 cpuspeed_set8_3:
-		bclr       #0,0xFFFF8007 ; CPU 8Mhz
+		movea.l    #0xFFFF8007,a0
+		bclr       #0,(a0)
 		rts
 
 cpuspeed_set16:
-		moveq      #0,d0
-		bsr        set_nemesis_cookie
-		beq        cpuspeed_set8_3
+		movea.l    (0x000005A0).w,a0
+		move.l     #COOK_NEMESIS,d0
+cpuspeed_set16_1:
+		move.l     (a0),d1
+		beq.s      cpuspeed_set16_3
+		cmp.l      d0,d1
+		beq.s      cpuspeed_set16_2
+		addq.l     #8,a0
+		bra.s      cpuspeed_set16_1
+cpuspeed_set16_2:
+		move.l     #0,4(a0)
 		lea.l      (0xFFFFFC04).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0x95,(a0)
@@ -694,7 +872,8 @@ cpuspeed_set16:
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
 cpuspeed_set16_3:
-		bset       #0,0xFFFF8007 ; CPU 16Mhz
+		movea.l    #0xFFFF8007,a0
+		bset       #0,(a0)
 		rts
 
 cpuspeed_set20:
@@ -704,10 +883,20 @@ cpuspeed_set20:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0xD6,(a0)
-		moveq      #1,d0
-		bsr        set_nemesis_cookie
-		bset       #0,(0xFFFF8007).w ; CPU 16Mhz
-		bclr       #2,(0xFFFF8007).w ; blitter 8Mhz
+		movea.l    (0x000005A0).w,a0
+		move.l     #COOK_NEMESIS,d0
+cpuspeed_set20_1:
+		move.l     (a0),d1
+		beq.s      cpuspeed_set20_3
+		cmp.l      d0,d1
+		beq.s      cpuspeed_set20_2
+		addq.l     #8,a0
+		bra.s      cpuspeed_set20_1
+cpuspeed_set20_2:
+		move.l     #1,4(a0)
+cpuspeed_set20_3:
+		bset       #0,(0xFFFF8007).w
+		bclr       #2,(0xFFFF8007).w
 		rts
 
 cpuspeed_set24:
@@ -717,220 +906,303 @@ cpuspeed_set24:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0xD6,(a0)
-		moveq      #2,d0
-		bsr        set_nemesis_cookie
-		bset       #0,(0xFFFF8007).w ; CPU 16Mhz
-		bclr       #2,(0xFFFF8007).w ; blitter 8Mhz
+		movea.l    (0x000005A0).w,a0
+		move.l     #COOK_NEMESIS,d0
+cpuspeed_set24_1:
+		move.l     (a0),d1
+		beq.s      cpuspeed_set24_3
+		cmp.l      d0,d1
+		beq.s      cpuspeed_set24_2
+		addq.l     #8,a0
+		bra.s      cpuspeed_set24_1
+cpuspeed_set24_2:
+		move.l     #2,4(a0)
+cpuspeed_set24_3:
+		bset       #0,(0xFFFF8007).w
+		bclr       #2,(0xFFFF8007).w
 		rts
+
+cpu_setspeed: ds.l 1
+	ds.l 1 /* unused */
 
 /*
  * Syntax: X=_memtop
  */
 memtop:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
+		movem.l    a0-a6,-(a7)
+		pea.l      get_memtop(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		move.l     d0,d3
+		lea.l      memtop_val(pc),a1
+		move.l     (a1),d3
 		clr.l      d2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 get_memtop:
-		move.l     0x00000436,d0
+		lea.l      0x00000436,a0 /* XXX */
+		lea.l      memtop_val(pc),a1
+		move.l     (a0),(a1)
 		rts
+
+memtop_val: ds.l 1
 
 /*
  * Syntax: _blitterspeed N
  */
 blitterspeed:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
 		bne        illfalconfunc
+		cmp.w      #1,d0
+		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
-		move.l     nemesis_cookie+4(pc),d0
-		bne.s      blitterspeed2
+		lea.l      blitter_setspeed(pc),a0
+		move.l     d3,(a0)
+		pea.l      get_nemesis(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		lea.l      nemesis_val(pc),a1
+		move.l     (a1),d7
+		tst.l      d7
+		beq.s      blitterspeed1
+		bra.s      blitterspeed2 /* BUG: should do nothing, but sets 8Mhz */
 blitterspeed1:
+		move.l     blitter_setspeed(pc),d3
+		cmpi.l     #8,d3
+		beq.s      blitterspeed2
 		cmpi.l     #16,d3
 		beq.s      blitterspeed3
-		cmpi.l     #8,d3
-		bne        blitterspeederr
+		bra        blitterspeederr
 blitterspeed2:
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      blitterspeed4
+		movem.l    a0-a6,-(a7)
 		pea.l      blitter_set8(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
 		bra.s      blitterspeed4
 blitterspeed3:
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      blitterspeed4
+		movem.l    a0-a6,-(a7)
 		pea.l      blitter_set16(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
+		movem.l    (a7)+,a0-a6
 blitterspeed4:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 blitter_set8:
-		bclr       #2,0xFFFF8007 ; blitter 8Mhz
+		movea.l    #0xFFFF8007,a0
+		bclr       #2,(a0)
 		rts
 
 blitter_set16:
-		bset       #2,0xFFFF8007 ; blitter 16Mhz
+		movea.l    #0xFFFF8007,a0
+		bset       #2,(a0)
 		rts
 
+blitter_setspeed: ds.l 1
+
+get_nemesis:
+		movea.l    0x000005A0.l,a0 /* XXX */
+		move.l     #COOK_NEMESIS,d0
+get_nemesis1:
+		move.l     (a0),d1
+		beq.s      get_nemesis3
+		cmp.l      d0,d1
+		beq.s      get_nemesis2
+		addq.l     #8,a0
+		bra.s      get_nemesis1
+get_nemesis2:
+		lea.l      nemesis_val(pc),a1
+		move.l     4(a0),(a1)
+		rts
+get_nemesis3:
+		lea.l      nemesis_val(pc),a1
+		move.l     #0,(a1)
+		rts
+
+nemesis_val: ds.l 1
 
 /*
  * Syntax: B=_busmode
  */
 busmode:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
+		moveq.l    #0,d3
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne.s      busmode1
 		tst.w      d0
 		bne        syntax
-		moveq.l    #0,d3
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
-		bne.s      busmode1
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		pea.l      get_busmode(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 		move.l     d0,d3
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 busmode1:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 get_busmode:
-		moveq      #0,d0
-		move.b     0xFFFF8007,d0
+		movea.l    #0xFFFF8007,a0
+		move.b     (a0),d0
+		andi.l     #0x0000FFFF,d0 /* FIXME; useless */
 		rts
 
 /*
  * Syntax: _stebus
  */
 stebus:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
 		bne.s      stebus1
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		pea.l      stebus_on(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 stebus1:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 stebus_on:
-		bclr       #5,0xFFFF8007
+		movea.l    #0xFFFF8007,a0
+		bclr       #5,(a0)
 		rts
 
 /*
  * Syntax: X=paddle x(P)
  */
 paddle_x:
-		move.l     (a7)+,a1
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
-		subq.w     #1,d0
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		movem.l    a0-a6,-(a7)
 		moveq.l    #0,d0
-		move.w     mch_cookie(pc),d1
-		subq.w     #1,d1
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      paddle_x1
-		subq.w     #2,d1
+		cmpi.w     #3,d6
 		bne.s      paddle_x2
 paddle_x1:
-		cmpi.w     #4,d3
-		bcc.s      paddle_x2
+		tst.l      d3
+		bmi.s      paddle_x2
+		cmpi.l     #3,d3
+		bgt.s      paddle_x2
 		asl.w      #2,d3
-		movea.l    #$ffff9210,a0
+		movea.l    #$00FF9210,a0 /* XXX */
 		move.b     1(a0,d3.w),d0
 paddle_x2:
 		move.l     d0,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: _falconbus
  */
 falconbus:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
 		bne.s      falconbus1
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		pea.l      stebus_off(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 falconbus1:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 stebus_off:
-		bset       #5,0xFFFF8007
+		movea.l    #0xFFFF8007,a0
+		bset       #5,(a0)
 		rts
 
 /*
  * Syntax: Y=paddle y(P)
  */
 paddle_y:
-		move.l     (a7)+,a1
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
-		subq.w     #1,d0
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		movem.l    a0-a6,-(a7)
 		moveq.l    #0,d0
-		move.w     mch_cookie(pc),d1
-		subq.w     #1,d1
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      paddle_y1
-		subq.w     #2,d1
+		cmpi.w     #3,d6
 		bne.s      paddle_y2
 paddle_y1:
-		cmpi.w     #4,d3
-		bcc.s      paddle_y2
+		tst.l      d3
+		bmi.s      paddle_y2
+		cmpi.l     #3,d3
+		bgt.s      paddle_y2
 		asl.w      #2,d3
-		movea.l    #$ffff9212,a0
+		movea.l    #$00FF9212,a0 /* XXX */
 		move.b     1(a0,d3.w),d0
 paddle_y2:
 		move.l     d0,d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: _cpucache on
  */
 cpucache_on:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.l     cpu_cookie(pc),d6
 		cmpi.w     #30,d6
 		bne.s      cpucache_on1
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		pea.l      cache_on(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 cpucache_on1:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 cache_on:
 		move.l     #$00000A0A,d0
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
@@ -944,45 +1216,53 @@ cache_on:
  * Syntax: X=_cpucache stat
  */
 cpucache_stat:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
+		moveq.l    #0,d3
+		move.l     cpu_cookie(pc),d6
+		cmpi.w     #30,d6
+		bne.s      cpucache_stat1
 		tst.w      d0
 		bne        syntax
-		moveq.l    #0,d3
-		move.l     cpu_cookie(pc),d0
-		cmpi.w     #30,d0
-		bne.s      cpucache_stat1
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		pea.l      cache_get(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		move.l     d0,d3
-		movem.l    (a7)+,a0-a2
+		lea.l      cache_val,a0 /* FIXME */
+		move.l     (a0),d3
+		movem.l    (a7)+,a0-a6
 cpucache_stat1:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 cache_get:
 		dc.w 0x4e7a,2 /* movec      cacr,d0 */
+		move.l     d0,cache_val
 		rts
+
+cache_val: ds.l 1
 
 /*
  * Syntax: _cpucache off
  */
 cpucache_off:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
 		move.l     cpu_cookie(pc),d6
 		cmpi.w     #30,d6
 		bne.s      cpucache_off1
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		pea.l      cache_off(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a2
+		movem.l    (a7)+,a0-a6
 cpucache_off1:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 cache_off:
 		move.l     #$00000A0A,d0
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
@@ -994,130 +1274,165 @@ cache_off:
  * Syntax: X=lpen x
  */
 lpen_x:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
-		moveq.l    #0,d3
-		move.w     mch_cookie(pc),d1
-		subq.w     #1,d1
+		movem.l    a0-a6,-(a7)
+		moveq.l    #0,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      lpen_x1
-		subq.w     #2,d1
+		cmpi.w     #3,d6
 		bne.s      lpen_x2
 lpen_x1:
-		move.w     $ffff9220,d3
+		move.w     $00FF9220,d0 /* XXX */
 lpen_x2:
+		move.l     d0,d3
+		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: ide on
  */
 ide_on:
+		move.l     (a7)+,returnpc
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne        illfalconfunc
 		tst.w      d0
 		bne        syntax
-		move.w     mch_cookie(pc),d0
-		subq.w     #3,d0
-		bne        illfalconfunc
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #0x007F,-(a7)
 		move.w     #29,-(a7) /* Offgibit */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: Y=lpen y
  */
 lpen_y:
+		move.l     (a7)+,returnpc
 		move.w     #0,bootflag
 		tst.w      d0
 		bne        syntax
+		movem.l    a0-a6,-(a7)
 		moveq.l    #0,d0
-		move.w     mch_cookie(pc),d1
-		subq.w     #1,d1
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      lpen_y1
-		subq.w     #2,d1
+		cmpi.w     #3,d6
 		bne.s      lpen_y2
 lpen_y1:
-		move.w     0xffff9222,d0
+		move.w     0x00FF9222,d0 /* XXX */
 lpen_y2:
 		move.l     d0,d3
+		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: ide off
  */
 ide_off:
+		move.l     (a7)+,returnpc
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #3,d6
+		bne        illfalconfunc
 		tst.w      d0
 		bne        syntax
-		move.w     mch_cookie(pc),d1
-		subq.w     #3,d1
-		bne        illfalconfunc
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #0x0080,-(a7)
 		move.w     #30,-(a7) /* Ongibit */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: NEMESIS_FLAG=_nemesis
  */
 nemesis:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
-		move.l     nemesis_cookie(pc),d3
+		movem.l    a0-a6,-(a7)
+		lea.l      cookieid(pc),a1
+		move.l     #COOK_NEMESIS,(a1)
+		pea.l      getcookie(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
+		lea.l      cookievalue(pc),a1
+		lea.l      nemesis_cookie(pc),a0
+		move.l     (a1),(a0)
+		moveq.l    #0,d3
+		tst.l      d0
 		beq.s      nemesis1
 		moveq.l    #-1,d3
 nemesis1:
+		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: _set printer X
  */
 set_printer:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
+		movem.l    a0-a6,-(a7)
 		move.w     d3,-(a7)
 		move.w     #33,-(a7) /* Setprt */
 		trap       #14
 		addq.l     #4,a7
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: A=_printer ready
  */
 printer_ready:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
-		clr.w      -(a7)
+		movem.l    a0-a6,-(a7)
+		move.w     #0,-(a7)
 		move.w     #8,-(a7) /* Bcostat */
 		trap       #13
 		addq.l     #4,a7
 		move.w     d0,d3
 		ext.l      d3
 		clr.l      d2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: file attr FNAME$,ATTR
  */
 file_attr:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #2,d0
 		bne        syntax
 		bsr        getinteger
-		move.w     d3,d1
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
+		lea.l      file_attrval(pc),a1
+		move.w     d3,(a1)
 		bsr        getstring
 		movea.l    d3,a2
-		move.l     a1,-(a7)
 		lea.l      file_attrname(pc),a1
 		move.w     #(256/4)-1,d7
 file_attr1:
@@ -1129,17 +1444,21 @@ file_attr1:
 file_attr2:
 		move.b     (a2)+,(a1)+
 		dbf        d7,file_attr2
-		clr.b      (a1)+
-		move.w     d1,-(a7)
+		move.b     #0,(a1)+
+		movem.l    a0-a6,-(a7)
+		move.w     file_attrval(pc),-(a7)
 		move.w     #1,-(a7)
 		pea.l      file_attrname(pc)
 		move.w     #67,-(a7) /* Fattrib */
 		trap       #1
 		lea.l      10(a7),a7
+		movem.l    (a7)+,a0-a6
 		tst.w      d0
 		bmi        diskerror
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
+file_attrval: ds.w 1
 file_attrname: ds.b 256
 
 
@@ -1147,96 +1466,100 @@ file_attrname: ds.b 256
  * Syntax: X=kbshift
  */
 kbshift:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
-		moveq      #0,d3
+		andi.l     #0x000000FF,d0
 		move.w     d0,d3
 		clr.l      d2
-		movem.l    (a7)+,a0-a2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: A=_aes in
  */
 aes_in:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
-		movem.l    a0-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #0x00C9,d0
 		trap       #2
-		movem.l    (a7)+,a0-a2
-		moveq      #0,d3
+		movem.l    (a7)+,a0-a6
+		clr.l      d3
 		cmpi.w     #0x00C9,d0
 		beq.s      aes_in1
 		moveq.l    #-1,d3
 aes_in1:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: code$ A$,N
  */
 codestr:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #2,d0
 		bne        syntax
 		bsr        getinteger
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		move.w     d3,d1
 		bsr        getstring
-		move.l     a1,-(a7)
 		movea.l    d3,a2
+		moveq.l    #0,d3
 		move.w     (a2)+,d3
-		beq        codestr2
-		subq.w     #1,d3
+		subq.w     #1,d3 /* BUG: does not check for empty string */
 codestr1:
 		move.b     (a2),d2
 		add.b      d1,d2
 		move.b     d2,(a2)+
 		dbf        d3,codestr1
-codestr2:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: uncode$ A$,N
  */
 uncodestr:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #2,d0
 		bne        syntax
 		bsr        getinteger
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		move.w     d3,d1
 		bsr        getstring
-		move.l     a1,-(a7)
 		movea.l    d3,a2
+		moveq.l    #0,d3
 		move.w     (a2)+,d3
-		beq        uncodestr2
-		subq.w     #1,d3
+		subq.w     #1,d3 /* BUG: does not check for empty string */
 uncodestr1:
 		move.b     (a2),d2
 		sub.b      d1,d2
 		move.b     d2,(a2)+
 		dbf        d3,uncodestr1
-uncodestr2:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: A=file exist(F$)
  */
 file_exist:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getstring
 		movea.l    d3,a2
-		move.l     a1,-(a7)
+		cmpi.w     #1,(a2)
+		blt        badfilename
 		move.w     (a2),d7
-		beq        badfilename
-		subq.w     #1,d7
+		subq.w     #1,d7 /* BUG: does not check for empty string */
 file_exist1:
 		cmpi.b     #'*',2(a2,d7.w)
 		beq        badfilename
@@ -1252,7 +1575,8 @@ file_exist2:
 file_exist3:
 		move.b     (a2)+,(a1)+
 		dbf        d7,file_exist3
-		clr.b      (a1)+
+		move.b     #0,(a1)+
+		movem.l    a0-a6,-(a7)
 		lea.l      file_existdtaptr(pc),a3
 		move.w     #47,-(a7) /* Fgetdta */
 		trap       #1
@@ -1278,12 +1602,15 @@ file_exist4:
 		trap       #1
 		addq.l     #6,a7
 		move.l     (a7)+,d3
+		tst.l      d3
 		beq.s      file_exist5
 		lea.l      file_existdta(pc),a0
 		move.l     26(a0),d3
 file_exist5:
 		clr.l      d2
-		rts
+		movem.l    (a7)+,a0-a6
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 file_existname: ds.b 256
      ds.b 16 /* unused */
@@ -1294,8 +1621,8 @@ file_existdta: ds.b 44
  * Syntax: A=_add cbound(A,I,L,U)
  */
 add_cbound:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #4,d0
 		bne        syntax
 		lea.l      add_cbound_rect(pc),a2
 		bsr        getinteger
@@ -1306,7 +1633,6 @@ add_cbound:
 		move.l     d3,4(a2)
 		bsr        getinteger
 		move.l     d3,(a2)
-		move.l     a1,-(a7)
 		movem.l    (a2)+,d0-d3
 		add.l      d1,d0
 		cmp.l      d3,d0
@@ -1315,14 +1641,17 @@ add_cbound:
 		blt.s      add_cbound2
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 add_cbound1:
 		move.l     d2,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 add_cbound2:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 add_cbound_rect: ds.l 4
 
@@ -1330,33 +1659,47 @@ add_cbound_rect: ds.l 4
  * Syntax: lset$ A$,B$
  */
 lsetstr:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #2,d0
 		bne        syntax
 		bsr        getstring
 		movea.l    d3,a2
-		move.w     (a2)+,d1
+		moveq.l    #0,d3
+		move.w     (a2)+,d3
+		lea.l      lset_srcstr(pc),a0
+		move.l     a2,(a0)+
+		move.w     d3,(a0)+
 		bsr        getstring
-		move.l     a1,-(a7)
-		movea.l    d3,a1
-		move.w     (a1)+,d0
-		tst.w      d1
-		beq.s      lsetstr2
+		movea.l    d3,a2
+		moveq.l    #0,d3
+		move.w     (a2)+,d3
+		lea.l      lset_dststr(pc),a0
+		move.l     a2,(a0)+
+		move.w     d3,(a0)+
+		lea.l      lset_dststr(pc),a0
+		move.w     4(a0),d0
+		move.w     10(a0),d1
 		cmp.w      d1,d0
 		bcs.s      lsetstr2
 		subq.w     #1,d1
+		movea.l    (a0),a2
+		movea.l    6(a0),a1
 lsetstr1:
 		move.b     (a1)+,(a2)+
 		dbf        d1,lsetstr1
 lsetstr2:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+lset_dststr: ds.b 6
+lset_srcstr: ds.b 6
 
 /*
  * Syntax: A=_sub cbound(A,I,L,U)
  */
 sub_cbound:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #4,d0
 		bne        syntax
 		lea.l      sub_cbound_rect(pc),a2
 		bsr        getinteger
@@ -1367,7 +1710,6 @@ sub_cbound:
 		move.l     d3,4(a2)
 		bsr        getinteger
 		move.l     d3,(a2)
-		move.l     a1,-(a7)
 		movem.l    (a2)+,d0-d3
 		sub.l      d1,d0
 		cmp.l      d3,d0
@@ -1376,14 +1718,17 @@ sub_cbound:
 		blt.s      sub_cbound2
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 sub_cbound1:
 		move.l     d2,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 sub_cbound2:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 sub_cbound_rect: ds.l 4
 
@@ -1392,36 +1737,50 @@ sub_cbound_rect: ds.l 4
  * Syntax: rset$ A$,B$
  */
 rsetstr:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #2,d0
 		bne        syntax
 		bsr        getstring
 		movea.l    d3,a2
-		move.w     (a2)+,d1
+		moveq.l    #0,d3
+		move.w     (a2)+,d3
+		lea.l      rset_srcstr(pc),a0
+		move.l     a2,(a0)+
+		move.w     d3,(a0)+
 		bsr        getstring
-		move.l     a1,-(a7)
-		movea.l    d3,a1
-		move.w     (a1)+,d0
-		tst.w      d1
-		beq.s      rsetstr2
+		movea.l    d3,a2
+		moveq.l    #0,d3
+		move.w     (a2)+,d3
+		lea.l      rset_dststr(pc),a0
+		move.l     a2,(a0)+
+		move.w     d3,(a0)+
+		lea.l      rset_dststr(pc),a0
+		move.w     4(a0),d0
+		move.w     10(a0),d1
 		cmp.w      d1,d0
 		bcs.s      rsetstr2
+		movea.l    (a0),a2
 		adda.w     d0,a2
+		movea.l    6(a0),a1
 		adda.w     d1,a1
 		subq.w     #1,d1
 rsetstr1:
 		move.b     -(a1),-(a2)
 		dbf        d1,rsetstr1
 rsetstr2:
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+
+rset_dststr: ds.b 6
+rset_srcstr: ds.b 6
 
 
 /*
  * Syntax: A=_add ubound(A,I,U)
  */
 add_ubound:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #3,d0
 		bne        syntax
 		lea.l      add_ubound_rect(pc),a2
 		bsr        getinteger
@@ -1430,18 +1789,19 @@ add_ubound:
 		move.l     d3,4(a2)
 		bsr        getinteger
 		move.l     d3,(a2)
-		move.l     a1,-(a7)
 		movem.l    (a2)+,d0-d2
 		add.l      d1,d0
 		cmp.l      d2,d0
 		bgt.s      add_ubound1
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 add_ubound1:
 		move.l     add_ubound_rect+8(pc),d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 add_ubound_rect: ds.l 3
 
@@ -1449,21 +1809,24 @@ add_ubound_rect: ds.l 3
  * Syntax: st mouse on
  */
 st_mouse_on:
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
+		beq        extension_noent
 		tst.w      d0
 		bne        syntax
-		move.w     spritelib_ok(pc),d0
-		beq        extension_noent
 		movem.l    a0-a6,-(a7)
 		moveq.l    #S_st_mouse_on,d0
 		trap       #5
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: A=_sub lbound(A,I,L)
  */
 sub_lbound:
-		move.l     (a7)+,a1
+		move.l     (a7)+,returnpc
 		cmpi.w     #3,d0
 		bne        syntax
 		lea.l      sub_lbound_rect(pc),a2
@@ -1473,18 +1836,19 @@ sub_lbound:
 		move.l     d3,4(a2)
 		bsr        getinteger
 		move.l     d3,(a2)
-		move.l     a1,-(a7)
 		movem.l    (a2)+,d0-d2
 		sub.l      d1,d0
 		cmp.l      d2,d0
 		blt.s      sub_lbound1
 		move.l     d0,d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 sub_lbound1:
 		move.l     sub_lbound_rect+8(pc),d3
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 sub_lbound_rect: ds.l 3
 
@@ -1492,25 +1856,27 @@ sub_lbound_rect: ds.l 3
  * Syntax: st mouse off
  */
 st_mouse_off:
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
+		beq        extension_noent
 		tst.w      d0
 		bne        syntax
-		move.w     spritelib_ok(pc),d0
-		beq        extension_noent
 		movem.l    a0-a6,-(a7)
 		moveq.l    #S_st_mouse_off,d0
 		trap       #5
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: X=odd(A)
  */
 odd:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		move.l     d3,d0
 		moveq.l    #-1,d3
 		btst       #0,d0
@@ -1518,43 +1884,53 @@ odd:
 		moveq.l    #0,d3
 odd1:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: st mouse colour COL_INDEX
  *         st mouse colour RED,GREEN,BLUE
  */
 st_mouse_colour:
-		move.l     (a7)+,a1
-		move.w     spritelib_ok(pc),d1
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
 		beq        extension_noent
-		subq.w     #1,d0
+		cmp.w      #1,d0
 		beq.s      st_mouse_colour2
-		subq.w     #2,d0
-		bne        syntax
+		cmp.w      #3,d0
+		beq.s      st_mouse_colour1
+		bra        syntax
 st_mouse_colour1:
 		bsr        getinteger
-		andi.w     #31,d3
-		move.w     d3,d1
+		andi.l     #31,d3
+		lea.l      st_mouse_colour_rgb(pc),a0
+		move.w     d3,4(a0)
 		bsr        getinteger
-		andi.w     #31,d3
-		lsl.w      #6,d3
-		or.w       d3,d1
+		andi.l     #31,d3
+		rol.w      #6,d3
+		lea.l      st_mouse_colour_rgb(pc),a0
+		move.w     d3,2(a0)
 		bsr        getinteger
-		move.l     a1,-(a7)
-		andi.w     #31,d3
-		lsl.w      #6,d3
-		lsl.w      #5,d3
-		or.w       d1,d3
+		andi.l     #31,d3
+		rol.w      #6,d3
+		rol.w      #5,d3
+		lea.l      st_mouse_colour_rgb(pc),a0
+		move.w     d3,(a0)
+		movem.w    (a0)+,d1-d3
+		or.w       d1,d2
+		or.w       d2,d3
+		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		bra.s      st_mouse_colour3
 st_mouse_colour2:
 		bsr        getinteger
-		move.l     a1,-(a7)
+		andi.l     #0x000000FF,d3
 st_mouse_colour3:
 		move.w     d3,d1
 		moveq.l    #S_st_mouse_color,d0
 		trap       #5
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 st_mouse_colour_rgb: ds.w 4
 
@@ -1562,11 +1938,10 @@ st_mouse_colour_rgb: ds.w 4
  * Syntax: X=even(A)
  */
 even:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmp.w      #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		move.l     d3,d0
 		moveq.l    #-1,d3
 		btst       #0,d0
@@ -1574,20 +1949,23 @@ even:
 		moveq.l    #0,d3
 even1:
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: _limit st mouse X1,Y1,X2,Y2
  *         _limit st mouse -1
  */
 limit_st_mouse:
-		move.l     (a7)+,a1
-		move.w     spritelib_ok(pc),d1
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
 		beq        extension_noent
-		subq.w     #1,d0
+		cmp.w      #1,d0
 		beq.s      limit_st_mouse2
-		subq.w     #3,d0
-		bne        syntax
+		cmp.w      #4,d0
+		beq.s      limit_st_mouse1
+		bra        syntax
 limit_st_mouse1:
 		bsr        getinteger
 		lea.l      limit_st_mouse_coords(pc),a0
@@ -1601,19 +1979,22 @@ limit_st_mouse1:
 		bsr        getinteger
 		lea.l      limit_st_mouse_coords(pc),a0
 		move.w     d3,(a0)
-		move.l     a1,-(a7)
-		movem.w    (a0),d1-d4
+		move.w     (a0)+,d1
+		move.w     (a0)+,d2
+		move.w     (a0)+,d3
+		move.w     (a0)+,d4
 		moveq.l    #-1,d5
 		moveq.l    #S_limit_st_mouse,d0
 		trap       #5
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 limit_st_mouse2:
-		bsr        getinteger
-		move.l     a1,-(a7)
+		/* BUG: does not pop argument */
 		moveq.l    #0,d5
 		moveq.l    #S_limit_st_mouse,d0
 		trap       #5
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 limit_st_mouse_coords: ds.w 4
 
@@ -1621,10 +2002,12 @@ limit_st_mouse_coords: ds.w 4
  * Syntax: X=st mouse stat
  */
 st_mouse_stat:
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
+		beq        extension_noent
 		tst.w      d0
 		bne        syntax
-		move.w     spritelib_ok(pc),d0
-		beq        extension_noent
 		movem.l    a0-a6,-(a7)
 		moveq.l    #S_st_mouse_stat,d0
 		trap       #5
@@ -1632,56 +2015,58 @@ st_mouse_stat:
 		ext.l      d3
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: st mouse N
  */
 st_mouse:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		move.w     spritelib_ok(pc),d0
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
 		beq        extension_noent
+		cmp.w      #1,d0
+		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
-		moveq      #0,d1
-		move.b     d3,d1
+		move.l     d3,d1
+		andi.l     #0x000000FF,d1 /* FIXME */
 		moveq.l    #S_st_mouse,d0
 		trap       #5
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: F$=_fileselect$(PATH$,TITLE$,BG_COLOUR,BTN_COLOUR_1,BTN_COLOUR_2,TXT_COLOUR_1,TXT_COLOUR_2)
  */
 fileselect:
-		move.l     (a7)+,a1
-		subq.w     #7,d0
-		bne        syntax
-		move.w     spritelib_ok(pc),d0
+		move.l     (a7)+,returnpc
+		move.w     spritelib_ok(pc),d6
+		tst.w      d6
 		beq        extension_noent
+		cmp.w      #7,d0
+		bne        syntax
 		bsr        getinteger
-		lea.l      fileselect_txtcolor2(pc),a0
-		move.w     d3,(a0)
+		lea.l      fileselect_txtcolor2(pc),a1
+		move.w     d3,(a1)
 		bsr        getinteger
-		lea.l      fileselect_txtcolor1(pc),a0
-		move.w     d3,(a0)
+		lea.l      fileselect_txtcolor1(pc),a1
+		move.w     d3,(a1)
 		bsr        getinteger
-		lea.l      fileselect_btncolor2(pc),a0
-		move.w     d3,(a0)
+		lea.l      fileselect_btncolor2(pc),a1
+		move.w     d3,(a1)
 		bsr        getinteger
-		lea.l      fileselect_btncolor1(pc),a0
-		move.w     d3,(a0)
+		lea.l      fileselect_btncolor1(pc),a1
+		move.w     d3,(a1)
 		bsr        getinteger
-		lea.l      fileselect_bgcolor(pc),a0
-		move.w     d3,(a0)
+		lea.l      fileselect_bgcolor(pc),a1
+		move.w     d3,(a1)
 		bsr        getstring
 		lea.l      fileselect_title(pc),a0
 		move.l     d3,(a0)
 		bsr        getstring
 		lea.l      fileselect_path(pc),a0
 		move.l     d3,(a0)
-		move.l     a1,-(a7)
 		movem.l    a2-a6,-(a7)
 		lea.l      fileselect_bgcolor(pc),a1
 		movem.w    (a1)+,d1-d5
@@ -1689,13 +2074,15 @@ fileselect:
 		moveq.l    #S_fileselect,d0
 		trap       #5
 		lea.l      fileselect_name(pc),a1
+		/* tst.b      (a0) */
+		dc.w 0x0c10,0 /* XXX */
+		beq.s      fileselect4
 		clr.l      d3
-		tst.b      (a0)
-		beq.s      fileselect2
 fileselect1:
 		cmpi.w     #12,d3
 		beq.s      fileselect2
 		move.b     (a0)+,d0
+		tst.b      d0
 		beq.s      fileselect2
 		cmpi.b     #' ',d0
 		beq.s      fileselect1
@@ -1703,20 +2090,28 @@ fileselect1:
 		addq.w     #1,d3
 		bra.s      fileselect1
 fileselect2:
-		bsr        malloc
-		move.l     a0,a1
+		jsr        malloc /* FIXME */
 		move.w     d3,(a0)+
-		beq.s      fileselect4
 		subq.w     #1,d3
 		lea.l      fileselect_name(pc),a3
 fileselect3:
 		move.b     (a3)+,(a0)+
 		dbf        d3,fileselect3
-fileselect4:
 		movem.l    (a7)+,a2-a6
 		move.l     a1,d3
 		move.w     #128,d2 /* returns string */
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
+fileselect4:
+		clr.l      d3
+		jsr        malloc /* FIXME */
+		move.w     d3,(a0)+
+		move.b     #0,(a0)+
+		movem.l    (a7)+,a2-a6
+		move.l     a1,d3
+		move.w     #128,d2 /* returns string */
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 fileselect_bgcolor: ds.w 1
 fileselect_btncolor1: ds.w 1
@@ -1731,188 +2126,212 @@ fileselect_name: ds.b 24
  * Syntax: D=_jagpad direction(PORT)
  */
 jagpad_direction:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
-		cmpi.w     #2,d3
-		bcc        illfunc
+		tst.l      d3
+		bmi        illfunc
+		cmpi.l     #1,d3
+		bgt        illfunc
+		andi.l     #15,d3 /* FIXME: useless */
 		movem.l    a0-a6,-(a7)
-		move.l     d3,d2
-		moveq.l    #0,d3
-		move.w     mch_cookie(pc),d0
-		subq.w     #1,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      jagpad_direction1
-		subq.w     #2,d0
-		bne.s      jagpad_direction3
+		cmpi.w     #3,d6
+		beq.s      jagpad_direction1
+		moveq.l    #0,d3
+		bra.s      jagpad_direction3
 jagpad_direction1:
-		movea.l    #0xffff9200,a0
+		movea.l    #0x00FF9200,a0 /* XXX */
 		move.w     #0xFFFE,d0
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_direction2
 		move.w     #0xFFEF,d0
 jagpad_direction2:
-		asl.w      #1,d2
+		asl.w      #1,d3
 		move.w     d0,2(a0)
-		move.w     2(a0,d2.w),d3
+		move.w     2(a0,d3.w),d3
 		not.w      d3
-		lsr.w      #8,d3
+		ror.w      #8,d3
 		andi.w     #15,d3
 jagpad_direction3:
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: F=_jagpad fire(PORT,BTN)
  */
 jagpad_fire:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #2,d0
 		bne        syntax
 		bsr        getinteger
-		cmpi.w     #3,d3
-		bcc        illfunc
+		tst.l      d3
+		bmi        illfunc
+		cmpi.l     #2,d3
+		bgt        illfunc
+		andi.l     #15,d3 /* FIXME: useless */
 		move.l     d3,d5
 		bsr        getinteger
-		cmpi.w     #2,d3
-		bcc        illfunc
-		move.l     a1,-(a7)
-		move.w     d3,d2
+		tst.w      d3
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #15,d3
 		movem.l    a0-a6,-(a7)
-		moveq.l    #0,d3
-		move.w     mch_cookie(pc),d0
-		subq.w     #1,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      jagpad_fire1
-		subq.w     #2,d0
-		bne.s      jagpad_fire4
+		cmpi.w     #3,d6
+		beq.s      jagpad_fire1
+		moveq.l    #0,d3
+		bra.s      jagpad_fire4
 jagpad_fire1:
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_fire2
 		asl.w      #4,d5
 jagpad_fire2:
-		movea.l    #0xffff9200,a0
+		movea.l    #0x00FF9200,a0 /* XXX */
 		move.w     #-1,d0
 		bclr       d5,d0
 		move.w     d0,2(a0)
-		move.w     (a0),d1
+		move.w     ZERO(a0),d1
 		not.w      d1
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_fire3
-		lsr.w      #2,d1
+		ror.w      #2,d1
 jagpad_fire3:
-		lsr.w      #1,d1
+		ror.w      #1,d1
 		andi.w     #1,d1
+		moveq.l    #0,d3
+		tst.w      d1
 		beq.s      jagpad_fire4
 		moveq.l    #-1,d3
 jagpad_fire4:
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: X=_jagpad pause(PORT)
  */
 jagpad_pause:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		cmpi.w     #2,d3
-		bcc        illfunc
-		move.l     a1,-(a7)
-		move.w     d3,d2
+		tst.w      d3
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #15,d3 /* FIXME: useless */
 		movem.l    a0-a6,-(a7)
-		moveq.l    #0,d3
-		move.w     mch_cookie(pc),d0
-		subq.w     #1,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      jagpad_pause1
-		subq.w     #2,d0
-		bne.s      jagpad_pause4
+		cmpi.w     #3,d6
+		beq.s      jagpad_pause1
+		moveq.l    #0,d3
+		bra.s      jagpad_pause4
 jagpad_pause1:
-		movea.l    #$ffff9200,a0
+		movea.l    #$00FF9200,a0 /* XXX */
 		move.w     #0xFFFE,d0
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_pause2
 		move.w     #0xFFEF,d0
 jagpad_pause2:
 		move.w     d0,2(a0)
-		move.w     (a0),d1
+		move.w     ZERO(a0),d1
 		not.w      d1
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_pause3
-		lsr.w      #2,d1
+		ror.w      #2,d1
 jagpad_pause3:
 		andi.w     #1,d1
+		moveq.l    #0,d3
+		tst.w      d1
 		beq.s      jagpad_pause4
 		moveq.l    #-1,d3
 jagpad_pause4:
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: X=_jagpad option(PORT)
  */
 jagpad_option:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		cmpi.w     #2,d3
-		bcc        illfunc
-		move.l     a1,-(a7)
-		move.w     d3,d2
+		tst.w      d3
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #15,d3 /* FIXME: useless */
 		movem.l    a0-a6,-(a7)
-		moveq.l    #0,d3
-		move.w     mch_cookie(pc),d0
-		subq.w     #1,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      jagpad_option1
-		subq.w     #2,d0
-		bne.s      jagpad_option4
+		cmpi.w     #3,d6
+		beq.s      jagpad_option1
+		moveq.l    #0,d3
+		bra.s      jagpad_option4
 jagpad_option1:
-		movea.l    #0xffff9200,a0
+		movea.l    #0x00FF9200,a0 /* XXX */
 		move.w     #0xFFF7,d0
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_option2
 		move.w     #0xFF7F,d0
 jagpad_option2:
 		move.w     d0,2(a0)
-		move.w     0(a0),d1
+		move.w     ZERO(a0),d1
 		not.w      d1
-		tst.w      d2
+		tst.w      d3
 		beq.s      jagpad_option3
-		lsr.w      #2,d1
+		ror.w      #2,d1
 jagpad_option3:
-		lsr.w      #1,d1
+		ror.w      #1,d1
 		andi.w     #1,d1
+		moveq.l    #0,d3
+		tst.w      d1
 		beq.s      jagpad_option4
 		moveq.l    #-1,d3
 jagpad_option4:
 		movem.l    (a7)+,a0-a6
 		clr.l      d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 /*
  * Syntax: K$=_jagpad key$(PORT)
  */
 jagpad_key:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		cmpi.w     #2,d3
-		bcc        illfunc
-		move.l     a1,-(a7)
+		tst.w      d3
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #15,d3 /* FIXME: useless */
 		movem.l    a0-a6,-(a7)
-		move.w     mch_cookie(pc),d0
-		subq.w     #1,d0
+		move.w     mch_cookie(pc),d6
+		cmpi.w     #1,d6
 		beq.s      jagpad_key1
-		subq.w     #2,d0
-		bne.s      jagpad_key4
+		cmpi.w     #3,d6
+		beq.s      jagpad_key1
+		bra.s      jagpad_key4
 jagpad_key1:
-		movea.l    #0xffff9200,a0
+		movea.l    #0x00FF9200,a0 /* XXX */
 		lea.l      readmasks(pc),a1
 		lea.l      readchars(pc),a2
 		move.w     #0x0F00,d4
@@ -1936,17 +2355,19 @@ jagpad_key3:
 jagpad_key4:
 		lea.l      jagpad_str(pc),a1
 		move.l     a1,d3
-		clr.l      (a1)
+		move.w     #0,(a1)+
+		move.w     #0,(a1)+
 		move.w     #128,d2 ; returns string
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 jagpad_key5:
 		tst.w      d3
 		beq.s      jagpad_key6
-		lsr.w      #4,d1
+		ror.w      #4,d1
 jagpad_key6:
-		lsr.w      #8,d1
-		andi.w     #15,d1
+		ror.w      #8,d1
+		andi.l     #15,d1
 		moveq.l    #3,d6
 jagpad_key7:
 		btst       d6,d1
@@ -1960,10 +2381,11 @@ jagpad_key8:
 		move.l     a1,d3
 		move.w     #1,(a1)+
 		move.b     d6,(a1)+
-		clr.b      (a1)
+		move.b     #0,(a1)+
 		move.w     #128,d2 ; returns string
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 jagpad_str: dc.w 0,0
 
@@ -1975,6 +2397,7 @@ readchars: dc.b "*7410852#963"
  * Syntax: _joysticks on
  */
 joysticks_on:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		movem.l    a0-a6,-(a7)
@@ -1995,7 +2418,8 @@ joysticks_on1:
 		beq.s      joysticks_on1
 		move.b     #0x14,2(a1) ; SET JOYSTICK EVENT REPORTING
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 myjoyvec:
 		move.l     a1,-(a7)
@@ -2014,57 +2438,75 @@ joybuf: ds.b 2
  * Syntax: F=_joyfire(P)
  */
 joyfire:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		subq.w     #1,d3
-		cmpi.w     #2,d3
-		bcc        illfunc
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #3,d3
 		move.l     d3,d0
-		moveq.l    #0,d3
 		lea.l      joybuf(pc),a0
 		move.b     0(a0,d0.w),d3
-		andi.b     #0x80,d3
+		andi.l     #0x80,d3
+		tst.l      d3
 		beq.s      joyfire1
 		moveq.l    #-1,d3
 joyfire1:
 		moveq.l    #0,d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 
 /*
  * Syntax: _joysticks off
  */
 joysticks_off:
+		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		movem.l    a0-a6,-(a7)
-		bsr        restore_joyvec
+		lea.l      kbdvbase(pc),a0
+		/* tst.l     (a0) */
+		dc.w 0x0c90,0,0 /* XXX */
+		beq.s      joysticks_off2
+		movea.l    (a0),a1
+		move.l     #0,(a0) /* XXX */
+		move.l     oldjoyvec(pc),24(a1)
+		lea.l      ($FFFFFC00).w,a1
+joysticks_off1:
+		move.b     (a1),d1
+		btst       #1,d1
+		beq.s      joysticks_off1
+		move.b     #8,2(a1) ; restore to normal mouse reporting
+joysticks_off2:
 		movem.l    (a7)+,a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 
 /*
  * Syntax: J=_joystick(P)
  */
 joystick:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
+		move.l     (a7)+,returnpc
+		cmpi.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     a1,-(a7)
 		subq.w     #1,d3
-		cmpi.w     #2,d3
-		bcc        illfunc
+		bmi        illfunc
+		cmpi.w     #1,d3
+		bgt        illfunc
+		andi.l     #3,d3
 		move.l     d3,d0
-		moveq      #0,d3
 		lea.l      joybuf(pc),a0
 		move.b     0(a0,d0.w),d3
-		andi.b     #0x7F,d3
+		andi.l     #0x7F,d3
 		moveq.l    #0,d2
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 
 
@@ -2072,7 +2514,9 @@ joystick:
  * Syntax: sys cmds
  */
 sys_cmds:
-		tst.w      d0
+		move.l     (a7)+,returnpc
+		/* tst.w      d0 */
+		dc.w 0xb07c,0 /* XXX */
 		bne        syntax
 		movem.l    d1-d7/a0-a6,-(a7)
 		lea.l      helpmsgs(pc),a0
@@ -2088,9 +2532,10 @@ sys_cmds2:
 		bne.s      sys_cmds2
 sys_cmds3:
 		movem.l    a0-a6,-(a7)
-		move.w     #7,-(a7) /* Crawcin */
+		move.w     #255,-(a7)
+		move.w     #6,-(a7) /* Crawio */
 		trap       #1
-		addq.l     #2,a7
+		addq.l     #4,a7
 		bclr       #5,d0
 		movem.l    (a7)+,a0-a6
 		tst.l      d0
@@ -2101,7 +2546,8 @@ sys_cmds3:
 		bne.s      sys_cmds3
 sys_cmds4:
 		movem.l    (a7)+,d1-d7/a0-a6
-		rts
+		movea.l    returnpc(pc),a0
+		jmp        (a0)
 
 	.data
 
@@ -2754,13 +3200,18 @@ helpmsgs:
 		dc.b 13,10
 		dc.b '--------------------------------------------------------------------------',13,10
 		dc.b 13,10
-		dc.b 'End of command reference... Press N to exit.',13,10,0
+		dc.b 'End of command reference... Press N to exit.',13,10
 		dc.b 0
 		.even
+		dc.w 0
+		dc.w 0
 
 	.bss
 
-spritelib_ok: ds.w 1
+spritelib_ok: ds.w 1 /* 18a36 */
+rgbpalette: ds.l 256 /* 18a38 */
 
-finprg:
+finprg: /* 18e38 */
 	ds.l 1
+
+ZERO = 0

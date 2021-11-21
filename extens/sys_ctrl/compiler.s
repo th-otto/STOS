@@ -174,27 +174,27 @@ l016:	.dc.b I,I,1,1,0           ; paddle y(P)
 l017:	.dc.b 0,1,1,0             ; _cpucache on
 l018:	.dc.b I,1,1,0             ; _cpucache stat
 l019:	.dc.b 0,1,1,0             ; _cpucache off
-l020:	.dc.b I,I,1,1,0           ; lpen x BUG: has no parameters
+l020:	.dc.b I,1,1,0             ; lpen x
 l021:	.dc.b 0,1,1,0             ; ide on
-l022:	.dc.b I,I,1,1,0           ; lpen y BUG: has no parameters
+l022:	.dc.b I,1,1,0             ; lpen y
 l023:	.dc.b 0,1,1,0             ; ide off
 l024:	.dc.b I,1,1,0             ; _nemesis
 l025:	.dc.b 0,I,1,1,0           ; _set printer X
 l026:	.dc.b I,1,1,0             ; _printer ready
-l027:	.dc.b 0,S,',',I,1,0       ; file attr FNAME$,ATTR BUG end marker wrong
+l027:	.dc.b 0,S,',',I,1,1,0     ; file attr FNAME$,ATTR
 l028:	.dc.b I,1,1,0             ; kbshift
-l029:	.dc.b 0,S,',',I,1,0       ; code$ A$,N BUG end marker wrong
+l029:	.dc.b 0,S,',',I,1,1,0     ; code$ A$,N
 l030:	.dc.b I,1,1,0             ; _aes in
 l031:	.dc.b 0,S,',',I,1,0       ; uncode$ A$,N
 l032:	.dc.b I,S,1,1,0           ; file exist(F$)
 l033:	.dc.b 0,1,1,0
-l034:	.dc.b I,I,',',I,',',I,',',I,1,0   ; _add cbound(A,I,L,U) BUG end marker wrong
+l034:	.dc.b I,I,',',I,',',I,',',I,1,1,0   ; _add cbound(A,I,L,U)
 l035:	.dc.b 0,S,',',S,1,1,0     ; lset$ A$,B$
-l036:	.dc.b I,I,',',I,',',I,',',I,1,0   ; _sub cbound(A,I,L,U) BUG end marker wrong
+l036:	.dc.b I,I,',',I,',',I,',',I,1,1,0   ; _sub cbound(A,I,L,U)
 l037:	.dc.b 0,S,',',S,1,1,0     ; rset$ A$,B$
-l038:	.dc.b I,I,',',I,',',I,1,0  ; _add ubound(A,I,U) BUG end marker wrong
+l038:	.dc.b I,I,',',I,',',I,1,1,0  ; _add ubound(A,I,U)
 l039:	.dc.b 0,1,1,0             ; st mouse on
-l040:	.dc.b I,I,',',I,',',I,1,0  ; _sub lbound(A,I,L) BUG end marker wrong
+l040:	.dc.b I,I,',',I,',',I,1,1,0  ; _sub lbound(A,I,L)
 l041:	.dc.b 0,1,1,0             ; st mouse off
 l042:	.dc.b I,I,1,1,0           ; odd(A)
 l043:	.dc.b 0,I,1               ; st mouse colour COL_INDEX
@@ -223,12 +223,6 @@ l062:	.dc.b I,I,1,1,0           ; _joystick(PORT)
 		.even
 
 entry:  bra.w init
-
-install_joyvec_offset: dc.l install_joyvec-entry /* 10266 */
-get_joyfire_offset: dc.l get_joyfire-entry /* 102c4 */
-restore_joyvec_offset: dc.l restore_joyvec-entry /* 102dc */
-get_joybutton_offset: dc.l get_joybutton-entry /* 10312 */
-
 
 install_joyvec:
 		movem.l    a0-a6,-(a7)
@@ -265,24 +259,21 @@ kbdvbase: ds.l 1
 joybuf: ds.b 2
 
 get_joyfire:
-		move.l     d3,d0
 		lea.l      joybuf(pc),a0
 		move.b     0(a0,d0.w),d3
-		andi.l     #0x80,d3
-		tst.l      d3
+		andi.b     #0x80,d3
 		beq.s      get_joyfire1
 		moveq.l    #-1,d3
 get_joyfire1:
 		rts
 
 restore_joyvec:
-		movem.l    a0-a6,-(a7)
+		movem.l    d0-d1/a0-a1,-(a7)
 		lea.l      kbdvbase(pc),a0
-		/* tst.l     (a0) */
-		dc.w 0x0c90,0,0 /* XXX */
+		move.l     (a0),d0
 		beq.s      joysticks_off2
-		movea.l    (a0),a1
-		move.l     #0,(a0) /* XXX */
+		movea.l    d0,a1
+		clr.l      (a0)
 		move.l     oldjoyvec(pc),24(a1)
 		lea.l      ($FFFFFC00).w,a1
 joysticks_off1:
@@ -291,126 +282,75 @@ joysticks_off1:
 		beq.s      joysticks_off1
 		move.b     #8,2(a1) ; restore to normal mouse reporting
 joysticks_off2:
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,d0-d1/a0-a1
 		rts
 
 
 get_joybutton:
-		move.l     d3,d0
 		lea.l      joybuf(pc),a0
 		move.b     0(a0,d0.w),d3
-		andi.l     #0x7F,d3
+		andi.b     #0x7F,d3
 		rts
 
 
 mch_cookie: ds.l 1
 cpu_cookie: ds.l 1
-vdo_cookie: ds.l 1
-snd_cookie: ds.l 1
-nemesis_cookie: ds.l 2
-cookieid: ds.l 1
-cookievalue: ds.l 1
-falcon_mode: ds.w 1
+nemesis_cookie:
+	ds.l 1 ; current value
+	ds.l 1 ; original value
 
+getjar:
+		move.l     0x000005A0,d0
+		rts
 getcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      cookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      cookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
+		pea        getjar(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
 		tst.l      d0
 		beq.s      getcookie3
 		movea.l    d0,a0
-		moveq      #0,d4
 getcookie1:
-		move.l     (a0)+,d0
 		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
 		beq.s      getcookie3
-		cmp.l      d3,d0
-		beq.s      getcookie2
-		addq.w     #1,d4
-		bra.s      getcookie1
-getcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      getcookie3
-		move.l     d1,(a5)
+		move.l     (a0)+,d0
+		cmp.l      d3,d1
+		bne.s      getcookie1
+		tst.l      d0
+		rts
 getcookie3:
+		moveq      #0,d0
 		rts
 
 
 init:
 		movem.l    d0-d7/a0-a6,-(a7)
+		move.l     #0x5F4D4348,d3 /* '_MCH' */
+		bsr        getcookie
 		lea.l      mch_cookie(pc),a0
-		clr.l      (a0)+
-		clr.l      (a0)+
-		clr.l      (a0)+
-		move.l     #1,(a0)+
-		lea.l      cookieid(pc),a1
-		move.l     #0x5F4D4348,(a1)
-		bsr.s      getcookie
-		tst.l      d0
-		beq.s      cold1
-		lea.l      cookievalue(pc),a1
-		lea.l      mch_cookie(pc),a0
-		move.l     (a1),(a0)
-cold1:
-		lea.l      cookieid(pc),a1
-		move.l     #0x5F435055,(a1)
-		bsr.s      getcookie
-		tst.l      d0
-		beq.s      cold2
-		lea.l      cookievalue(pc),a1
+		move.l     d0,(a0)
+		move.l     #0x5F435055,d3 /* '_CPU' */
+		bsr        getcookie
 		lea.l      cpu_cookie(pc),a0
-		move.l     (a1),(a0)
-cold2:
-		lea.l      cookieid(pc),a1
-		move.l     #0x5F56444F,(a1)
+		move.l     d0,(a0)
+		move.l     #COOK_NEMESIS,d3
 		bsr        getcookie
-		tst.l      d0
-		beq.s      cold3
-		lea.l      cookievalue(pc),a1
-		lea.l      vdo_cookie(pc),a0
-		move.l     (a1),(a0)
-cold3:
-		lea.l      cookieid(pc),a1
-		move.l     #COOK_NEMESIS,(a1)
-		bsr        getcookie
-		tst.l      d0
-		beq.s      cold5
-		lea.l      cookievalue(pc),a1
 		lea.l      nemesis_cookie(pc),a0
-		move.l     #-1,(a0)
-		move.l     (a1),4(a0)
-cold5:
-
-
-		move.w     vdo_cookie(pc),d6 /* WTF? */
-		cmpi.w     #3,d6
-		bra.s      warm1 /* WTF? */
-		move.w     #-1,-(a7)
-		move.w     #88,-(a7) /* VsetMode */
-		trap       #14
-		addq.l     #4,a7
-		lea.l      falcon_mode(pc),a0
-		move.w     d0,(a0)
-warm1:
+		move.l     d0,(a0)+
+		move.l     d0,(a0)
 		movem.l    (a7)+,d0-d7/a0-a6
 		lea exit(pc),a2
 		rts
 
 exit:
-		/* BUG: joyvec bot restored */
 		movem.l    d0-d7/a0-a6,-(a7)
+		bsr        restore_joyvec
 		move.w     #0x00C9,d0
 		trap       #2
 		cmpi.w     #0x00C9,d0
 		beq.s      exit1
-		lea.l      mch_cookie(pc),a0
-		cmpi.w     #3,(a0)
+		move.w     mch_cookie(pc),d0
+		subq.w     #3,d0
 		bne.s      exit1
 		pea.l      dowarm(pc)
 		move.w     #38,-(a7)
@@ -423,10 +363,9 @@ exit1:
 
 dowarm:
 		lea.l      nemesis_cookie(pc),a0
-		tst.l      (a0)
+		tst.l      4(a0)
 		beq        warm_reset
-		/* tst.l      4(a0) */
-		dc.w 0x0ca8,0,0,4 /* XXX */
+		tst.l      (a0)
 		beq.s      warm_16mhz
 		cmpi.l     #1,4(a0)
 		beq.s      warm_20mhz
@@ -441,18 +380,8 @@ warm_16mhz:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-warm_16mhz1:
-		move.l     (a0),d1
-		beq.s      warm_16mhz3
-		cmp.l      d0,d1
-		beq.s      warm_16mhz2
-		addq.l     #8,a0
-		bra.s      warm_16mhz1
-warm_16mhz2:
-		move.l     #0,4(a0)
-warm_16mhz3:
+		moveq      #0,d0
+		bsr        set_nemesis_cookie
 		bra        warm_reset
 
 warm_20mhz:
@@ -462,27 +391,11 @@ warm_20mhz:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0xD6,(a0)
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-warm_20mhz1:
-		move.l     (a0),d1
-		beq.s      warm_20mhz3
-		cmp.l      d0,d1
-		beq.s      warm_20mhz2
-		addq.l     #8,a0
-		bra.s      warm_20mhz1
-warm_20mhz2:
-		move.l     #1,4(a0)
-warm_20mhz3:
-		bset       #0,(0xFFFF8007).w
-		bclr       #2,(0xFFFF8007).w
-		move.l     #0x00000A0A,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-		move.l     #0x00003919,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-		move.l     #0x00003111,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-		rts
+		moveq      #1,d0
+		bsr        set_nemesis_cookie
+		bset       #0,(0xFFFF8007).w ; CPU 16Mhz
+		bclr       #2,(0xFFFF8007).w ; blitter 8Mhz
+		bra        enable_cache
 
 warm_24mhz:
 		lea.l      (0xFFFFFC04).w,a0
@@ -491,42 +404,50 @@ warm_24mhz:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0xD6,(a0)
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-warm_24mhz1:
-		move.l     (a0),d1
-		beq.s      warm_24mhz3
-		cmp.l      d0,d1
-		beq.s      warm_24mhz2
-		addq.l     #8,a0
-		bra.s      warm_24mhz1
-warm_24mhz2:
-		move.l     #2,4(a0)
-warm_24mhz3:
-		bset       #0,(0xFFFF8007).w
-		bclr       #2,(0xFFFF8007).w
-		move.l     #0x00000A0A,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-		move.l     #0x00003919,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-		move.l     #0x00003111,d0
-		dc.w 0x4e7b,2 /* movec      d0,cacr */
-		rts
+		moveq      #2,d0
+		bsr        set_nemesis_cookie
+		bset       #0,(0xFFFF8007).w ; CPU 16Mhz
+		bclr       #2,(0xFFFF8007).w ; blitter 8Mhz
+		bra        enable_cache
 
 warm_reset:
 		movea.l    #0xFFFF8007,a0
 		moveq.l    #0,d0
-		bset       #0,d0
-		bset       #2,d0
-		bset       #5,d0
+		bset       #0,d0 ; CPU 16Mhz
+		bset       #2,d0 ; blitter 16Mhz
+		bset       #5,d0 ; STe bus emulation off
 		move.b     d0,(a0)
+enable_cache:
+		move.l     cpu_cookie(pc),d0
+		cmp.w      #30,d0
+		bne.s      warm_reset1
 		move.l     #0x00000A0A,d0
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
 		move.l     #0x00003919,d0
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
 		move.l     #0x00003111,d0
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
+warm_reset1:
 		rts
+
+set_nemesis_cookie:
+		movea.l    0x000005A0,a0
+		move.l     #COOK_NEMESIS,d2
+set_nemesis_cookie1:
+		move.l     (a0)+,d1
+		beq.s      set_nemesis_cookie3
+		cmp.l      d2,d1
+		beq.s      set_nemesis_cookie2
+		addq.l     #4,a0
+		bra.s      set_nemesis_cookie1
+set_nemesis_cookie2:
+		move.l     d0,(a0)
+		lea        nemesis_cookie(pc),a0
+		move.l     d0,(a0)
+		tst.l      d2
+set_nemesis_cookie3:
+		rts
+
 
 /*
  * Syntax: coldboot
@@ -537,14 +458,10 @@ coldboot:
 		pea.l      docoldboot(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
-		addq.l     #6,a7
-		rts
 docoldboot:
-		clr.l      0x00000420.l ; clear memvalid flag /* XXX */
-		lea.l      0x00000004,a0 /* XXX */
-		movea.l    (a0),a0
+		clr.l      0x00000420 ; clear memvalid flag
+		movea.l    4.w,a0
 		jmp        (a0)
-		rts /* FIXME */
 
 /*
  * Syntax: P_COOKIE=cookieptr
@@ -552,12 +469,15 @@ docoldboot:
 lib2:
 	dc.w	0			; no library calls
 cookieptr:
-		movem.l    a0-a6,-(a7)
-		movea.l    #0x000005A0,a0
-		move.l     (a0),d3
-		movem.l    (a7)+,a0-a6
+		pea        cgetjar(pc)
+		move.w     #38,-(a7) /* Supexec */
+		trap       #14
+		addq.l     #6,a7
 		moveq      #0,d2
-		move.l     d3,-(a6)
+		move.l     d0,-(a6)
+		rts
+cgetjar:
+		move.l     0x000005A0,d0
 		rts
 
 /*
@@ -569,13 +489,9 @@ warmboot:
 		pea.l      dowarmboot(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
-		addq.l     #6,a7
-		rts
 dowarmboot:
-		lea.l      0x00000004,a0 /* XXX */
-		movea.l    (a0),a0
+		movea.l    4.w,a0
 		jmp        (a0)
-		rts /* FIXME */
 
 /*
  * Syntax: COOKIE_VAL=cookie(ID$)
@@ -584,75 +500,33 @@ lib4:
 	dc.w	0			; no library calls
 cookie:
 		move.l     (a6)+,a2
-		cmpi.w     #4,(a2)
-		beq.s      cookie0
-		moveq      #0,d3
-		moveq      #0,d2
-		move.l     d3,-(a6)
-		rts
-cookie0:
-		movem.l    a0-a6,-(a7)
-		move.w     (a2),d3
-		addq.l     #2,a2
-		lea.l      ccookieid(pc),a1
-		subq.w     #1,d3
-cookie1:
-		move.b     (a2)+,(a1)+
-		dbf        d3,cookie1
-		pea.l      cgetcookie(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
-		tst.l      d0
-		beq.s      cookie2
-		lea.l      ccookievalue(pc),a1
-		move.l     (a1),d3
-		bra.s      cookie3
-cookie2:
-		move.l     d0,d3
-cookie3:
-		lea.l      ccookieid(pc),a1
-		cmpi.l     #0x5F435055,(a1) /* '_CPU' */
+		moveq      #0,d0
+		move.w     (a2)+,d3
+		subq.w     #4,d3
 		bne.s      cookie4
-		andi.l     #255,d3 /* WTF */
-		addi.l     #68000,d3
+		movem.l    a0-a5,-(a7)
+		subq.l     #4,a7
+		move.l     a7,a0
+		move.b     (a2)+,(a0)+
+		move.b     (a2)+,(a0)+
+		move.b     (a2)+,(a0)+
+		move.b     (a2)+,(a0)+
+		move.l     (a7)+,d3
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		lea        getcookie-entry(a0),a0
+		jsr        (a0)
+		movem.l    (a7)+,a0-a5
+cookie3:
+		cmpi.l     #0x5F435055,d3 /* '_CPU' */
+		bne.s      cookie4
+		andi.l     #255,d0
+		addi.l     #68000,d0
 cookie4:
 		moveq      #0,d2
-		move.l     d3,-(a6)
+		move.l     d0,-(a6)
 		rts
 
-cgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      ccookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      ccookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      cgetcookie3
-		movea.l    d0,a0
-		moveq      #0,d4
-cgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      cgetcookie3
-		cmp.l      d3,d0
-		beq.s      cgetcookie2
-		addq.w     #1,d4
-		bra.s      cgetcookie1
-cgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      cgetcookie3
-		move.l     d1,(a5)
-cgetcookie3:
-		rts
-
-ccookieid: ds.l 1
-ccookievalue: ds.l 1
 
 /*
  * Syntax: caps on
@@ -660,59 +534,53 @@ ccookievalue: ds.l 1
 lib5:
 	dc.w	0			; no library calls
 caps_on:
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a2,-(a7)
 		move.w     #16,-(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
 		rts
 
 /*
  * Syntax: A$=_tos$
  */
 lib6:
-	dc.w lib6_1-lib6
 	dc.w	0
 tosstr:
-		movem.l    a2-a6,-(a7)
+		movem.l    a2-a5,-(a7)
 		pea.l      get_tosvers(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 		moveq.l    #5,d3
-lib6_1:	jsr        L_malloc.l
+		lea        tosverstr(pc),a0
+		move.l     a0,a1
 		move.w     d3,(a0)+
-		lea.l      tosver(pc),a2
-		move.w     (a2),d0
-		andi.l     #0x0FFF,d0
+		andi.w     #0x0FFF,d0
 		move.l     d0,d2
-		move.b     #' ',(a0)
-		ror.w      #8,d0
+		move.b     #' ',(a0)+
+		lsr.w      #8,d0
 		addi.b     #'0',d0
-		move.b     d0,1(a0)
-		move.b     #'.',2(a0)
+		move.b     d0,(a0)+
+		move.b     #'.',(a0)+
 		move.w     d2,d0
-		andi.l     #0xF0,d0
-		ror.w      #4,d0
+		andi.w     #0xF0,d0
+		lsr.w      #4,d0
 		addi.b     #'0',d0
-		move.b     d0,3(a0)
-		andi.l     #15,d2
+		move.b     d0,(a0)+
+		andi.w     #15,d2
 		addi.b     #'0',d2
-		move.b     d2,4(a0)
-		movem.l    (a7)+,a2-a6
+		move.b     d2,(a0)+
+		movem.l    (a7)+,a2-a5
 		move.l     a1,-(a6)
 		rts
 get_tosvers:
-		movea.l    #0x000004F2,a0
-		movea.l    (a0),a0
+		movea.l    0x000004F2,a0
 		move.w     2(a0),d0
-		andi.l     #0x00000FFF,d0 /* WTF */
-		lea.l      tosver(pc),a0
-		move.w     d0,(a0)
 		rts
 
-tosver: ds.w 1
+tosverstr: ds.b 8
 
 /*
  * Syntax: caps off
@@ -720,12 +588,12 @@ tosver: ds.w 1
 lib7:
 	dc.w	0			; no library calls
 caps_off:
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a2,-(a7)
 		move.w     #0,-(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
 		rts
 
 /*
@@ -734,23 +602,16 @@ caps_off:
 lib8:
 	dc.w	0			; no library calls
 phystop:
-		movem.l    a0-a6,-(a7)
 		pea.l      get_phystop(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		lea.l      phystop_val(pc),a1
-		move.l     (a1),d3
 		clr.l      d2
-		movem.l    (a7)+,a0-a6
-		move.l     d3,-(a6)
+		move.l     d0,-(a6)
 		rts
 get_phystop:
-		lea.l      0x0000042E,a0 /* XXX */
-		lea.l      phystop_val(pc),a1
-		move.l     (a0),(a1)
+		move.l     0x0000042E,d0
 		rts
-phystop_val: ds.l 1
 
 /*
  * Syntax: _cpuspeed N
@@ -759,33 +620,16 @@ lib9:
 	dc.w	0			; no library calls
 cpuspeed:
 		move.l     (a6)+,d3
-		lea.l      cpu_setspeed(pc),a0
-		move.l     d3,(a0)
-		movem.l    d1-d7/a1-a6,-(a7)
-		lea.l      pcookieid(pc),a1
-		move.l     #0x5F4D4348,(a1) /* '_MCH' */
-		pea.l      pgetcookie(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a1-a6
-		lea        pcookievalue(pc),a1
-		tst.l      d0
-		beq.s      cpuspeed0
-		move.w     (a1),d0
-		cmpi.w     #3,d0
-		bne.s      cpuspeed0
-		movem.l    d1-d7/a1-a6,-(a7)
-		lea.l      pcookieid(pc),a1
-		move.l     #COOK_NEMESIS,(a1)
-		pea.l      pgetcookie(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a1-a6
-		tst.l      d0
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
+		bne.s      cpuspeed6
+		lea        set_nemesis_cookie-entry(a3),a0
+		lea        set_nemesis_ptr(pc),a1
+		move.l     a0,(a1)
+		move.l     nemesis_cookie+4-entry(a3),d0
 		beq.s      cpuspeed1
-		move.l     cpu_setspeed(pc),d3
 		cmpi.l     #8,d3
 		beq.s      cpuspeed2
 		cmpi.l     #16,d3
@@ -794,61 +638,44 @@ cpuspeed:
 		beq.s      cpuspeed4
 		cmpi.l     #24,d3
 		beq.s      cpuspeed5
-cpuspeed0:
 		rts
 cpuspeed1:
-		move.l     cpu_setspeed(pc),d3
 		cmpi.l     #8,d3
 		beq.s      cpuspeed2
 		cmpi.l     #16,d3
 		beq.s      cpuspeed3
 		rts
 cpuspeed2:
-		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set8(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
 		rts
 cpuspeed3:
-		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set16(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
 		rts
 cpuspeed4:
-		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set20(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
 		rts
 cpuspeed5:
-		movem.l    a0-a6,-(a7)
 		pea.l      cpuspeed_set24(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
 cpuspeed6:
 		rts
 
 cpuspeed_set8:
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-cpuspeed_set8_1:
-		move.l     (a0),d1
-		beq.s      cpuspeed_set8_3
-		cmp.l      d0,d1
-		beq.s      cpuspeed_set8_2
-		addq.l     #8,a0
-		bra.s      cpuspeed_set8_1
-cpuspeed_set8_2:
-		move.l     #0,4(a0)
+		moveq      #0,d0
+		move.l     set_nemesis_ptr(pc),a0
+		jsr        (a0)
+		beq        cpuspeed_set8_3
 		lea.l      (0xFFFFFC04).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0x95,(a0)
@@ -856,22 +683,14 @@ cpuspeed_set8_2:
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
 cpuspeed_set8_3:
-		movea.l    #0xFFFF8007,a0
-		bclr       #0,(a0)
+		bclr       #0,0xFFFF8007 ; CPU 8Mhz
 		rts
 
 cpuspeed_set16:
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-cpuspeed_set16_1:
-		move.l     (a0),d1
-		beq.s      cpuspeed_set16_3
-		cmp.l      d0,d1
-		beq.s      cpuspeed_set16_2
-		addq.l     #8,a0
-		bra.s      cpuspeed_set16_1
-cpuspeed_set16_2:
-		move.l     #0,4(a0)
+		moveq      #0,d0
+		move.l     set_nemesis_ptr(pc),a0
+		jsr        (a0)
+		beq        cpuspeed_set16_3
 		lea.l      (0xFFFFFC04).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0x95,(a0)
@@ -879,8 +698,7 @@ cpuspeed_set16_2:
 		move.b     #0x03,(a0)
 		move.b     #0x96,(a0)
 cpuspeed_set16_3:
-		movea.l    #0xFFFF8007,a0
-		bset       #0,(a0)
+		bset       #0,0xFFFF8007 ; CPU 16Mhz
 		rts
 
 cpuspeed_set20:
@@ -890,20 +708,11 @@ cpuspeed_set20:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0xD6,(a0)
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-cpuspeed_set20_1:
-		move.l     (a0),d1
-		beq.s      cpuspeed_set20_3
-		cmp.l      d0,d1
-		beq.s      cpuspeed_set20_2
-		addq.l     #8,a0
-		bra.s      cpuspeed_set20_1
-cpuspeed_set20_2:
-		move.l     #1,4(a0)
-cpuspeed_set20_3:
-		bset       #0,(0xFFFF8007).w
-		bclr       #2,(0xFFFF8007).w
+		moveq      #1,d0
+		move.l     set_nemesis_ptr(pc),a0
+		jsr        (a0)
+		bset       #0,(0xFFFF8007).w ; CPU 16Mhz
+		bclr       #2,(0xFFFF8007).w ; blitter 8Mhz
 		rts
 
 cpuspeed_set24:
@@ -913,56 +722,15 @@ cpuspeed_set24:
 		lea.l      (0xFFFFFC00).w,a0
 		move.b     #0x03,(a0)
 		move.b     #0xD6,(a0)
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-cpuspeed_set24_1:
-		move.l     (a0),d1
-		beq.s      cpuspeed_set24_3
-		cmp.l      d0,d1
-		beq.s      cpuspeed_set24_2
-		addq.l     #8,a0
-		bra.s      cpuspeed_set24_1
-cpuspeed_set24_2:
-		move.l     #2,4(a0)
-cpuspeed_set24_3:
-		bset       #0,(0xFFFF8007).w
-		bclr       #2,(0xFFFF8007).w
+		moveq      #2,d0
+		move.l     set_nemesis_ptr(pc),a0
+		jsr        (a0)
+		bset       #0,(0xFFFF8007).w ; CPU 16Mhz
+		bclr       #2,(0xFFFF8007).w ; blitter 8Mhz
 		rts
 
-pgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      pcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      pcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      pgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-pgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      pgetcookie3
-		cmp.l      d3,d0
-		beq.s      pgetcookie2
-		addq.w     #1,d4
-		bra.s      pgetcookie1
-pgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      pgetcookie3
-		move.l     d1,(a5)
-pgetcookie3:
-		rts
+set_nemesis_ptr: ds.l 1
 
-pcookieid: ds.l 1
-pcookievalue: ds.l 1
-
-cpu_setspeed: ds.l 1
-	ds.l 1 /* unused */
 
 /*
  * Syntax: X=_memtop
@@ -970,25 +738,17 @@ cpu_setspeed: ds.l 1
 lib10:
 	dc.w	0			; no library calls
 memtop:
-		movem.l    a0-a6,-(a7)
 		pea.l      get_memtop(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		lea.l      memtop_val(pc),a1
-		move.l     (a1),d3
 		clr.l      d2
-		movem.l    (a7)+,a0-a6
-		move.l     d3,-(a6)
+		move.l     d0,-(a6)
 		rts
 
 get_memtop:
-		lea.l      0x00000436,a0 /* XXX */
-		lea.l      memtop_val(pc),a1
-		move.l     (a0),(a1)
+		move.l     0x00000436,d0
 		rts
-
-memtop_val: ds.l 1
 
 /*
  * Syntax: _blitterspeed N
@@ -997,122 +757,41 @@ lib11:
 	dc.w	0			; no library calls
 blitterspeed:
 		move.l     (a6)+,d3
-		lea.l      blitter_setspeed(pc),a0
-		move.l     d3,(a0)
-		movem.l    d1-d7/a1-a6,-(a7)
-		lea.l      bcookieid(pc),a1
-		move.l     #0x5F4D4348,(a1) /* '_MCH' */
-		pea.l      bgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a1-a6
-		lea.l      bcookievalue(pc),a1
-		tst.l      d0
-		beq.s      blitterspeed0
-		move.w     (a1),d0
-		cmpi.w     #3,d0
-		bne.s      blitterspeed0
-		movem.l    d0-d7/a1-a5,-(a7)
-		pea.l      get_nemesis(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d0-d7/a1-a5
-		lea.l      bcookievalue(pc),a0
-		move.l     (a0),d7
-		tst.l      d7
-		beq.s      blitterspeed1
-		bra.s      blitterspeed2 /* BUG: should do nothing, but sets 8Mhz */
-blitterspeed0:
-		rts
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
+		bne.s      blitterspeed4
+		move.l     nemesis_cookie+4-entry(a3),d0
+		bne.s      blitterspeed2
 blitterspeed1:
-		move.l     blitter_setspeed(pc),d3
-		cmpi.l     #8,d3
-		beq.s      blitterspeed2
 		cmpi.l     #16,d3
 		beq.s      blitterspeed3
-		rts
+		cmpi.l     #8,d3
+		bne.s      blitterspeed4
 blitterspeed2:
-		movem.l    a0-a6,-(a7)
 		pea.l      blitter_set8(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
 		rts
 blitterspeed3:
-		movem.l    a0-a6,-(a7)
 		pea.l      blitter_set16(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		movem.l    (a7)+,a0-a6
 blitterspeed4:
 		rts
 
 blitter_set8:
-		movea.l    #0xFFFF8007,a0
-		bclr       #2,(a0)
+		bclr       #2,0xFFFF8007 ; blitter 8Mhz
 		rts
 
 blitter_set16:
-		movea.l    #0xFFFF8007,a0
-		bset       #2,(a0)
+		bset       #2,0xFFFF8007 ; blitter 16Mhz
 		rts
 
-bgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      bcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      bcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      bgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-bgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      bgetcookie3
-		cmp.l      d3,d0
-		beq.s      bgetcookie2
-		addq.w     #1,d4
-		bra.s      bgetcookie1
-bgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      bgetcookie3
-		move.l     d1,(a5)
-bgetcookie3:
-		rts
 
-bcookieid: ds.l 1
-bcookievalue: ds.l 1
-
-blitter_setspeed: ds.l 1
-
-get_nemesis:
-		movea.l    0x000005A0.l,a0 /* XXX */
-		move.l     #COOK_NEMESIS,d0
-get_nemesis1:
-		move.l     (a0),d1
-		beq.s      get_nemesis3
-		cmp.l      d0,d1
-		beq.s      get_nemesis2
-		addq.l     #8,a0
-		bra.s      get_nemesis1
-get_nemesis2:
-		lea.l      bcookievalue(pc),a1
-		move.l     4(a0),(a1)
-		rts
-get_nemesis3:
-		lea.l      bcookievalue(pc),a1
-		move.l     #0,(a1)
-		rts
 
 /*
  * Syntax: B=_busmode
@@ -1120,19 +799,12 @@ get_nemesis3:
 lib12:
 	dc.w	0			; no library calls
 busmode:
-		movem.l    d0-d2/d4-d7/a0-a6,-(a7)
-		lea.l      mcookieid(pc),a1
-		move.l     #0x5F4D4348,(a1) /* '_MCH' */
-		pea.l      mgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		moveq.l    #0,d3
-		lea.l      mcookievalue(pc),a1
-		tst.l      d0
-		beq.s      busmode1
-		move.w     (a1),d0
-		cmpi.w     #3,d0
+		movem.l    d1-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		moveq      #0,d3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
 		bne.s      busmode1
 		pea.l      get_busmode(pc)
 		move.w     #38,-(a7) /* Supexec */
@@ -1140,48 +812,15 @@ busmode:
 		addq.l     #6,a7
 		move.l     d0,d3
 busmode1:
-		movem.l    (a7)+,d0-d2/d4-d7/a0-a6
+		movem.l    (a7)+,d1-d2/a0-a3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 
 get_busmode:
-		movea.l    #0xFFFF8007,a0
-		move.b     (a0),d0
-		andi.l     #0x0000FFFF,d0 /* FIXME; useless */
+		moveq      #0,d0
+		move.b     0xFFFF8007,d0
 		rts
-
-mgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      mcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      mcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      mgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-mgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      mgetcookie3
-		cmp.l      d3,d0
-		beq.s      mgetcookie2
-		addq.w     #1,d4
-		bra.s      mgetcookie1
-mgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      mgetcookie3
-		move.l     d1,(a5)
-mgetcookie3:
-		rts
-
-mcookieid: ds.l 1
-mcookievalue: ds.l 1
 
 /*
  * Syntax: _stebus
@@ -1189,63 +828,23 @@ mcookievalue: ds.l 1
 lib13:
 	dc.w	0			; no library calls
 stebus:
-		movem.l    d0-d7/a0-a6,-(a7)
-		lea.l      scookieid(pc),a1
-		move.l     #0x5F4D4348,(a1)
-		pea.l      sgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		moveq.l    #0,d3
-		lea.l      scookievalue(pc),a1
-		tst.l      d0
-		beq.s      stebus1
-		move.w     (a1),d0
-		cmpi.w     #3,d0
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
 		bne.s      stebus1
 		pea.l      stebus_on(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 stebus1:
-		movem.l    (a7)+,d0-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		rts
 stebus_on:
-		movea.l    #0xFFFF8007,a0
-		bclr       #5,(a0)
+		bclr       #5,0xFFFF8007 ; STe bus emulation on
 		rts
 
-sgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      scookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      scookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      sgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-sgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      sgetcookie3
-		cmp.l      d3,d0
-		beq.s      sgetcookie2
-		addq.w     #1,d4
-		bra.s      sgetcookie1
-sgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      sgetcookie3
-		move.l     d1,(a5)
-sgetcookie3:
-		rts
-
-scookieid: ds.l 1
-scookievalue: ds.l 1
 
 /*
  * Syntax: X=paddle x(P)
@@ -1253,74 +852,28 @@ scookievalue: ds.l 1
 lib14:
 	dc.w	0			; no library calls
 paddle_x:
-		move.l     (a6)+,d3
-		andi.l     #0x0000007F,d3 /* FIXME useless */
-		movem.l    d0-d2/d4-d7/a0-a6,-(a7)
-		lea.l      paddlex_port(pc),a0
-		move.w     d3,(a0)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      pxgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		moveq.l    #0,d3
-		lea.l      pxcookievalue(pc),a1
-		tst.l      d0
-		beq.s      paddle_x2
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.l     (a6)+,d1
+		moveq      #0,d3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      paddle_x1
-		cmpi.w     #3,d6
+		subq.w     #2,d0
 		bne.s      paddle_x2
 paddle_x1:
-		moveq.l    #0,d3
-		move.w     paddlex_port(pc),d0
-		tst.w      d0
-		bmi.s      paddle_x2
-		cmpi.w     #3,d0
-		bgt.s      paddle_x2
-		asl.w      #2,d0
-		movea.l    #$00FF9210,a0 /* XXX */
-		move.b     1(a0,d0.w),d3
+		cmpi.w     #4,d1
+		bcc.s      paddle_x2
+		asl.w      #2,d1
+		movea.l    #$ffff9210,a0
+		move.b     1(a0,d1.w),d3
 paddle_x2:
-		movem.l    (a7)+,d0-d2/d4-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 
-paddlex_port: ds.w 1
-
-pxgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      pxcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      pxcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      pxgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-pxgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      pxgetcookie3
-		cmp.l      d3,d0
-		beq.s      pxgetcookie2
-		addq.w     #1,d4
-		bra.s      pxgetcookie1
-pxgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      pxgetcookie3
-		move.l     d1,(a5)
-pxgetcookie3:
-		rts
-
-pxcookieid: ds.l 1
-pxcookievalue: ds.l 1
 
 /*
  * Syntax: _falconbus
@@ -1328,63 +881,23 @@ pxcookievalue: ds.l 1
 lib15:
 	dc.w	0			; no library calls
 falconbus:
-		movem.l    d0-d7/a0-a6,-(a7)
-		lea.l      fcookieid(pc),a1
-		move.l     #0x5F4D4348,(a1)
-		pea.l      fgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		moveq.l    #0,d3
-		lea.l      fcookievalue(pc),a1
-		tst.l      d0
-		beq.s      falconbus1
-		move.w     (a1),d0
-		cmpi.w     #3,d0
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
 		bne.s      falconbus1
 		pea.l      stebus_off(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 falconbus1:
-		movem.l    (a7)+,d0-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		rts
 stebus_off:
-		movea.l    #0xFFFF8007,a0
-		bset       #5,(a0)
+		bset       #5,0xFFFF8007 ; STe bus emulation off
 		rts
 
-fgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      fcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      fcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      fgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-fgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      fgetcookie3
-		cmp.l      d3,d0
-		beq.s      fgetcookie2
-		addq.w     #1,d4
-		bra.s      fgetcookie1
-fgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      fgetcookie3
-		move.l     d1,(a5)
-fgetcookie3:
-		rts
-
-fcookieid: ds.l 1
-fcookievalue: ds.l 1
 
 /*
  * Syntax: Y=paddle y(P)
@@ -1392,74 +905,28 @@ fcookievalue: ds.l 1
 lib16:
 	dc.w	0			; no library calls
 paddle_y:
-		move.l     (a6)+,d3
-		andi.l     #0x0000007F,d3 /* FIXME: useless */
-		movem.l    d0-d2/d4-d7/a0-a6,-(a7)
-		lea.l      paddley_port(pc),a0
-		move.w     d3,(a0)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      pygetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		moveq.l    #0,d3
-		lea.l      pycookievalue(pc),a1
-		tst.l      d0
-		beq.s      paddle_y2
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.l     (a6)+,d1
+		moveq      #0,d3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      paddle_y1
-		cmpi.w     #3,d6
+		subq.w     #2,d0
 		bne.s      paddle_y2
 paddle_y1:
-		moveq.l    #0,d3
-		move.w     paddley_port(pc),d0
-		tst.w      d0
-		bmi.s      paddle_y2
-		cmpi.w     #3,d0
-		bgt.s      paddle_y2
-		asl.w      #2,d0
-		movea.l    #$00FF9212,a0 /* XXX */
-		move.b     1(a0,d0.w),d3
+		cmpi.w     #4,d1
+		bcc.s      paddle_y2
+		asl.w      #2,d1
+		movea.l    #$ffff9212,a0
+		move.b     1(a0,d1.w),d3
 paddle_y2:
-		movem.l    (a7)+,d0-d2/d4-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 
-paddley_port: ds.w 1
-
-pygetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      pycookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      pycookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      pygetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-pygetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      pygetcookie3
-		cmp.l      d3,d0
-		beq.s      pygetcookie2
-		addq.w     #1,d4
-		bra.s      pygetcookie1
-pygetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      pygetcookie3
-		move.l     d1,(a5)
-pygetcookie3:
-		rts
-
-pycookieid: ds.l 1
-pycookievalue: ds.l 1
 
 /*
  * Syntax: _cpucache on
@@ -1467,24 +934,18 @@ pycookievalue: ds.l 1
 lib17:
 	dc.w	0			; no library calls
 cpucache_on:
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.l     #0x5F435055,(a1) /* BUG: a1 not set */
-		pea.l      congetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		lea.l      concookievalue(pc),a1
-		tst.l      d0
-		beq.s      cpucache_on1
-		move.l     (a1),d6
-		cmpi.w     #30,d6
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.l     cpu_cookie-entry(a3),d0
+		cmpi.w     #30,d0
 		bne.s      cpucache_on1
 		pea.l      cache_on(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 cpucache_on1:
-		movem.l    (a7)+,d0-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		rts
 cache_on:
 		move.l     #$00000A0A,d0
@@ -1495,107 +956,33 @@ cache_on:
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
 		rts
 
-congetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      concookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      concookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      congetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-congetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      congetcookie3
-		cmp.l      d3,d0
-		beq.s      congetcookie2
-		addq.w     #1,d4
-		bra.s      congetcookie1
-congetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      congetcookie3
-		move.l     d1,(a5)
-congetcookie3:
-		rts
-
-concookieid: ds.l 1
-concookievalue: ds.l 1
-
 /*
  * Syntax: X=_cpucache stat
  */
 lib18:
 	dc.w	0			; no library calls
 cpucache_stat:
-		movem.l    d0-d2/d4-d7/a0-a6,-(a7)
-		move.l     #0x5F435055,(a1) /* BUG: a1 not set */
-		pea.l      csgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
 		moveq.l    #0,d3
-		lea.l      cscookievalue(pc),a1
-		tst.l      d0
-		beq.s      cpucache_stat1
-		move.l     (a1),d6
-		cmpi.w     #30,d6
+		move.l     cpu_cookie-entry(a3),d0
+		cmpi.w     #30,d0
 		bne.s      cpucache_stat1
 		pea.l      cache_get(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
-		lea.l      cache_val(pc),a0
-		move.l     (a0),d3
+		move.l     d0,d3
 cpucache_stat1:
-		movem.l    (a7)+,d0-d2/d4-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 cache_get:
 		dc.w 0x4e7a,2 /* movec      cacr,d0 */
-		lea        cache_val(pc),a0
-		move.l     d0,(a0)
 		rts
 
-cache_val: ds.l 1
-
-csgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      cscookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      cscookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      csgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-csgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      csgetcookie3
-		cmp.l      d3,d0
-		beq.s      csgetcookie2
-		addq.w     #1,d4
-		bra.s      csgetcookie1
-csgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      csgetcookie3
-		move.l     d1,(a5)
-csgetcookie3:
-		rts
-
-cscookieid: ds.l 1
-cscookievalue: ds.l 1
 
 /*
  * Syntax: _cpucache off
@@ -1603,24 +990,18 @@ cscookievalue: ds.l 1
 lib19:
 	dc.w	0			; no library calls
 cpucache_off:
-		movem.l    d0-d7/a0-a6,-(a7)
-		move.l     #0x5F435055,(a1) /* BUG: a1 not set */
-		pea.l      coffgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		lea.l      coffcookievalue(pc),a1
-		tst.l      d0
-		beq.s      cpucache_off1
-		move.l     (a1),d6
-		cmpi.w     #30,d6
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.l     cpu_cookie-entry(a3),d0
+		cmpi.w     #30,d0
 		bne.s      cpucache_off1
 		pea.l      cache_off(pc)
 		move.w     #38,-(a7) /* Supexec */
 		trap       #14
 		addq.l     #6,a7
 cpucache_off1:
-		movem.l    (a7)+,d0-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		rts
 cache_off:
 		move.l     #$00000A0A,d0
@@ -1629,37 +1010,6 @@ cache_off:
 		dc.w 0x4e7b,2 /* movec      d0,cacr */
 		rts
 
-coffgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      coffcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      coffcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      coffgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-coffgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      coffgetcookie3
-		cmp.l      d3,d0
-		beq.s      coffgetcookie2
-		addq.w     #1,d4
-		bra.s      coffgetcookie1
-coffgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      coffgetcookie3
-		move.l     d1,(a5)
-coffgetcookie3:
-		rts
-
-coffcookieid: ds.l 1
-coffcookievalue: ds.l 1
 
 /*
  * Syntax: X=lpen x
@@ -1667,60 +1017,23 @@ coffcookievalue: ds.l 1
 lib20:
 	dc.w	0			; no library calls
 lpen_x:
-		movem.l    d0-d2/d4-d7/a0-a6,-(a7)
-		move.l     #$5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      lxgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
 		moveq.l    #0,d3
-		lea.l      lxcookievalue(pc),a1
-		tst.l      d0
-		beq.s      lpen_x2
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      lpen_x1
-		cmpi.w     #3,d6
+		subq.w     #2,d0
 		bne.s      lpen_x2
 lpen_x1:
-		move.w     $00FF9220,d3 /* XXX */
+		move.w     $ffff9220,d3
 lpen_x2:
-		movem.l    (a7)+,d0-d2/d4-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
 
-lxgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      lxcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      lxcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      lxgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-lxgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      lxgetcookie3
-		cmp.l      d3,d0
-		beq.s      lxgetcookie2
-		addq.w     #1,d4
-		bra.s      lxgetcookie1
-lxgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      lxgetcookie3
-		move.l     d1,(a5)
-lxgetcookie3:
-		rts
-
-lxcookieid: ds.l 1
-lxcookievalue: ds.l 1
 
 /*
  * Syntax: ide on
@@ -1728,17 +1041,18 @@ lxcookievalue: ds.l 1
 lib21:
 	dc.w	0			; no library calls
 ide_on:
-		.IFNE 0 /* BUG: not implemented */
-		move.w     mch_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
+		bne.s      ide_on1
 		move.w     #0x007F,-(a7)
 		move.w     #29,-(a7) /* Offgibit */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
-		.ENDC
+ide_on1:
+		movem.l    (a7)+,a0-a3
 		rts
 
 /*
@@ -1747,60 +1061,22 @@ ide_on:
 lib22:
 	dc.w	0			; no library calls
 lpen_y:
-		movem.l    d0-d2/d4-d7/a0-a6,-(a7)
-		move.l     #$5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      lygetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
+		movem.l    d0-d2/a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
 		moveq.l    #0,d3
-		lea.l      lycookievalue(pc),a1
-		tst.l      d0
-		beq.s      lpen_y2
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      lpen_y1
-		cmpi.w     #3,d6
+		subq.w     #2,d0
 		bne.s      lpen_y2
 lpen_y1:
-		move.w     0x00FF9222,d3 /* XXX */
+		move.w     0xffff9222,d3
 lpen_y2:
-		movem.l    (a7)+,d0-d2/d4-d7/a0-a6
+		movem.l    (a7)+,d0-d2/a0-a3
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
-
-lygetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      lycookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      lycookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      lygetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-lygetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      lygetcookie3
-		cmp.l      d3,d0
-		beq.s      lygetcookie2
-		addq.w     #1,d4
-		bra.s      lygetcookie1
-lygetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      lygetcookie3
-		move.l     d1,(a5)
-lygetcookie3:
-		rts
-
-lycookieid: ds.l 1
-lycookievalue: ds.l 1
 
 /*
  * Syntax: ide off
@@ -1808,17 +1084,18 @@ lycookievalue: ds.l 1
 lib23:
 	dc.w	0			; no library calls
 ide_off:
-		.IFNE 0 /* BUG: not implemented */
-		move.w     mch_cookie(pc),d6
-		cmpi.w     #3,d6
-		bne        illfalconfunc
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #3,d0
+		bne.s      ide_off1
 		move.w     #0x0080,-(a7)
 		move.w     #30,-(a7) /* Ongibit */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
-		.ENDC
+ide_off1:
+		movem.l    (a7)+,a0-a3
 		rts
 
 /*
@@ -1827,55 +1104,17 @@ ide_off:
 lib24:
 	dc.w	0			; no library calls
 nemesis:
-		movem.l    d0-d6/a0-a6,-(a7)
-		lea.l      ncookieid(pc),a1
-		move.l     #COOK_NEMESIS,(a1)
-		pea.l      ngetcookie(pc)
-		move.w     #38,-(a7) /* Supexec */
-		trap       #14
-		addq.l     #6,a7
-		lea.l      ncookievalue(pc),a1
-		moveq.l    #0,d7
-		tst.l      d0
+		move.l     a3,-(a7)
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.l     nemesis_cookie-entry(a3),d3
 		beq.s      nemesis1
-		moveq.l    #-1,d7
+		moveq.l    #-1,d3
 nemesis1:
-		movem.l    (a7)+,d0-d6/a0-a6
+		move.l     (a7)+,a3
 		clr.l      d2
-		move.l     d7,-(a6)
+		move.l     d3,-(a6)
 		rts
-
-ngetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      ncookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      ncookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      ngetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-ngetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      ngetcookie3
-		cmp.l      d3,d0
-		beq.s      ngetcookie2
-		addq.w     #1,d4
-		bra.s      ngetcookie1
-ngetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      ngetcookie3
-		move.l     d1,(a5)
-ngetcookie3:
-		rts
-
-ncookieid: ds.l 1
-ncookievalue: ds.l 1
 
 /*
  * Syntax: _set printer X
@@ -1884,13 +1123,12 @@ lib25:
 	dc.w	0			; no library calls
 set_printer:
 		move.l     (a6)+,d3
-		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a2,-(a7)
 		move.w     d3,-(a7)
 		move.w     #33,-(a7) /* Setprt */
 		trap       #14
 		addq.l     #4,a7
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
 		rts
 
 /*
@@ -1899,15 +1137,14 @@ set_printer:
 lib26:
 	dc.w	0			; no library calls
 printer_ready:
-		movem.l    a0-a6,-(a7)
-		move.w     #0,-(a7)
+		movem.l    a0-a2,-(a7)
+		clr.w      -(a7)
 		move.w     #8,-(a7) /* Bcostat */
 		trap       #13
 		addq.l     #4,a7
 		move.w     d0,d3
-		andi.l     #0x0000FFFF,d3 /* FIXME */
 		ext.l      d3
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -1918,9 +1155,7 @@ printer_ready:
 lib27:
 	dc.w	0			; no library calls
 file_attr:
-		move.l     (a6)+,d3
-		lea.l      file_attrval(pc),a1
-		move.w     d3,(a1)
+		move.l     (a6)+,d1
 		move.l     (a6)+,a2
 		lea.l      file_attrname(pc),a1
 		move.w     #(256/4)-1,d7
@@ -1933,15 +1168,15 @@ file_attr1:
 file_attr2:
 		move.b     (a2)+,(a1)+
 		dbf        d7,file_attr2
-		move.b     #0,(a1)+
-		movem.l    a0-a6,-(a7)
-		move.w     file_attrval(pc),-(a7)
+		clr.b      (a1)+
+		movem.l    a0-a2,-(a7)
+		move.w     d1,-(a7)
 		move.w     #1,-(a7)
 		pea.l      file_attrname(pc)
 		move.w     #67,-(a7) /* Fattrib */
 		trap       #1
 		lea.l      10(a7),a7
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
 		tst.w      d0
 		bmi.s      diskerror
 		rts
@@ -1950,7 +1185,6 @@ diskerror:
 		movea.l    error(a5),a0
 		jmp        (a0)
 
-file_attrval: ds.w 1
 file_attrname: ds.b 256
 
 
@@ -1960,14 +1194,14 @@ file_attrname: ds.b 256
 lib28:
 	dc.w	0			; no library calls
 kbshift:
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a2,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #11,-(a7) /* Kbshift */
 		trap       #13
 		addq.l     #4,a7
-		andi.l     #0x000000FF,d0
+		moveq      #0,d3
 		move.w     d0,d3
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
 		clr.l      d2
 		move.l     d3,-(a6)
 		rts
@@ -1979,17 +1213,18 @@ lib29:
  */
 codestr:
 		move.l     (a6)+,d3
-		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		move.w     d3,d1
 		move.l     (a6)+,a2
 		moveq.l    #0,d3
 		move.w     (a2)+,d3
-		subq.w     #1,d3 /* BUG: does not check for empty string */
+		beq        codestr2
+		subq.w     #1,d3
 codestr1:
 		move.b     (a2),d2
 		add.b      d1,d2
 		move.b     d2,(a2)+
 		dbf        d3,codestr1
+codestr2:
 		rts
 
 /*
@@ -1998,18 +1233,17 @@ codestr1:
 lib30:
 	dc.w	0			; no library calls
 aes_in:
-		movem.l    a0-a6,-(a7)
+		movem.l    a0-a2,-(a7)
 		move.w     #0x00C9,d0
 		trap       #2
-		movem.l    (a7)+,a0-a6
+		movem.l    (a7)+,a0-a2
+		moveq      #0,d3
 		cmpi.w     #0x00C9,d0
 		beq.s      aes_in1
-		clr.l      d2
-		move.l     #-1,-(a6) /* FIXME */
-		rts
+		moveq.l    #-1,d3
 aes_in1:
 		clr.l      d2
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 
 /*
@@ -2019,17 +1253,18 @@ lib31:
 	dc.w	0			; no library calls
 uncodestr:
 		move.l     (a6)+,d3
-		andi.l     #0x0000FFFF,d3 /* FIXME: useless */
 		move.w     d3,d1
 		move.l     (a6)+,a2
 		moveq.l    #0,d3
 		move.w     (a2)+,d3
-		subq.w     #1,d3 /* BUG: does not check for empty string */
+		beq        uncodestr2
+		subq.w     #1,d3
 uncodestr1:
 		move.b     (a2),d2
 		sub.b      d1,d2
 		move.b     d2,(a2)+
 		dbf        d3,uncodestr1
+uncodestr2:
 		rts
 
 /*
@@ -2042,10 +1277,9 @@ file_exist:
 		movem.l    a0-a6,-(a7)
 		movea.l    d3,a2
 		moveq      #0,d3
-		cmpi.w     #1,(a2)
-		blt        badfilename
 		move.w     (a2),d7
-		subq.w     #1,d7 /* BUG: does not check for empty string */
+		beq        badfilename
+		subq.w     #1,d7
 file_exist1:
 		cmpi.b     #'*',2(a2,d7.w)
 		beq        badfilename
@@ -2053,7 +1287,7 @@ file_exist1:
 		lea.l      file_existname(pc),a1
 		move.w     #(256/4)-1,d7
 file_exist2:
-		clr.b      (a1)+ /* XXX */
+		clr.l      (a1)+
 		dbf        d7,file_exist2
 		lea.l      file_existname(pc),a1
 		move.w     (a2)+,d7
@@ -2061,7 +1295,7 @@ file_exist2:
 file_exist3:
 		move.b     (a2)+,(a1)+
 		dbf        d7,file_exist3
-		move.b     #0,(a1)+
+		clr.b      (a1)+
 		move.w     #47,-(a7) /* Fgetdta */
 		trap       #1
 		addq.l     #2,a7
@@ -2082,7 +1316,6 @@ file_exist3:
 		beq.s      file_exist4
 		moveq.l    #-1,d0
 file_exist4:
-		nop /* XXX */
 		not.l      d0
 		move.l     d0,-(a7)
 		move.l     file_existdtaptr(pc),-(a7)
@@ -2095,16 +1328,14 @@ file_exist4:
 		lea.l      file_existdta(pc),a0
 		move.l     26(a0),d3
 file_exist5:
-badfilename: /* FIXME */
 		clr.l      d2
 		movem.l    (a7)+,a0-a6
 		move.l     d3,-(a6)
 		rts
-		.IFNE 0
+badfilename:
 		moveq.l    #E_badfilename,d0
 		move.l     error(a5),a0
 		jmp        (a0)
-		.ENDC
 
 file_existname: ds.b 256
      ds.b 16 /* unused */
@@ -2145,36 +1376,20 @@ add_cbound2:
 lib35:
 	dc.w	0			; no library calls
 lsetstr:
-		move.l     (a6)+,d3 /* FIXME */
-		movea.l    d3,a2
-		moveq.l    #0,d3
-		move.w     (a2)+,d3
-		lea.l      lset_srcstr(pc),a0
-		move.l     a2,(a0)+
-		move.w     d3,(a0)+
-		move.l     (a6)+,d3 /* FIXME */
-		movea.l    d3,a2
-		moveq.l    #0,d3
-		move.w     (a2)+,d3
-		lea.l      lset_dststr(pc),a0
-		move.l     a2,(a0)+
-		move.w     d3,(a0)+
-		lea.l      lset_dststr(pc),a0
-		move.w     4(a0),d0
-		move.w     10(a0),d1
+		move.l     (a6)+,a2
+		move.w     (a2)+,d1
+		move.l     (a6)+,a1
+		move.w     (a1)+,d0
+		tst.w      d1
+		beq.s      lsetstr2
 		cmp.w      d1,d0
 		bcs.s      lsetstr2
 		subq.w     #1,d1
-		movea.l    (a0),a2
-		movea.l    6(a0),a1
 lsetstr1:
 		move.b     (a1)+,(a2)+
 		dbf        d1,lsetstr1
 lsetstr2:
 		rts
-
-lset_dststr: ds.b 6
-lset_srcstr: ds.b 6
 
 /*
  * Syntax: A=_sub cbound(A,I,L,U)
@@ -2208,28 +1423,15 @@ sub_cbound2:
 lib37:
 	dc.w	0			; no library calls
 rsetstr:
-		move.l     (a6)+,d3 /* FIXME */
-		movea.l    d3,a2
-		moveq.l    #0,d3
-		move.w     (a2)+,d3
-		lea.l      rset_srcstr(pc),a0
-		move.l     a2,(a0)+
-		move.w     d3,(a0)+
-		move.l     (a6)+,d3 /* FIXME */
-		movea.l    d3,a2
-		moveq.l    #0,d3
-		move.w     (a2)+,d3
-		lea.l      rset_dststr(pc),a0
-		move.l     a2,(a0)+
-		move.w     d3,(a0)+
-		lea.l      rset_dststr(pc),a0
-		move.w     4(a0),d0
-		move.w     10(a0),d1
+		move.l     (a6)+,a2
+		move.w     (a2)+,d1
+		move.l     (a6)+,a1
+		move.w     (a1)+,d0
+		tst.w      d1
+		beq.s      rsetstr2
 		cmp.w      d1,d0
 		bcs.s      rsetstr2
-		movea.l    (a0),a2
 		adda.w     d0,a2
-		movea.l    6(a0),a1
 		adda.w     d1,a1
 		subq.w     #1,d1
 rsetstr1:
@@ -2238,8 +1440,6 @@ rsetstr1:
 rsetstr2:
 		rts
 
-rset_dststr: ds.b 6
-rset_srcstr: ds.b 6
 
 
 /*
@@ -2331,22 +1531,20 @@ st_mouse_colour:
 		beq.s      st_mouse_colour1
 		rts
 st_mouse_colour1:
-		move.l     (a6)+,d3
-		andi.l     #31,d3
-		move.l     (a6)+,d2
-		andi.l     #31,d2
-		rol.w      #6,d2
 		move.l     (a6)+,d1
-		andi.l     #31,d1
-		rol.w      #6,d1
-		rol.w      #5,d1
-		or.w       d3,d2
+		andi.w     #31,d1
+		move.l     (a6)+,d2
+		andi.w     #31,d2
+		lsl.w      #6,d2
 		or.w       d2,d1
-		andi.l     #0x0000FFFF,d1 /* FIXME: useless */
+		move.l     (a6)+,d2
+		andi.w     #31,d2
+		lsl.w      #6,d2
+		lsl.w      #5,d2
+		or.w       d2,d1
 		bra.s      st_mouse_colour3
 st_mouse_colour2:
 		move.l     (a6)+,d1
-		andi.l     #0x000000FF,d1
 st_mouse_colour3:
 		moveq.l    #S_st_mouse_color,d0
 		trap       #5
@@ -2396,10 +1594,7 @@ limit_st_mouse1:
 		lea.l      limit_st_mouse_coords(pc),a0
 		move.w     d0,(a0)
 		movem.l    d0-d7/a1-a6,-(a7)
-		move.w     (a0)+,d1
-		move.w     (a0)+,d2
-		move.w     (a0)+,d3
-		move.w     (a0)+,d4
+		movem.w    (a0),d1-d4
 		moveq.l    #-1,d5
 		moveq.l    #S_limit_st_mouse,d0
 		trap       #5
@@ -2473,15 +1668,14 @@ fileselect:
 		move.l     (a6)+,d3
 		lea.l      fileselect_path(pc),a0
 		move.l     d3,(a0)
-		movem.l    a2-a6,-(a7)
+		movem.l    a2-a5,-(a7)
 		lea.l      fileselect_bgcolor(pc),a1
 		movem.w    (a1)+,d1-d5
 		movem.l    (a1)+,a2-a3
 		moveq.l    #S_fileselect,d0
 		trap       #5
 		lea.l      fileselect_name(pc),a1
-		/* tst.b      (a0) */
-		dc.w 0x0c10,0 /* XXX */
+		tst.b      (a0)
 		beq.s      fileselect4
 		moveq      #0,d3
 fileselect1:
@@ -2503,16 +1697,16 @@ lib48_1:	jsr        L_malloc.l
 fileselect3:
 		move.b     (a3)+,(a0)+
 		dbf        d3,fileselect3
-		movem.l    (a7)+,a2-a6
+		movem.l    (a7)+,a2-a5
 		move.l     a1,-(a6)
 		rts
 fileselect4:
 		moveq      #0,d3
 lib48_2:	jsr        L_malloc.l
+		move.l     a0,-(a6)
 		move.w     d3,(a0)+
-		move.b     #0,(a0)+
-		movem.l    (a7)+,a2-a6
-		move.l     a1,-(a6)
+		clr.b      (a0)
+		movem.l    (a7)+,a2-a5
 		rts
 
 fileselect_bgcolor: ds.w 1
@@ -2534,81 +1728,41 @@ lib49:
 lib50:
 	dc.w	0			; no library calls
 jagpad_direction:
-		move.l     (a6)+,d3
-		/* FIXME: range checks removed */
-		andi.l     #15,d3 /* FIXME: useless */
-		movem.l    d1-d7/a0-a6,-(a7)
-		movem.l    d1-d7/a0-a6,-(a7)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      jgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a0-a6
-		lea.l      jcookievalue(pc),a1
-		tst.l      d0
-		beq.s      jagpad_direction4
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d1-d7/a0-a5,-(a7)
+		move.l     (a6)+,d2
+		cmpi.w     #2,d2
+		bcc        jagpad_direction4
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		moveq      #0,d3
+		subq.w     #1,d0
 		beq.s      jagpad_direction1
-		cmpi.w     #3,d6
-		bne.s      jagpad_direction4
+		subq.w     #2,d0
+		bne.s      jagpad_direction3
 jagpad_direction1:
-		movea.l    #0x00FF9200,a0 /* XXX */
+		movea.l    #0xffff9200,a0
 		move.w     #0xFFFE,d0
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_direction2
 		move.w     #0xFFEF,d0
 jagpad_direction2:
-		asl.w      #1,d3
+		asl.w      #1,d2
 		move.w     d0,2(a0)
-		move.w     2(a0,d3.w),d3
+		move.w     2(a0,d2.w),d3
 		not.w      d3
-		ror.w      #8,d3
-		andi.l     #15,d3 /* FIXME */
+		lsr.w      #8,d3
+		andi.w     #15,d3
 jagpad_direction3:
-		exg        d3,d0
-		movem.l    (a7)+,d1-d7/a0-a6
+		move.l     d3,-(a6)
+		movem.l    (a7)+,d1-d7/a0-a5
 		clr.l      d2
-		move.l     d0,-(a6)
 		rts
 jagpad_direction4:
-		movem.l    (a7)+,d1-d7/a0-a6
-		clr.l      d2
-		move.l     #0,-(a6)
-		rts
+		moveq.l    #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
 
-jgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      jcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      jcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      jgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-jgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      jgetcookie3
-		cmp.l      d3,d0
-		beq.s      jgetcookie2
-		addq.w     #1,d4
-		bra.s      jgetcookie1
-jgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      jgetcookie3
-		move.l     d1,(a5)
-jgetcookie3:
-		rts
-
-jcookieid: ds.l 1
-jcookievalue: ds.l 1
 
 lib51:
 	dc.w	0			; no library calls
@@ -2620,92 +1774,50 @@ lib51:
 lib52:
 	dc.w	0			; no library calls
 jagpad_fire:
-		move.l     (a6)+,d3
-		/* FIXME: range checks removed */
-		andi.l     #15,d3 /* FIXME: useless */
-		move.l     d3,d5
-		move.l     (a6)+,d3
-		andi.l     #15,d3
-		movem.l    d1-d7/a0-a6,-(a7)
-		movem.l    d1-d7/a0-a6,-(a7)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      jfgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a0-a6
-		lea.l      jfcookievalue(pc),a1
-		tst.l      d0
-		beq.s      jagpad_fire5
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d1-d7/a0-a5,-(a7)
+		move.l     (a6)+,d5
+		move.l     (a6)+,d2
+		cmpi.w     #3,d5
+		bcc        jagpad_fire5
+		cmpi.w     #2,d2
+		bcc        jagpad_fire5
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		moveq.l    #0,d3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      jagpad_fire1
-		cmpi.w     #3,d6
-		bne.s      jagpad_fire5
+		subq.w     #2,d0
+		bne.s      jagpad_fire4
 jagpad_fire1:
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_fire2
 		asl.w      #4,d5
 jagpad_fire2:
-		movea.l    #0x00FF9200,a0 /* XXX */
+		movea.l    #0xffff9200,a0
 		move.w     #-1,d0
 		bclr       d5,d0
 		move.w     d0,2(a0)
-		move.w     ZERO(a0),d1
+		move.w     (a0),d1
 		not.w      d1
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_fire3
-		ror.w      #2,d1
+		lsr.w      #2,d1
 jagpad_fire3:
-		ror.w      #1,d1
+		lsr.w      #1,d1
 		andi.w     #1,d1
-		moveq.l    #0,d3
-		tst.w      d1
 		beq.s      jagpad_fire4
 		moveq.l    #-1,d3
 jagpad_fire4:
-		exg        d3,d0
-		movem.l    (a7)+,d1-d7/a0-a6
+		move.l     d3,-(a6)
+		movem.l    (a7)+,d1-d7/a0-a5
 		clr.l      d2
-		move.l     d0,-(a6)
 		rts
 jagpad_fire5:
-		movem.l    (a7)+,d1-d7/a0-a6
-		clr.l      d2
-		move.l     #0,-(a6)
-		rts
+		moveq.l    #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
 
-jfgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      jfcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      jfcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      jfgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-jfgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      jfgetcookie3
-		cmp.l      d3,d0
-		beq.s      jfgetcookie2
-		addq.w     #1,d4
-		bra.s      jfgetcookie1
-jfgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      jfgetcookie3
-		move.l     d1,(a5)
-jfgetcookie3:
-		rts
-
-jfcookieid: ds.l 1
-jfcookievalue: ds.l 1
 
 lib53:
 	dc.w	0			; no library calls
@@ -2717,87 +1829,45 @@ lib53:
 lib54:
 	dc.w	0			; no library calls
 jagpad_pause:
-		move.l     (a6)+,d3
-		/* FIXME: range checks removed */
-		andi.l     #15,d3 /* FIXME: useless */
-		movem.l    d1-d7/a0-a6,-(a7)
-		movem.l    d1-d7/a0-a6,-(a7)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      jpgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a0-a6
-		lea.l      jpcookievalue(pc),a1
-		tst.l      d0
-		beq.s      jagpad_pause5
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d1-d7/a0-a5,-(a7)
+		move.l     (a6)+,d2
+		cmpi.w     #2,d3
+		bcc        jagpad_pause5
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		moveq.l    #0,d3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      jagpad_pause1
-		cmpi.w     #3,d6
-		bne.s      jagpad_pause5
+		subq.w     #2,d0
+		bne.s      jagpad_pause4
 jagpad_pause1:
-		movea.l    #$00FF9200,a0 /* XXX */
+		movea.l    #$ffff9200,a0
 		move.w     #0xFFFE,d0
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_pause2
 		move.w     #0xFFEF,d0
 jagpad_pause2:
 		move.w     d0,2(a0)
-		move.w     ZERO(a0),d1
+		move.w     (a0),d1
 		not.w      d1
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_pause3
 		ror.w      #2,d1
 jagpad_pause3:
 		andi.w     #1,d1
-		moveq.l    #0,d3
-		tst.w      d1
 		beq.s      jagpad_pause4
 		moveq.l    #-1,d3
 jagpad_pause4:
-		exg        d3,d0
-		movem.l    (a7)+,d1-d7/a0-a6
+		move.l     d3,-(a6)
+		movem.l    (a7)+,d1-d7/a0-a5
 		clr.l      d2
-		move.l     d0,-(a6)
 		rts
 jagpad_pause5:
-		movem.l    (a7)+,d1-d7/a0-a6
-		clr.l      d2
-		move.l     #0,-(a6)
-		rts
+		moveq.l    #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
 
-jpgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      jpcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      jpcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      jpgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-jpgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      jpgetcookie3
-		cmp.l      d3,d0
-		beq.s      jpgetcookie2
-		addq.w     #1,d4
-		bra.s      jpgetcookie1
-jpgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      jpgetcookie3
-		move.l     d1,(a5)
-jpgetcookie3:
-		rts
-
-jpcookieid: ds.l 1
-jpcookievalue: ds.l 1
 
 lib55:
 	dc.w	0			; no library calls
@@ -2809,88 +1879,46 @@ lib55:
 lib56:
 	dc.w	0			; no library calls
 jagpad_option:
-		move.l     (a6)+,d3
-		/* FIXME: range checks removed */
-		andi.l     #15,d3 /* FIXME: useless */
-		movem.l    d1-d7/a0-a6,-(a7)
-		movem.l    d1-d7/a0-a6,-(a7)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      jogetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a0-a6
-		lea.l      jocookievalue(pc),a1
-		tst.l      d0
-		beq.s      jagpad_option5
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d1-d7/a0-a5,-(a7)
+		move.l     (a6)+,d2
+		cmpi.w     #2,d2
+		bcc        jagpad_option5
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		moveq.l    #0,d3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      jagpad_option1
-		cmpi.w     #3,d6
-		bne.s      jagpad_option5
+		subq.w     #2,d0
+		bne.s      jagpad_option4
 jagpad_option1:
-		movea.l    #0x00FF9200,a0 /* XXX */
+		movea.l    #0xffff9200,a0
 		move.w     #0xFFF7,d0
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_option2
 		move.w     #0xFF7F,d0
 jagpad_option2:
 		move.w     d0,2(a0)
-		move.w     ZERO(a0),d1
+		move.w     (a0),d1
 		not.w      d1
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_option3
-		ror.w      #2,d1
+		lsr.w      #2,d1
 jagpad_option3:
-		ror.w      #1,d1
+		lsr.w      #1,d1
 		andi.w     #1,d1
-		moveq.l    #0,d3
-		tst.w      d1
 		beq.s      jagpad_option4
 		moveq.l    #-1,d3
 jagpad_option4:
-		exg        d3,d0
-		movem.l    (a7)+,d1-d7/a0-a6
+		move.l     d3,-(a6)
+		movem.l    (a7)+,d1-d7/a0-a5
 		clr.l      d2
-		move.l     d0,-(a6)
 		rts
 jagpad_option5:
-		movem.l    (a7)+,d1-d7/a0-a6
-		clr.l      d2
-		move.l     #0,-(a6)
-		rts
+		moveq.l    #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
 
-jogetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      jocookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      jocookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      jogetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-jogetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      jogetcookie3
-		cmp.l      d3,d0
-		beq.s      jogetcookie2
-		addq.w     #1,d4
-		bra.s      jogetcookie1
-jogetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      jogetcookie3
-		move.l     d1,(a5)
-jogetcookie3:
-		rts
-
-jocookieid: ds.l 1
-jocookievalue: ds.l 1
 
 lib57:
 	dc.w	0			; no library calls
@@ -2902,31 +1930,23 @@ lib57:
 lib58:
 	dc.w	0			; no library calls
 jagpad_key:
-		move.l     (a6)+,d3
-		/* FIXME: range checks removed */
-		andi.l     #15,d3 /* FIXME: useless */
-		movem.l    d1-d7/a0-a6,-(a7)
-		movem.l    d1-d7/a0-a6,-(a7)
-		move.l     #0x5F4D4348,(a1) /* BUG: a1 not set */
-		pea.l      jkgetcookie(pc)
-		move.w     #38,-(a7)
-		trap       #14
-		addq.l     #6,a7
-		movem.l    (a7)+,d1-d7/a0-a6
-		lea.l      jkcookievalue(pc),a1
-		tst.l      d0
-		beq.s      jagpad_key4
-		move.w     (a1),d6
-		cmpi.w     #1,d6
+		movem.l    d1-d7/a0-a5,-(a7)
+		move.l     (a6)+,d2
+		cmpi.w     #2,d2
+		bcc        jagpad_key9
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.w     mch_cookie-entry(a3),d0
+		subq.w     #1,d0
 		beq.s      jagpad_key1
-		cmpi.w     #3,d6
+		cmpi.w     #2,d0
 		bne.s      jagpad_key4
 jagpad_key1:
-		movea.l    #0x00FF9200,a0 /* XXX */
+		movea.l    #0xffff9200,a0
 		lea.l      readmasks(pc),a1
 		lea.l      readchars(pc),a2
 		move.w     #0x0F00,d4
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_key2
 		addq.l     #6,a1
 		move.w     #0xF000,d4
@@ -2945,19 +1965,18 @@ jagpad_key3:
 		bne.s      jagpad_key3
 jagpad_key4:
 		lea.l      jagpad_str(pc),a4
-		move.l     #0,(a4)
-		move.l     a4,d0
-		movem.l    (a7)+,d1-d7/a0-a6
+		clr.l      (a4)
+		move.l     d4,-(a6)
+		movem.l    (a7)+,d1-d7/a0-a5
 		move.w     #128,d2 ; returns string
-		move.l     d0,-(a6)
 		rts
 jagpad_key5:
-		tst.w      d3
+		tst.w      d2
 		beq.s      jagpad_key6
-		ror.w      #4,d1
+		lsr.w      #4,d1
 jagpad_key6:
-		ror.w      #8,d1
-		andi.l     #15,d1
+		lsr.w      #8,d1
+		andi.w     #15,d1
 		moveq.l    #3,d6
 jagpad_key7:
 		btst       d6,d1
@@ -2968,46 +1987,19 @@ jagpad_key8:
 		add.w      d6,d7
 		move.b     0(a2,d7.w),d6
 		lea.l      jagpad_str(pc),a4
-		move.w     #1,(a4)
-		move.b     d6,2(a4)
-		move.b     #0,3(a4)
+		move.l     a4,-(a6)
+		move.w     #1,(a4)+
+		move.b     d6,(a4)+
+		clr.b      (a4)
 		move.l     a4,d0
-		movem.l    (a7)+,d1-d7/a0-a6
+		movem.l    (a7)+,d1-d7/a0-a5
 		move.w     #128,d2 ; returns string
-		move.l     d0,-(a6)
 		rts
+jagpad_key9:
+		moveq.l    #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
 
-jkgetcookie:
-		movea.l    #0x000005A0,a0
-		lea.l      jkcookievalue(pc),a5
-		clr.l      (a5)
-		lea.l      jkcookieid(pc),a1
-		move.l     (a1),d3
-		move.l     (a0),d0
-		tst.l      d0
-		beq.s      jkgetcookie3
-		movea.l    d0,a0
-		moveq.l    #0,d4
-jkgetcookie1:
-		move.l     (a0)+,d0
-		move.l     (a0)+,d1
-		/* tst.l      d0 */
-		dc.w 0xb0bc,0,0 /* XXX */
-		beq.s      jkgetcookie3
-		cmp.l      d3,d0
-		beq.s      jkgetcookie2
-		addq.w     #1,d4
-		bra.s      jkgetcookie1
-jkgetcookie2:
-		/* cmpa.l     #0,a5 */
-		dc.w 0xbbfc,0,0 /* XXX */
-		beq.s      jkgetcookie3
-		move.l     d1,(a5)
-jkgetcookie3:
-		rts
-
-jkcookieid: ds.l 1
-jkcookievalue: ds.l 1
 
 jagpad_str: dc.w 0,0
 
@@ -3024,8 +2016,7 @@ lib59:
 joysticks_on:
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     install_joyvec_offset-entry(a0),d0
-		adda.l     d0,a0
+		lea        install_joyvec-entry(a0),a0
 		jsr        (a0)
 		rts
 
@@ -3036,23 +2027,18 @@ joysticks_on:
 lib60:
 	dc.w	0			; no library calls
 joyfire:
-		move.l     (a6)+,d3
-		andi.l     #3,d3
-		subq.w     #1,d3
-		bmi        joyfire1
-		cmpi.w     #1,d3
-		bgt        joyfire1
+		move.l     (a6)+,d0
+		moveq.l    #0,d3
+		subq.w     #1,d0
+		cmpi.w     #2,d0
+		bcc        joyfire1
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     get_joyfire_offset-entry(a0),d0
-		adda.l     d0,a0
+		lea        get_joyfire-entry(a0),a0
 		jsr        (a0)
-		moveq.l    #0,d2
-		move.l     d3,-(a6)
-		rts
 joyfire1:
 		moveq.l    #0,d2
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 
 /*
@@ -3063,8 +2049,7 @@ lib61:
 joysticks_off:
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     restore_joyvec_offset-entry(a0),d0
-		adda.l     d0,a0
+		lea        restore_joyvec-entry(a0),a0
 		jsr        (a0)
 		rts
 
@@ -3075,26 +2060,19 @@ joysticks_off:
 lib62:
 	dc.w	0			; no library calls
 joystick:
-		move.l     (a6)+,d3
-		andi.l     #3,d3
-		subq.w     #1,d3
-		bmi        joystick1
-		cmpi.w     #1,d3
-		bgt        joystick1
+		move.l     (a6)+,d0
+		moveq.l    #0,d3
+		subq.w     #1,d0
+		cmpi.w     #2,d0
+		bcc        joystick1
 		movea.l    debut(a5),a0
 		movea.l    0(a0,d1.w),a0
-		move.l     get_joybutton_offset-entry(a0),d0
-		adda.l     d0,a0
+		lea        get_joybutton-entry(a0),a0
 		jsr        (a0)
-		moveq.l    #0,d2
-		move.l     d3,-(a6)
-		rts
 joystick1:
 		moveq.l    #0,d2
-		move.l     #0,-(a6)
+		move.l     d3,-(a6)
 		rts
 
 libex:
 	ds.w 1
-
-ZERO = 0

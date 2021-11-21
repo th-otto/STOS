@@ -87,6 +87,9 @@ CPU/Blitter control commands; * _cpuspeed         * _busmode
                               * _cpucache stat    * _nemesis
                               * _cpucache off
 
+Joystick Commands;            _joysticks on       _joysticks on
+                              _joyfire            _joystick
+
 Paddle/Jagpad commands;       ! _jagpad direction ! paddle x
                               ! _jagpad fire      ! paddle y
                               ! _jagpad pause     ! lpen x
@@ -305,6 +308,60 @@ Command   :-   st mouse stat
 Version   :-   System Control version => 0.9
 Syntax    :-   X=st mouse stat
 Action    :-   Returns X=TRUE if the ST mouse is enabled otherwise FALSE.
+
+-------------------------- Dual Joystick Commands ------------------------
+
+This group of commands allows BOTH the standard ST joysticks ports to be
+accessed by STOS.
+
+Machine   :-   All ST's/TT's/Falcon 030's.
+Version   :-   System Control version => 1.02
+Command   :-   _joysticks on
+Action    :-   Enables the Dual ST joystick ports [you should always HIDE
+               the STOS mouse pointer before invoking this command].
+
+--------------------------------------------------------------------------
+
+Machine   :-   All ST's/TT's/Falcon 030's.
+Version   :-   System Control version => 1.02
+Command   :-   _joysticks off
+Action    :-   Disables the Dual ST joystick ports [returns the mouse
+               reporting to normal, the STOS mouse pointer may now be
+               reSHOWn].
+
+--------------------------------------------------------------------------
+
+Machine   :-   All ST's/TT's/Falcon 030's.
+Version   :-   System Control version => 1.02
+Command   :-   F=_joyfire(P)
+Action    :-   Returns the status of the firebutton of joystick(P).
+               where P = 1 or 2 and the returned value 'F' = TRUE (-1)
+               if pressed, otherwise FALSE (0).
+
+--------------------------------------------------------------------------
+
+Machine   :-   All ST's/TT's/Falcon 030's.
+Version   :-   System Control version => 1.02
+Command   :-   J=_joystick(P)
+Action    :-   Returns the value 'J' with the direction of joystick 'P'
+               where P = 1 = joystick 1
+                     P = 2 = joystick 2
+
+               The directions 'J' correspond as follows:-
+
+                              1    
+                         5    |    9
+                          \   |   /       Note;   Neutral position returns
+                           \  |  /                a value of zero.
+                            \ | /
+                             \|/
+                        4-----+-----8
+                             /|\
+                            / | \
+                           /  |  \
+                          /   |   \
+                         6    |    10
+                              2   
 
 ------------------------- Jagpad/Paddle Commands -------------------------
 
