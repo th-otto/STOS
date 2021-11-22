@@ -5,15 +5,15 @@
 		.include "equates.inc"
 		.include "lib.inc"
 
-PSG  =	 $ffff8800
+PSG  =	 $ff8800
 
-iera =   $fffffa07
-ipra =   $fffffa0b
-isra =   $fffffa0f
-imra =   $fffffa13
-vr   =   $fffffa17
-tacr =   $fffffa19
-tadr =   $fffffa1f
+iera =   $fffa07
+ipra =   $fffa0b
+isra =   $fffa0f
+imra =   $fffa13
+vr   =   $fffa17
+tacr =   $fffa19
+tadr =   $fffa1f
 
 TYPE_FORWARD       = 1
 TYPE_BACKWARD      = 2
@@ -174,17 +174,21 @@ snd_init:
 	dc.b 10,0
 	dc.b 11,0
 	dc.b 12,0
-	dc.b 13,0
+* BUG: 13 not cleared
 	dc.b -1,0
 
 sampleno: ds.l 1
+samrawend: ds.l 1
+copydst: ds.l 1 /* FIXME no need to staore that here */
+copysrcend: ds.l 1
 auto_on: ds.w 1
 speed_override: ds.w 1
 type: dc.w 1
-speed: dc.b 41
+speed: dc.b 45 ; BUG? 41 in interpreter
 	.even
 
 playbankno: dc.w 5
+	ds.l 2
 
 
 hertz:
@@ -196,6 +200,9 @@ startaddr: ds.l 1
 startaddr2: ds.l 1
 length: ds.l 1
 length2: ds.l 1
+
+dummy_startaddr = $00ffffff
+dummy_length = $00ffffff
 
 * Conversion table as used in stos maestro
 
@@ -457,7 +464,71 @@ voldat2:
 	dc.l $08000e00,$09000e00,$0a000700,$00000000
 	dc.l $08000e00,$09000e00,$0a000700,$00000000
 
+	ds.b 16
+
+speedtable:
+	dc.b 'C','9',0,0
+	dc.b 'C','#',55,0
+	dc.b 'D','5',0,0
+	dc.b 'D','#',51,0
+	dc.b 'E','1',0,0
+	dc.b 'F','.',0,0
+	dc.b 'F','#',44,0
+	dc.b 'G','+',0,0
+	dc.b 'G','#',41,0
+	dc.b 'A','(',0,0
+	dc.b 'A','#',38,0
+	dc.b 'B','%',0,0
+	dc.b 0,0,0,0
+
 init:
+		move.l     a3,-(a7)
+* WTF: manual relocation
+		lea.l      startaddr(pc),a2
+		lea.l      dum_startaddr1(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr2(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr3(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr5(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr7(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr8(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr9(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_startaddr4(pc),a3
+		move.l     a2,4(a3)
+		lea.l      dum_startaddr6(pc),a3
+		move.l     a2,4(a3)
+
+		lea.l      length(pc),a2
+		lea.l      dum_length1(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length2(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length3(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length5(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length7(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length9(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length11(pc),a3
+		move.l     a2,2(a3)
+		lea.l      dum_length4(pc),a3
+		move.l     a2,4(a3)
+		lea.l      dum_length6(pc),a3
+		move.l     a2,4(a3)
+		lea.l      dum_length8(pc),a3
+		move.l     a2,4(a3)
+		lea.l      dum_length10(pc),a3
+		move.l     a2,4(a3)
+		movea.l    (a7)+,a3
+
 		lea.l      exit(pc),a2
 exit:
 		rts
@@ -466,173 +537,160 @@ exit:
 * forward normal play routine *
 
 playirq1:
-		movem.l    d7/a0/a3,-(a7)
-		lea        length(pc),a3
-		subq.l     #1,(a3)
-		bmi        outofit1
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3
-		moveq      #0,d7
-		move.b     (a3)+,d7
-		move.l     a3,(a0)
+		movem.l    d7/a3,-(a7)
+		movea.l    startaddr(pc),a3
+		move.b     (a3),d7
+dum_length1:		subq.l     #1,dummy_length
+		beq        outofit
+dum_startaddr1:		addq.l     #1,dummy_startaddr
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3
 		lsl.w      #4,d7
 		move.l     0(a3,d7.w),PSG
 		move.l     4(a3,d7.w),PSG
 		move.l     8(a3,d7.w),PSG
-		movem.l    (a7)+,d7/a0/a3
-		rte
-
-outofit1:
-		bclr       #5,iera              ; disable interrupt
-		movem.l    (a7)+,d7/a0/a3       ; stack back
+		movem.l    (a7)+,d7/a3
 		rte
 
 * backward normal play routine *
 
 playirq2:
-		movem.l    d7/a0/a3,-(a7)
-		lea        length(pc),a3
-		subq.l     #1,(a3)
-		bmi        outofit1
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3
-		moveq      #0,d7
+		movem.l    d7/a3,-(a7)
+		movea.l    startaddr(pc),a3
 		move.b     (a3),d7
-		subq.l     #1,a3
-		move.l     a3,(a0)
+dum_length2:		subq.l     #1,dummy_length
+		beq        outofit
+dum_startaddr2:		subq.l     #1,dummy_startaddr
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3
 		lsl.w      #4,d7
 		move.l     0(a3,d7.w),PSG
 		move.l     4(a3,d7.w),PSG
 		move.l     8(a3,d7.w),PSG
-		movem.l    (a7)+,d7/a0/a3
+		movem.l    (a7)+,d7/a3
 		rte
 
 * forward loop play routine *
 
 playirq3:
-		movem.l    d7/a0/a3,-(a7)
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3
-		moveq      #0,d7
+		movem.l    d7/a3,-(a7)
+		andi.w     #255,d7 /* FIXME */
+		movea.l    startaddr(pc),a3
 		move.b     (a3),d7
-		lea        length(pc),a3
-		subq.l     #1,(a3)
-		bmi.s      outofit2
-		addq.l     #1,(a0)
+dum_length3:		subq.l     #1,dummy_length
+		beq.s      outofit2
+dum_startaddr3:		addq.l     #1,dummy_startaddr
 intoit2:
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3
 		lsl.w      #4,d7
 		move.l     0(a3,d7.w),PSG
 		move.l     4(a3,d7.w),PSG
 		move.l     8(a3,d7.w),PSG
-		movem.l    (a7)+,d7/a0/a3
+		movem.l    (a7)+,d7/a3
 		rte
 outofit2:
-		move.l     length2(pc),(a3)
-		move.l     startaddr2(pc),(a0)
+dum_length4:		move.l     length2(pc),dummy_length
+dum_startaddr4:		move.l     startaddr2(pc),dummy_startaddr
 		bra.s      intoit2
 
 * backward loop play routine *
 
 playirq4:
-		movem.l    d7/a0/a3,-(a7)
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3
-		moveq      #0,d7
+		movem.l    d7/a3,-(a7)
+		movea.l    startaddr(pc),a3
 		move.b     (a3),d7
-		lea        length(pc),a3
-		subq.l     #1,(a3)
-		bmi.s      outofit3
-		subq.l     #1,(a0)
+dum_length5:		subq.l     #1,dummy_length
+		beq.s      outofit3
+dum_startaddr5:		subq.l     #1,dummy_startaddr
 intoit3:
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3
 		lsl.w      #4,d7
 		move.l     0(a3,d7.w),PSG
 		move.l     4(a3,d7.w),PSG
 		move.l     8(a3,d7.w),PSG
-		movem.l    (a7)+,d7/a0/a3
+		movem.l    (a7)+,d7/a3
 		rte
 outofit3:
-		move.l     length2(pc),(a3)
-		move.l     startaddr2(pc),(a0)
+dum_length6:		move.l     length2(pc),dummy_length
+dum_startaddr6:		move.l     startaddr2(pc),dummy_startaddr
 		bra.s      intoit3
 
 * sweep play routine *
 
 playirq5:
-		movem.l    d7/a0/a3,-(a7)
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3
-		moveq      #0,d7
+		movem.l    d7/a3,-(a7)
+		movea.l    startaddr(pc),a3
 		move.b     (a3),d7
-		lea        length(pc),a3
-		subq.l     #1,(a3)
-		bmi.s      outofit4
-		addq.l     #1,(a0)
+dum_length7:		subq.l     #1,dummy_length
+		beq.s      outofit4
+dum_startaddr7:		addq.l     #1,dummy_startaddr
 intoit4:
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3
 		lsl.w      #4,d7
 		move.l     0(a3,d7.w),PSG
 		move.l     4(a3,d7.w),PSG
 		move.l     8(a3,d7.w),PSG
-		movem.l    (a7)+,d7/a0/a3
+		movem.l    (a7)+,d7/a3
 		rte
 outofit4:
-		move.l     length2(pc),(a3)
+dum_length8:		move.l     length2(pc),dummy_length
 		lea        playirq6(pc),a3
-		move.l     a3,0x0134
+		move.l     a3,0x0134.l
 		bra.s      intoit4
 
-
 playirq6:
-		movem.l    d7/a0/a3,-(a7)
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3
-		moveq      #0,d7
+		movem.l    d7/a3,-(a7)
+		movea.l    startaddr(pc),a3
 		move.b     (a3),d7
-		lea        length(pc),a3
-		subq.l     #1,(a3)
-		bmi.s      outofit5
-		subq.l     #1,(a0)
+dum_length9:		subq.l     #1,dummy_length
+		beq.s      outofit5
+dum_startaddr8:		subq.l     #1,dummy_startaddr
 intoit5:
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3
+		move.b     #8,PSG /* FIXME */
 		lsl.w      #4,d7
 		move.l     0(a3,d7.w),PSG
 		move.l     4(a3,d7.w),PSG
 		move.l     8(a3,d7.w),PSG
-		movem.l    (a7)+,d7/a0/a3
+		movem.l    (a7)+,d7/a3
 		rte
 outofit5:
-		move.l     length2(pc),(a3)
+dum_length10:		move.l     length2(pc),dummy_length
 		lea        playirq5(pc),a3
-		move.l     a3,0x0134
-		bra.s      intoit5
+		move.l     a3,0x0134.l
+		bra.w      intoit5
+
+outofit:
+		lea        startaddr(pc),a3
+		addq.l     #1,(a3)              ; start address + 1
+		bclr       #5,iera              ; disable interrupt
+		movem.l    (a7)+,d7/a3          ; stack back
+		rte
 
 * record interrupt routine *
 recirq:
-		movem.l    d7/a0/a3,-(a7)       ; save regs on stack
-		lea        length(pc),a3
-		subq.l     #1,(a3)              ; length -1
-		bmi.s      routofit             ; end, exit
-		lea        startaddr(pc),a0
-		movea.l    (a0),a3              ; start address
-		moveq      #0,d7                ; clr word
+		movem.l    d7/a3,-(a7)          ; save regs on stack
+		movea.l    startaddr(pc),a3     ; start address
 		move.b     0x00FB0001,d7        ; get input data
-		move.b     d7,(a3)+             ; save it in memory
-		move.l     a3,(a0)              ; start address +1
+		move.b     d7,(a3)              ; save it in memory
+dum_length11:		subq.l     #1,dummy_length      ; length -1
+		beq.s      routofit             ; end, exit
+dum_startaddr9:		addq.l     #1,dummy_startaddr   ; start address +1
+		andi.w     #255,d7
 		lea.l      voldat2(pc),a3       ; volume convert table
 		lsl.w      #4,d7                ; d7 * 16
 		move.l     0(a3,d7.w),PSG       ; data for volume 1
 		move.l     4(a3,d7.w),PSG       ; data for volume 2
 		move.l     8(a3,d7.w),PSG       ; data for volume 3
-		movem.l    (a7)+,d7/a0/a3       ; stack stuff back
+		movem.l    (a7)+,d7/a3          ; stack stuff back
 		rte
 routofit:
-		clr.l      (a3)
 		bclr       #5,iera              ; clear timer a interrupt
-		movem.l    (a7)+,d7/a0/a3       ; stack stuff back
+		movem.l    (a7)+,d7/a3          ; stack stuff back
 		rte
 
 
@@ -672,13 +730,15 @@ realplaysam:
 samplay1:
 		addq.l     #8,a1
 		addq.w     #1,d7
-		tst.l      (a1)
-		bne.s      samplay1
+		/* tst.l      (a1) */
+		dc.w 0x0c91,0,0 /* XXX */
+		bne.w      samplay1
 		subq.w     #1,d7
 		movea.l    (a7)+,a1
 		movea.l    a1,a0
 		move.l     sampleno-entry(a3),d3
-		tst.b     d3
+		/* tst.b     d3 */
+		dc.w 0x0c03,0 /* XXX */
 		beq        samplenotfound
 		cmp.b      d7,d3
 		bgt        samplenotfound
@@ -687,8 +747,10 @@ samplay1:
 		adda.l     d3,a1
 		adda.l     (a1),a0
 		movea.l    4(a1),a1
-		lea        -20(a1),a1
-		addq.l     #8,a0
+		/* suba.l     #20,a1 */
+		dc.w 0x93fc,0,20 /* XXX */
+		/* addq.l     #8,a0 */
+		dc.w 0xd1fc,0,8 /* XXX */
 
 * Sample play routine, includes code for forward,back,loop,sweep
 * Also can be used with samples that include their sample rate,
@@ -735,79 +797,88 @@ playsam:
 
 		clr.b      tacr                 ; stop timer a
 		move.b     #1,tacr              ; start timer a
-		tst.w      auto_on-entry(a3)    ; auto mode ?
-		beq.s      noton                ; no, dont search
+		cmpi.w     #1,auto_on-entry(a3)     ; auto mode ?
+		bne.w      noton                ; no, dont search
 		cmpi.b     #'J',(a0)            ; check code digit 1
 		bne        nospeed              ; not found use set rate
 		cmpi.b     #'O',1(a0)           ; check digit 2
 		bne        nospeed              ; not found
 		cmpi.b     #'N',2(a0)           ; check digit 3
 		bne        nospeed              ; not found
-		moveq      #0,d3
 		move.b     3(a0),d3             ; 4th byte is the rate
+		andi.w     #255,d3              ; isolate word
 		lea.l      hertz-entry(a3),a0   ; start of rate conversion table
 		move.b     0(a0,d3.w),d3        ; get timer a data for samrate
 		addi.b     #19,d3               ; add 19 timer ticks
-		bra.s      skipnxt              ; store timer a data & skip next bit
+		move.b     d3,tadr              ; store timer a data
+		bra.w      skipnxt              ; skip next bit
 
 noton:
-		tst.w      speed_override-entry(a3)
-		beq.s      noton1
-		move.b     speed-entry(a3),d3
-		bra.s      skipnxt
+		/* tst.w     speed_override-entry(a3) */
+		dc.w 0x0c6b,0,speed_override-entry /* XXX */
+		beq.w      noton1
+		move.b     speed-entry(a3),tadr
+		bra.w      skipnxt
 noton1:
 		move.b     speed-entry(a3),d3   ; speed in d3
 		addi.b     #19,d3               ; add 19 ticks
-skipnxt:
 		move.b     d3,tadr              ; store the data
 
+skipnxt:
 		ori.b      #0x20,imra           ; timer a mask
 		ori.b      #0x20,iera           ; timer a enable
 		bclr       #3,vr                ; automatic end-of-interrupt BUG: should not mess with this
-		move.w     type-entry(a3),d3
-		subq.w     #TYPE_FORWARD,d3     ; type 1 forward
-		beq.s      type1
-		subq.w     #1,d3                ; type 2 backward
-		beq.s      type2
-		subq.w     #1,d3                ; type 3 forward loop
-		beq.s      type3
-		subq.w     #1,d3                ; type 4 backward loop
-		beq.s      type4
-		subq.w     #1,d3                ; type 5 sweep
-		beq.s      type5
+		cmpi.w     #TYPE_FORWARD,type-entry(a3)   ; type 1 forward
+		beq.w      type1
+		cmpi.w     #TYPE_BACKWARD,type-entry(a3)  ; type 2 backward
+		beq.w      type2
+		cmpi.w     #TYPE_LOOP_FORWARD,type-entry(a3) ; type 3 forward loop
+		beq.w      type3
+		cmpi.w     #TYPE_LOOP_BACKWARD,type-entry(a3) ; type 4 backward loop
+		beq.w      type4
+		cmpi.w     #TYPE_SWEEP,type-entry(a3)     ; type 5 sweep
+		beq.w      type5
 type1:
-		lea        playirq1-entry(a3),a0 ; interrupt address 1
-		bra.s      playsamexit
+		lea        playirq1-entry(a3),a0
+		move.l     a0,0x0134.l          ; interrupt address 1
+		move.w     d7,sr                ; status back again
+		bra.w      playsamexit
 type2:
+		lea        playirq2-entry(a3),a0
+		move.l     a0,0x0134.l          ; interrupt address 2
 		move.l     length-entry(a3),d0            
 		add.l      d0,startaddr-entry(a3)         ; start from the end
 		add.l      d0,startaddr2-entry(a3)
-		lea        playirq2-entry(a3),a0 ; interrupt address 2
-		bra.s      playsamexit
+		move.w     d7,sr                ; status back again
+		bra.w      playsamexit
 type3:
-		lea        playirq3-entry(a3),a0 ; interrupt address 3
-		bra.s      playsamexit
+		lea        playirq3-entry(a3),a0
+		move.l     a0,0x0134.l   ; interrupt address 3
+		move.w     d7,sr                ; status back
+		bra.w      playsamexit
 type4:
+		lea        playirq4-entry(a3),a0
+		move.l     a0,0x0134.l   ; interrupt address 4
 		move.l     length-entry(a3),d0
 		add.l      d0,startaddr-entry(a3)         ; start from the end
 		add.l      d0,startaddr2-entry(a3)
-		lea        playirq4-entry(a3),a0 ; interrupt address 4
-		bra.s      playsamexit
-type5:
-		lea        playirq5-entry(a3),a0   ; interrupt address 5
-playsamexit:
-		move.l     a0,0x0134
 		move.w     d7,sr                ; status back
-		clr.l      d0
-		rts
-
+		bra.w      playsamexit
+type5:
+		lea        playirq5-entry(a3),a0
+		move.l     a0,0x0134.l   ; interrupt address 5
+		move.w     d7,sr                ; status back
+		bra.w      playsamexit
 nospeed:
 		move.w     d7,sr
 nosampledata:
 samplenotfound:
-		moveq.l    #E_illegalfunc,d0
+		moveq.l    #E_syntax,d0 /* BUG: should be E_illegalfunc */
 		move.l     error(a5),a0
 		jmp        (a0)
+playsamexit:
+		clr.l      d0
+		rts
 
 
 /*
@@ -818,7 +889,8 @@ lib1:
 soundinit:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		pea        snd_init-entry(a3)
+		lea        snd_init-entry(a3),a2
+		move.l     a2,-(a7)
 		move.w     #32,-(a7) ; Dosound
 		trap       #14
 		addq.l     #6,a7
@@ -911,11 +983,11 @@ samspeed:
 		cmpi.w     #23,d3
 		bge.s      outofrange
 		cmpi.w     #4,d3
-		blt.s      outofrange
+		ble.s      outofrange /* BUG: should be blt */
 		clr.w      auto_on-entry(a3)
 		lea.l      hertz-entry(a3),a0
-		move.b     0(a0,d3.w),d3
-		move.b     d3,speed-entry(a3)
+		move.b     0(a0,d3.w),speed-entry(a3)
+		move.b     speed-entry(a3),d3
 		addi.b     #19,d3
 		move.b     d3,tadr
 		rts
@@ -939,8 +1011,8 @@ samstop:
 		move.w     sr,d7                ; save status
 		move.w     #0x2700,sr           ; kill interrupts
 		bclr       #5,iera              ; timer a interrupt off
-		move.b     #0xdf,ipra           ; timer a pending clear
-		move.b     #0xdf,isra           ; timer a interrupt in service clr
+		bclr       #5,ipra              ; timer a pending clear
+		bclr       #5,isra              ; timer a interrupt in service clr
 		bclr       #5,imra              ; timer a mask off
 		move.w     d7,sr                ; status back
 		rts
@@ -957,12 +1029,11 @@ lib13:
 samloop_off:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		lea        type-entry(a3),a0
-		cmpi.w     #TYPE_BACKWARD,(a0)
+		cmpi.w     #TYPE_BACKWARD,type-entry(a3)
 		ble.s      samloop_off1
-		cmpi.w     #TYPE_SWEEP,(a0)
+		cmpi.w     #TYPE_SWEEP,type-entry(a3)
 		beq.s      samloop_off1
-		subq.w     #2,(a0)
+		subq.w     #2,type-entry(a3)
 samloop_off1:
 		rts
 
@@ -978,13 +1049,15 @@ lib15:
 samloop_on:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		lea        type-entry(a3),a0
-		cmpi.w     #TYPE_SWEEP,(a0)
-		beq.s      samloop_on1
-		cmpi.w     #TYPE_LOOP_FORWARD,(a0)
+		cmpi.w     #TYPE_SWEEP,type-entry(a3)
+		beq.w      samloop_on1
+		cmpi.w     #TYPE_LOOP_FORWARD,type-entry(a3)
 		bge.s      samloop_on1
-		addq.w     #2,(a0)
+		addq.w     #2,type-entry(a3)
 samloop_on1:
+		rts
+		move.w     #TYPE_LOOP_FORWARD,type-entry(a3)
+samloop_on2:
 		rts
 
 lib16:
@@ -999,15 +1072,18 @@ lib17:
 samdir_forward:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		lea        type-entry(a3),a0
-		cmpi.w     #TYPE_LOOP_BACKWARD,(a0)
-		beq.s      samdir_forward1
-		cmpi.w     #TYPE_BACKWARD,(a0)
+		cmpi.w     #TYPE_SWEEP,type-entry(a3)
+		beq.s      samdir_forward2
+		cmpi.w     #TYPE_FORWARD,type-entry(a3)
+		beq        samdir_forward2
+		cmpi.w     #TYPE_LOOP_FORWARD,type-entry(a3)
+		beq        samdir_forward2
+		cmpi.w     #TYPE_BACKWARD,type-entry(a3)
 		bne.s      samdir_forward1
-		move.w     #TYPE_FORWARD,(a0)
+		move.w     #TYPE_FORWARD,type-entry(a3)
 		rts
 samdir_forward1:
-		move.w     #TYPE_LOOP_FORWARD,(a0)
+		move.w     #TYPE_LOOP_FORWARD,type-entry(a3)
 samdir_forward2:
 		rts
 
@@ -1023,16 +1099,19 @@ lib19:
 samdir_backward:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		lea        type-entry(a3),a0
-		cmpi.w     #TYPE_LOOP_FORWARD,(a0)
-		beq.s      samdir_backward2
-		cmpi.w     #TYPE_FORWARD,(a0)
+		cmpi.w     #TYPE_SWEEP,type-entry(a3)
+		beq        samdir_backward2
+		cmpi.w     #TYPE_BACKWARD,type-entry(a3)
+		beq        samdir_backward2
+		cmpi.w     #TYPE_LOOP_BACKWARD,type-entry(a3)
+		beq        samdir_backward2
+		cmpi.w     #TYPE_FORWARD,type-entry(a3)
 		bne.s      samdir_backward1
-		move.w     #TYPE_BACKWARD,(a0)
+		move.w     #TYPE_BACKWARD,type-entry(a3)
 		rts
-samdir_backward2:
-		move.w     #TYPE_LOOP_BACKWARD,(a0)
 samdir_backward1:
+		move.w     #TYPE_LOOP_BACKWARD,type-entry /* BUG: missing (a3) */
+samdir_backward2:
 		rts
 
 lib20:
@@ -1077,16 +1156,18 @@ lib25:
 samraw:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		move.l     (a6)+,a1
-		move.l     (a6)+,a0 
-		cmp.l      a1,a0
+		move.l     (a6)+,samrawend-entry(a3)
+		move.l     (a6)+,d3
+		cmp.l      samrawend-entry(a3),d3
 		bge.s      illegalend
+		movea.l    d3,a0
+		movea.l    samrawend-entry(a3),a1
 		suba.l     a0,a1
 		lea        realplayraw-entry(a3),a2
 		jmp        (a2)
 
 illegalend:
-		moveq.l    #E_illegalfunc,d0
+		moveq.l    #E_syntax,d0 /* BUG: should be E_illegalfunc */
 		move.l     error(a5),a0
 		jmp        (a0)
 
@@ -1107,10 +1188,12 @@ lib27:
 samrecord:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
-		move.l     (a6)+,a1
-		move.l     (a6)+,a0
-		cmp.l      a1,a0
-		bge.s      samrecorderr
+		move.l     (a6)+,samrawend-entry(a3)
+		move.l     (a6)+,d3
+		cmp.l      samrawend-entry(a3),d3
+		bge.w      illegalend /* BUG: not part of this routine */
+		movea.l    d3,a0
+		movea.l    samrawend-entry(a3),a1
 		suba.l     a0,a1                ; calculate length
 		move.l     a0,startaddr-entry(a3)         ; start address
 		move.l     a1,length-entry(a3)            ; length
@@ -1127,13 +1210,9 @@ samrecord:
 		ori.b      #0x20,iera           ; interrupt enable
 		bclr       #3,vr                ; automatic end-of-interrupt BUG: should not mess with this
 		lea.l      recirq-entry(a3),a0  ; address of routine
-		move.l     a0,0x0134
+		move.l     a0,0x0134.l
 		move.w     d7,sr                ; status back
 		rts
-samrecorderr:
-		moveq.l    #E_illegalfunc,d0
-		move.l     error(a5),a0
-		jmp        (a0)
 
 lib28:
 	dc.w	0			; no library calls
@@ -1145,12 +1224,15 @@ lib28:
 lib29:
 	dc.w	0			; no library calls
 samcopy:
-		move.l     (a6)+,a2
-		move.l     (a6)+,d0
+		move.l     debut(a5),a3
+		movea.l    0(a3,d1.w),a3
+		move.l     (a6)+,copydst-entry(a3)
+		move.l     (a6)+,copysrcend-entry(a3)
 		move.l     (a6)+,a0
+		movea.l    copydst-entry(a3),a1
 samcopy1:
-		move.b     (a0)+,(a2)+
-		cmp.l      d0,a0
+		move.b     (a0)+,(a1)+
+		cmpa.l     copysrcend-entry(a3),a0
 		blt.s      samcopy1
 		rts
 
@@ -1159,7 +1241,7 @@ lib30:
 	rts
 
 /*
- * Syntax: sammusick SAMPLENO,N$
+ * Syntax: sammusic SAMPLENO,N$
  */
 lib31:
 	dc.w lib31_1-lib31
@@ -1168,14 +1250,13 @@ sammusic:
 		move.l     debut(a5),a3
 		movea.l    0(a3,d1.w),a3
 		movea.l    (a6)+,a2
+		* BUG: a2 points to length field, not data
+		andi.b     #0xDF,(a2) ; make uppercase ; BUG: modifies user input
 		move.w     (a2)+,d2
-		beq.s      sammusic2
-		move.b     (a2)+,d0
-		andi.b     #0xDF,d0 ; make uppercase
 		movea.l    a2,a0
-		lea.l      notetable(pc),a1
+		lea.l      speedtable-entry(a3),a1
 sammusic1:
-		cmp.b      (a1)+,d0
+		cmpm.b     (a0)+,(a1)+
 		bne.s      sammusic4
 		cmpi.b     #1,d2
 		beq.s      sammusic3
@@ -1183,18 +1264,17 @@ sammusic1:
 		bne.s      sammusic5
 		cmpi.b     #2,d2
 		beq.s      sammusic3
-sammusic2:
 		moveq.l    #E_illegalfunc,d0
 		move.l     error(a5),a0
 		jmp        (a0)
 sammusic3:
 		move.b     (a1),speed-entry(a3)
-		clr.w      auto_on-entry(a3)
+		/* move.w     #0,auto_on-entry(a3) BUG: missing */
 		move.w     #1,speed_override-entry(a3)
 		move.l     (a6)+,d3
 		move.l     d3,sampleno-entry(a3)
-		moveq      #0,d3
 		move.w     playbankno-entry(a3),d3
+		andi.l     #0x0000FFFF,d3
 		move.l     d3,-(a6)
 lib31_1: jsr       L_addrofbank.l
 		lea        realplaysam-entry(a3),a0
@@ -1204,27 +1284,13 @@ sammusic4:
 sammusic5:
 		addq.l     #2,a1
 		movea.l    a2,a0
-		tst.b      (a1)
-		bne.s      sammusic1
-		moveq.l    #E_illegalfunc,d0
+		/* tst.b     (a1) */
+		dc.w 0x0c11,0 /* XXX */
+		bne.w      sammusic1
+		moveq.l    #E_syntax,d0 /* BUG: should be E_illegalfunc */
 		move.l     error(a5),a0
 		jmp        (a0)
-
-notetable:
-	dc.b 'C','9',0,0
-	dc.b 'C','#',55,0
-	dc.b 'D','5',0,0
-	dc.b 'D','#',51,0
-	dc.b 'E','1',0,0
-	dc.b 'F','.',0,0
-	dc.b 'F','#',44,0
-	dc.b 'G','+',0,0
-	dc.b 'G','#',41,0
-	dc.b 'A','(',0,0
-	dc.b 'A','#',38,0
-	dc.b 'B','%',0,0
-	dc.b 0,0,0,0
-
+		rts /* XXX */
 
 lib32:
 	dc.w	0			; no library calls
@@ -1258,7 +1324,7 @@ samthru:
 		ori.b      #$20,iera            ; enable timer a
 		bclr       #3,vr
 		lea.l      thruirq-entry(a3),a0 ; address of routine
-		move.l     a0,0x0134
+		move.l     a0,0x0134.l
 		move.w     d7,sr                ; status back
 		rts
 
@@ -1278,9 +1344,9 @@ sambank:
 		move.l     (a6)+,d3
 		/* tst.w      d3 */
 		dc.w 0x0c43,0 /* XXX */
-		beq.s      memorybankrange
+		beq.w      memorybankrange
 		cmpi.w     #16,d3
-		bge.s      memorybankrange
+		bge.w      memorybankrange
 		move.w     d3,playbankno-entry(a3)
 		rts
 

@@ -4654,7 +4654,7 @@ ouvreacc: move.l dta+26,d6    ;entree pour ACCLOAD (pas de SFIRST)
           bsr readisk
           bmi diskerr
           lea buffer,a0
-          move #9,d0
+          moveq #10-1,d0
 ouvre2:   move.b (a0)+,d1
           cmp.b (a1)+,d1
           bne noformat
@@ -5160,7 +5160,7 @@ lprg3:    rts
 
 ; LOAD "AAAAAAAA.MBK"[,xx]: charge une banque memoire
 loadmbk:  lea name1,a0
-          bsr ouvrebank                 ;ouvre le fichier, cherche le codage
+          bsr ouvrebank                 ;open the file, look for the encoding
           lea buffer,a0
           moveq #4,d0
           bsr readisk
@@ -5168,7 +5168,7 @@ loadmbk:  lea name1,a0
           tst.l buffer                  ;si ZERO, il s'agit de TOUTES
           beq badname                   ;les banques memoire!!!
 ; charge UNE banque memoire
-          lea buffer+4,a0               ;taille de la banque
+          lea buffer+4,a0               ; bank size
           moveq #4,d0
           bsr readisk                   ;va charger la longueur
           bmi diskerr
