@@ -1,0 +1,116 @@
+		     The Missing Link Map Editor. v1.0.
+
+About
+-----
+	This utility was written to make designing maps for use with
+the Missing Link WORLD and LANDSCAPE commands as easy as possible.  It
+provides the user with extremely powerful features while still remaining
+easy to use.
+
+Instructions
+------------
+	When you first run the program you will be in the map screen,
+so press SPACE to get to the main menu.
+
+	The main menu consists of a series of icons along the top of
+the screen with the rest of the screen being taken up by the blocks
+you loaded in.
+	The icons are, from left to right:
+	
+	LOAD BLOCKS
+		Select this if you want to load a different set of
+		blocks.
+
+	LOAD A MAP
+		Click on this to load in some WORLD or LANDSCAPE data
+		you have already saved.
+		
+	SAVE A WORLD
+		This will save out the map in the format needed by
+		the WORLD command.
+		
+	SAVE A LANDSCAPE
+		This saves out the map in LANDSCAPE format.
+	
+	RESIZE MAP
+		You can use this to change the dimensions of the map.
+		After selection you are asked for the new X and Y sizes
+		of the map, so enter the sizes you want and the map
+		will be set to these dimensions.
+	
+
+	Please note that you cannot load LANDSCAPE data into Eddie!
+Any attempts to do so will make things go badly wrong.  If you are
+using LANDSCAPE in your game then you will have to make up a special
+set of WORLD blocks to do the map-editing.  This will all be fixed in
+the registration version (honestly...)
+	To set the blocks which you will actually draw with, use the
+left and right mousebuttons to click on the desired block.  Whichever
+block you click on will be allocated to the mousebutton you used to 
+select it when you draw on the actual map.
+	You also set up the "brick" data here.  By moving the mouse
+over a block then pressing a number from 1 to 9 that block will be
+allocated to that number for the brick and column fills in the map screen.
+
+	To go to the map screen press the SPACE bar.  You can exit
+the program by pressing UNDO.  You can also get online help by pressing
+the "*" key on the numeric keyppad.
+
+	The map screen is taken up by the current map with the current
+X and Y position on the bottom-left of the screen.  You can move the
+mouse around to move about the map and pressing the left or right
+mousebutton will place the block allocated to that button.
+	Pressing SPACE will take you back to the main menu.
+
+	The extra features of the map-editor are all accessed via the
+keyboard.  Here is a list of the keys and their function:
+
+F1/F2	:	Use these keys to set the top-left and bottom-right
+		of an "area".  "Areas" are the term used in the program
+		for a rectanguler area used for the cut and paste, fill
+		and other features.  Once set the blocks in the "area"
+		will be shown with a coloured pattern overlayed on them.
+
+F3	:	This will clear the area-markers set up with F1/F2.
+
+F4	:	Use this to paste a copy of an area somewhere on the
+		map.  The copy will be placed at the current mouse
+		position.
+
+F5	:	This will fill the map from the top-left of the area
+		to the current mouseposition with copies of the area.
+
+F9	:	Use this to save an area to disk.
+
+F10	:	This will load in a previously saved area.
+
+Insert/	:	These keys will fill the area with the block allocated
+Clr Home	to the left/right mousebuttons.
+
+Backspace :	This will fill an area with block 0.
+
+Delete	:	This is the same as Backspace, but the area markers will
+		be cleared as if you had pressed Backspace then F3.
+
+Help	:	Pressing Help will highlight the current area again.
+		This can be very useful if you have drawn over the top
+		of your area and wish to see where it is again.
+
+1-9	:	Pressing 1-9 will fill the current area with columns of
+(keuboard)	the blocks you allocated brick-numbers in the main menu.
+		The number you press will define the width of the
+		columns.  For instance, pressing 5 will mean you get
+		columns of block 1,2,3,4,5,1,2,3,4,5,1,2... etc.
+
+1-9	:	These will fill the area with a brick-wall of the
+(keypad)	blocks you allocated in the main menu.  This is an
+		extremely useful function for doing walls which are made
+		up of multiple-block bricks.
+
+
+Last word
+---------
+	Bye!
+
+
+?i

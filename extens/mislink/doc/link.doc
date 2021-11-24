@@ -1,0 +1,1227 @@
+                      The Missing Link Extension
+               Written by Colin Watt and Billy Allan of
+                              Top Notch
+                        Version 1.0 - 12/02/93
+
+
+Liff
+----
+        Let's face it, STOS is really pretty poor.  It has some nice
+commands and it's easy to use, but when it comes down to it, it's just
+too slow.
+
+                        That is until now!
+
+        Yes, the Missing Link gives an unimaginable boost in
+performance to STOS games and demos alike.  With new sprite, mapping,
+joystick and music playing commands you will be able to produce
+assembly-quality games while still retaining the ease of use you had
+with STOS!
+
+About
+-----
+        The Missing Link contains over 50 commands, each one, we hope,
+useful to most STOS programmers.  The commands are pretty much game-
+orientated, but they can still be used in demos, intros, menus and
+whatever else takes your fancy.
+        The extension has taken us about five months of continuous
+work to write.  The commands have all been optimised to a tremendous
+extent, giving a real boost to the performance of STOS games.
+        We have already written several games using the extension, and
+also updated old games to work with the new commands.  To give you an
+idea of the performance of these routines against their STOS
+counterparts, a horizontally scrolling "Zaxxon" type game we wrote in
+100% STOS updated at 6 frames per second with five aliens and two
+bullets now goes at 2 frames with 20 aliens and 16 bullets on screen!
+        We hope that with the release of this extension STOS games
+will become much closer to the quality of pure 68000 programs.  It may
+require a slight change in programming practices to get the best out
+of the extension, but it is certainly worth the effort!
+
+        The release versions of the extensions have had some
+limitations built-in to encourage registration.  In the BASIC
+extension a message will appear every so often telling you to
+register.  In the Compiler extension you are provented from using many
+of the commands in programs which are compiled to GEM - programs which
+are compile to BASIC are unnafected by this.  The version you recieve
+when you register, of course, has these limitations removed.
+        These limitations were added after we saw how many people were
+using our previous extension "Misty" without registering with us
+first.
+
+
+The Price of Power
+------------------
+        Yes folks, this program is shareware.  We have worked
+extremely hard to make this extension as good as it is, and we hope
+you will reward our effort to some small degree.  If you are cynical
+about the amount of effort which goes into the making of an extension,
+then try loading an assembler, loading a source file, assembling it to
+disk, loading up STOS, running a basic file, compiling it, running it
+compiled and then repeating all that 5 or 6 times in a row every
+evening for several months...
+        The registration fee is 10 pounds sterling.  Please do not
+send cash through the post!  Pay by postal orders or cheques only!
+Also, if you are sending a postal order please make sure you fill it
+in correctly.  It causes a lot of problems when you try and cash blank
+postal orders...
+        If you are from outside Britain, then please do NOT send the
+registration fee in your own currency!  Due to certain exchange-rate
+problems caused by our government (not that I'm one to critisise of
+course...) it has become very difficult to judge how much 10 pounds is
+worth.  Still, never mind.
+        So, send your œ10 to the following address:
+
+        Top Notch Software,
+        PO Box 1083,
+        Glasgow,
+        G14 9DG.
+
+        Make all cheques/postal orders payable to Billy Allan.
+
+        We guarantee that you will recieve your registration package
+within 28 days for EC deliveries.  Outside of that, it depends on the
+postal service!
+
+
+What you get
+------------
+        Well, I suppose you want something in return eh?  Well, here's
+what you get with the Missing link registration package.
+
+        The proper BASIC and Compiler Extension
+        Example files for all of the commands
+        The editor version of the Missing Link map-definer
+        Lots of music for use with the new music commands
+        Source code to several games (including "The Race" and "Frank
+           and the lost Aubergine")
+        Various other things
+
+
+Legalities
+----------
+        Nasty I know, but they have to be here.  All the code in this
+extension is copyright to Top Notch Software.  It may be freely copied
+and spread providing this document remains with the copies.  Remember
+that this extension is shareware.
+        PD/Shareware Diskmagazines such as HP Source, Ledgers, DBA
+Magazine and the like are free to put the install program on their
+disk if they wish, but commercial magazines should seek our permission
+first.
+        ST User may under no circumstances use this extension on their
+coverdisk, due to their use of the Misty Extension without our
+permission and without any payment to us - glad to see you strongly
+support the shareware principle.
+
+
+Extra Service
+-------------
+        We now provide a custom-extension service for STOS users.  If
+you have a piece of assembly code which you wish to to have turned
+into an extension, then we will do so for a flat fee of 10 pounds
+sterling.
+        This service only applies to turning source-code into
+extensions.  Do NOT expect us to hack-out routines from programs and
+make them into an extension!  Also, be warned that some routines are
+next to impossible to convert, especially things like tracker-
+routines.  For instance, don't send the replay code from Audio-
+sculpture and say "make this into an extension for me"!
+        Also, remember to send ALL relevant information about the
+routine, ie, if you want a command which sends codes to a printer then
+tell us what all the valid codes are!  Remember our hardware
+limitations - we may not have the equipment you do, so if you want a
+midi-keyboard routine then you're in trouble!  (we do NOT have bloody
+STE's!)
+        If we cannot make an extension from your routine then we will
+return your disk and money.
+
+
+Updates
+-------
+        The Missing Link will hopefully be updated for the Falcon
+pretty soon.  We have tried STOS and the Missing Link on the Falcon
+and both work.  We hope to add support for all the Falcons standard
+screen-modes including truecolour and 8-bitplane, and also it's extra
+hardware like the blitter.
+        If anyone is interested by the way, don't belive the stories
+you hear about the Falcon being incompatible - we have tried hundreds
+of programs on it including STOS, Calamus, Starglider, Devpac, Xenon,
+First Word and found that the machine is almost entirely compatible
+with the ST.
+
+
+Reference guide
+---------------
+        This is a small reference guide which you may want to print
+out.  It just lists the commands and the basic parameters.
+
+ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ|
+BOB x1,y1,x2,y2,0,1                             |
+BOB scr,gadr,img,x,y,0                          |
+JOEY x1,y1,x2,y2,0,0,1                          |  SPRITE
+JOEY scr,gadr,img,x,y,,COL,0                    |  COMMANDS
+h = B HEIGHT(gadr,img)                          |
+w = B WIDTH(gadr,img)                           |
+------------------------------------------------|
+WORLD x1,y1,x2,y2,0,1                           |
+WORLD scr,gadr,madr,x,y,0                       |
+LANDSCAPE x1,y1,x2,y2,0,1                       |
+LANDSCAPE scr,gadr,madr,x,y,0                   |
+SETBLOCK madr,x,y,blk                           |
+r = WHICHBLOCK(madr,x,y)                        |  MAPPING
+REPLACE BLOCKS madr,blk1,blk2                   |  COMMANDS
+REPLACE RANGE madr,min,max,blk                  |
+r = BLOCK AMOUNT(madr,blk)                      |
+XY BLOCK madr,xadr,yadr,blk,num                 |
+x = X LIMIT(madr,x1,x2)                         |
+y = Y LIMIT(madr,y1,y2)                         |
+a = MAP TOGGLE(madr)                            |
+r = WIN BLOCK AMOUNT (madr,x1,y1,x2,y2,blk)     |
+WIN XY BLOCK madr,x1,y1,x2,y2,xadr,yadr,blk,num |
+WIN REPLACE BLOCKS madr,x1,y1,x2,y2,blk1,blk2   |
+WIN REPLACE RANGE madr,x1,y1,x2,y2,min,max,blk  |
+------------------------------------------------|
+TEXT scr,font,tadr,x,y                          |  PRINTING
+tadr = STRING (num)                             |  COMMANDS
+------------------------------------------------|
+WIPE scr                                        |
+TILE scr,gadr,img,x,y                           |
+MOZAIC scr,gadr,img,x1,y1,x2,y2,x,y             |  MISCELLANEOUS
+SPOT scr,x,y,colr                               |  GFX COMMANDS
+REFLECT scr1,y1,y2,scr2,y3                      |
+DISPLAY PC1 gadr,scr                            |
+WASH scr,x1,y1,x2,y2                            |
+BLIT scr1,x1,y1,x2,y2,scr2,x3,y3                |
+M BLIT scr1,x1,y1,x2,y2,scr2,x3,y               |
+------------------------------------------------|
+r = PALT (gadr)                                 |  PALETTE
+PALSPLIT md,cadr,y,hig,num                      |  COMMANDS
+FLOODPAL colr                                   |
+r = BRIGHTEST (padr)                            |
+------------------------------------------------|
+l = DLOAD (fadr,adr,ofs,num)                    |
+l = DSAVE (fadr,adr,ofs,num)                    |
+r = REAL LENGTH (fadr)                          |
+BANK LOAD fadr,adr,num                          |  FILE
+BANK COPY adr1,adr2,num                         |  COMMANDS
+r = BANK LENGTH (fadr,num)                      |
+r = BANK SIZE (adr,num)                         |
+DISPLAY PC1 adr,scr                             |
+------------------------------------------------|
+DIGI PLAY md,sadr,sz,freq,lp                    |
+SAMSIGN sadr,sz                                 |  SOUND
+t = MUSAUTO (adr,num,sz)                        |  COMMANDS
+MUSPLAY adr,num,ofs                             |
+------------------------------------------------|
+P ON                                            |
+P STOP                                          |
+d = P JOY (n)                                   |
+d = P UP (n)                                    |  JOYSTICK
+d = P DOWN (n)                                  |  COMMANDS
+d = P LEFT (n)                                  |
+d = P RIGHT (n)                                 |
+d = P FIRE (n)                                  |
+------------------------------------------------|
+l = DEPACK (adr)                                |
+d = COMPSTATE                                   |  MISCELLANEOUS
+RELOCATE padr                                   |  COMMANDS
+r = BOUNDARY (n)                                |
+r = OVERLAP (x1,y1,x2,y2,wd1,hg1,wd2,hg2)       |
+REBOOT n                                        |
+a = mostly harmless(1,2,3,4,5)                  |
+________________________________________________|
+
+
+Command list
+------------
+        Please note that ALL addresses must be "actual".  This means
+that you must pass "start(10)" rather than "10" for memory banks etc.
+	If your program crashes while you are using one of the interrupt
+commands (mus auto, mus play, digiplay, pal split or any of the
+joystick commands) then if you change program number (ie, press HELP
+then move to a different program area) the interupt will be stopped.
+This can avoid most nasty crashes, but please be careful when using
+interrupts!  It's always a good idea to save your program before
+trying out a new interrupt section you've just added!
+
+Sprite commands
+---------------
+BOB X1,Y1,X2,Y2,0,1
+or
+BOB scr,gadr,img,x,y,0
+
+        The BOB command is a replacement for the SPRITE command.  It
+is so much faster than SPRITE that I can't give you any comparisons,
+but you can display about 25 16x16 sprites in 1 one VBL!
+        The first version of the command, with a 1 as the last
+parameter, sets the clipping zone for the sprites in a box from X1,Y1
+to X2,Y2.  The 0 is reserved for future purposes.
+        The second, with a 0 for the last parameter, is used to
+display a sprite.  SCR is the screen address to display it on, ADR is
+the address of the sprite data, IMG is the sprite number (from 0
+onwards) and X,Y are the screen co-ordinates.
+
+e.g.
+        5 rem> BOB's in bank 5 <
+        10 logic=back
+        20 bob 16,16,304,184,0,1 : rem> Set clip 16,16 to 304,184) <
+        20 repeat
+        30 bob logic,start(5),0,x mouse,y mouse,0
+        40 screen swap : wait vbl
+        50 until mousekey=1
+
+
+JOEY X1,Y1,X2,Y2,0,0,1
+or
+JOEY scr,gadr,img,x,y,colr,0
+
+        The JOEY command is very similar to the BOB command.  It is
+specifically for sprites which are only drawn in one colour though.
+All of the parameters are the same apart from the addition of COLR
+which contains the colour of the sprite.
+        JOEY's are especially useful for small bullet-type sprites or
+even bonus score sprites which appear when you kill a baddie or
+collect something in a game.
+        Certain colours are faster than others.  Colour 15 is the
+fastest for certain technical reasons.
+
+e.g.
+        5 rem> JOEY's in bank 5 <
+        10 logic=back
+        20 joey 16,16,304,184,0,0,1
+        20 repeat
+        30 joey logic,start(5),0,x mouse,y mouse,15,0
+        40 screen swap : wait vbl
+        50 until mousekey=1
+
+
+w = B WIDTH (gadr,img)
+h = B HEIGHT (gadr,img)
+
+        These two commands return the width or height of a given BOB
+or JOEY.  This can be very useful for restoring their backgrounds or
+for collision detection.
+        GADR is the address of the BOB/JOEY data and IMG is the sprite
+number to check.
+
+
+Mapping commands
+----------------
+WORLD x1,y1,x2,y2,0,1
+or
+WORLD scr,gadr,madr,x,y,0
+
+        WORLD is used for multi-directionally scrolling maps.  It is
+not advisable to use this for anything else, seeing as the block-data
+for WORLD takes up more memory than that for the MAP command.
+        The first version of the command, with a 1 as the last
+parameter, is used to set the window-size for the map.  The window
+size is set in the box from X1,Y1 to X2,Y2.  The X co-ordinates should
+be multiples of 16.
+        The second version, with a 0 as the last parameter, is used to
+actually draw up the map.  SCR is the screen address, GADR is the
+address of the map-blocks, MADR is the address of the map-data, X and
+Y are the co-ordinates in the map-data.
+
+e.g.
+        10 rem> Assuming the map-data is in banks 6 <
+        20 rem> and the blocks are in bank 5.       <
+        30 world 32,10,288,190,0,1
+        40 logic=back
+        50 X=0 : Y=0
+        60 repeat
+        70 world logic,start(5),start(6),X,Y,0
+        80 if jleft and X>0 then dec X
+        90 if jright and X<1500 then inc X
+        100 if jup and Y>0 then dec Y
+        110 if jdown and Y<2000 then inc Y
+        120 screen swap : wait vbl
+        130 until fire
+
+
+LANDSCAPE x1,y1,x2,y2,0,1
+or
+LANDSCAPE scr,gadr,madr,x,y,0
+
+        The LANDSCAPE command is used to display vertically scrolling
+maps.  It is also suitable for quickly drawing single-screen maps.
+The parameters are all the same as in the WORLD command, with the
+exception of the X parameter in the second version.  The X co-ordinate
+is always rounded down to the nearest 16 pixels.  This opens up
+possibilities for games like "CJ's Elephant Antics" and all the other
+flick-screen games we see these days.
+
+e.g.
+        10 rem> Assuming the map-data is in banks 6 <
+        20 rem> and the blocks are in bank 5.       <
+        30 landscape 32,10,288,190,0,1
+        40 logic=back
+        50 Y=0
+        60 repeat
+        70 landscape logic,start(5),start(6),0,Y,0
+        80 if jup and Y>0 then dec Y
+        90 if jdown and Y<2000 then inc Y
+        100 screen swap : wait vbl
+        110 until fire
+
+
+r = WHICH BLOCK (madr,x,y)
+
+        WHICH BLOCK is used to check which block is on the map at co-
+ordinates X,Y.  MADR is the address of the map data.  R is returned as
+the block number.
+        WHICH BLOCK is extremely useful for collision detection.  If,
+for instance, you have to collect diamonds from the screen which don't
+move, then it would be better to draw them as part of the background
+and check for them with WHICH BLOCK rather than drawing them as
+sprites.
+
+e.g.
+        10 rem> Assuming the map-data is in banks 6 <
+        20 rem> and the blocks are in bank 5.       <
+        30 landscape 32,10,288,190,0,1
+        40 logic=back
+        50 Y=0
+        60 repeat
+        70 landscape logic,start(5),start(6),0,Y,0
+        80 if jup and Y>0 then dec Y
+        90 if jdown and Y<2000 then inc Y
+        95 if which block(start(6),160,Y+100)=1 then bell
+        100 screen swap : wait vbl
+        110 until fire
+
+
+SET BLOCK madr,x,y,blk
+
+        SET BLOCK is used to set a block in the map.  MADR is the
+address of the map data, X and Y are the co-ordinates and BLK is the
+new block number.
+        SET BLOCK can be used to great effect in conjunction with
+WHICH BLOCK to erase blocks from the background which have been picked
+up or destroyed.
+
+e.g.
+        10 rem> Assuming the map-data is in banks 6 <
+        20 rem> and the blocks are in bank 5.       <
+        30 landscape 32,10,288,190,0,1
+        40 logic=back
+        50 Y=0
+        60 repeat
+        70 landscape logic,start(5),start(6),0,Y,0
+        80 if jup and Y>0 then dec Y
+        90 if jdown and Y<2000 then inc Y
+        95 if which block(start(6),160,Y+100)=1 then
+           set block start(6),160,Y+100,0 : bell
+        100 screen swap : wait vbl
+        110 until fire
+
+
+REPLACE BLOCKS madr,blk1,blk2
+
+        The REPLACE BLOCKS command is used to replace all occurrences
+of one block with another.  MADR is the address of the map data, BLK1
+is the block to search for and BLK2 is the block to replace it with.
+
+e.g.
+        10 rem> assuming map-data in bank 6 <
+        20 replace blocks start(6),5,20
+
+
+REPLACE RANGE madr,min,max,blk
+
+        This command is like the REPLACE BLOCKS command found in the
+original extension.  REPLACE RANGE allows you to replace all blocks
+within a given range with another block.  This can, for instance, be
+extremly useful for eraseing groups of blocks which are no longer
+needed like starting positions etc.
+        MADR is the address of the map-data, MIN and MAX are the lower
+and upper block numbers to replace and BLK is the block to replace
+them all with.
+
+e.g.
+        10 rem> assuming map-data in bank 10 <
+        20 replace range start(10),5,10,0
+
+        which would replace blocks 5,6,7,8,9 and 10 with block 0.
+
+
+r = BLOCK AMOUNT(madr,blk)
+
+        The BLOCK AMOUNT command is used to quickly count the number
+of times a certain block occurs.  MADR is the address of the map data
+and BLK is the block to search for.  R is returned as the number of
+occurrences.
+
+e.g.
+        10 rem> assuming the map data is in bank 6 <
+        20 A=block amount(start(6),4)
+        30 print "Block 4 occurs";A;" times!"
+
+
+XY BLOCK madr,xadr,yadr,blk,num
+
+        The XY BLOCK command will store all of the co-ordinates of of
+a given block in a STOS array.  This can significantly speed up the
+time taken to work out the co-ordinates of important map-blocks like
+baddies starting positions or exits.
+        MADR is the address of the map data, XADR is a pointer to the
+start of the X-array (see note below), YADR is a pointer to the Y-
+array, BLK is the block to search for and NUM is the number of blocks
+to check for.
+
+e.g.
+        10 rem> assuming the map data is in bank 6 <
+        20 A=block amount(start(6),4)
+        30 dim X(A+1),Y(A+1)
+        40 xy block start(6),varptr(X(0)),varptr(Y(0)),4,A
+
+        The XADR and YADR parameters are pointers to the start
+of two arrays.  These are calculated as in the above example, using
+the VARPTR command.  STOS arrays are made up of a series of longwords
+(ie, 32-bit numbers).  If you are using memory banks rather than
+arrays then just reserve the bank as 4*A.
+
+
+r = WIN BLOCK AMOUNT (madr,x1,y1,x2,y2,blk)
+WIN XY BLOCK madr,x1,y1,x2,y2,xadr,yadr,blk,num
+WIN REPLACE BLOCKS madr,x1,y1,x2,y2,blk1,blk2
+WIN REPLACE RANGE madr,x1,y1,x2,y2,min,max,blk
+
+        The WIN family of commands are new version of commands which
+were contained in the original extension.  They have the extra feature
+of only effecting the blocks within a given window.
+        This means that you can produce effects like animating
+backgrounds with ease.  They can also be used for collision detection
+and a host of other things.
+        All of the commands have the same parameters as their
+originals, except with the addition of X1, Y1, X2 and Y2.  These four
+parameters define the top-left and bottom right of the window to use.
+
+e.g.
+        10 rem> assuming map-data is in bank 10 <
+        20 R=win block amount(start(10),0,0,320,200,5)
+        30 dim X(R),Y(R)
+        40 win xy block start(10),0,0,320,200,varptr(X(0)),
+           varptr(Y(0)),5,R
+        50 win replace blocks start(10),0,0,320,200,5,0
+        60 win replace range start(10),0,0,320,200,7,10,5
+
+
+x = X LIMIT(madr,x1,x2)
+y = Y LIMIT(madr,y1,y2)
+
+        These commands return the maximum width and height of a map.
+This is very useful for working out how far your sprites may move
+around a map before being stopped.
+        MADR is the address of the map data, X1 and X2 or Y1,Y2 are
+the window sizes you set up with either the WORLD or LANDSCAPE
+commands.  X and Y are returned as the maximum X and Y co-ordinates.
+
+e.g.
+        10 rem> assuming map data in bank 6 <
+        15 world 0,0,256,160,1
+        20 MX=x limit(start(6),0,256)
+        30 MY=y limit(start(6),0,160)
+        40 print "Max X is";MX
+        50 print "Max Y is";MY
+
+
+n = MAP TOGGLE(madr)
+
+        This command will convert 'landscape' map data to 'world'
+map data and vice versa.  Ignore the value returned.
+
+
+
+Text commands
+-------------
+TEXT scr,font,tadr,x,y
+
+        The TEXT command is a replacement PRINT command.  It only
+prints the text on 1 bitplane and is much, much faster than PRINT.
+        SCR is the screen address, FONT is the number of the font,
+TADR is the address of the text, X and Y are the screen co-ordinates
+of the text.
+        Please note that the text should end with a 0 byte.  If it is
+a STOS string then you should add "chr$(0)" to the end.
+
+e.g.
+        30 T$="Register now!"+chr$(0)
+        40 text logic,0,varptr(T$),10,10
+
+
+tadr = STRING (num)
+
+        The STRING command is used to quickly convert a number to a
+string.  This routine is much faster than STR and is specifically
+designed for the TEXT command.
+        NUM is the number to convert (integers only!) and TADR is
+returned as the address of the string.  TADR may then used directly by
+the TEXT command.  The string will have two spaces added to the end.
+
+e.g.
+        30 T=12345 : ADR=string(T)
+        40 text logic,0,ADR,10,11
+
+
+Miscellaneous GFX commands
+-------------------------
+WIPE scr
+
+        The WIPE command is an extremely fast CLS command.  It will
+clear the whole screen in under half the time taken by CLS!
+        SCR is the address of the screen you wish to clear.
+        WIPE can also be used as a quick way of clearing memory banks
+in multiples of 32k.
+e.g.
+        10 wipe logic
+
+
+TILE scr,gadr,img,x,y
+
+        The TILE command will fill the screen with 16x16 tiles.  It
+will fill the whole screen in about 1/2 a VBL!  Using SCREEN COPY to
+do this takes almost 2 VBL's.  It can be used to produce the sinus-
+tiles as seen in many demos these days.
+        SCR is the screen address, GADR is the address of the tile-
+data, IMG is the tile image, X and Y are the "virtual" co-ordinates to
+draw from.
+
+e.g.
+        10 rem> assuming the tile-data is in bank 9 <
+        20 logic=back
+        30 repeat
+        40 tile logic,start(9),0,x mouse,y mouse
+        50 screen swap : wait vbl
+        60 until mouse key=1
+
+
+MOZAIC scr,gadr,img,x1,y1,x2,y2,x,y
+
+        MOZAIC is very similar to TILE except that it will fill any
+window rather than just the whole screen.  As it is more general-
+purpose it is somewhat slower than TILE, but it's still much faster
+than SCREEN COPY and SCREEN$.
+        SCR is the screen address, GADR is the address of the tile
+data, IMG is the tile image, X1,Y1 are the top-left of the window,
+X2,Y2 are the bottom left, X and Y are the "virtual" co-ordinates.
+
+e.g.
+        10 rem> assuming the tile-data is in bank 9 <
+        20 logic=back
+        30 repeat
+        40 mozaic logic,start(9),0,32,16,288,176,x mouse,y mouse
+        50 screen swap : wait vbl
+        60 until mouse key=1
+
+
+SPOT scr,x,y,colr
+
+        The SPOT command is a replacement PLOT command.
+        SCR is the screen address, X and Y are the co-ordinates and
+COLR is the colour to plot in.
+
+e.g.
+        10 repeat
+        20 spot logic,x mouse,y mouse,1
+        30 until mouse key=1
+
+
+REFLECT scr1,y1,y2,scr2,y3
+
+        REFLECT will produce a rippling water effect on the screen.
+It can be used to great effect in games and demos to give an excellent
+feeling of depth.
+        SCR1 is the source-screen address, Y1 is the line to start the
+reflection at, Y2 is the line to stop reflecting at, SCR2 is the
+destination address and Y3 is the line to start drawing the reflection
+at.
+
+e.g.
+        10 show on : limit mouse 0,0 to 303,83
+        20 logic=back
+        30 repeat
+        40 reflect logic,0,83,logic,84
+        50 screen swap : wait vbl
+        60 until mouse key=1
+
+
+WASH scr,x1,y1,x2,y2
+
+        The WASH command is a very fast version of CLS.
+        SCR is the screen address, X1 and Y1 are the top-left of the
+area to clear and X2 and Y2 are the bottom-right.  All X co-ordinates
+should be rounded to the nearest 16 pixels.
+
+e.g.
+        10 wash logic,0,0,320,200
+
+
+BLIT scr1,x1,y1,x2,y2,scr2,x3,y3
+
+        BLIT is a new version of SCREEN COPY (it is also much improved
+from it's previous incarnation from our Misty Extension - SKOPY 4).
+It's main use is in saving and restoring sprite backgrounds, but is
+serves just as well for any other screen-copying has to be done.
+        SCR1 is the source address, X1,Y2,X2,Y2 define the top-
+left/bottom right of the block to be copied, SCR2 is the destinatiion
+address, X3,Y3 are the destination co-ordinates.  Again all X co-
+ordinates should be multiples of 16.
+
+e.g.
+        10 blit logic,0,0,320,200,back,0,0
+
+        If there are any Misty Users out there who use SKOPY 4, then
+you can just use the CHANGE command to replace SKOPY like this:
+        change "skopy 4" to "blit"
+
+
+M BLIT scr1,x1,y1,x2,y2,scr2,x3,y3
+
+        This is almost exactly the same as blit except that the image
+is source image is merged onto the destination screen.  This command
+is quite a bit faster than the equivalent "screen$ (logic,0,0)=
+screen$ (5,0,0 to 160,100)".
+	The parameters are exectly the same as those for BLIT.
+	
+e.g.
+	10 m blit logic,0,0,320,200,back,0,0
+	
+
+Palette commands
+----------------
+r = PALT (gadr)
+
+        The PALT command will get the palette from various .MBK files
+automatically.  It searches for the "PALT" string which is found in
+STOS sprite banks and also in all of the Missing Link's graphic files.
+        GADR is the address of the .MBK file.  R is returned as the
+address of the palette data.
+
+e.g.
+        10 load "sprite.mbk",1
+        20 D=palt(start(1)) : wait vbl
+
+
+PALSPLIT md,cadr,y,hig,num
+
+        PALSPLIT will split the palette at various given points on the
+screen.  This command provides you with the ability to have separate
+palettes for different areas of the screen.  For instance, you could
+have a 16-colour logo at the top of the screen, a 16-colour scrolling
+map in the middle of the screen and a score-panel at the bottom, each
+with it's own palette!
+        MD is the mode - 0 is off/1 is on, CADR is the address of the
+palette data (each palette is 16 words of colour data), Y is the
+starting scanline for the palette split, HIG is the number of
+scanlines to split over and NUM is the number of palette splits to do.
+
+e.g.
+        10 load "picture.neo",back
+        20 get palette (back)
+        30 screen copy back to physic
+        40 palsplit 1,physic,100,1,1
+        50 repeat : until inkey$=" "
+        60 palsplit 0,0,0,0,0
+
+
+FLOODPAL colr
+
+        FLOODPAL will quickly fill the palette with a given colour.
+        COLR is the colour to use.
+
+e.g.
+        10 for C=$000 to $777 step $111
+        20 floodpal c : wait vbl
+        30 next C
+
+
+r = BRIGHTEST (padr)
+
+        The BRIGHTEST command is used to calculate the brightest
+colour in a palette.  This can be extremely useful for ensuring that
+you can always see your highscore or lives in a game where the palette
+changes.
+        PADR is the address of the palette to check.  Do not use the
+hardware palette ($FF8240) for this as it ususally returns the wrong
+result.
+
+e.g.
+        10 load "bobs.mbk",1
+        20 D=palt(start(1))
+        30 C=brightest(D)
+        40 print "Brightest bob colour is";C
+        50 C=brightest(logic+32000)
+        60 print "Brightest current colour is";C
+
+
+File commands
+-------------
+l = DLOAD (fadr,adr,ofs,num)
+l = DSAVE (fadr,adr,ofs,num)
+
+        DLOAD and DSAVE provide for complex file loading and saving.
+They allow the easy creation of both archives and data-bases.
+        FADR is the address of the filename (with a 0-byte at the
+end), ADR is the address to load to/save from, OFS is the offset to
+start loading or saving from within the file and NUM is the number of
+bytes to read or write.  L is returned as the number of bytes read or
+written to the file.
+
+e.g.
+        10 F$="PIC.DAT"+chr$(0)
+        20 L=dsave(varptr(F$),physic,0,32032)
+        30 L=dload(varptr(F$),back,0,32032)
+        40 get palette(back)
+
+
+r = REAL LENGTH (fadr)
+
+        REAL LENGTH will return the depacked size of a packed disk-
+file.  The can be vital for programs which have to reserve memory
+banks exactly the size of a packed file.
+        FADR is a pointer to the filename (again, with a zero-byte at
+the end).  R is returned as the depacked length of the file, or 0 if
+the file was not packed or didn't exist.
+
+e.g.
+        10 F$=fileselect$("*.*","Select a file",4)
+        20 if F$="" then end
+        30 F$=F$+chr$(0)
+        40 SZ=real length(varptr(F$))
+        50 if SZ=0 then print "Not packed!" : end
+        60 print "Depacked size is";SZ
+
+
+BANK LOAD fadr,adr,num
+BANK COPY adr1,adr2,num
+
+	These two commands are for use with Missing Link file-banks.
+File-banks are special archives in which you store all of the data
+files which you would normally have lying around on the disk.  For
+example, you might have 20 maps for a game, so rather than have 20
+seperate files, you could make up a file-bank which would hold them
+all in one large file.  As well as cutting down the number of files
+needed for your games, this will also speed up the loading quite
+considerably.
+	BANK LOAD.
+		This is the version which will load files from the
+		bank from a disk-based file-bank.  FADR is a pointer
+		to the filename, ADR is the address to load it to and 
+		NUM is the file-number to load from the bank (starting 
+		at 0).
+	BANK COPY
+		This version was written to make writing memory
+		enhanced versions of your games.  It will "load" a
+		file from a bank which has been previously BLOADed
+		into memory.  ADR1 is the address of the file-bank,
+		ADR2 is the address to load it to and NUM is the
+		file number to load.
+e.g.
+	10 reserve as work 10,free
+	15 F$="MY_BANK.BNK"+chr$(0)
+	20 bank load varptr(f$),start(10),4
+	30 bload "MY_BANK.BNK",start(10)
+	40 bank copy start(10),physic,6
+	
+
+r = BANK LENGTH (fadr,num)
+r = BANK SIZE (adr,num)
+
+	These commands are for use in conjunction with the two
+commands above.  They will return the length of an individual file
+from a file-bank.
+	BANK LENGTH is for use with disk-files.  FADR is the
+	filename and NUM is the file number to check.  R is the
+	filesize.
+	BANK SIZE is for use with file-bank which are already
+	in memory.  ADR is the address of the bank and NUM if the
+	file to check.  R is the filesize.
+e.g.
+	5 F$="MY_BANK.BNK"+chr$(0)
+	10 L=bank length(varptr(F$),4)
+	20 reserve as work 10,L
+	30 bank load varptr(F$),start(10),4
+	40 erase 10
+	50 reserve as work 10,100000
+	60 bload "MY_BANK.BNK",10
+	70 L=bank size(start(10),5)
+	80 reserve as work 11,L
+	90 bank copy start(10),start(11),5)
+	
+	The BANK commands provide for a great improvement in games
+and programs of all descriptions.  We hope that they will mean an
+end to STOS games with hundreds of .MBK files lying around the disk
+which can cuase people with single drives a great deal of trouble to
+copy.  If you are using STOS 3D then you can turn all of your 3D
+files and surfaces into one big file-bank by cheating somewhat.  You
+will have to install a small ramdisk, the size of the largest 3D file
+in your bank.  Then BANK LOAD the file you want into memory, BSAVE it
+into the ramdisk and then TD LOAD it back in!  Complicated, but it
+sure cuts down on the number of files!
+
+
+DISPLAY PC1 adr,scr
+
+        This command will display a PC1 (degas low resolution)
+picture which is stored in a memory bank.
+        ADR is the address of the PC1 file.  SCR is the address
+of the destination screen which the picture will be stored on. 
+
+e.g.
+
+        10 F$=file select$("*.PC1","Load a PC1 file",)
+        15 if F$="" then default : end
+        20 open in #1,F$ : L=lof(1) : close #1
+        30 erase 5 : reserve as work 5,L
+        40 bload F$,5
+        50 reserve as screen 6
+        60 display PC1 start(5),physic
+        70 display PC1 start(5),start(6)
+        80 wait key
+        90 goto 10
+
+	This command was in the original version of TML but due
+to an administrative oversight, we forgot to include it.
+
+
+Sound commands
+--------------
+DIGI PLAY md,sadr,sz,freq,lp
+
+        The DIGI PLAY command is used to replay sampled sounds.  It
+takes less processor time than Maestro and covers quite a few of its
+commands in one.
+        MD is the mode - 1 is on/0 is off, SADR is the address of the
+sample, SZ is the size of the sample (see note below), FREQ is the
+frequency (3-25Khz) and LP is the loop flag - 1 is on/0 is off.
+        If the sample plays through it's whole length, then it is
+automatically stopped by the routine, except if the looping is turned
+on.
+
+e.g.
+        10 bload "sample.sam",back
+        20 digi play 1,back,32000,10,1
+        30 repeat : until inkey$=" "
+        40 digiplay 0,0,0,0,0
+
+        If the length (SZ) is less then 50, then the program will
+assume you are using a digiplay sample-bank.  You can make these using
+the supplied utility to hold up to 50 samples in one file.
+
+
+SAMSIGN sadr,sz
+
+        SAMSIGN is used to convert between signed and unsigned sample
+formats.  This is especially useful if you have something like Master
+Sound 2 where you normally have to press CTRL-S before saving the
+sample out to use it.
+        SADR is the address of the sample data and SZ is the length of
+the sample.
+
+e.g.
+        10 bload "sample.sam",back
+        20 samsign back,32000
+
+
+r = MUSAUTO (adr,num,size)
+
+        The MUSAUTO command is to play "good" music back from STOS on
+interrupt.
+        ADR is the address of the music file, NUM is the music number
+to play (if available).  Pass NUM as zero to turn the music off.  SIZE
+is the size of the music file.  The value returned signifies the type
+of music, as defined here:
+
+1. Mad Max		2. Mad Max		3. Count Zero
+4. Big Alec (old)	5. TAO (chip #1)	6. TAO (chip #2)
+7. TAO (digi)		8. Lap (1990)		9. Lap (1991)
+10. Big Alec (new)	11. Megatizer		12. Undead
+13. Zound Dragger	14. Titan		15. LTK
+16. TriMod		17. Lap (1 scanline)	18. Synth Dream
+19. Ben Daglish		20. Nexus		21. Chrispy Noodle #1
+22. Chrispy Noodle #2	23. MUF/SMF		24. Misfit
+25. Blipp Blopper	26. G.S.R Format	27. FFT
+28. Crusader		29. Newline		30. Millenium Brothers
+31. Synergy
+
+e.g.
+        10 reserve as work 10,50000
+        20 F$=fileselect$("*.MU?")
+        30 if F$="" then end
+        40 open in #1,F$ : L=lof(#1) : close #1
+        40 bload F$,10
+        50 N=musauto(start(10),1,L)
+        60 wait key
+        70 N=musauto(0,0,0)
+        80 goto 20
+
+        This command was added due to the number of people who
+registered for the Misty extension and who asked for a command to do
+this sort of thing.  I hope you're all satisfied!
+
+	Number 23 (MUF/SMF) will never be returned.  This is a driver
+which is recognised by it's file extension and seeing as MUSAUTO never
+gets to see the filename it can't recognise it.  If you have any music
+files with this extension you can play them with MUSPLAY like this:
+
+10 musplay start(10),1,4
+20 wait key
+30 musplay 0,0,0
+
+        Note that the numbers returned for the music type have
+changed compared to older versions of this command.  We apologise
+if there is anyone who has written program which depend on these
+values, but there wasn't anything we could do about it.
+
+
+MUSPLAY adr,num,offset
+----------------------
+        If you want to play a bit of music which MUSAUTO doesn't
+recognise, then you can use MUSPLAY instead providing you know what
+the play offset is.  It is also useful for doing sound effects in
+games as it doesn't have to work out the music type and hence doesn't
+take as much time to initialise as MUSAUTO.
+        ADR is the address of the music file, OFFSET is the play-
+offset (ie 8 for Mad Max) and NUM is the music number.  To turn the
+music off, pass NUM as 0.
+
+e.g.
+        10 reserve as work 10,50000
+        20 bload "COUNT_0.MUS",10
+        30 musplay start(10),1,6
+        40 repeat : until inkey$=" "
+        50 musplay start(10),0,2
+
+
+Joystick commands
+-----------------
+P ON
+P STOP
+d = P JOY (n)
+d = P UP (n)
+d = P DOWN (n)
+d = P LEFT (n)
+d = P RIGHT (n)
+d = P FIRE (n)
+
+        All of these commands are for accessing the twin-joystick
+driver.
+        P ON/P STOP is used to initialise and turn off the driver.
+        P JOY is used to read the joystick in port N (0 or 1).  D is
+returned in much the same format as the STOS command "JOY".
+        P RIGHT, P LEFT, P UP, P DOWN and P FIRE are used in the same
+way as JLEFT, JRIGHT, FIRE etc.  N is the port to check (0 or 1).  D
+is returned as true or false.
+
+e.g.
+        10 p on
+        20 print "press RIGHT on the joystick"
+        30 repeat
+        40 until p right(1)
+        50 p stop
+
+
+Miscellaneous commands
+----------------------
+l = DEPACK (adr)
+
+        The DEPACK command will depack data-files packed with any of
+the common packers around.  It currently depacks the following
+packers:
+
+Atomik v3.5     Ice v2.4        Fire v2.2       Automation v5.1
+Speed v2.0      Speed v3.0
+
+        ADR is the address of the packed file.  L is returned as the
+length of the depacked file or 0 if it was not packed.
+        The data is depacked on top of itself, so make sure you have
+enough room at the end of the work-space!
+
+e.g.
+        10 bload "packed.dat",back
+        20 L=depack(back)
+        30 if L=0 then print "Not packed!" : end
+        40 print "depacked size is";L
+
+
+d = COMPSTATE
+
+        COMPSTATE will return the current state of your program -
+compiled or interpreted.  This can make life much easier when you are
+writing or debugging programs.  For instance, maybe you only want a
+game to display 10 sprites when you run it in BASIC but 20 when
+compiled, or perhaps you only want to play music in the compiled
+version of a demoscreen.
+        D is returned as TRUE if the program is compiled and FALSE
+otherwise.
+        It is possible to check if your program is compiled to GEM by
+using the "hidden" command in the compiler extension "COMPAD" which
+will return a negative number if the program is compiled to GEM.
+
+e.g.
+        10 if not(compstate) then print "In BASIC" : end
+        20 print "Compiled!"
+
+
+RELOCATE padr
+
+        RELOCATE will make alter an executable program to run from any
+given address.  Normally STOS will only let you CALL a program if it
+is reserved as a program bank.  With RELOCATE you can load the program
+to any address or bank and still call it.
+        PADR is the address of the program to relocate.
+
+e.g.
+        10 bload "my_prog.prg",back
+        20 relocate back
+        30 call back+28
+
+
+r = BOUNDARY (n)
+
+        BOUNDARY will round a number down to its nearest 16-pixel
+boundary.  This is very useful for restoring sprite backgrounds.  It
+is much, much quicker than the STOS "X=X/16*16" equivalent.
+        N is the number you wish to round down.  R is the rounded
+number.
+
+e.g.
+        10 home : print boundary(x mouse);"   "
+        20 wait vbl : goto 10
+
+
+r = OVERLAP (x1,y1,x2,y2,wd1,hg1,wd2,hg2)
+
+        The OVERLAP command provides for a fast way of checking
+collisions between to rectangular blocks.
+        X1,Y1 is the top-left of the first rectangle, X2,Y2 is the
+top-left of the second, WD1,HG1 is the width and height of the first
+rectangle and WD2,HG2 are for the second.
+
+e.g.
+        10 repeat
+        20 if overlap(x mouse,y mouse,144,84,16,16,32,32) then bell
+        30 until mouse key=1
+
+
+REBOOT n
+
+        This was originaly called 'cold boot; but STOS turned it into
+col DBOOT when you entered it!  It will reset the machine and clear 
+everything including ram-disks and reset-resident programs.
+
+e.g.
+        10 reboot 0
+
+        There is a double check where the program asks if you want to
+proceed but if you want to skip this then pass 'n' as $ABCD.
+
+e.g.
+        10 reboot $ABCD
+
+
+a = MOSTLY HARMLESS (1,2,3,4,5)
+
+        You know that message which keeps coming up while you're
+editing?  The one which says "This message will not appear when you
+register"?  Well, to get rid of it, you have to put this command into
+your AUTOEXEC file (you do have an autoexec don't you?  If not, just
+save a basic file in the root directory called "AUTOEXEC.BAS" with
+the example in it).
+
+e.g.
+        10 A=mostly harmless(1,2,3,4,5)
+
+
+
+
+PLEASE
+------
+
+        If (when?) you finish a complete game, utility or demo,
+we would be very pleased of you mentioned somewhere that it used The 
+Missing Link.  You are not obliged to do this but we would really
+appreciate it.
+
+
+
+And Finally
+-----------
+        We would like to thank the following people:
+
+        Paul for giving us his sample-replay routine.
+
+        Neil Stewart for his tricks, tips and help (I don't know,
+texture-mapped 3D screensize truecolour cubes at 50Hz... STOS could
+beat that any day... Well, if you removed the texture-mapped 3D cube
+part anyway...)
+
+        Douglas Little for the all the same reasons (oh, and for
+lending Colin a meg machine!).
+
+        Mark of Dimension Zero (If I remember correctly) for his
+exquisite Top Notch logo.
+
+        All of those who registered for the Misty Extension - without
+your support for Misty, this extension would never have been released.
+(do you know that out of the few hundred registrations we got, there
+were no females whatsoever?  So either there are a lot of dishonest
+women out there or very few female STOS coders... I wonder which...)
+
+        Everyone who we know and converse with whenever possible,
+without whom life would (quite enjoyable?) incomplete, who are: Waldo,
+Patrick, Agrajag, Graham, Leon (stop mucking up my doc files!), Chris,
+Eddie, Robert, Neil (TYG), Bruno, Iain and Peter of Phoenix PD (I hope
+everythings going well with the new stall - I'll try and get in to see
+you some time, work allowing (sigh)), CP-3-67, Darren of Income PD and
+finally Twylyte (sorry none of your graphics were used, but they
+haven't arrived yet...)
+
+        And special thanks go to Grazey of the PHF who unwittingly
+helped by ripping of lot's new music drivers which were subsequently
+placed in the MUS AUTO command.  Keep up the good work!  (GSR is great!
+Who'd ever have thought something so useful would come out of Hull?!)
+
+         - - - - - - - - - - - - - - - - - - - - - - - - - -
+                          Registration Form
+         - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        Please note that you do not have to fill this in apart from
+your name and address.  We would however appreciate it if you do fill
+out as much as you can as it makes our life easier when replying to
+you.  We would especially ask people who registered for Misty to fill
+in the relevant part of the form.
+        The information will NOT be held on a database as it proved
+too much work!
+        Please don't put any "funny" answers!  I don't think I could
+take any more "Sex: Yes please!"...
+
+Name:
+______________________________________________________________________
+Address:
+______________________________________________________________________
+______________________________________________________________________
+______________________________________________________________________
+Phone Number:
+______________________________________________________________________
+Sex (hmm, I wonder...):
+______________________________________________________________________
+Age:
+______________________________________________________________________
+Date:
+______________________________________________________________________
+Are you a Misty Registree?
+______________________________________________________________________
+Are you in a programming group, and if so what is it called?
+______________________________________________________________________
+What do you program?
+______________________________________________________________________
+Do you have any ideas for improvements for existing commands or
+any ideas for new ones?
+______________________________________________________________________
+______________________________________________________________________
+______________________________________________________________________
+
+
+ 

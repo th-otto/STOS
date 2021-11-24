@@ -1,0 +1,9 @@
+..\..\dist\compiler\link1.ecq
+.L[-S=0]
+.S[-2-]
+.S[-S]
+.S[-DCOMPILER=1]
+.S[-I..\..\src]
+.S[-I..\..\compiler]
+=
+comp1.s

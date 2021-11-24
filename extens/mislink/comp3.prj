@@ -1,0 +1,9 @@
+..\..\dist\compiler\link3.ecs
+.L[-S=0]
+.S[-2-]
+.S[-DCOMPILER=1]
+.S[-S]
+.S[-I..\..\src]
+.S[-I..\..\compiler]
+=
+comp3.s

@@ -1,0 +1,8 @@
+..\..\dist\stos\link1.exq
+.L[-S=0]
+.S[-2-]
+.S[-S]
+.S[-DCOMPILER=0]
+.S[-I..\..\src]
+=
+link1.s

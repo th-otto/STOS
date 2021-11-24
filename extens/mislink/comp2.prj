@@ -1,0 +1,8 @@
+..\..\dist\compiler\link2.ecr
+.L[-S=0]
+.S[-2-]
+.S[-DCOMPILER=1]
+.S[-I..\..\src]
+.S[-I..\..\compiler]
+=
+comp2.s

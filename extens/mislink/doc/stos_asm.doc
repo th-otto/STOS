@@ -1,0 +1,89 @@
+		   Adding assembly to you STOS programs.
+
+	Although The Missing Link is extremely powerful, STOS can
+still do with a speed-boost from time to time, especially in main-loops
+whith a lot of FOR..NEXT loops.  This is where you can use assembly
+to very great effect in STOS programs.  So if you have even a little
+assemebly experience you can improve the speed of your programs by
+a tremendous amount.
+
+	Say you have a program like this:
+	
+10 dim X(99),Y(99)
+20 for T=0 to 99
+30 X(T)=rnd(319) : Y(T)=rnd(199)
+40 next T
+50 for T=0 to 99
+60 plot X(T),Y(T)
+70 X(T)=X(T)+4 : if X(T)>319 then X(T)=0
+80 next T
+90 goto 50
+
+	A bit contrived I grant you, but you get the idea.  Now we
+can re-write line 70 in assembly with extreme ease, which should
+speed the loop up considerably.
+	As you know, STOS provides us with the DREG(x)/AREG(x) arrays
+for access to the 68000's data and address registers.  We can use these
+to make interfacing with assembly really easy providing we know how
+STOS holds it's variables.
+	I will restrict myself to integers here as these are the most
+common type of variable you will have to deal with.
+	A simple integer variable is held as one longword in memory.  An
+array of integers is held as a continuos block of longwords.  As we want
+to actually modify the variables we have to pass thier address to our
+assembly program, so to do this we use the VARPTR command.  So, for
+instance, varptr(X) gives the address of the variable X and varptr(X(0))
+gives the address of the array X() (notice that the SORT command needs
+"sort Q(0)"!).
+	So, if we go back to the example program, this is the line we
+want to change to assembly:
+
+70 X(T)=X(T)+4 : if X(T)>319 then X(T)=0
+
+	As we know how to get the address of the array this becomes
+very easy to do using the AREG array.
+
+; "line 70" in 68000
+;
+start:	move.l	#99,d0		; ie, size of the array
+	moveq.l	#4,d1		; amount to add to each element
+loop1:	move.l	(a0),d2		
+	add.l	d1,d2		; add to array element
+	cmp.l	#319,d2		; if X>319...
+	ble.s	next1
+	moveq.l	#0,d2
+next1:	move.l	d2,(a0)+
+	dbra.w	d0,loop1	; loop d0 times
+	rts			; and back to STOS
+
+	To integrate this in STOS we would change our program to
+something like this (having loaded our assembled program into memory
+bank 15):
+
+10 dim X(99),Y(99)
+20 for T=0 to 99
+30 X(T)=rnd(319) : Y(T)=rnd(199)
+40 next T
+45 areg(0)=varptr(X(0)) : call 15
+50 for T=0 to 99
+60 plot X(T),Y(T)
+80 next T
+90 goto 45
+
+	Line 45 is where we call our assembly routine.  Using this
+assembly routine to handle the array is at least 8 times faster than
+it's STOS equivalent!
+	We could make the assembly routine more general purpose by
+removing the two lines from "start:" and passing these using DREG(n)
+which would men the routine could handle any size of array and any size
+of addition.
+
+	I hope this little doc has been of some use to you.  Providing
+you know a little assembly it is very easy to write large parts of the
+average main-loop, and therefore speed up your games by many times.
+	If you don't know any assembly language then I strongly advise
+you to learn some!  You'll be surprised how easy it is to learn and at
+what a difference it can make to your programs!
+
+
+
