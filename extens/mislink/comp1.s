@@ -3,6 +3,7 @@
 		.include "window.inc"
 		.include "sprites.inc"
 		.include "equates.inc"
+		.include "adapt.inc"
 
 SCREEN_WIDTH  = 320
 SCREEN_HEIGHT = 200
@@ -33,9 +34,6 @@ timerc_vec = 0x0114
 timerb_vec = 0x0120
 timera_vec = 0x0134
 
-saved_joyvec = $0418 ; WTF
-joybuf       = $041c ; WTF
-joysave_flag    = $041e ; WTF
 colorptr     = $045a
 conterm      = $0484
 
@@ -170,12 +168,21 @@ l032:	.dc.b I,I,',',I,',',I,',',I,1,1,0             ; dsave
 entry:  bra.w init
 
 init:
+*
+* the loader already installs a joystick routine that handles both joysticks,
+* we just need the address of the joytsick buffer
+*
+		lea        joybuf(pc),a1
+		move.l     ada(a5),a2 ; get address of adaptation routines
+		move.l     adapt_joy(a2),a2 ; get address of jostick buffer
+		move.l     a2,(a3) ; save for later use
 		lea        exit(pc),a2
 		rts
 
 exit:
 		rts
 
+joybuf:   ds.l 1
 
 ; -----------------------------------------------------------------------------
 
@@ -205,8 +212,6 @@ landscape:
 		movea.l    d1,a4
 		movea.l    d1,a5
 		movea.l    d1,a6
-		tst.w      d0 ; FIXME: already done above
-		bne        landscape_init
 		cmpi.l     #0x03031973,(a1)+
 		bne        landscape_ret
 		cmpi.l     #0x18E7074C,(a2)+
@@ -234,11 +239,9 @@ landscape1:
 		bge.s      landscape2
 		moveq.l    #0,d7
 landscape2:
-		.IFNE 0 ; FIXME, missing
 		tst.w      d6
 		bge.s      landscape3
 		moveq.l    #0,d6
-		.ENDC
 landscape3:
 		lsr.w      #4,d6
 		add.w      d6,d6
@@ -459,7 +462,7 @@ landscape_init:
 		bge.s      landscape_init1
 		moveq.l    #0,d0
 landscape_init1:
-		cmpi.w     #SCREEN_WIDTH-16,d0 ; FIXME screen size
+		cmpi.w     #SCREEN_WIDTH-16,d0
 		ble.s      landscape_init2
 		move.w     #SCREEN_WIDTH-16,d0
 landscape_init2:
@@ -480,7 +483,7 @@ landscape_init4:
 		mulu.w     #160,d1
 		add.w      d1,d0
 		lea.l      landscape_screenoffset(pc),a0
-		move.w     d0,(a0) ; BUG: should be long
+		move.w     d0,(a0) ; FIXME: should be long
 		move.w     d2,d0
 		move.w     d3,d1
 		subq.w     #1,d0
@@ -508,7 +511,7 @@ landscape_end:
 		movem.l    (a7)+,a0-a5
 		rts
 
-landscape_screenoffset: ds.w 1 ; BUG: should be long
+landscape_screenoffset: ds.w 1 ; FIXME: should be long
 landscape_width: dc.w 19 ; in words
 landscape_height: dc.w 10 ; in words
 landscape_mapx: ds.w 1
@@ -565,8 +568,8 @@ lib3:
 bob:
 		movem.l    a0-a5,-(a7)
 		move.l     (a6)+,d6
-		cmpi.w     #1,d6
-		beq        bob_init
+		tst.w      d6
+		bne        bob_init
 		move.l     (a6)+,d2
 		move.l     (a6)+,d1
 		move.l     (a6)+,d0
@@ -1518,17 +1521,15 @@ bob_init:
 		move.l     (a6)+,d1 ; y1
 		move.l     (a6)+,d0 ; x1
 		move.l     a6,-(a7)
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
+		tst.w      d0
 		bge.s      bob_init1
 		moveq.l    #0,d0
 bob_init1:
-		cmpi.w     #SCREEN_WIDTH,d2 ; FIXME screensize
+		cmpi.w     #SCREEN_WIDTH,d2
 		ble.s      bob_init2
 		move.w     #SCREEN_WIDTH,d2
 bob_init2:
-		/* tst.w      d1 */
-		dc.w 0x0c41,0 /* XXX */
+		tst.w      d1
 		bge.s      bob_init3
 		moveq.l    #0,d1
 bob_init3:
@@ -1538,6 +1539,7 @@ bob_init3:
 bob_init4:
 		andi.w     #-16,d0
 		andi.w     #-16,d2
+
 		lea.l      bobpatch7(pc),a0
 		move.w     d1,2(a0)
 		lea.l      bobpatch9(pc),a0
@@ -1546,15 +1548,18 @@ bob_init4:
 		move.w     d1,2(a0)
 		lea.l      bobpatch4(pc),a0
 		move.w     d1,2(a0)
+
 		subi.w     #64,d1
 		lea.l      bobpatch2_1(pc),a0
 		move.w     d1,2(a0)
+
 		lea.l      bobpatch6(pc),a0
 		move.w     d3,2(a0)
 		lea.l      bobpatch5(pc),a0
 		move.w     d3,2(a0)
 		lea.l      bobpatch3(pc),a0
 		move.w     d3,2(a0)
+
 		lea.l      bobpatch43(pc),a0
 		move.w     d0,2(a0)
 		lea.l      bobpatch47(pc),a0
@@ -1585,6 +1590,7 @@ bob_init4:
 		move.w     d0,2(a0)
 		lea.l      bobpatch18(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
 		lea.l      bobpatch44(pc),a0
 		move.w     d0,2(a0)
@@ -1594,6 +1600,7 @@ bob_init4:
 		move.w     d0,2(a0)
 		lea.l      bobpatch11(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
 		lea.l      bobpatch38(pc),a0
 		move.w     d0,2(a0)
@@ -1601,15 +1608,19 @@ bob_init4:
 		move.w     d0,2(a0)
 		lea.l      bobpatch13(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
 		lea.l      bobpatch29(pc),a0
 		move.w     d0,2(a0)
 		lea.l      bobpatch15(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
-		lea.l      bobpatch17(pc),a0 ; BUG: not patched
+		lea.l      bobpatch17(pc),a0
+		move.w     d0,2(a0)
 		lea.l      bobpatch1(pc),a0
 		move.w     d0,2(a0)
+
 		lea.l      bobpatch46(pc),a0
 		move.w     d2,2(a0)
 		lea.l      bobpatch40(pc),a0
@@ -1622,6 +1633,7 @@ bob_init4:
 		move.w     d2,2(a0)
 		lea.l      bobpatch2(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      bobpatch46_1(pc),a0
 		move.w     d2,2(a0)
@@ -1631,6 +1643,7 @@ bob_init4:
 		move.w     d2,2(a0)
 		lea.l      bobpatch20(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      bobpatch42(pc),a0
 		move.w     d2,2(a0)
@@ -1638,11 +1651,13 @@ bob_init4:
 		move.w     d2,2(a0)
 		lea.l      bobpatch21(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      bobpatch34(pc),a0
 		move.w     d2,2(a0)
 		lea.l      bobpatch22(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      bobpatch23(pc),a0
 		move.w     d2,2(a0)
@@ -1891,7 +1906,7 @@ map_toggle3:
 		dbf        d2,map_toggle3
 map_toggle_end:
 		move.l     (a7)+,a0
-		move.l     #0,(a6) ; BUG: should be -(a6)
+		clr.l      -(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2450,8 +2465,11 @@ palt6:
 		rts
 palt7:
 		adda.l     d1,a0
-		move.l     a0,colorptr /* FIXME: use Setpalette */
 		move.l     a0,(a6)
+		move.l     a0,-(a7)
+		move.w     #6,-(a7) ; Setpalette
+		trap       #14
+		addq.w     #6,a7
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2482,8 +2500,6 @@ world:
 		movea.l    d0,a4
 		movea.l    d0,a5
 		movea.l    d0,a6
-		tst.w      d7
-		bne        world_init ; FIXME; already done above
 		cmpi.l     #0x07793868,(a1)+
 		bne        world_end
 		cmpi.l     #0x02528E54,(a2)+
@@ -2752,10 +2768,9 @@ world11:
 		addq.w     #2,a7
 		movea.l    (a7)+,a0
 		movem.w    world_width(pc),d0-d1
-		lsl.w      #1,d0 ; FIXME; may overflow
-		suba.l     d0,a2
+		suba.w     d0,a2
+		suba.w     d0,a2
 		subq.w     #2,a2
-		lsr.w      #1,d0 ; FIXME
 		moveq.l    #0,d7
 		move.w     x12004(pc),d7
 		addq.w     #2,d7
@@ -2772,7 +2787,7 @@ world12:
 		moveq.l    #15,d7
 		sub.w      d1,d7
 		lsl.w      #4,d7
-		lea.l      world14(pc,d7.w),a4
+		lea        world14(pc,d7.w),a4		; dml
 world13:
 		lea.l      128(a3),a5
 		move.w     (a2)+,d7			; dml
@@ -2875,7 +2890,7 @@ world_init:
 		bge.s      world_init1
 		moveq.l    #0,d0
 world_init1:
-		cmpi.w     #SCREEN_WIDTH-16,d0 ; FIXME screensize
+		cmpi.w     #SCREEN_WIDTH-16,d0
 		ble.s      world_init2
 		move.w     #SCREEN_WIDTH-16,d0
 world_init2:
@@ -3269,7 +3284,7 @@ musauto15:
 		bne.s      musauto16
 		move.w     #15,(a2)
 		move.w     #34,(a3)
-		bra.w      soundplay1
+		bra        soundplay1
 
 musauto16:
 		cmpi.l     #"(c)L",(a1) ; Lap (1 scanline)
@@ -3410,8 +3425,7 @@ musstop:
 		jsr        (a0)
 		movem.l    (a7)+,d0-d7/a0-a6
 		move.l     #255,d0
-		/* lea -18(a0),a0 */
-		dc.w 0x91fc,0,18 /* XXX */
+		lea        -18(a0),a0
 		movem.l    d0-d7/a0-a6,-(a7)
 		jsr        (a0)
 		movem.l    (a7)+,d0-d7/a0-a6
@@ -3593,7 +3607,7 @@ which_block:
 		bra.s      which_block2
 which_block1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne.w      which_block3
+		bne        which_block3
 		moveq.l    #8,d5
 which_block2:
 		tst.w      d0
@@ -3621,14 +3635,12 @@ which_block2:
 		move.w     (a0),d3
 		lsr.w      d5,d3
 		tst.w      d3
-		bge.w      which_block3
+		bge        which_block3
+which_block4:
 		move.l     #0x0000FFFF,d3
 which_block3:
 		move.l     d3,-(a6)
 		rts
-which_block4:
-		move.l     #0x0000FFFF,d3
-		bra.s      which_block3
 
 ; -----------------------------------------------------------------------------
 
@@ -3639,40 +3651,33 @@ lib13:
 	dc.w	0			; no library calls
 relocate:
 		move.l     (a6)+,a0
-		movem.l    d0-d7/a0-a5,-(a7)
+		movem.l    d1-d2/a0-a2,-(a7)
 		cmpi.w     #0x601A,(a0) ; GEMDOS magic
-		beq.s      relocate1
-		bra.s      relocate5
-relocate1:
-		move.l     a0,d2
-		addi.l     #28,d2
+		bne.s      relocate5
 		lea.l      28(a0),a1
+		move.l     a1,d2
 		movea.l    a1,a2
 		adda.l     2(a0),a2 ; skip text segment
-; 3 BUGS: in a single instruction:
-;  - ignores length of data segment
-;  - ignores length of symbol table
-;  - does not check for first longword being zero
-		adda.l     (a2)+,a1 ; get address of first relocation
-		add.l      d2,(a1)
-relocate2:
-		tst.b      (a2)
-		beq.s      relocate5
-		moveq.l    #0,d1
-relocate3:
+		adda.l     6(a0),a2 ; skip data segment
+		adda.l     14(a0),a2 ; skip symbols
+		move.l     (a2)+,d1 ; get address of first relocation
+		beq        relocate5 ; no relocations present
+		add.l      d1,a1
 		moveq.l    #0,d0
+relocate2:
+		add.l      d2,(a1)
+relocate3:
 		move.b     (a2)+,d0
+		beq.s      relocate5
 		cmp.b      #1,d0
 		bne.s      relocate4
-		addi.w     #254,d1
+		lea        254(a1),a1
 		bra.s      relocate3
 relocate4:
-		add.w      d0,d1
-		adda.w     d1,a1
-		add.l      d2,(a1)
+		adda.w     d0,a1
 		bra.s      relocate2
 relocate5:
-		movem.l    (a7)+,d0-d7/a0-a5
+		movem.l    (a7)+,d1-d2/a0-a2
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3683,8 +3688,10 @@ relocate5:
 lib14:
 	dc.w	0			; no library calls
 p_left:
-		move.l     (a6)+,d3
-		lea.l      joybuf,a0
+		move.l     (a6)+,d0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     joybuf-entry(a0),a0
 		adda.w     d3,a0
 		moveq.l    #0,d3
 		move.b     (a0),d0
@@ -3703,33 +3710,14 @@ p_left1:
 lib15:
 	dc.w	0			; no library calls
 p_on:
-		cmpi.w     #0x1234,(joysave_flag).w
-		beq.s      p_on1
-		move.w     #0x1234,(joysave_flag).w
 		movem.l    d0-d2/a0-a2,-(a7)
-		move.w     #20,-(a7)
+		move.w     #20,-(a7) ; joystick reporting
 		move.w     #4,-(a7) ; IKBD
 		move.w     #3,-(a7) ; Bconout
 		trap       #13
 		addq.l     #6,a7
-		move.w     #34,-(a7) ; Kbdvbase
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
-		/* adda.l     #24,a0 */
-		dc.w 0xd1fc,0,24 /* XXX */
-		move.l     (a0),saved_joyvec
-		lea.l      myjoyvec(pc),a1
-		move.l     a1,(a0)
 		movem.l    (a7)+,d0-d2/a0-a2
 p_on1:
-		rts
-
-myjoyvec:
-		movem.l    a0-a1,-(a7)
-		move.b     1(a0),joybuf
-		move.b     2(a0),joybuf+1
-		movem.l    (a7)+,a0-a1
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3740,17 +3728,15 @@ myjoyvec:
 lib16:
 	dc.w	0			; no library calls
 p_joy:
-		move.l     (a6)+,d3
-		tst.b      d3
-		bne.s      p_joy1
-		moveq.l    #0,d3
-		move.b     joybuf,d3
-		bra.s      p_joy2
-p_joy1:
-		moveq.l    #0,d3
-		move.b     joybuf+1,d3
-p_joy2:
-		move.l     d3,-(a6)
+		move.l     (a6)+,d0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     joybuf-entry(a0),a0
+		and.w      #1,d0
+		add.w      d0,a0
+		moveq.l    #0,d0
+		move.b     (a0),d0
+		move.l     d0,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3761,16 +3747,6 @@ p_joy2:
 lib17:
 	dc.w	0			; no library calls
 p_stop:
-		cmpi.w     #0x1234,(joysave_flag).w
-		bne.s      p_stop1
-		move.w     #-1,(joysave_flag).w
-		move.w     #34,-(a7) ; Kbdvbase
-		trap       #14
-		addq.l     #2,a7
-		movea.l    d0,a0
-		/* adda.l     #24,a0 */
-		dc.w 0xd1fc,0,24 /* XXX */
-		move.l     saved_joyvec,(a0)
 ; send reset command to IKBD
 		move.w     #0x0080,-(a7)
 		move.w     #4,-(a7)
@@ -3794,7 +3770,9 @@ lib18:
 	dc.w	0			; no library calls
 p_up:
 		move.l     (a6)+,d3
-		lea.l      joybuf,a0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     joybuf-entry(a0),a0
 		adda.w     d3,a0
 		moveq.l    #0,d3
 		move.b     (a0),d0
@@ -3823,7 +3801,7 @@ set_block:
 		bra.s      set_block2
 set_block1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne.w      set_block3
+		bne        set_block3
 		lsl.w      #8,d2
 set_block2:
 		tst.w      d0
@@ -3860,7 +3838,9 @@ lib20:
 	dc.w	0			; no library calls
 p_right:
 		move.l     (a6)+,d3
-		lea.l      joybuf,a0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     joybuf-entry(a0),a0
 		adda.w     d3,a0
 		moveq.l    #0,d3
 		move.b     (a0),d0
@@ -3886,23 +3866,21 @@ palsplit:
 		move.l     (a6)+,d1
 		tst.w      d1
 		beq        palsplit4
-		.IFNE 0 ; missing
 		cmpi.w     #2,d2
 		bge.s      palsplit1
 		moveq.l    #2,d2
-		.ENDC
 palsplit1:
 		lea        palsplit_saveflag(pc),a2
 		tst.w      (a2)
 		beq.s      palsplit2
-		clr.b      tbcr.l /* XXX */
+		clr.b      tbcr
 		lea.l      palsplit_patch1(pc),a2
 		move.b     d0,2(a2)
 		lea.l      palsplit_patch2(pc),a2
 		move.b     d2,2(a2)
 		lea.l      palsplit_num(pc),a2
 		move.w     d3,(a2)
-		move.b     #8,tbcr.l /* XXX */
+		move.b     #8,tbcr
 		bra        palsplit_end
 palsplit2:
 		lea.l      palsplit_patch1(pc),a2
@@ -3926,6 +3904,7 @@ palsplit3:
 		move.b     (ierb).w,(a0)+
 		move.b     (imra).w,(a0)+
 		move.b     (imrb).w,(a0)+
+		move.w     sr,d0
 		move.w     #0x2700,sr
 		ori.b      #1,(iera).w
 		ori.b      #1,(imra).w
@@ -3935,8 +3914,7 @@ palsplit3:
 		move.l     (vbl_vec).w,(a2)
 		lea        palsplit_vbl(pc),a2
 		move.l     a2,(vbl_vec).w
-; BUG: sr not saved/restored
-		move.w     #0x2300,sr
+		move.w     d0,sr
 		lea        palsplit_saveflag(pc),a2
 		move.w     #1,(a2)
 		bra.s      palsplit_end
@@ -3944,6 +3922,8 @@ palsplit4:
 		lea        palsplit_saveflag(pc),a2
 		tst.w      (a2)
 		beq.s      palsplit_end
+		clr.w      (a2)
+		move.w     sr,d0
 		move.w     #0x2700,sr
 		lea.l      palsplit_savearea(pc),a0
 		move.b     (a0)+,(iera).w
@@ -3951,10 +3931,7 @@ palsplit4:
 		move.b     (a0)+,(imra).w
 		move.b     (a0)+,(imrb).w
 		move.l     palsplit_savevbl(pc),(vbl_vec).w
-; BUG: sr not saved/restored
-		move.w     #0x2300,sr
-		lea        palsplit_saveflag(pc),a2
-		move.w     #0,(a2)
+		move.w     d0,sr
 
 palsplit_end:
 		rts
@@ -4067,7 +4044,9 @@ lib22:
 	dc.w	0			; no library calls
 p_down:
 		move.l     (a6)+,d3
-		lea.l      joybuf,a0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     joybuf-entry(a0),a0
 		adda.w     d3,a0
 		moveq.l    #0,d3
 		move.b     (a0),d0
@@ -4092,8 +4071,10 @@ floodpal:
 floodpal1:
 		move.w     d3,(a0)+
 		dbf        d0,floodpal1
-		lea.l      floodpal_colortab(pc),a0
-		move.l     a0,colorptr /* FIXME: use Setpalette */
+		pea        floodpal_colortab(pc)
+		move.w     #6,-(a7) ; Setpalette
+		trap       #14
+		addq.w     #6,a7
 		rts
 
 floodpal_colortab: ds.w 16
@@ -4107,7 +4088,9 @@ lib24:
 	dc.w	0			; no library calls
 p_fire:
 		move.l     (a6)+,d3
-		lea.l      joybuf,a0
+		move.l     debut(a5),a0
+		movea.l    0(a0,d1.w),a0
+		move.l     joybuf-entry(a0),a0
 		adda.l     d3,a0
 		moveq.l    #0,d3
 		move.b     (a0),d0
@@ -4179,30 +4162,31 @@ digi_play4:
 install_digiirq:
 		lea.l      digiplay_flag(pc),a1
 		move.w     #1,(a1)
-		move.w     sr,-(a7)
+		move.w     sr,d0
 		move.w     #0x2700,sr
+		lea        save_timera(pc),a1
+		move.l     (timera_vec).w,(a1)
+		lea        digiplay_irq(pc),a1
+		move.l     a1,(timera_vec).w
 		lea        save_iera(pc),a1
 		move.b     iera,(a1)+
 		move.b     imra,(a1)+
 		move.b     vr,(a1)+
 		move.b     tacr,(a1)
-		lea        save_timera(pc),a1
-		move.l     (timera_vec).w,(a1)
-		lea        digiplay_irq(pc),a1
-		move.l     a1,(timera_vec).w
 		move.b     #1,(tacr).w
 		move.b     timera_value(pc),(tadr).w
 		bset       #5,(iera).w
 		bset       #5,(imra).w
 		bclr       #3,(vr).w
-		rte
+		move.w     d0,sr
+		rts
 
 digi_play_stop:
-		move.w     sr,-(a7)
 		lea.l      digiplay_flag(pc),a0
 		tst.w      (a0)
 		beq.s      digi_play_stop1
-		move.w     #0,(a0)
+		clr.w      (a0)
+		move.w     sr,d0
 		move.w     #0x2700,sr
 		move.l     save_timera(pc),(timera_vec).w
 		move.b     save_iera(pc),(iera).w
@@ -4210,7 +4194,8 @@ digi_play_stop:
 		move.b     save_vr(pc),(vr).w
 		move.b     save_tacr(pc),(tacr).w
 		lea        digiplay_loop(pc),a0
-		move.w     #0,(a0)
+		clr.w      (a0)
+		move.w     d0,sr
 digi_play_stop1:
 		rte
 
@@ -4225,7 +4210,7 @@ digiplay_init:
 		move.l     d0,(a1)
 		lea        digiplay_addr(pc),a1
 		move.l     a0,(a1)
-		move.b     #11-1,d1 /* BUG: should be move.w */
+		moveq      #11-1,d1
 		moveq.l    #0,d0
 		movea.w    #PSG,a0
 digiplay_init1:
@@ -4555,7 +4540,7 @@ FN_string:
 		move.l     (a6),d3
 		lea.l      stringbuf+14(pc),a0
 		tst.l      d3
-		bgt.s      string1 ; BUG: should be bne, or handle negative values
+		bne.s      string1
 		move.b     #'0',-(a0)
 		bra.s      string2
 string1:
@@ -4565,7 +4550,7 @@ string1:
 		swap       d3
 		addi.w     #'0',d3
 		move.b     d3,-(a0)
-		move.w     #ZERO,d3
+		clr.w      d3
 		swap       d3
 		bra.s      string1
 string2:
@@ -4573,7 +4558,6 @@ string2:
 		rts
 
 stringbuf: dc.b "               ",0
-		rts ; FIXME
 
 ; -----------------------------------------------------------------------------
 
@@ -4587,7 +4571,7 @@ samsign:
 		move.l     (a6)+,a0
 samsign1:
 		addi.b     #0x80,(a0)+
-		subq.w     #1,d0 ; BUG: should be .l
+		subq.l     #1,d0
 		bne.s      samsign1
 		rts
 
@@ -4638,8 +4622,7 @@ depack6:
 		move.l     12(a0),-(a7)
 		bsr        speed3_depack
 depack_end:
-		move.l     (a7)+,d0 ; return value
-		move.l     d0,-(a6)
+		move.l     (a7)+,-(a6) ; return value
 		rts
 
 		include "atomik.s"
@@ -4709,9 +4692,6 @@ dload:
 		trap       #1
 		addq.l     #8,a7
 		move.w     d0,d7
-		move.w     d0,d6 ; BUG: should be move.l
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
 		blt.s      dload2
 		clr.w      -(a7)
 		move.w     d7,-(a7)
@@ -4719,17 +4699,15 @@ dload:
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
 		lea.l      10(a7),a7
-		move.w     d0,d6 ; BUG: should be move.l
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
-		blt.s      dload1
+		cmp.l      d0,d3
+		bne        dload1
 		move.l     a4,-(a7)
 		move.l     d4,-(a7)
 		move.w     d7,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
 		lea.l      12(a7),a7
-		move.w     d0,d6 ; BUG: should be move.l
+		move.l     d0,d6
 dload1:
 		move.w     d7,-(a7)
 		move.w     #62,-(a7) ; Fclose
@@ -4750,11 +4728,13 @@ lib31:
 display_pc1:
 		movem.l    a0-a5,-(a7)
 		move.l     (a6)+,a1
-		move.l     (a6)+,a0
-		lea.l      2(a0),a3
-		move.l     a3,(colorptr).w /* FIXME: use Setpalette */
+		move.l     (a6)+,a3
+		pea        2(a3)
+		move.w     #6,-(a7) ; Setpalette
+		trap       #14
+		addq.w     #6,a7
+		lea.l      34(a3),a0
 		movea.l    a1,a3
-		lea.l      34(a0),a0
 		move.w     #200-1,d4
 display_pc1_1:
 		moveq.l    #3,d3
@@ -4852,9 +4832,6 @@ dsave1:
 		addq.l     #8,a7
 dsave2:
 		move.w     d0,d7
-		move.w     d0,d6 ; BUG: should be move.l
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
 		blt.s      dsave4
 		clr.w      -(a7)
 		move.w     d7,-(a7)
@@ -4862,17 +4839,15 @@ dsave2:
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
 		lea.l      10(a7),a7
-		move.w     d0,d6 ; BUG: should be move.l
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
-		blt.s      dsave3
+		cmp.l      d0,d3
+		bne        dsave3
 		move.l     a4,-(a7)
 		move.l     d4,-(a7)
 		move.w     d7,-(a7)
 		move.w     #64,-(a7) ; Fwrite
 		trap       #1
 		lea.l      12(a7),a7
-		move.w     d0,d6 ; BUG: should be move.l
+		move.l     d0,d6
 dsave3:
 		move.w     d7,-(a7)
 		move.w     #62,-(a7) ; Fclose
@@ -4893,5 +4868,3 @@ dsave_dta: ds.b 46
 
 libex:
 	dc.w 0
-
-ZERO = 0

@@ -162,6 +162,12 @@ JOEY x1,y1,x2,y2,0,0,1                          |  SPRITE
 JOEY scr,gadr,img,x,y,,COL,0                    |  COMMANDS
 h = B HEIGHT(gadr,img)                          |
 w = B WIDTH(gadr,img)                           |
+MANY BOB x1,y1,x2,y2,0,0,0,0,0,1                |
+MANY BOB scr,gadr,imgadr,xadr,yadr,statadr,xoff,|
+     yoff,num,0                                 |
+MANY JOEY x1,y1,x2,y2,0,0,0,0,0,0,1             |
+MANY JOEY scr,gadr,imgadr,xadr,yadr,statadr,    |
+     coladr,xoff,yoff,num,0                     |
 ------------------------------------------------|
 WORLD x1,y1,x2,y2,0,1                           |
 WORLD scr,gadr,madr,x,y,0                       |
@@ -193,11 +199,17 @@ DISPLAY PC1 gadr,scr                            |
 WASH scr,x1,y1,x2,y2                            |
 BLIT scr1,x1,y1,x2,y2,scr2,x3,y3                |
 M BLIT scr1,x1,y1,x2,y2,scr2,x3,y               |
+BULLET scr,x,y,col                              |
+MANY BULLET scr,xadr,yady,statadr,coladr,xoff,  |
+     yoff,num                                   |
+MANY SPOT scr,xadr,yady,statadr,coladr,xoff,    |
+     yoff,num                                   |
 ------------------------------------------------|
 r = PALT (gadr)                                 |  PALETTE
 PALSPLIT md,cadr,y,hig,num                      |  COMMANDS
 FLOODPAL colr                                   |
 r = BRIGHTEST (padr)                            |
+RASTER flag,coladr,line,wid,num,col             |
 ------------------------------------------------|
 l = DLOAD (fadr,adr,ofs,num)                    |
 l = DSAVE (fadr,adr,ofs,num)                    |
@@ -228,6 +240,14 @@ RELOCATE padr                                   |  COMMANDS
 r = BOUNDARY (n)                                |
 r = OVERLAP (x1,y1,x2,y2,wd1,hg1,wd2,hg2)       |
 REBOOT n                                        |
+r = MANY OVERLAP (x1,y1,xadr,yadr,wid1,hig1,    |
+    wid2,hig2,statadr,imgadr,stval,imgval,num)  |
+MANY ADD xadr,vadr,num,lval,uval                |
+MANY SUB xadr,vadr,num,lval,uval                |
+MANY INC xadr,num,lval,uval                     |
+MANY DEC xadr,num,lval,uval                     |
+freq = HERTZ                                    |
+SET HERTZ freq                                  |
 a = mostly harmless(1,2,3,4,5)                  |
 ________________________________________________|
 
@@ -293,6 +313,61 @@ e.g.
         30 joey logic,start(5),0,x mouse,y mouse,15,0
         40 screen swap : wait vbl
         50 until mousekey=1
+
+
+MANY BOB x1,y1,x2,y2,0,0,0,0,0,1
+or
+MANY BOB scr,gadr,imgadr,xadr,yadr,statadr,xoff,yoff,num,0
+
+        The MANY BOB command lets you draw up a series of BOBS without
+having to do the usual "for..next" loop.  This command gives a
+considerable speed increase over the normal method.
+        The first version of the command is used to set the clipping
+zone.
+        The second actaully draws the bobs.  SCR is the screen
+address, GADR is the address of the bob data, IMGADR is a pointer to
+an array containing the image numbers, XADR is a pointer to an array
+holding the X co-ordinates, YADR points to an array holding the Y co-
+ordinates, STATADR points to an array which determines whether to draw
+the current sprite or not, XOFF is the amount to subtract from each X-
+co-ordinte displayed (for use with sprites which have "virtual" co-
+ordintes), YOFF is the amount to subtract from the Y and NUM is the
+number of bobs to draw.
+        If the content of the STATADR array is not 0 then the bob is
+displayed, otherwise the BOB is ignored.  This allows for bobs to be
+"Killed" so they are not displayed.
+
+e.g.
+        10 rem> assuming the bob-data is in bank 1 <
+        20 many bob 0,0,320,200,0,0,0,0,0,1
+        30 dim X(9),Y(9),IMG(9),FLAG(9)
+        40 for T=0 to 9
+        50 FLAG(T)=0
+        60 next T
+        70 many bob logic,start(1),varptr(IMG(0)),varptr(X(0)),
+           varptr(Y(0)),varptr(FLAG(0)),0,0,9,0
+
+
+MANY JOEY x1,y1,x2,y2,0,0,0,0,1
+or
+MANY JOEY scr,gadr,imgadr,xadr,yadr,statadr,coladr,xoff,yoff,num,0
+
+        The MANY JOEY command is like the MANY BOB command, except of
+course that it draws joeys rather then bobs!
+        The only parameter which is different is that there is the
+addition of COLADR.  This points to an array containing the colour for
+each joey.  If you pass COLADR as 0-15 then this will be assumed to be
+the colour used for all of the joey's.
+
+e.g.
+        10 rem> assuming the joey-data is in bank 1 <
+        20 many joey 0,0,320,200,0,0,0,0,1
+        30 dim X(9),Y(9),IMG(9),FLAG(9),CL(9)
+        40 for T=0 to 9
+        50 FLAG(T)=0 : CL(T)=rnd(14)+1
+        60 next T
+        70 many joey logic,start(1),varptr(IMG(0)),varptr(X(0)),
+           varptr(Y(0)),varptr(FLAG(0)),varptr(CL(0)),0,0,9,0
 
 
 w = B WIDTH (gadr,img)
@@ -627,6 +702,48 @@ e.g.
         30 until mouse key=1
 
 
+BULLET scr,x,y,col
+
+        The BULLET command is similar to SPOT, except that it draws a
+2x2 box rather than a single pixel.  As the name suggests, this is
+extremely useful for doing a quick bullet or two!
+        SCR is the screen address, X and Y are the co-ordinates of the
+bullet and COL is the colour.
+
+e.g.
+        10 bullet logic,x mouse,y mouse,rnd(15)
+
+
+MANY BULLET scr,xadr,yady,statadr,coladr,xoff,yoff,num
+
+        MANY BULLET is the same as the other MANY graphics commands
+except that it draws a bullet (surprise huh?).
+        The parameters are the same as for MANY JOEY, exept that the
+IMGADR is not used.
+
+e.g.
+        30 dim X(9),Y(9),IMG(9),FLAG(9),CL(9)
+        40 for T=0 to 9
+        50 FLAG(T)=0 : CL(T)=rnd(14)+1
+        60 next T
+        70 many bullet logic,start(1),varptr(X(0)),
+varptr(Y(0)),varptr(FLAG(0)),varptr(CL(0)),0,0,9,0
+
+
+MANY SPOT scr,xadr,yady,statadr,coladr,xoff,yoff,num
+
+        This is the MANY version of SPOT.  The parameters are all the
+same as for MANY BULLET.
+
+e.g.
+        30 dim X(9),Y(9),IMG(9),FLAG(9),CL(9)
+        40 for T=0 to 9
+        50 FLAG(T)=0 : CL(T)=rnd(14)+1
+        60 next T
+        70 many spot logic,start(1),varptr(X(0)),
+varptr(Y(0)),varptr(FLAG(0)),varptr(CL(0)),0,0,9,0
+
+
 REFLECT scr1,y1,y2,scr2,y3
 
         REFLECT will produce a rippling water effect on the screen.
@@ -753,6 +870,32 @@ e.g.
         40 print "Brightest bob colour is";C
         50 C=brightest(logic+32000)
         60 print "Brightest current colour is";C
+
+
+RASTER flag,coladr,line,wid,num,col
+
+        The RASTER command is used in the same way as PALSLIT, but it
+only changes one colour rather than the whole palette.  This can be
+used to great effect to produce "parallax" skies and multi-coloured
+text in intros.
+        FLAG is the on/off flag (1 is on, 0 is off), COLADR is the
+address of the colour-data (one word per colour), LINE is the
+scanline to start the raster on, WID is how far apart each raster will
+occur, NUM is the number of rasters to do and COL is the colour
+register to change (0-15).
+
+e.g.
+        10 reserve as work 10,512*2
+        15 H=0
+        20 for R=0 to 7 : for G=0 to 7 : for B=0 to 7
+        30 doke start(10)+H,R*256+G*16+B
+        40 H=H+2
+        50 next B : next G : next R
+        60 raster 1,start(10)+H,1,1,199,0
+        70 H=H+2 : if H>311*2 then H=0
+        80 wait vbl
+        90 raster 0,0,0,0,0,0
+        100 if inkey$<>" " then goto 60
 
 
 File commands
@@ -1105,6 +1248,51 @@ e.g.
         30 until mouse key=1
 
 
+r = MANY OVERLAP (x1,y1,xadr,yadr,wid1,hig1,wid2,hig2,statadr,
+    imgadr,stval,imgval,num)
+
+        This command is a version of OVERLAP, but which does multiple
+collision checks.  The speed increase with this command - even over
+OVERLAP itself - is very, very high.
+        X1,Y1 is the top-left corner of the object to check everything
+else against, XADR,YADR are pointers to the X and Y co-ordinate
+arrays, WID1,HIG1 are the width and height of the first object,
+WID2,HIG2 are the width and height of all the other objects in the
+array, STATADR is a pointer to the array holding the status of the
+object, IMGADR points to the array holding the imgage numbers to be
+returned, STVAL is the value which will be placed in STATADR if a
+collision takes place, IMGVAL is the value which will be placed in
+IMGADR if a collision occurs and finally (at last!) NUM holds the
+number of collisions to check.  R is returned as the number of
+collisions which actually occurred.
+        STATADR should hold 1 if the collision is to be checked for
+the element in the array, and anything else will skip that element.
+So
+for example, if STAT(9) was 4 the collision for element 9 would be
+skipped.  The way we usually use this is STAT(x) holds 0 if the sprite
+is off the screen, 1 if the sprite is on screen and is to be checked
+and 2 if the sprite is exploding or is "dead".
+
+e.g.
+
+        10 dim X(99),Y(99),STAT(99),IMG(99)
+        20 for T=0 to 99
+        30 X(T)=rnd(800)-400
+        40 Y(T)=rnd(800)-400
+        50 IMG(T)=1
+        60 if X(T)<0 or X(T)>319 or Y(T)<0 or Y(T)>199 then
+           STAT(T)=0 else STAT(T)=1
+        70 next T
+        80 rem
+        90 XM=x mouse : YM=y mouse
+        100 R=many overlap(XM,YM,varptr(X(0)),varptr(Y(0)),
+            16,16,32,24,varptr(STAT(0)),varptr(IMG(0)),
+            2,5,99)
+        110 if R>0 then boom
+        120 goto 90
+
+
+
 REBOOT n
 
         This was originaly called 'cold boot; but STOS turned it into
@@ -1119,6 +1307,50 @@ proceed but if you want to skip this then pass 'n' as $ABCD.
 
 e.g.
         10 reboot $ABCD
+
+
+MANY ADD xadr,vadr,num,lval,uval
+MANY SUB xadr,vadr,num,lval,uval
+
+        MANY ADD will do multiple additions on an array.  This can
+speed up almost any STOS program.
+        XADR is the address of the array to add the values to, VADR is
+either an array of values to add to the corrosponding element in XADR
+or else an immediate vlaue LESS THAN 32000!, NUM is the number of
+elements in the array, LVAL is the lower limit which the value can be
+and UVAL is the upper limit.
+        LVAL and UVAL are used to replace the "IF X(0)>UVAL then
+X(0)=LVAL" type construct.
+
+e.g.
+        10 dim X(99),NUM(99)
+        20 many add varptr(X(0)),varptr(NUM(0)),99,0,319
+        30 many add varptr(X(0)),4,99,0,319
+
+
+MANY INC xadr,num,lval,uval
+MANY DEC xadr,num,lval,uval
+
+        These commands are like MANY ADD except that they are for
+adding or subtracting by 1 only (like INC and DEC in STOS).
+        The parameters corrosopnd to the ones in MANY ADD.
+
+
+freq = HERTZ
+
+        This command will return the current screen frequency in R.
+
+e.g.
+        10 H=hertz
+
+
+SET HERTZ freq
+
+        Use this command to actually set the frequency of the monitor.
+        FREQ is the frequency to set it to (50 or 60).
+
+e.g.
+        10 wait vbl : set freq 50
 
 
 a = MOSTLY HARMLESS (1,2,3,4,5)

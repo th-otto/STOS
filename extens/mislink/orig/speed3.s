@@ -6,6 +6,8 @@
 
 	.EXPORT	speed3_depack
 
+flash = 1 ; XXX FIXME
+
 speed3_depack:
 	moveq	#0,d0
 	movem.l	d0-a6,-(sp)
@@ -47,6 +49,15 @@ speed3_depack:
 	rts
 
 .sp3_03:
+	.IFNE flash
+	move.w	SR,d1
+	andi.w	#$2000,d1
+	beq.s	.sp3_04
+	move.w	$FFFF8240.W,2(a6)
+	btst	#1,$FFFF8260.W
+	bne.s	.sp3_04
+	swap	d5
+	.ENDC
 
 .sp3_04:
 	clr.w	d5
@@ -140,6 +151,12 @@ speed3_depack:
 	rts
 
 .sp3_15:
+	.IFNE flash
+	move.w	SR,d1
+	andi.w	#$2000,d1
+	beq.s	.sp3_16
+	move.w	2(a6),$FFFF8240.W
+	.ENDC
 
 .sp3_16:
 	tst.w	d6
@@ -180,6 +197,10 @@ speed3_depack:
 
 .sp3_22:
 	swap	d5
+	.IFNE flash
+	beq.s	.sp3_23
+	move.w	d5,$FFFF8240.W
+	.ENDC
 
 .sp3_23:
 	lea		.sp3_56+2-.sp3_53(a6),a3

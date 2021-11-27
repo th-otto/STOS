@@ -37,11 +37,8 @@ tokens:
         dc.b "m blit",$96
         dc.b "win block amount",$97
         dc.b "replace range",$98
-        dc.b "empty",$99 ; FIXME
         dc.b "win replace blocks",$9a
-        dc.b "empty2",$9b ; FIXME
         dc.b "win replace range",$9c
-        dc.b "empty3",$9d ; FIXME
         dc.b "win xy block",$9e
 
         dc.b 0
@@ -73,11 +70,11 @@ jumps: dc.w 31
 		dc.l m_blit
 		dc.l win_block_amount
 		dc.l replace_range
-		dc.l empty
+		dc.l dummy
 		dc.l win_replace_blocks
-		dc.l empty2
+		dc.l dummy
 		dc.l win_replace_range
-		dc.l empty3
+		dc.l dummy
 		dc.l win_xy_block
 		
 
@@ -86,55 +83,23 @@ welcome:
 	dc.b 0
 
 table: ds.l 1
-returnpc: ds.l 1
 
 load:
-		lea.l      finprg,a0
-		lea.l      cold,a1
+		lea.l      finprg(pc),a0
+		lea.l      cold(pc),a1
 		rts
 
 cold:
-		move.l     a0,table
-		lea.l      welcome,a0
-		lea.l      warm,a1
-		lea.l      tokens,a2
-		lea.l      jumps,a3
+		lea        table(pc),a1
+		move.l     a0,(a1)
+		lea.l      welcome(pc),a0
+		lea.l      warm(pc),a1
+		lea.l      tokens(pc),a2
+		lea.l      jumps(pc),a3
 		rts
 
 warm:
-		lea.l      registered(pc),a0
-		cmpi.w     #999,(a0)
-		beq.s      warm1
-		lea.l      registered_timer(pc),a0
-		move.w     (a0),d0
-		subq.w     #1,d0
-		move.w     d0,(a0)
-		tst.w      d0
-		bge.s      warm1
-		lea.l      register_msg(pc),a0
-		moveq.l    #W_prtstring,d7
-		trap       #3
-		lea.l      registered_timer(pc),a0
-		move.w     #199,(a0)
-warm1:
 		rts
-
-register_msg:
-	dc.b C_inverse,"This message will not appear if you",C_normal,' ',10,13
-	dc.b C_inverse,"register for The Missing Link.",C_normal,' ',10,13
-	dc.b C_inverse,"You will also receive a very nice",C_normal,' ',10,13
-	dc.b C_inverse,"disk with a lot of source on it.",C_normal,' ',10,13
-	dc.b 0
-	.even
-
-link1_missing:
-	dc.b C_clearscreen,C_home
-	dc.b "LINK1.EXQ is not installed",10,13,0
-	.even
-
-registered_timer: dc.w 20
-
-registered: dc.w 0
 
 getinteger:
 		movea.l    (a7)+,a0
@@ -143,19 +108,11 @@ getinteger:
 		bne.s      typemismatch
 		jmp        (a0)
 
-getstring: /* unused */
-		movea.l    (a7)+,a0
-		movem.l    (a7)+,d2-d4
-		tst.b      d2
-		bge.w      typemismatch
-		movea.l    d3,a1
-		moveq.l    #0,d2
-		move.w     (a1)+,d2
-		jmp        (a0)
-
 diskerror:
 		moveq.l    #E_diskerror,d0
 		bra.s      goerror
+
+dummy:
 syntax:
 		moveq.l    #E_syntax,d0
 		bra.s      goerror
@@ -165,8 +122,8 @@ typemismatch:
 illfunc: /* unused */
 		moveq.l    #E_illegalfunc,d0
 		bra.s      goerror
-noerror:
-		moveq.l    #0,d0
+notdone:
+		moveq.l    #E_none,d0
 
 goerror:
 		movea.l    table(pc),a0
@@ -180,11 +137,9 @@ goerror:
  *         JOEY scr,gadr,img,x,y,colr,0
  */
 joey:
-		move.l     (a7)+,returnpc
-		cmp.w      #7,d0
+		move.l     (a7)+,a1
+		subq.w     #7,d0
 		bne.s      syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr.s      getinteger
 		move.l     d3,args+24
 		bsr.s      getinteger
@@ -199,9 +154,11 @@ joey:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		move.l     args+24(pc),d6
-		cmpi.w     #1,d6
-		beq        joey_init
+		tst.w      d6
+		bne        joey_init
 		movem.l    args+0(pc),a0-a1
 		movem.l    args+8(pc),d0-d3
 		moveq.l    #0,d4
@@ -1080,8 +1037,7 @@ joey53:
 
 joey_init:
 		movem.l    args+0(pc),d0-d3 ; x1,y1,x2,y2
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
+		tst.w      d0
 		bge.s      joey_init1
 		moveq.l    #0,d0
 joey_init1:
@@ -1089,8 +1045,7 @@ joey_init1:
 		ble.s      joey_init2
 		move.w     #SCREEN_WIDTH,d2
 joey_init2:
-		/* tst.w     d1 */
-		dc.w 0x0c41,0 /* XXX */
+		tst.w      d1
 		bge.s      joey_init3
 		moveq.l    #0,d1
 joey_init3:
@@ -1100,6 +1055,7 @@ joey_init3:
 joey_init4:
 		andi.w     #-16,d0
 		andi.w     #-16,d2
+
 		lea.l      joeypatch8(pc),a0
 		move.w     d1,2(a0)
 		lea.l      joeypatch11(pc),a0
@@ -1108,15 +1064,18 @@ joey_init4:
 		move.w     d1,2(a0)
 		lea.l      joeypatch5(pc),a0
 		move.w     d1,2(a0)
+
 		subi.w     #64,d1
 		lea.l      joeypatch3(pc),a0
 		move.w     d1,2(a0)
+
 		lea.l      joeypatch7(pc),a0
 		move.w     d3,2(a0)
 		lea.l      joeypatch6(pc),a0
 		move.w     d3,2(a0)
 		lea.l      joeypatch4(pc),a0
 		move.w     d3,2(a0)
+
 		lea.l      joeypatch48(pc),a0
 		move.w     d0,2(a0)
 		lea.l      joeypatch53(pc),a0
@@ -1147,6 +1106,7 @@ joey_init4:
 		move.w     d0,2(a0)
 		lea.l      joeypatch23(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
 		lea.l      joeypatch49(pc),a0
 		move.w     d0,2(a0)
@@ -1156,6 +1116,7 @@ joey_init4:
 		move.w     d0,2(a0)
 		lea.l      joeypatch16(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
 		lea.l      joeypatch43(pc),a0
 		move.w     d0,2(a0)
@@ -1168,8 +1129,10 @@ joey_init4:
 		move.w     d0,2(a0)
 		lea.l      joeypatch20(pc),a0
 		move.w     d0,2(a0)
+
 		subi.w     #16,d0
-		lea.l      joeypatch22(pc),a0 ; BUG: not patched
+		lea.l      joeypatch22(pc),a0
+		move.w     d0,2(a0)
 		lea.l      joeypatch1(pc),a0
 		move.w     d0,2(a0)
 		lea.l      joeypatch51(pc),a0
@@ -1184,6 +1147,7 @@ joey_init4:
 		move.w     d2,2(a0)
 		lea.l      joeypatch2(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      joeypatch52(pc),a0
 		move.w     d2,2(a0)
@@ -1193,6 +1157,7 @@ joey_init4:
 		move.w     d2,2(a0)
 		lea.l      joeypatch25(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      joeypatch47(pc),a0
 		move.w     d2,2(a0)
@@ -1200,20 +1165,20 @@ joey_init4:
 		move.w     d2,2(a0)
 		lea.l      joeypatch26(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      joeypatch39(pc),a0
 		move.w     d2,2(a0)
 		lea.l      joeypatch27(pc),a0
 		move.w     d2,2(a0)
+
 		subi.w     #16,d2
 		lea.l      joeypatch28(pc),a0
 		move.w     d2,2(a0)
 
 joey_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1221,30 +1186,28 @@ joey_end:
  * Syntax: h = B HEIGHT (gadr,img)
  */
 b_height:
-		move.l     (a7)+,returnpc
-		cmp.w      #2,d0
+		move.l     (a7)+,a1
+		subq.w     #2,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,d0
 		bsr        getinteger
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    d3,a1
 		cmpi.l     #0x38964820,(a1)
-		bne        noerror
+		bne        notdone
 		move.w     4(a1),d7
 		cmp.w      d7,d0
-		bge        noerror
+		bge        notdone
 		lsl.w      #2,d0
 		lea.l      38(a1,d0.w),a2
 		adda.l     (a2),a1
 		moveq.l    #0,d3
 		move.w     2(a1),d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1252,8 +1215,8 @@ b_height:
  * Syntax: BLIT scr1,x1,y1,x2,y2,scr2,x3,y3
  */
 blit:
-		move.l     (a7)+,returnpc
-		cmp.w      #8,d0
+		move.l     (a7)+,a1
+		subq.w     #8,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+28
@@ -1271,8 +1234,8 @@ blit:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		move.l     args+8,d1
@@ -1577,7 +1540,7 @@ blit32:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit32
-		bra.w      blit_end
+		bra.s      blit_end
 blit33:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1590,7 +1553,7 @@ blit33:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit33
-		bra.w      blit_end
+		bra.s      blit_end
 blit34:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1605,10 +1568,8 @@ blit34:
 		dbf        d7,blit34
 
 blit_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1616,30 +1577,28 @@ blit_end:
  * Syntax: w = B WIDTH (gadr,img)
  */
 b_width:
-		move.l     (a7)+,returnpc
-		cmp.w      #2,d0
+		move.l     (a7)+,a1
+		subq.w     #2,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,d0
 		bsr        getinteger
 		movea.l    d3,a1
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		cmpi.l     #0x38964820,(a1)
-		bne        noerror
+		bne        notdone
 		move.w     4(a1),d7
 		cmp.w      d7,d0
-		bge        noerror
+		bge        notdone
 		lsl.w      #2,d0
 		lea.l      38(a1,d0.w),a2
 		adda.l     (a2),a1
 		moveq.l    #0,d3
 		move.w     (a1),d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1647,8 +1606,8 @@ b_width:
  * Syntax: SPOT scr,x,y,colr
  */
 spot:
-		move.l     (a7)+,returnpc
-		cmp.w      #4,d0
+		move.l     (a7)+,a1
+		subq.w     #4,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+12
@@ -1658,8 +1617,8 @@ spot:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		move.l     args+8,d1
@@ -1690,144 +1649,99 @@ spot_jbase:
 spot0:
 		and.l      d1,(a0)+
 		and.l      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot1:
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		and.l      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot2:
 		and.w      d1,(a0)+
 		or.w       d0,(a0)+
 		and.l      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot3:
 		or.l       d0,(a0)+
 		and.l      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot4:
 		and.l      d1,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot5:
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot6:
 		and.w      d1,(a0)+
 		or.l       d0,(a0)+
 		and.w      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot7:
 		or.l       d0,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot8:
 		and.l      d1,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot9:
 		or.w       d0,(a0)+
 		and.l      d1,(a0)+
 		or.w       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot10:
 		and.w      d1,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot11:
 		or.l       d0,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot12:
 		and.l      d1,(a0)+
 		or.l       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot13:
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		or.l       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot14:
 		and.w      d1,(a0)+
 		or.l       d0,(a0)+
 		or.w       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		bra        spot_end
 
 spot15:
 		or.l       d0,(a0)+
 		or.l       d0,(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+
+spot_end:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 spot_masktab:
 	dc.l 0x80008000,0x7fff7fff
@@ -1871,22 +1785,22 @@ spot_jtab:
  * Syntax: r = BLOCK AMOUNT(madr,blk)
  */
 block_amount:
-		move.l     (a7)+,returnpc
-		cmp.w      #2,d0
+		move.l     (a7)+,a1
+		subq.w     #2,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,d0
 		bsr        getinteger
 		movea.l    d3,a0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		cmpi.l     #0x03031973,(a0)+
 		bne.s      block_amount1
 		moveq.l    #7,d4
 		bra.s      block_amount2
 block_amount1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		moveq.l    #8,d4
 block_amount2:
 		moveq.l    #0,d2
@@ -1907,10 +1821,8 @@ block_amount3:
 block_amount4:
 		dbf        d2,block_amount3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1918,8 +1830,8 @@ block_amount4:
  * Syntax: REFLECT scr1,y1,y2,scr2,y3
  */
 reflect:
-		move.l     (a7)+,returnpc
-		cmp.w      #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+16
@@ -1931,8 +1843,8 @@ reflect:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		move.l     args+8,d1
@@ -2011,10 +1923,8 @@ reflect10:
 		lea.l      160(a1),a1
 		dbf        d7,reflect10
 reflect_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 reflect_state: dc.w 0,0
 
@@ -3637,8 +3547,8 @@ compstate:
  * Syntax: MOZAIC scr,gadr,img,x1,y1,x2,y2,x,y
  */
 mozaic:
-		move.l     (a7)+,returnpc
-		cmp.w      #9,d0
+		move.l     (a7)+,a1
+		cmpi.w     #9,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+32
@@ -3658,8 +3568,8 @@ mozaic:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		movea.l    args+4(pc),a1
 		move.l     args+8(pc),d0
@@ -5331,10 +5241,8 @@ mozaic45:
 		dbf        d7,mozaic44
 
 mozaic_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -5342,8 +5250,8 @@ mozaic_end:
  * Syntax: x = X LIMIT(madr,x1,x2)
  */
 x_limit:
-		move.l     (a7)+,returnpc
-		cmp.w      #3,d0
+		move.l     (a7)+,a1
+		subq.w     #3,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+8
@@ -5351,15 +5259,15 @@ x_limit:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		move.l     args+4(pc),d0
 		move.l     args+8(pc),d1
 		cmpi.l     #0x03031973,(a0)+
 		beq.s      x_limit1
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 x_limit1:
 		sub.w      d0,d1
 		andi.w     #-16,d1
@@ -5369,10 +5277,8 @@ x_limit1:
 		sub.w      d1,d0
 		move.l     d0,d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -5380,8 +5286,8 @@ x_limit1:
  * Syntax: XY BLOCK madr,xadr,yadr,blk,num
  */
 xy_block:
-		move.l     (a7)+,returnpc
-		cmp.w      #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+16
@@ -5393,8 +5299,8 @@ xy_block:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		movea.l    args+4(pc),a1
 		movea.l    args+8(pc),a2
@@ -5406,7 +5312,7 @@ xy_block:
 		bra.s      xy_block2
 xy_block1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		lsl.w      #8,d0
 xy_block2:
 		movem.w    (a0)+,d2-d3
@@ -5431,10 +5337,8 @@ xy_block5:
 		addi.w     #16,d7
 		dbf        d3,xy_block3
 xy_block6:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -5442,8 +5346,8 @@ xy_block6:
  * Syntax: y = Y LIMIT(madr,y1,y2)
  */
 y_limit:
-		move.l     (a7)+,returnpc
-		cmp.w      #3,d0
+		move.l     (a7)+,a1
+		subq.w     #3,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+8
@@ -5451,15 +5355,15 @@ y_limit:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		move.l     args+4(pc),d0
 		move.l     args+8(pc),d1
 		cmpi.l     #0x03031973,(a0)+
 		beq.s      y_limit1
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 y_limit1:
 		sub.w      d0,d1
 		andi.w     #-16,d1
@@ -5468,10 +5372,8 @@ y_limit1:
 		sub.w      d1,d0
 		move.l     d0,d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -5479,8 +5381,8 @@ y_limit1:
  * Syntax: TEXT scr,font,tadr,x,y
  */
 text:
-		move.l     (a7)+,returnpc
-		cmp.w      #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+16
@@ -5492,8 +5394,8 @@ text:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		movea.l    args+4(pc),a2
 		movea.l    args+8(pc),a1
@@ -5697,10 +5599,8 @@ textpatch9:
 		bgt.s      text12
 
 text_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 textfont_patched: dc.w 0
 
@@ -5711,55 +5611,18 @@ textfont_patched: dc.w 0
  * Syntax: a = mostly harmless(1,2,3,4,5)
  */
 mostly_harmless:
-		move.l     (a7)+,returnpc
-		cmp.w      #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     d3,args+16
 		bsr        getinteger
-		move.l     d3,args+12
 		bsr        getinteger
-		move.l     d3,args+8
 		bsr        getinteger
-		move.l     d3,args+4
 		bsr        getinteger
-		move.l     d3,args+0
-		move.l     args+0(pc),d0
-		move.l     args+4(pc),d1
-		move.l     args+8(pc),d2
-		move.l     args+12(pc),d3
-		move.l     args+16(pc),d4
-		cmpi.w     #1,d0
-		bne.s      mostly_harmless1
-		cmpi.w     #2,d1
-		bne.s      mostly_harmless1
-		cmpi.w     #3,d2
-		bne.s      mostly_harmless1
-		cmpi.w     #4,d3
-		bne.s      mostly_harmless1
-		cmpi.w     #5,d4
-		bne.s      mostly_harmless1
-		lea.l      registered(pc),a0
-		move.w     #999,(a0)
-		lea.l      yougotit(pc),a0
-		moveq.l    #1,d7
-		trap       #3
-		bra.s      mostly_harmless2
-mostly_harmless1:
-		lea.l      registered(pc),a0
-		move.w     #0,(a0)
-		lea.l      youdont(pc),a0
-		moveq.l    #1,d7
-		trap       #3
-mostly_harmless2:
-		moveq.l    #0,d3
-		move.l     d3,d2
-		movea.l    returnpc,a0
-		jmp        (a0)
+		move.l     a1,-(a7) ; push return pc
+		rts
 
-yougotit: dc.b "You got it!",10,13,0
-youdont: dc.b C_clearscreen,C_home,C_curoff,C_underlineoff,C_inverse,C_shadowon,"You don't got it!",10,13,0
-	.even
+; -----------------------------------------------------------------------------
 
 lineoffset_table:
 	dc.w 0*160
@@ -5969,8 +5832,8 @@ lineoffset_table:
  * Syntax: WASH scr,x1,y1,x2,y2
  */
 wash:
-		move.l     (a7)+,returnpc
-		cmpi.w     #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+16
@@ -5982,8 +5845,8 @@ wash:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		move.l     args+4(pc),d0
 		move.l     args+8(pc),d1
@@ -6409,7 +6272,7 @@ wash46:
 		movem.l    d1-d7/a1-a3,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash46
-		bra.w      wash_end
+		bra.s      wash_end
 
 wash47:
 		moveq.l    #0,d1
@@ -6431,7 +6294,7 @@ wash48:
 		movem.l    d1-d7/a1-a5,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash48
-		bra.w      wash_end
+		bra.s      wash_end
 
 wash49:
 		moveq.l    #0,d1
@@ -6456,11 +6319,8 @@ wash50:
 		dbf        d0,wash50
 
 wash_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-		rts ; FIXME
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -6468,10 +6328,11 @@ wash_end:
  * Syntax: r = REAL LENGTH (fadr)
  */
 real_length:
-		move.l     (a7)+,returnpc
-		cmpi.w     #1,d0
+		move.l     (a7)+,a1
+		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
+		move.l     a1,-(a7) ; push return pc
 		moveq.l    #0,d7
 		clr.w      -(a7)
 		move.l     d3,-(a7)
@@ -6479,15 +6340,13 @@ real_length:
 		trap       #1
 		addq.l     #8,a7
 		move.w     d0,d6
-		tst.w      d0
 		blt.s      real_length_end
 		pea.l      fheader(pc)
 		move.l     #16,-(a7)
 		move.w     d6,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
-		/* adda.l     #12,a7 */
-		dc.w 0xdffc,0,12 /* XXX */
+		lea        12(a7),a7
 		tst.w      d0
 		ble.s      real_length4
 		lea.l      fheader(pc),a0
@@ -6503,7 +6362,7 @@ real_length:
 		beq.s      real_length3
 		cmpi.l     #0x53507633,(a0) ; 'SPv3'
 		beq.s      real_length3
-		bra.s      real_length_end ; BUG: file not closed
+		bra.s      real_length4
 real_length1:
 		move.l     8(a0),d7
 		bra.s      real_length4
@@ -6520,8 +6379,7 @@ real_length4:
 real_length_end:
 		move.l     d7,d3
 		moveq.l    #0,d2
-		movea.l    returnpc,a0
-		jmp        (a0)
+		rts
 
 fheader: ds.b 16
 
@@ -6531,13 +6389,13 @@ fheader: ds.b 16
  * Syntax: REBOOT n
  */
 reboot:
-		move.l     (a7)+,returnpc
-		cmpi.w     #1,d0
+		move.l     (a7)+,a1
+		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
+		move.l     a1,-(a7) ; push return pc
 		cmpi.w     #0xABCD,d3
-		beq.s      reboot1
-		bra.s      reboot2
+		bne.s      reboot2
 reboot1:
 		clr.l      (0x00000420).w ; clear memvalid
 		clr.l      (0x00000426).w ; clear resvalid
@@ -6549,18 +6407,25 @@ reboot2:
 		moveq.l    #W_prtstring,d7
 		trap       #3
 reboot3:
-		cmpi.b     #0x15,0x00FFFC02 ; BUG: scancode of 'Y' on US keyboards only
-		beq.s      reboot1
-		cmpi.b     #0x31,0x00FFFC02 ; scancode of 'N'
-		bne.s      reboot3
-		movea.l    returnpc,a0
-		jmp        (a0)
+		move.l     #0x20002,-(a7) ; Bconin(2)
+		trap       #13
+		addq.w     #4,(a7)
+		cmpi.b     #'y',d0
+		beq        reboot1
+		cmpi.b     #'Y',d0
+		beq        reboot1
+		cmpi.b     #'n',d0
+		beq        reboot4
+		cmpi.b     #'N',d0
+		bne        reboot3
+reboot4:
+		rts
 
 reboot_msg:
-	dc.b "This action is the software equivalent",10,13
-	dc.b "of an enema!",10,13
-	dc.b "Are you sure that you wish to proceed?",10,13
-	dc.b "press Y or N.",10,13,0
+	dc.b "This action is the software equivalent",13,10
+	dc.b "of an enema!",13,10
+	dc.b "Are you sure that you wish to proceed?",13,10
+	dc.b "press Y or N.",13,10,0
 	.even
 
 ; -----------------------------------------------------------------------------
@@ -6569,14 +6434,13 @@ reboot_msg:
  * Syntax: r = BRIGHTEST (padr)
  */
 brightest:
-		move.l     (a7)+,returnpc
-		cmpi.w     #1,d0
+		move.l     (a7)+,a1
+		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
-		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
-		movea.l    args+0,a0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
+		movea.l    d3,a0
 		moveq.l    #16-1,d0
 		moveq.l    #15,d4
 		moveq.l    #0,d5
@@ -6587,7 +6451,7 @@ brightest1:
 		moveq.l    #0,d2
 		moveq.l    #0,d3
 		move.w     (a0)+,d1
-		andi.w     #0x0777,d1 ; BUG: should not mask out STe bit
+		andi.w     #0x0777,d1 ; FIXME: should not mask out STe bit
 		move.w     d1,d2
 		and.w      d4,d2
 		lsr.w      #4,d1
@@ -6606,10 +6470,8 @@ brightest2:
 		dbf        d0,brightest1
 		move.w     d7,d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -6617,8 +6479,8 @@ brightest2:
  * Syntax: BANK LOAD fadr,adr,num
  */
 bank_load:
-		move.l     (a7)+,returnpc
-		cmpi.w     #3,d0
+		move.l     (a7)+,a1
+		subq.w     #3,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+8
@@ -6626,8 +6488,8 @@ bank_load:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a3
 		movea.l    args+4(pc),a5
 		move.l     args+8(pc),d6
@@ -6637,7 +6499,6 @@ bank_load:
 		trap       #1
 		addq.w     #8,a7
 		move.w     d0,d7
-		tst.w      d7
 		blt        diskerror
 		lea.l      bankload_buffer(pc),a4
 		moveq.l    #6,d0
@@ -6646,8 +6507,8 @@ bank_load:
 		bne.s      bankload_end
 		cmp.w      4(a4),d6
 		bgt.s      bankload_end
-		lsl.w      #3,d6
-		addq.w     #6,d6
+		lsl.l      #3,d6
+		addq.l     #6,d6
 		bsr.s      bankload_seek
 		lea.l      bankload_buffer(pc),a4
 		moveq.l    #8,d0
@@ -6658,10 +6519,8 @@ bank_load:
 		movea.l    a5,a4
 		bsr.s      bankload_read
 		bsr.s      bankload_close
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 bankload_read:
 		move.l     a4,-(a7)
@@ -6669,8 +6528,7 @@ bankload_read:
 		move.w     d7,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
-		/* adda.l     #12,a7 */
-		dc.w 0xdffc,0,12 /* XXX */
+		lea        12(a7),a7
 		rts
 
 bankload_seek:
@@ -6679,8 +6537,7 @@ bankload_seek:
 		move.l     d6,-(a7)
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
-		/* adda.l     #10,a7 */
-		dc.w 0xdffc,0,10 /* XXX */
+		lea        10(a7),a7
 		rts
 
 bankload_close:
@@ -6692,9 +6549,8 @@ bankload_close:
 
 bankload_end:
 		bsr.s      bankload_close
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		bra        noerror
+		movem.l    (a7)+,d5-d6/a2-a6
+		bra        notdone
 
 bankload_buffer: ds.b 8
 
@@ -6704,31 +6560,22 @@ bankload_buffer: ds.b 8
  * Syntax: r = BANK LENGTH (fadr,num)
  */
 bank_length:
-		move.l     (a7)+,returnpc
-		cmpi.w     #2,d0
+		move.l     (a7)+,a1
+		subq.w     #2,d0
 		bne        syntax
-		lea.l      trapsaveend,a0
-		movem.l    d0-d7/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,d6
 		bsr        getinteger
-		movea.l    d3,a1
-		move.l     #0,bank_length_len
-		lea.l      bank_length_filename(pc),a0
-bank_length1:
-		move.b     (a1)+,d0
-		move.b     d0,(a0)+
-		tst.w      d0 ; BUG: only byte
-		bne.s      bank_length1
-		clr.w      (a0) ; BUG: may be odd address
-		lea.l      bank_length_filename(pc),a3
+		move.l     a1,-(a7) ; push return pc
+		movea.l    d3,a3
+		lea        bank_length_len(pc),a0
+		clr.l      (a0)
 		clr.w      -(a7)
 		move.l     a3,-(a7)
 		move.w     #61,-(a7) ; Fopen
 		trap       #1
 		addq.l     #8,a7
 		move.w     d0,d7
-		tst.w      d7
 		blt.s      bank_length_end
 		lea.l      bank_length_buffer(pc),a4
 		moveq.l    #6,d0
@@ -6751,12 +6598,9 @@ bank_length2:
 		trap       #1
 		addq.l     #4,a7
 bank_length_end:
-		lea.l      trapsave,a0
-		movem.l    (a0)+,d0-d7/a1-a6
 		move.l     bank_length_len(pc),d3
 		moveq.l    #0,d2
-		movea.l    returnpc,a0
-		jmp        (a0)
+		rts
 
 banklength_read:
 		move.l     a4,-(a7)
@@ -6764,8 +6608,7 @@ banklength_read:
 		move.w     d7,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
-		/* adda.l     #12,a7 */
-		dc.w 0xdffc,0,12 /* XXX */
+		lea        12(a7),a7
 		rts
 
 banklength_seek:
@@ -6774,12 +6617,10 @@ banklength_seek:
 		move.l     d6,-(a7)
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
-		/* adda.l     #10,a7 */
-		dc.w 0xdffc,0,10 /* XXX */
+		lea        10(a7),a7
 		rts
 
 bank_length_buffer: ds.b 8
-bank_length_filename: ds.b 16
 bank_length_len: ds.l 1
 
 ; -----------------------------------------------------------------------------
@@ -6788,24 +6629,24 @@ bank_length_len: ds.l 1
  * Syntax: BANK COPY adr1,adr2,num
  */
 bank_copy:
-		move.l     (a7)+,returnpc
-		cmpi.w     #3,d0
+		move.l     (a7)+,a1
+		subq.w     #3,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+8
 		bsr        getinteger
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		movea.l    args+4,a1
 		move.l     args+8,d0
 		cmpi.l     #0x46424E4B,(a0) ; 'FBNK'
-		bne        noerror
+		bne        notdone
 		cmp.w      4(a0),d0
-		bgt        noerror
+		bgt        notdone
 		lsl.w      #3,d0
 		lea.l      6(a0,d0.w),a2
 		adda.l     (a2)+,a0
@@ -6815,10 +6656,8 @@ bank_copy:
 bank_copy1:
 		move.w     (a0)+,(a1)+
 		dbf        d0,bank_copy1
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -6826,28 +6665,26 @@ bank_copy1:
  * Syntax: r = BANK SIZE (adr,num)
  */
 bank_size:
-		move.l     (a7)+,returnpc
-		cmpi.w     #2,d0
+		move.l     (a7)+,a1
+		subq.w     #2,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		cmpi.l     #0x46424E4B,(a0) ; 'FBNK'
-		bne        noerror
+		bne        notdone
 		cmp.w      4(a0),d0
-		bgt        noerror
+		bgt        notdone
 		lsl.w      #3,d0
 		move.l     10(a0,d0.w),d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -6855,8 +6692,8 @@ bank_size:
  * Syntax: M BLIT scr1,x1,y1,x2,y2,scr2,x3,y3
  */
 m_blit:
-		move.l     (a7)+,returnpc
-		cmp.w      #8,d0
+		move.l     (a7)+,a1
+		subq.w     #8,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+28
@@ -6874,8 +6711,8 @@ m_blit:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0 ; scr1
 		move.l     args+4,d0 ; x1
 		move.l     args+8,d1 ; y1
@@ -7360,10 +7197,8 @@ m_blit16:
 		lea.l      160(a1),a1
 		dbf        d7,m_blit15
 m_blit_end:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -7371,8 +7206,8 @@ m_blit_end:
  * Syntax: r = WIN BLOCK AMOUNT (madr,x1,y1,x2,y2,blk)
  */
 win_block_amount:
-		move.l     (a7)+,returnpc
-		cmp.w      #6,d0
+		move.l     (a7)+,a1
+		subq.w     #6,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+20
@@ -7386,8 +7221,8 @@ win_block_amount:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		move.l     args+4(pc),d0
 		move.l     args+8(pc),d1
@@ -7400,7 +7235,7 @@ win_block_amount:
 		bra.s      win_block_amount2
 win_block_amount1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		lsl.w      #8,d4
 win_block_amount2:
 		lsr.w      #4,d0
@@ -7465,10 +7300,8 @@ win_block_amount13:
 		dbf        d3,win_block_amount11
 		move.l     d1,d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -7476,8 +7309,8 @@ win_block_amount13:
  * Syntax: REPLACE RANGE madr,min,max,blk
  */
 replace_range:
-		move.l     (a7)+,returnpc
-		cmp.w      #4,d0
+		move.l     (a7)+,a1
+		subq.w      #4,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+12
@@ -7487,8 +7320,8 @@ replace_range:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		move.l     args+4(pc),d0
 		move.l     args+8(pc),d1
@@ -7499,7 +7332,7 @@ replace_range:
 		bra.s      replace_range2
 replace_range1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		moveq.l    #8,d5
 replace_range2:
 		moveq.l    #0,d3
@@ -7521,14 +7354,8 @@ replace_range3:
 		move.w     d2,-2(a0)
 replace_range4:
 		dbf        d3,replace_range3
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; -----------------------------------------------------------------------------
-
-empty:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -7536,8 +7363,8 @@ empty:
  * Syntax: WIN REPLACE BLOCKS madr,x1,y1,x2,y2,blk1,blk2
  */
 win_replace_blocks:
-		move.l     (a7)+,returnpc
-		cmp.w      #7,d0
+		move.l     (a7)+,a1
+		subq.w     #7,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+24
@@ -7553,8 +7380,8 @@ win_replace_blocks:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0 ; x1
 		move.l     args+4(pc),d0 ; y1
 		move.l     args+8(pc),d1 ; x2
@@ -7569,7 +7396,7 @@ win_replace_blocks:
 		bra.s      win_replace_blocks2
 win_replace_blocks1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		lsl.w      #8,d4
 		lsl.w      #8,d7
 win_replace_blocks2:
@@ -7632,10 +7459,8 @@ win_replace_blocks13:
 		move.w     d0,d2
 		adda.w     d5,a0
 		dbf        d3,win_replace_blocks11
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -7647,8 +7472,8 @@ empty2:
  * Syntax: WIN REPLACE RANGE madr,x1,y1,x2,y2,min,max,blk
  */
 win_replace_range:
-		move.l     (a7)+,returnpc
-		cmp.w      #8,d0
+		move.l     (a7)+,a1
+		subq.w     #8,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+28
@@ -7666,8 +7491,8 @@ win_replace_range:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0 ; madr
 		move.l     args+4(pc),d0 ; x1
 		move.l     args+8(pc),d1 ; y1
@@ -7684,7 +7509,7 @@ win_replace_range:
 		bra.s      win_replace_range2
 win_replace_range1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		lsl.w      #8,d4
 		lsl.w      #8,d7
 		lsl.w      #8,d6
@@ -7753,10 +7578,8 @@ win_replace_range13:
 		move.w     d0,d2
 		adda.w     d5,a0
 		dbf        d3,win_replace_range11
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -7768,8 +7591,8 @@ empty3:
  * Syntax: WIN XY BLOCK madr,x1,y1,x2,y2,xadr,yadr,blk,num
  */
 win_xy_block:
-		move.l     (a7)+,returnpc
-		cmp.w      #9,d0
+		move.l     (a7)+,a1
+		cmpi.w     #9,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+32
@@ -7789,8 +7612,8 @@ win_xy_block:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0(pc),a0
 		move.l     args+4(pc),d0
 		move.l     args+8(pc),d1
@@ -7806,7 +7629,7 @@ win_xy_block:
 		bra.s      win_xy_block2
 win_xy_block1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
+		bne        notdone
 		lsl.w      #8,d7
 win_xy_block2:
 		lsr.w      #4,d0
@@ -7882,18 +7705,8 @@ win_xy_block13:
 		addi.w     #16,d4
 		dbf        d3,win_xy_block11
 win_xy_block14:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; space for registers d5-d6/a1-a6
-saveregs: ds.l 8
-saveregsend:
-
-; space for registers d0-d7/a1-a6
-trapsave: ds.l 14
-trapsaveend:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; space for up to 12 arguments
 args: ds.l 12

@@ -10,9 +10,13 @@ ice2:
 	movem.L	d0-a6,-(sp)
 	lea	120(a0),a4
 	move.L	a4,a6
-	bsr.s	.getinfo
+	bsr.w	.getinfo /* XXX */
 	cmpi.L	#'ICE!',d0
+	.IFNE COMPILER /* XXX */
 	bne.s	.not_packed
+	.ELSE
+	bne.w	.not_packed
+	.ENDC
 	bsr.s	.getinfo
 	lea.L	-8(a0,d0.L),a5
 	bsr.s	.getinfo

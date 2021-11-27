@@ -116,11 +116,11 @@ l022:	.dc.b I,I,',',I,1,1,0     ; bank size
 l023:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; m blit
 l024:	.dc.b I,I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; win block amount
 l025:	.dc.b 0,I,',',I,',',I,',',I,1,1,0     ; replace range
-l026:	.dc.b I,1,1,0
+l026:	.dc.b I,I,',',I,',',I,',',I,',',I,',',1,1,0 ; empty FIXME
 l027:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0     ; win replace blocks
-l028:	.dc.b I,1,1,0
+l028:	.dc.b I,I,',',I,',',I,',',I,',',I,',',I,',',1,1,0 ; empty2 FIXME
 l029:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0 ; win replace range
-l030:	.dc.b I,1,1,0
+l030:	.dc.b I,I,',',I,',',I,',',I,1,1,0 ; empty3 FIXME
 l031:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0     ; win xy block
 
 		.even
@@ -1038,7 +1038,8 @@ joey_init:
 		move.l     (a6)+,d2 ; x2
 		move.l     (a6)+,d1 ; y1
 		move.l     (a6)+,d0 ; x1
-		tst.w      d0
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
 		bge.s      joey_init1
 		moveq.l    #0,d0
 joey_init1:
@@ -1046,7 +1047,8 @@ joey_init1:
 		ble.s      joey_init2
 		move.w     #SCREEN_WIDTH,d2
 joey_init2:
-		tst.w      d1
+		/* tst.w     d1 */
+		dc.w 0x0c41,0 /* XXX */
 		bge.s      joey_init3
 		moveq.l    #0,d1
 joey_init3:
@@ -1056,7 +1058,6 @@ joey_init3:
 joey_init4:
 		andi.w     #-16,d0
 		andi.w     #-16,d2
-
 		lea.l      joeypatch8(pc),a0
 		move.w     d1,2(a0)
 		lea.l      joeypatch11(pc),a0
@@ -1065,18 +1066,15 @@ joey_init4:
 		move.w     d1,2(a0)
 		lea.l      joeypatch5(pc),a0
 		move.w     d1,2(a0)
-
 		subi.w     #64,d1
 		lea.l      joeypatch3(pc),a0
 		move.w     d1,2(a0)
-
 		lea.l      joeypatch7(pc),a0
 		move.w     d3,2(a0)
 		lea.l      joeypatch6(pc),a0
 		move.w     d3,2(a0)
 		lea.l      joeypatch4(pc),a0
 		move.w     d3,2(a0)
-
 		lea.l      joeypatch48(pc),a0
 		move.w     d0,2(a0)
 		lea.l      joeypatch53(pc),a0
@@ -1107,7 +1105,6 @@ joey_init4:
 		move.w     d0,2(a0)
 		lea.l      joeypatch23(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
 		lea.l      joeypatch49(pc),a0
 		move.w     d0,2(a0)
@@ -1117,7 +1114,6 @@ joey_init4:
 		move.w     d0,2(a0)
 		lea.l      joeypatch16(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
 		lea.l      joeypatch43(pc),a0
 		move.w     d0,2(a0)
@@ -1130,10 +1126,8 @@ joey_init4:
 		move.w     d0,2(a0)
 		lea.l      joeypatch20(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
-		lea.l      joeypatch22(pc),a0
-		move.w     d0,2(a0)
+		lea.l      joeypatch22(pc),a0 ; BUG: not patched
 		lea.l      joeypatch1(pc),a0
 		move.w     d0,2(a0)
 		lea.l      joeypatch51(pc),a0
@@ -1148,7 +1142,6 @@ joey_init4:
 		move.w     d2,2(a0)
 		lea.l      joeypatch2(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      joeypatch52(pc),a0
 		move.w     d2,2(a0)
@@ -1158,7 +1151,6 @@ joey_init4:
 		move.w     d2,2(a0)
 		lea.l      joeypatch25(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      joeypatch47(pc),a0
 		move.w     d2,2(a0)
@@ -1166,13 +1158,11 @@ joey_init4:
 		move.w     d2,2(a0)
 		lea.l      joeypatch26(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      joeypatch39(pc),a0
 		move.w     d2,2(a0)
 		lea.l      joeypatch27(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      joeypatch28(pc),a0
 		move.w     d2,2(a0)
@@ -1559,35 +1549,45 @@ blit15:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit15
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit16:
 		movem.l    (a0),d0-d3
 		movem.l    d0-d3,(a1)
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit16
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit17:
 		movem.l    (a0),d0-d5
 		movem.l    d0-d5,(a1)
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit17
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit18:
 		movem.l    (a0),d0-d6/a3
 		movem.l    d0-d6/a3,(a1)
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit18
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit19:
 		movem.l    (a0),d0-d6/a3-a5
 		movem.l    d0-d6/a3-a5,(a1)
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit19
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit20:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1596,7 +1596,9 @@ blit20:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit20
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit21:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1605,7 +1607,9 @@ blit21:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit21
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit22:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1614,7 +1618,9 @@ blit22:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit22
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit23:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1623,7 +1629,9 @@ blit23:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit23
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit24:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1632,7 +1640,9 @@ blit24:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit24
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit25:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1641,7 +1651,9 @@ blit25:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit25
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit26:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1652,7 +1664,9 @@ blit26:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit26
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit27:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1663,7 +1677,9 @@ blit27:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit27
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit28:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1674,7 +1690,9 @@ blit28:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit28
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit29:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1685,7 +1703,9 @@ blit29:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit29
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit30:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1696,7 +1716,9 @@ blit30:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit30
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit31:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1709,7 +1731,9 @@ blit31:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit31
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit32:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1722,7 +1746,9 @@ blit32:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit32
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit33:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -1735,7 +1761,9 @@ blit33:
 		lea.l      160(a0),a0
 		lea.l      160(a1),a1
 		dbf        d7,blit33
-		bra        blit_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 blit34:
 		movem.l    (a0),d0-d6/a3-a6
 		movem.l    d0-d6/a3-a6,(a1)
@@ -2051,97 +2079,110 @@ spot_jtab:
 spot0:
 		and.l      d1,(a0)+
 		and.l      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot1:
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		and.l      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot2:
 		and.w      d1,(a0)+
 		or.w       d0,(a0)+
 		and.l      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot3:
 		or.l       d0,(a0)+
 		and.l      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot4:
 		and.l      d1,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot5:
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot6:
 		and.w      d1,(a0)+
 		or.l       d0,(a0)+
 		and.w      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot7:
 		or.l       d0,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot8:
 		and.l      d1,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot9:
 		or.w       d0,(a0)+
 		and.l      d1,(a0)+
 		or.w       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot10:
 		and.w      d1,(a0)+
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot11:
 		or.l       d0,(a0)+
 		and.w      d1,(a0)+
 		or.w       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot12:
 		and.l      d1,(a0)+
 		or.l       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot13:
 		or.w       d0,(a0)+
 		and.w      d1,(a0)+
 		or.l       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot14:
 		and.w      d1,(a0)+
 		or.l       d0,(a0)+
 		or.w       d0,(a0)
-		bra        spot_end
+		movem.l    (a7)+,a0-a2
+		rts
 
 spot15:
 		or.l       d0,(a0)+
 		or.l       d0,(a0)
-
-spot_end:
 		movem.l    (a7)+,a0-a2
 		rts
 
@@ -2385,8 +2426,8 @@ block_amount3:
 		addq.w     #1,d3
 block_amount4:
 		dbf        d2,block_amount3
-block_amount5:
 		move.l     d3,-(a6)
+block_amount5: /* BUG: must be above */
 		move.l     (a7)+,a0
 		rts
 
@@ -5793,8 +5834,8 @@ x_limit:
 		cmpi.l     #0x03031973,(a0)+
 		beq.s      x_limit1
 		cmpi.l     #0x02528E54,-4(a0)
-		beq        x_limit1
-		clr.l      -(a6)
+		beq        x_limit1 ; FIXME: simplify
+		move.l     #0,-(a6)
 		movea.l    (a7)+,a0
 		rts
 x_limit1:
@@ -5871,8 +5912,8 @@ y_limit:
 		cmpi.l     #0x03031973,(a0)+
 		beq.s      y_limit1
 		cmpi.l     #0x02528E54,-4(a0)
-		beq        y_limit1
-		clr.l      -(a6)
+		beq        y_limit1 ; FIXME: simplify
+		move.l     #0,-(a6)
 		movea.l    (a7)+,a0
 		rts
 y_limit1:
@@ -6219,7 +6260,9 @@ wash12:
 		movem.l    d1-d2,(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash12
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash13:
 		moveq.l    #0,d1
@@ -6230,7 +6273,9 @@ wash14:
 		movem.l    d1-d4,(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash14
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash15:
 		moveq.l    #0,d1
@@ -6243,7 +6288,9 @@ wash16:
 		movem.l    d1-d6,(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash16
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash17:
 		moveq.l    #0,d1
@@ -6258,7 +6305,9 @@ wash18:
 		movem.l    d1-d7/a1,(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash18
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash19:
 		moveq.l    #0,d1
@@ -6275,7 +6324,9 @@ wash20:
 		movem.l    d1-d7/a1-a3,(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash20
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash21:
 		moveq.l    #0,d1
@@ -6294,7 +6345,9 @@ wash22:
 		movem.l    d1-d7/a1-a5,(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash22
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash23:
 		moveq.l    #0,d1
@@ -6315,7 +6368,9 @@ wash24:
 		move.l     d1,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash24
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash25:
 		moveq.l    #0,d1
@@ -6336,7 +6391,9 @@ wash26:
 		movem.l    d1-d3,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash26
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash27:
 		moveq.l    #0,d1
@@ -6357,7 +6414,9 @@ wash28:
 		movem.l    d1-d5,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash28
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash29:
 		moveq.l    #0,d1
@@ -6378,7 +6437,9 @@ wash30:
 		movem.l    d1-d7,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash30
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash31:
 		moveq.l    #0,d1
@@ -6399,7 +6460,9 @@ wash32:
 		movem.l    d1-d7/a1-a2,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash32
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash33:
 		moveq.l    #0,d1
@@ -6420,7 +6483,9 @@ wash34:
 		movem.l    d1-d7/a1-a4,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash34
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash35:
 		moveq.l    #0,d1
@@ -6441,7 +6506,9 @@ wash36:
 		movem.l    d1-d7/a1-a6,52(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash36
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash37:
 		moveq.l    #0,d1
@@ -6463,7 +6530,9 @@ wash38:
 		movem.l    d1-d2,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash38
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash39:
 		moveq.l    #0,d1
@@ -6485,7 +6554,9 @@ wash40:
 		movem.l    d1-d4,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash40
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash41:
 		moveq.l    #0,d1
@@ -6507,7 +6578,9 @@ wash42:
 		movem.l    d1-d6,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash42
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash43:
 		moveq.l    #0,d1
@@ -6529,7 +6602,9 @@ wash44:
 		movem.l    d1-d7/a1,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash44
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash45:
 		moveq.l    #0,d1
@@ -6551,7 +6626,9 @@ wash46:
 		movem.l    d1-d7/a1-a3,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash46
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash47:
 		moveq.l    #0,d1
@@ -6573,7 +6650,9 @@ wash48:
 		movem.l    d1-d7/a1-a5,104(a0)
 		lea.l      160(a0),a0
 		dbf        d0,wash48
-		bra        wash_end
+		move.l     (a7)+,a6 ; FIXME
+		movem.l    (a7)+,a0-a5
+		rts
 
 wash49:
 		moveq.l    #0,d1
@@ -6827,7 +6906,8 @@ real_length:
 		move.w     d6,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
-		lea        12(a7),a7
+		/* adda.l     #12,a7 */
+		dc.w 0xdffc,0,12 /* XXX */
 		tst.w      d0
 		ble.s      real_length4
 		lea.l      fheader(pc),a0
@@ -6843,7 +6923,7 @@ real_length:
 		beq.s      real_length3
 		cmpi.l     #0x53507633,(a0) ; 'SPv3'
 		beq.s      real_length3
-		bra.s      real_length4
+		bra.s      real_length_end ; BUG: file not closed
 real_length1:
 		move.l     8(a0),d7
 		bra.s      real_length4
@@ -6872,7 +6952,8 @@ lib17:
 	dc.w	0			; no library calls
 reboot:
 		cmpi.l     #0xABCD,(a6)+
-		bne.s      reboot2
+		beq.s      reboot1
+		bra.s      reboot2
 reboot1:
 		clr.l      (0x00000420).w ; clear memvalid
 		clr.l      (0x00000426).w ; clear resvalid
@@ -6884,18 +6965,10 @@ reboot2:
 		moveq.l    #W_prtstring,d7
 		trap       #3
 reboot3:
-		move.l     #0x20002,-(a7) ; Bconin(2)
-		trap       #13
-		addq.w     #4,(a7)
-		cmpi.b     #'y',d0
-		beq        reboot1
-		cmpi.b     #'Y',d0
-		beq        reboot1
-		cmpi.b     #'n',d0
-		beq        reboot4
-		cmpi.b     #'N',d0
-		bne        reboot3
-reboot4:
+		cmpi.b     #0x15,0x00FFFC02 ; BUG: scancode of 'Y' on US keyboards only
+		beq.s      reboot1
+		cmpi.b     #0x31,0x00FFFC02 ; scancode of 'N'
+		bne.s      reboot3
 		rts
 
 reboot_msg:
@@ -6925,7 +6998,7 @@ brightest1:
 		moveq.l    #0,d2
 		moveq.l    #0,d3
 		move.w     (a0)+,d1
-		andi.w     #0x0777,d1 ; FIXME: should not mask out STe bit
+		andi.w     #0x0777,d1 ; BUG: should not mask out STe bit
 		move.w     d1,d2
 		and.w      d4,d2
 		lsr.w      #4,d1
@@ -6957,13 +7030,21 @@ bank_load:
 		movem.l    d0-d7/a0-a5,-(a7)
 		move.l     (a6)+,d6
 		move.l     (a6)+,a5
-		move.l     (a6)+,a3
+		move.l     (a6)+,a1
+		lea        bankload_filename(pc),a0
+bank_load1:
+		move.b     (a1)+,d0
+		move.b     d0,(a0)+
+		tst.w      d0 ; BUG: only byte
+		bne.s      bank_load1
+		lea        bankload_filename(pc),a3
 		clr.w      -(a7)
 		move.l     a3,-(a7)
 		move.w     #61,-(a7) ; Fopen
 		trap       #1
-		addq.w     #8,a7
+		addq.l     #8,a7
 		move.w     d0,d7
+		tst.w      d7
 		blt        diskerror
 		lea.l      bankload_buffer(pc),a4
 		moveq.l    #6,d0
@@ -6988,7 +7069,7 @@ bankload_end:
 		move.w     #62,-(a7) ; Fclose
 		trap       #1
 		addq.l     #4,a7
-diskerror: ; FIXME no error return
+diskerror: ; BUG no error return
 		movem.l    (a7)+,d0-d7/a0-a5
 		rts
 
@@ -6998,7 +7079,8 @@ bankload_read:
 		move.w     d7,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
-		lea        12(a7),a7
+		/* adda.l     #12,a7 */
+		dc.w 0xdffc,0,12 /* XXX */
 		rts
 
 bankload_seek:
@@ -7007,10 +7089,12 @@ bankload_seek:
 		move.l     d6,-(a7)
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
-		lea        10(a7),a7
+		/* adda.l     #10,a7 */
+		dc.w 0xdffc,0,10 /* XXX */
 		rts
 
 bankload_buffer: ds.b 8
+bankload_filename: ds.b 16
 
 ; -----------------------------------------------------------------------------
 
@@ -7020,17 +7104,27 @@ bankload_buffer: ds.b 8
 lib20:
 	dc.w	0			; no library calls
 bank_length:
-		movem.l    d0-d7/a0-a4,-(a7)
+		movem.l    d0-d7/a0-a5,-(a7)
 		move.l     (a6)+,d6
-		move.l     (a6)+,a3
+		move.l     (a6)+,a1
+		move.l     a0,-(a7) ; FIXME: useless
 		lea        bank_length_len(pc),a0
-		clr.l      (a0)
+		move.l     #0,(a0)
+		movea.l    (a7)+,a0
+		lea.l      bank_length_filename(pc),a0
+bank_length1:
+		move.b     (a1)+,d0
+		move.b     d0,(a0)+
+		tst.w      d0 ; BUG: only byte
+		bne.s      bank_length1
+		lea.l      bank_length_filename(pc),a3
 		clr.w      -(a7)
 		move.l     a3,-(a7)
 		move.w     #61,-(a7) ; Fopen
 		trap       #1
 		addq.l     #8,a7
 		move.w     d0,d7
+		tst.w      d7
 		blt.s      bank_length_end
 		lea.l      bank_length_buffer(pc),a4
 		moveq.l    #6,d0
@@ -7045,15 +7139,17 @@ bank_length:
 		lea.l      bank_length_buffer(pc),a4
 		moveq.l    #8,d0
 		bsr.s      banklength_read
+		move.l     a0,-(a7) ; FIXME: useless
 		lea.l      bank_length_len(pc),a0
 		move.l     (a4),(a0)
+		movea.l    (a7)+,a0
 bank_length2:
 		move.w     d7,-(a7)
 		move.w     #62,-(a7) ; Fclose
 		trap       #1
 		addq.l     #4,a7
 bank_length_end:
-		movem.l    (a7)+,d0-d7/a0-a4
+		movem.l    (a7)+,d0-d7/a0-a5
 		move.l     bank_length_len(pc),-(a6)
 		rts
 
@@ -7063,7 +7159,8 @@ banklength_read:
 		move.w     d7,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
-		lea        12(a7),a7
+		/* adda.l     #12,a7 */
+		dc.w 0xdffc,0,12 /* XXX */
 		rts
 
 banklength_seek:
@@ -7072,10 +7169,12 @@ banklength_seek:
 		move.l     d6,-(a7)
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
-		lea        10(a7),a7
+		/* adda.l     #10,a7 */
+		dc.w 0xdffc,0,10 /* XXX */
 		rts
 
 bank_length_buffer: ds.b 8
+bank_length_filename: ds.b 16
 bank_length_len: ds.l 1
 
 ; -----------------------------------------------------------------------------
@@ -7118,15 +7217,13 @@ bank_size:
 		move.l     a0,-(a7)
 		move.l     (a6)+,d0
 		move.l     (a6)+,a0
-		moveq      #0,d3
 		cmpi.l     #0x46424E4B,(a0) ; 'FBNK'
 		bne        bank_size1
 		cmp.w      4(a0),d0
 		bgt        bank_size1
 		lsl.w      #3,d0
-		move.l     10(a0,d0.w),d3
-bank_size1:
-		move.l     d3,-(a6)
+		move.l     10(a0,d0.w),-(a6)
+bank_size1: ; BUG: no return value
 		move.l     (a7)+,a0
 		rts
 
@@ -7931,6 +8028,7 @@ replace_range:
 		move.l     (a6)+,d1
 		move.l     (a6)+,d0
 		move.l     (a6)+,a0
+		move.l     a0,-(a7) ; FIXME: useless
 		cmpi.l     #0x03031973,(a0)+
 		bne.s      replace_range1
 		moveq.l    #7,d5
@@ -7960,19 +8058,15 @@ replace_range3:
 replace_range4:
 		dbf        d3,replace_range3
 replace_range5:
+		move.l     (a7)+,a0
 		rts
-
-; -----------------------------------------------------------------------------
-
-lib26:
-	dc.w	0			; no library calls
-	rts
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: WIN REPLACE BLOCKS madr,x1,y1,x2,y2,blk1,blk2
  */
+lib26: ; FIXME
 lib27:
 	dc.w	0			; no library calls
 win_replace_blocks:
@@ -8058,17 +8152,10 @@ win_replace_blocks14:
 		movem.l    (a7)+,a0-a5
 		rts
 
-; -----------------------------------------------------------------------------
-
-lib28:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: WIN REPLACE RANGE madr,x1,y1,x2,y2,min,max,blk
  */
+lib28: ; FIXME
 lib29:
 	dc.w	0			; no library calls
 win_replace_range:
@@ -8089,7 +8176,7 @@ win_replace_range:
 		bra.s      win_replace_range2
 win_replace_range1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne.s      win_replace_range14
+		bne.w      win_replace_range14 /* XXX */
 		lsl.w      #8,d4
 		lsl.w      #8,d7
 		lsl.w      #8,d6
@@ -8164,15 +8251,10 @@ win_replace_range14:
 
 ; -----------------------------------------------------------------------------
 
-lib30:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: WIN XY BLOCK madr,x1,y1,x2,y2,xadr,yadr,blk,num
  */
+lib30: ; FIXME
 lib31:
 	dc.w	0			; no library calls
 win_xy_block:

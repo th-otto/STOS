@@ -99,7 +99,7 @@ atomik:	movem.l	d0-a6,-(a7)
 .ho_kesako2:	addi.b	#$f0,d5
 .ho_kesako3:	sub.b	d5,d0
 	move.b	d0,-(a5)
-	bra.s	.tst_end
+	bra.w	.tst_end /* XXX */
 .get_bit2:	clr	d5
 .get_bits:	add.b	d7,d7
 	beq.s	.empty
@@ -206,7 +206,11 @@ atomik:	movem.l	d0-a6,-(a7)
 	endc
 	ifne	1
 	move.l	(a7)+,d0
-	bsr.s	.copy_decrun
+	IFNE COMPILER
+	bsr.s	.copy_decrun /* XXX */
+	.ELSE
+	bsr.w	.copy_decrun /* XXX */
+	.ENDC
 	endc
 	ifne	1
 	move	-2(a2),d0

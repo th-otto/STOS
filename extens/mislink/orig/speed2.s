@@ -4,6 +4,8 @@
 * Out	d0: original length or 0 if not SP20 packed
 * ===============================================================
 
+flash = 1 ; XXX FIXME
+
 speed2_depack:
 	movem.l	d1-a6,-(sp)
 	clr.l	-(sp)
@@ -16,6 +18,16 @@ speed2_depack:
 	move.l	(a0)+,d0
 	move.l	(a0)+,d1
 	move.l	d1,(sp)
+	.IFNE flash
+	tst.w	d5
+	beq.s	.sp2_01
+	swap	d5
+	btst	#1,$FFFF8260.W
+	bne.s	.sp2_01
+	lea		$FFFF8240.W,a5
+	move.w	(a5),d5
+	swap	d5
+	.ENDC
 
 .sp2_01:
 	lea		64(a0),a1
@@ -85,6 +97,8 @@ speed2_depack:
 .sp2_14:
 	cmp.l	a1,a2
 	bne.s	.sp2_07
+	swap	d5
+	move.w	d5,(a5)
 	rts
 .sp2_15:
 	move.l	d7,d2
@@ -96,6 +110,11 @@ speed2_depack:
 	jsr		(a3)
 .sp2_18:
 	addx	d1,d1
+
+	ifne	0		;flash
+	not.w	$ffff8240.w
+	not.w	$ffff8240.w
+	endc
 
 	dbf		d2,.sp2_17
 .sp2_19:

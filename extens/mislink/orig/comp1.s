@@ -2,7 +2,7 @@
 		.include "errors.inc"
 		.include "window.inc"
 		.include "sprites.inc"
-		.include "adapt.inc"
+		.include "equates.inc"
 
 SCREEN_WIDTH  = 320
 SCREEN_HEIGHT = 200
@@ -29,9 +29,13 @@ tbdr =   $fffffa21 ; timer b data register
 
 vbl_vec    = 0x0070
 timerd_vec = 0x0110
+timerc_vec = 0x0114
 timerb_vec = 0x0120
 timera_vec = 0x0134
 
+saved_joyvec = $0418 ; WTF
+joybuf       = $041c ; WTF
+joysave_flag    = $041e ; WTF
 colorptr     = $045a
 conterm      = $0484
 
@@ -44,202 +48,134 @@ PACK_SPEED3     = 0x53507633 /* "SPv3" */
 
 		.text
 
-		bra.w        load
+* Define extension addresses
 
-        dc.b $80
-tokens:
-        dc.b "landscape",$80
-        dc.b "overlap",$81
-        dc.b "bob",$82
-        dc.b "map toggle",$83
-        dc.b "wipe",$84
-        dc.b "boundary",$85
-        dc.b "tile",$86
-        dc.b "palt",$87
-        dc.b "world",$88
-        dc.b "musauto",$89
-        dc.b "musplay",$8a
-        dc.b "which block",$8b
-        dc.b "relocate",$8c
-        dc.b "p left",$8d
-        dc.b "p on",$8e
-        dc.b "p joy",$8f
-        dc.b "p stop",$90
-        dc.b "p up",$91
-        dc.b "set block",$92
-        dc.b "p right",$93
-        dc.b "palsplit",$94
-        dc.b "p down",$95
-        dc.b "floodpal",$96
-        dc.b "p fire",$97
-        dc.b "digi play",$98
-        dc.b "string",$99
-        dc.b "samsign",$9a
-        dc.b "depack",$9b
-        dc.b "replace blocks",$9c
-        dc.b "dload",$9d
-        dc.b "display pc1",$9e
-        dc.b "dsave",$9f
-        dc.b "honesty",$a0
+start:
+	dc.l	para-start		; parameter definitions
+	dc.l	entry-start		; reserve data area for program
+	dc.l	lib1-start		; start of library
 
-        dc.b 0
-        even
+catalog:
+	dc.w	lib2-lib1
+	dc.w	lib3-lib2
+	dc.w	lib4-lib3
+	dc.w	lib5-lib4
+	dc.w	lib6-lib5
+	dc.w	lib7-lib6
+	dc.w	lib8-lib7
+	dc.w	lib9-lib8
+	dc.w	lib10-lib9
+	dc.w	lib11-lib10
+	dc.w	lib12-lib11
+	dc.w	lib13-lib12
+	dc.w	lib14-lib13
+	dc.w	lib15-lib14
+	dc.w	lib16-lib15
+	dc.w	lib17-lib16
+	dc.w	lib18-lib17
+	dc.w	lib19-lib18
+	dc.w	lib20-lib19
+	dc.w	lib21-lib20
+	dc.w	lib22-lib21
+	dc.w	lib23-lib22
+	dc.w	lib24-lib23
+	dc.w	lib25-lib24
+	dc.w	lib26-lib25
+	dc.w	lib27-lib26
+	dc.w	lib28-lib27
+	dc.w	lib29-lib28
+	dc.w	lib30-lib29
+	dc.w	lib31-lib30
+	dc.w	lib32-lib31
+	dc.w	libex-lib32
 
-jumps: dc.w 33
+para:
+	dc.w	32			; number of library routines
+	dc.w	32			; number of extension commands
+	.dc.w l001-para
+	.dc.w l002-para
+	.dc.w l003-para
+	.dc.w l004-para
+	.dc.w l005-para
+	.dc.w l006-para
+	.dc.w l007-para
+	.dc.w l008-para
+	.dc.w l009-para
+	.dc.w l010-para
+	.dc.w l011-para
+	.dc.w l012-para
+	.dc.w l013-para
+	.dc.w l014-para
+	.dc.w l015-para
+	.dc.w l016-para
+	.dc.w l017-para
+	.dc.w l018-para
+	.dc.w l019-para
+	.dc.w l020-para
+	.dc.w l021-para
+	.dc.w l022-para
+	.dc.w l023-para
+	.dc.w l024-para
+	.dc.w l025-para
+	.dc.w l026-para
+	.dc.w l027-para
+	.dc.w l028-para
+	.dc.w l029-para
+	.dc.w l030-para
+	.dc.w l031-para
+	.dc.w l032-para
 
-		dc.l landscape
-		dc.l overlap
-		dc.l bob
-		dc.l map_toggle
-		dc.l wipe
-		dc.l boundary
-		dc.l tile
-		dc.l palt
-		dc.l world
-		dc.l musauto
-		dc.l musplay
-		dc.l which_block
-		dc.l relocate
-		dc.l p_left
-		dc.l p_on
-		dc.l p_joy
-		dc.l p_stop
-		dc.l p_up
-		dc.l set_block
-		dc.l p_right
-		dc.l palsplit
-		dc.l p_down
-		dc.l floodpal
-		dc.l p_fire
-		dc.l digi_play
-		dc.l FN_string
-		dc.l samsign
-		dc.l depack
-		dc.l replace_blocks
-		dc.l dload
-		dc.l display_pc1
-		dc.l dsave
-		dc.l honesty
 
-; welcome messages: English, French
-welcome:
-		dc.b 10,"The Missing Link(c) 1993 Top Notch Software.",0
-		dc.b 10,"The Missing Link(c) 1993 Top Notch Software.",0
+* Parameter definitions
+
+I	equ	0
+F	equ	$40
+S	equ	$80
+
+l001:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; landscape
+l002:	.dc.b I,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; overlap
+l003:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; bob
+l004:	.dc.b I,I,1,1,0           ; map toggle
+l005:	.dc.b 0,I,1,1,0           ; wipe
+l006:	.dc.b I,I,1,1,0           ; boundary
+l007:	.dc.b 0,I,',',I,',',I,',',I,',',I,1,1,0             ; tile
+l008:	.dc.b I,I,1,1,0           ; palt
+l009:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; world
+l010:	.dc.b I,I,',',I,',',I,1,1,0             ; musauto
+l011:	.dc.b 0,I,',',I,',',I,1,1,0             ; musplay
+l012:	.dc.b I,I,',',I,',',I,1,1,0             ; which block
+l013:	.dc.b 0,I,1,1,0           ; relocate
+l014:	.dc.b I,I,1,1,0           ; p left
+l015:	.dc.b 0,1,1,0             ; p on
+l016:	.dc.b I,I,1,1,0           ; p joy
+l017:	.dc.b 0,1,1,0             ; p stop
+l018:	.dc.b I,I,1,1,0           ; p up
+l019:	.dc.b 0,I,',',I,',',I,',',I,1,1,0             ; set block
+l020:	.dc.b I,I,1,1,0           ; p right
+l021:	.dc.b 0,I,',',I,',',I,',',I,',',I,1,1,0             ; palsplit
+l022:	.dc.b I,I,1,1,0           ; p down
+l023:	.dc.b 0,I,1,1,0           ; floodpal
+l024:	.dc.b I,I,1,1,0           ; p fire
+l025:	.dc.b 0,I,',',I,',',I,',',I,',',I,1,1,0     ; digi play
+l026:	.dc.b I,I,1,1,0           ; string
+l027:	.dc.b 0,I,',',I,1,1,0     ; samsign
+l028:	.dc.b I,I,1,1,0           ; depack
+l029:	.dc.b 0,I,',',I,',',I,1,1,0 ; replace blocks
+l030:	.dc.b I,I,',',I,',',I,',',I,1,1,0             ; dload
+l031:	.dc.b 0,I,',',I,1,1,0     ; display pc1
+l032:	.dc.b I,I,',',I,',',I,',',I,1,1,0             ; dsave
+
 		.even
 
-table: ds.l 1
-joybuf:   ds.l 1
+entry:  bra.w init
 
-
-load:
-		lea.l      finprg(pc),a0
-		lea.l      cold(pc),a1
+init:
+		lea        exit(pc),a2
 		rts
 
-cold:
-		lea        table(pc),a1
-		move.l     a0,(a1)
-*
-* the loader already installs a joystick routine that handles both joysticks,
-* we just need the address of the joytsick buffer
-*
-		lea        joybuf(pc),a1
-		move.l     sys_vectors(a0),a0 ; get address of vectors
-		move.l     46(a0),a0 ; get address of adaptation routines (ada)
-		move.l     adapt_joy(a0),a0 ; get address of jostick buffer
-		move.l     a0,(a1) ; save for later use
-		lea.l      welcome(pc),a0
-		lea.l      warm(pc),a1
-		lea.l      tokens(pc),a2
-		lea.l      jumps(pc),a3
+exit:
 		rts
 
-;	warm start (response to UNDO keyword)
-warm:
-		movem.l    d0-d7/a0-a6,-(a7)
-		lea.l      vbl_saved_flag(pc),a2
-		tst.w      (a2)
-		beq        warm2
-		lea.l      save_vbl(pc),a1
-		move.l     (a1),vbl_vec
-		lea.l      vbl_saved_flag(pc),a1
-		clr.w      (a1)
-		move.l     #0x08000000,PSG.l ; turn all voices off
-		move.l     #0x09000000,PSG.l
-		move.l     #0x0A000000,PSG.l
-warm2:
-		pea        warm3(pc)
-		movem.l    d5-d6/a2-a6,-(a7) ; must match register list at start of musauto
-		bra        musstop
-warm3:
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-
-x10422:
-		lea.l      digiplay_flag(pc),a0
-		tst.w      (a0)
-		beq.s      x10422_1
-		clr.w      (a0)
-		move.w     sr,d0
-		move.w     #0x2700,sr
-		move.l     save_timera(pc),(timera_vec).w
-		move.b     save_iera(pc),(iera).w
-		move.b     save_imra(pc),(imra).w
-		move.b     save_vr(pc),(vr).w
-		move.b     save_tacr(pc),(tacr).w
-		move.w     #0,digiplay_loop
-		move.w     d0,sr
-x10422_1:
-		lea        palsplit_saveflag(pc),a0
-		tst.w      (a0)
-		beq.s      x10422_2
-		clr.w      (a0)
-		move.w     sr,d0
-		move.w     #0x2700,sr
-		lea.l      palsplit_savearea(pc),a0
-		move.b     (a0)+,(iera).w
-		move.b     (a0)+,(ierb).w
-		move.b     (a0)+,(imra).w
-		move.b     (a0)+,(imrb).w
-		move.l     palsplit_savevbl(pc),(vbl_vec).w
-		move.w     d0,sr
-x10422_2:
-		movem.l    (a7)+,d0-d7/a0-a6
-		rts
-
-getinteger:
-		movea.l    (a7)+,a0
-		movem.l    (a7)+,d2-d4
-		tst.b      d2
-		bne.s      typemismatch
-		jmp        (a0)
-
-x104f0: ds.w 1 /* unused */
-x104f2: ds.w 1
-
-crnl: dc.b 10,13,0
-mlmsg1: dc.b "type 'honesty' for registration details",0
-mlmsg2: dc.b "for Missing Link",0
-	.even
-
-
-syntax:
-		moveq      #E_syntax,d0
-		bra.s      goerror
-typemismatch:
-		moveq.l    #E_typemismatch,d0
-		bra.s      goerror
-illfunc: /* unused */
-		moveq.l    #E_illegalfunc,d0
-		bra.s      goerror
-notdone:
-		moveq.l    #E_none,d0
-
-goerror:
-		movea.l    table(pc),a0
-		movea.l    sys_error(a0),a0
-		jmp        (a0)
 
 ; -----------------------------------------------------------------------------
 
@@ -247,29 +183,19 @@ goerror:
  * Syntax: LANDSCAPE x1,y1,x2,y2,0,1
  *         LANDSCAPE scr,gadr,madr,x,y,0
  */
+lib1:
+	dc.w	0			; no library calls
 landscape:
-		move.l     (a7)+,a1
-		subq.w     #6,d0
-		bne.s      syntax
-		bsr        getinteger
-		move.l     d3,args+20
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movea.l    args+0(pc),a0
-		movea.l    args+4(pc),a2
-		movea.l    args+8(pc),a1
-		movem.l    args+12(pc),d6-d7
-		move.l     args+20(pc),d0
+		movem.l    a0-a5,-(a7)
+		move.l     (a6)+,d0
+		tst.w      d0
+		bne        landscape_init
+		move.l     (a6)+,d7
+		move.l     (a6)+,d6
+		move.l     (a6)+,a1
+		move.l     (a6)+,a2
+		move.l     (a6)+,a0
+		move.l     a6,-(a7)
 		moveq.l    #0,d1
 		move.l     d1,d2
 		move.l     d1,d3
@@ -279,12 +205,12 @@ landscape:
 		movea.l    d1,a4
 		movea.l    d1,a5
 		movea.l    d1,a6
-		tst.w      d0
+		tst.w      d0 ; FIXME: already done above
 		bne        landscape_init
 		cmpi.l     #0x03031973,(a1)+
-		bne        notdone
+		bne        landscape_ret
 		cmpi.l     #0x18E7074C,(a2)+
-		bne        notdone
+		bne        landscape_ret
 		lea.l      36(a2),a2
 		moveq.l    #0,d0
 		lea.l      landscape_screenoffset(pc),a3
@@ -308,9 +234,11 @@ landscape1:
 		bge.s      landscape2
 		moveq.l    #0,d7
 landscape2:
+		.IFNE 0 ; FIXME, missing
 		tst.w      d6
 		bge.s      landscape3
 		moveq.l    #0,d6
+		.ENDC
 landscape3:
 		lsr.w      #4,d6
 		add.w      d6,d6
@@ -326,11 +254,11 @@ landscape3:
 		move.w     d7,d6
 		move.w     d3,d1
 		lea.l      -8(a0),a4
-		moveq      #0,d4		; dml	
+		moveq      #0,d4			; dml
 landscape4:
 		movea.l    a6,a2
 		adda.w     d7,a2
-		move.w     (a1)+,d4		; dml	
+		move.w     (a1)+,d4		; dml
 		add.l      d4,a2
 		lea.l      landscape_loop(pc,d7.w),a3
 		lea.l      8(a4),a4
@@ -460,7 +388,7 @@ landscape6:
 		moveq      #120,d7
 		sub.w      d6,d7
 		move.w     d3,d1
-		lea        landscape_loop2(pc,d7.w),a3	; dml
+		lea.l      landscape_loop2(pc,d7.w),a3
 landscape7:
 		movea.l    a6,a2
 		move.w     (a1)+,d7		; dml
@@ -516,15 +444,22 @@ landscape_loop2:
 		nop
 		lea.l      8(a4),a0
 		dbf        d1,landscape7
-		bra        landscape_end
+landscape_ret:
+		movea.l    (a7)+,a6
+		movem.l    (a7)+,a0-a5
+		rts
 
 landscape_init:
-		movem.l    args+0(pc),d0-d3 ; x1,y1,x2,y2
+		lea.l      4(a6),a6 ; skip dummy arg
+		move.l     (a6)+,d3 ; y2
+		move.l     (a6)+,d2 ; x1
+		move.l     (a6)+,d1 ; y1
+		move.l     (a6)+,d0 ; x1
 		tst.w      d0
 		bge.s      landscape_init1
 		moveq.l    #0,d0
 landscape_init1:
-		cmpi.w     #SCREEN_WIDTH-16,d0
+		cmpi.w     #SCREEN_WIDTH-16,d0 ; FIXME screen size
 		ble.s      landscape_init2
 		move.w     #SCREEN_WIDTH-16,d0
 landscape_init2:
@@ -545,7 +480,7 @@ landscape_init4:
 		mulu.w     #160,d1
 		add.w      d1,d0
 		lea.l      landscape_screenoffset(pc),a0
-		move.w     d0,(a0) ; FIXME: should be long
+		move.w     d0,(a0) ; BUG: should be long
 		move.w     d2,d0
 		move.w     d3,d1
 		subq.w     #1,d0
@@ -566,16 +501,16 @@ landscape_init7:
 		ble.s      landscape_init8
 		moveq.l    #10,d1
 landscape_init8:
-		lea.l      landscape_width,a0
+		lea.l      landscape_width(pc),a0
 		move.w     d0,(a0)+
 		move.w     d1,(a0)
 landscape_end:
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a0-a5
 		rts
 
-landscape_screenoffset: ds.w 1 ; FIXME: should be long
-landscape_width: ds.w 1 ; in words
-landscape_height: ds.w 1 ; in words
+landscape_screenoffset: ds.w 1 ; BUG: should be long
+landscape_width: dc.w 19 ; in words
+landscape_height: dc.w 10 ; in words
 landscape_mapx: ds.w 1
 
 ; -----------------------------------------------------------------------------
@@ -583,30 +518,18 @@ landscape_mapx: ds.w 1
 /*
  * Syntax: r = OVERLAP (x1,y1,x2,y2,wd1,hg1,wd2,hg2)
  */
+lib2:
+	dc.w	0			; no library calls
 overlap:
-		move.l     (a7)+,a1
-		subq.w     #8,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+28
-		bsr        getinteger
-		move.l     d3,args+24
-		bsr        getinteger
-		move.l     d3,args+20
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d7,-(a7)
-		moveq.l    #0,d3
-		movem.l    args+0(pc),d0-d7
+		movem.l    d5-d7/a0,-(a7)
+		move.l     (a6)+,d7
+		move.l     (a6)+,d6
+		move.l     (a6)+,d5
+		move.l     (a6)+,d4
+		move.l     (a6)+,d3
+		move.l     (a6)+,d2
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
 		movea.w    d0,a0
 		adda.w     d4,a0
 		cmpa.w     d2,a0
@@ -623,10 +546,12 @@ overlap:
 		adda.w     d7,a0
 		cmp.w      a0,d1
 		bge.s      overlap1
-		moveq.l    #-1,d3
+		move.l     #-1,-(a6)
+		movem.l    (a7)+,d5-d7/a0
+		rts
 overlap1:
-		moveq.l    #0,d2
-		movem.l    (a7)+,d5-d7
+		move.l     #0,-(a6)
+		movem.l    (a7)+,d5-d7/a0
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -635,29 +560,19 @@ overlap1:
  * Syntax: BOB x1,y1,x2,y2,0,1
  *         BOB scr,gadr,img,x,y,0
  */
+lib3:
+	dc.w	0			; no library calls
 bob:
-		move.l     (a7)+,a1
-		subq.w     #6,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+20
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		move.l     args+20(pc),d6
-		tst.w      d6
-		bne        bob_init
-		movem.l    args+0(pc),a0-a1
-		movem.l    args+8(pc),d0-d2
+		movem.l    a0-a5,-(a7)
+		move.l     (a6)+,d6
+		cmpi.w     #1,d6
+		beq        bob_init
+		move.l     (a6)+,d2
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a1
+		move.l     (a6)+,a0
+		move.l     a6,-(a7)
 		moveq.l    #0,d3
 		move.l     d3,d4
 		move.l     d3,d5
@@ -680,7 +595,7 @@ bobpatch3:
 		cmpi.w     #SCREEN_HEIGHT,d2 ; patched with y2
 		bge        bob_end
 		cmpi.l     #0x38964820,(a1)
-		bne        notdone
+		bne        bob_end
 		move.w     4(a1),d7
 		cmp.w      d7,d0
 		bge        bob_end
@@ -701,10 +616,14 @@ bobpatch3:
 		tst.w      d0
 		beq.s      bob1
 		sub.w      a5,d3
-		bra.s      bob2
+		bra.s      bob2_1
 bob1:
 		subi.w     #16,d4
 bob2:
+		tst.w      d4
+		bge.s      bob2_1
+		moveq.l    #0,d4
+bob2_1:
 		adda.l     d3,a1
 		cmpi.w     #99,d6
 		bne.s      bob3
@@ -743,7 +662,7 @@ bobpatch8:
 		move.w     #0xdead,d7 ; patched with y1
 		sub.w      d2,d7
 		tst.w      d7
-		bpl.s      bob6
+		bge.s      bob6
 		neg.w      d7
 bob6:
 		move.w     d7,d2
@@ -756,7 +675,7 @@ bob6:
 bobpatch9:
 		move.w     #0xdead,d2 ; patched with y1
 bobpatch9_1:
-		move.w     #-16,d6
+		move.w     #16,d6
 		sub.w      d7,d6
 		move.w     d6,d7
 		bra.s      bob8
@@ -770,16 +689,16 @@ bobpatch9_3:
 		sub.w      d6,d7
 bob8:
 		lsr.w      #3,d4
-		lea.l      bob_jtable(pc),a2
+		lea.l      bob_jtab(pc),a2
 		adda.w     0(a2,d4.w),a2
 		jmp        (a2)
 
-bob_jtable:
-	dc.w bob31-bob_jtable
-	dc.w bob28-bob_jtable
-	dc.w bob24-bob_jtable
-	dc.w bob17-bob_jtable
-	dc.w bob9-bob_jtable
+bob_jtab:
+	dc.w bob31-bob_jtab
+	dc.w bob28-bob_jtab
+	dc.w bob24-bob_jtab
+	dc.w bob17-bob_jtab
+	dc.w bob9-bob_jtab
 
 bob9:
 bobpatch10:
@@ -1005,7 +924,7 @@ bob32:
 		add.w      d7,d6
 		movea.l    a0,a2
 		movea.l    a1,a3
-		lea        bob34(pc,d6.w),a4	; dml
+		lea.l      bob34(pc,d6.w),a4
 bob33:
 		jmp        (a4)
 bob34:
@@ -1593,16 +1512,23 @@ bob34:
 		bra        bob_end
 
 bob_init:
-		movem.l    args+0(pc),d0-d3 ; x1,y1,x2,y2
-		tst.w      d0
+		lea.l      4(a6),a6 ; skip dummy arg
+		move.l     (a6)+,d3 ; y2
+		move.l     (a6)+,d2 ; x1
+		move.l     (a6)+,d1 ; y1
+		move.l     (a6)+,d0 ; x1
+		move.l     a6,-(a7)
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
 		bge.s      bob_init1
 		moveq.l    #0,d0
 bob_init1:
-		cmpi.w     #SCREEN_WIDTH,d2
+		cmpi.w     #SCREEN_WIDTH,d2 ; FIXME screensize
 		ble.s      bob_init2
 		move.w     #SCREEN_WIDTH,d2
 bob_init2:
-		tst.w      d1
+		/* tst.w      d1 */
+		dc.w 0x0c41,0 /* XXX */
 		bge.s      bob_init3
 		moveq.l    #0,d1
 bob_init3:
@@ -1612,7 +1538,6 @@ bob_init3:
 bob_init4:
 		andi.w     #-16,d0
 		andi.w     #-16,d2
-
 		lea.l      bobpatch7(pc),a0
 		move.w     d1,2(a0)
 		lea.l      bobpatch9(pc),a0
@@ -1621,18 +1546,15 @@ bob_init4:
 		move.w     d1,2(a0)
 		lea.l      bobpatch4(pc),a0
 		move.w     d1,2(a0)
-
 		subi.w     #64,d1
 		lea.l      bobpatch2_1(pc),a0
 		move.w     d1,2(a0)
-
 		lea.l      bobpatch6(pc),a0
 		move.w     d3,2(a0)
 		lea.l      bobpatch5(pc),a0
 		move.w     d3,2(a0)
 		lea.l      bobpatch3(pc),a0
 		move.w     d3,2(a0)
-
 		lea.l      bobpatch43(pc),a0
 		move.w     d0,2(a0)
 		lea.l      bobpatch47(pc),a0
@@ -1663,7 +1585,6 @@ bob_init4:
 		move.w     d0,2(a0)
 		lea.l      bobpatch18(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
 		lea.l      bobpatch44(pc),a0
 		move.w     d0,2(a0)
@@ -1673,7 +1594,6 @@ bob_init4:
 		move.w     d0,2(a0)
 		lea.l      bobpatch11(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
 		lea.l      bobpatch38(pc),a0
 		move.w     d0,2(a0)
@@ -1681,19 +1601,15 @@ bob_init4:
 		move.w     d0,2(a0)
 		lea.l      bobpatch13(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
 		lea.l      bobpatch29(pc),a0
 		move.w     d0,2(a0)
 		lea.l      bobpatch15(pc),a0
 		move.w     d0,2(a0)
-
 		subi.w     #16,d0
-		lea.l      bobpatch17(pc),a0
-		move.w     d0,2(a0)
+		lea.l      bobpatch17(pc),a0 ; BUG: not patched
 		lea.l      bobpatch1(pc),a0
 		move.w     d0,2(a0)
-
 		lea.l      bobpatch46(pc),a0
 		move.w     d2,2(a0)
 		lea.l      bobpatch40(pc),a0
@@ -1706,7 +1622,6 @@ bob_init4:
 		move.w     d2,2(a0)
 		lea.l      bobpatch2(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      bobpatch46_1(pc),a0
 		move.w     d2,2(a0)
@@ -1716,7 +1631,6 @@ bob_init4:
 		move.w     d2,2(a0)
 		lea.l      bobpatch20(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      bobpatch42(pc),a0
 		move.w     d2,2(a0)
@@ -1724,33 +1638,231 @@ bob_init4:
 		move.w     d2,2(a0)
 		lea.l      bobpatch21(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      bobpatch34(pc),a0
 		move.w     d2,2(a0)
 		lea.l      bobpatch22(pc),a0
 		move.w     d2,2(a0)
-
 		subi.w     #16,d2
 		lea.l      bobpatch23(pc),a0
 		move.w     d2,2(a0)
 bob_end:
-		movem.l    (a7)+,d5-d6/a2-a6
+		move.l     (a7)+,a6
+		movem.l    (a7)+,a0-a5
 		rts
+
+lineoffset_table:
+	dc.w 0*160
+	dc.w 1*160
+	dc.w 2*160
+	dc.w 3*160
+	dc.w 4*160
+	dc.w 5*160
+	dc.w 6*160
+	dc.w 7*160
+	dc.w 8*160
+	dc.w 9*160
+	dc.w 10*160
+	dc.w 11*160
+	dc.w 12*160
+	dc.w 13*160
+	dc.w 14*160
+	dc.w 15*160
+	dc.w 16*160
+	dc.w 17*160
+	dc.w 18*160
+	dc.w 19*160
+	dc.w 20*160
+	dc.w 21*160
+	dc.w 22*160
+	dc.w 23*160
+	dc.w 24*160
+	dc.w 25*160
+	dc.w 26*160
+	dc.w 27*160
+	dc.w 28*160
+	dc.w 29*160
+	dc.w 30*160
+	dc.w 31*160
+	dc.w 32*160
+	dc.w 33*160
+	dc.w 34*160
+	dc.w 35*160
+	dc.w 36*160
+	dc.w 37*160
+	dc.w 38*160
+	dc.w 39*160
+	dc.w 40*160
+	dc.w 41*160
+	dc.w 42*160
+	dc.w 43*160
+	dc.w 44*160
+	dc.w 45*160
+	dc.w 46*160
+	dc.w 47*160
+	dc.w 48*160
+	dc.w 49*160
+	dc.w 50*160
+	dc.w 51*160
+	dc.w 52*160
+	dc.w 53*160
+	dc.w 54*160
+	dc.w 55*160
+	dc.w 56*160
+	dc.w 57*160
+	dc.w 58*160
+	dc.w 59*160
+	dc.w 60*160
+	dc.w 61*160
+	dc.w 62*160
+	dc.w 63*160
+	dc.w 64*160
+	dc.w 65*160
+	dc.w 66*160
+	dc.w 67*160
+	dc.w 68*160
+	dc.w 69*160
+	dc.w 70*160
+	dc.w 71*160
+	dc.w 72*160
+	dc.w 73*160
+	dc.w 74*160
+	dc.w 75*160
+	dc.w 76*160
+	dc.w 77*160
+	dc.w 78*160
+	dc.w 79*160
+	dc.w 80*160
+	dc.w 81*160
+	dc.w 82*160
+	dc.w 83*160
+	dc.w 84*160
+	dc.w 85*160
+	dc.w 86*160
+	dc.w 87*160
+	dc.w 88*160
+	dc.w 89*160
+	dc.w 90*160
+	dc.w 91*160
+	dc.w 92*160
+	dc.w 93*160
+	dc.w 94*160
+	dc.w 95*160
+	dc.w 96*160
+	dc.w 97*160
+	dc.w 98*160
+	dc.w 99*160
+	dc.w 100*160
+	dc.w 101*160
+	dc.w 102*160
+	dc.w 103*160
+	dc.w 104*160
+	dc.w 105*160
+	dc.w 106*160
+	dc.w 107*160
+	dc.w 108*160
+	dc.w 109*160
+	dc.w 110*160
+	dc.w 111*160
+	dc.w 112*160
+	dc.w 113*160
+	dc.w 114*160
+	dc.w 115*160
+	dc.w 116*160
+	dc.w 117*160
+	dc.w 118*160
+	dc.w 119*160
+	dc.w 120*160
+	dc.w 121*160
+	dc.w 122*160
+	dc.w 123*160
+	dc.w 124*160
+	dc.w 125*160
+	dc.w 126*160
+	dc.w 127*160
+	dc.w 128*160
+	dc.w 129*160
+	dc.w 130*160
+	dc.w 131*160
+	dc.w 132*160
+	dc.w 133*160
+	dc.w 134*160
+	dc.w 135*160
+	dc.w 136*160
+	dc.w 137*160
+	dc.w 138*160
+	dc.w 139*160
+	dc.w 140*160
+	dc.w 141*160
+	dc.w 142*160
+	dc.w 143*160
+	dc.w 144*160
+	dc.w 145*160
+	dc.w 146*160
+	dc.w 147*160
+	dc.w 148*160
+	dc.w 149*160
+	dc.w 150*160
+	dc.w 151*160
+	dc.w 152*160
+	dc.w 153*160
+	dc.w 154*160
+	dc.w 155*160
+	dc.w 156*160
+	dc.w 157*160
+	dc.w 158*160
+	dc.w 159*160
+	dc.w 160*160
+	dc.w 161*160
+	dc.w 162*160
+	dc.w 163*160
+	dc.w 164*160
+	dc.w 165*160
+	dc.w 166*160
+	dc.w 167*160
+	dc.w 168*160
+	dc.w 169*160
+	dc.w 170*160
+	dc.w 171*160
+	dc.w 172*160
+	dc.w 173*160
+	dc.w 174*160
+	dc.w 175*160
+	dc.w 176*160
+	dc.w 177*160
+	dc.w 178*160
+	dc.w 179*160
+	dc.w 180*160
+	dc.w 181*160
+	dc.w 182*160
+	dc.w 183*160
+	dc.w 184*160
+	dc.w 185*160
+	dc.w 186*160
+	dc.w 187*160
+	dc.w 188*160
+	dc.w 189*160
+	dc.w 190*160
+	dc.w 191*160
+	dc.w 192*160
+	dc.w 193*160
+	dc.w 194*160
+	dc.w 195*160
+	dc.w 196*160
+	dc.w 197*160
+	dc.w 198*160
+	dc.w 199*160
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: n = MAP TOGGLE(madr)
  */
+lib4:
+	dc.w	0			; no library calls
 map_toggle:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movea.l    d3,a0
+		move.l     a0,-(a7)
+		move.l     (a6)+,a0
 		cmpi.l     #0x03031973,(a0)
 		bne.s      map_toggle1
 		moveq.l    #7,d4
@@ -1759,7 +1871,7 @@ map_toggle:
 		bra.s      map_toggle2
 map_toggle1:
 		cmpi.l     #0x02528E54,(a0)
-		bne        notdone
+		bne        map_toggle_end
 		moveq.l    #8,d4
 		moveq.l    #7,d5
 		move.l     #0x03031973,(a0)+
@@ -1777,9 +1889,9 @@ map_toggle3:
 		lsl.w      d5,d3
 		move.w     d3,(a0)+
 		dbf        d2,map_toggle3
-		moveq.l    #0,d2
-		moveq.l    #0,d3
-		movem.l    (a7)+,d5-d6/a2-a6
+map_toggle_end:
+		move.l     (a7)+,a0
+		move.l     #0,(a6) ; BUG: should be -(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -1787,15 +1899,12 @@ map_toggle3:
 /*
  * Syntax: WIPE scr
  */
+lib5:
+	dc.w	0			; no library calls
 wipe:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movea.l    d3,a6
-		lea.l      32000(a6),a6
+		movem.l    a0-a6,-(a7)
+		move.l     (a6)+,a5
+		lea.l      32000(a5),a6
 		moveq.l    #0,d1
 		move.l     d1,d2
 		move.l     d1,d3
@@ -1928,7 +2037,8 @@ wipe1:
 		movem.l    d1-d7/a0-a5,-(a6)
 		movem.l    d1-d7/a0-a5,-(a6)
 		movem.l    d1-d5,-(a6)
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a0-a6
+		addq.w     #4,a6 ; adjust again for popped parameter
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -1936,14 +2046,10 @@ wipe1:
 /*
  * Syntax: r = BOUNDARY (n)
  */
+lib6:
+	dc.w	0			; no library calls
 boundary:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		andi.w     #-16,d3
-		moveq.l    #0,d2
+		andi.w     #-16,2(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -1951,24 +2057,15 @@ boundary:
 /*
  * Syntax: TILE scr,gadr,img,x,y
  */
+lib7:
+	dc.w	0			; no library calls
 tile:
-		move.l     (a7)+,a1
-		subq.w     #5,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movem.l    args+0(pc),a0-a1
-		movem.l    args+8(pc),d0-d2
+		move.l     (a6)+,d2
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a1
+		move.l     (a6)+,a0
+		movem.l    a1-a6,-(a7)
 		cmpi.l     #0x003D2067,(a1)+
 		bne        tile_end
 		move.w     (a1)+,d3
@@ -2305,7 +2402,7 @@ tile2:
 		movem.l    d0-d6/a2-a4,-(a0)
 		movem.l    d0-d6/a2-a4,-(a0)
 tile_end:
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a1-a6
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2313,13 +2410,10 @@ tile_end:
 /*
  * Syntax: r = PALT (gadr)
  */
+lib8:
+	dc.w	0			; no library calls
 palt:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movea.l    d3,a0
+		move.l     (a6),a0
 		cmpi.l     #0x19861987,(a0) ; is it a sprite bank?
 		beq.s      palt5
 		cmpi.l     #0x003D2067,(a0)
@@ -2342,7 +2436,8 @@ palt3:
 		move.w     #6,d1
 		bra.s      palt7
 palt4:
-		bra        notdone
+		move.l     #0,(a6)
+		rts
 palt5:
 		move.l     #(256000/2)-1,d0 ; WTF?
 		moveq.l    #4,d1
@@ -2351,15 +2446,12 @@ palt6:
 		beq.s      palt7
 		lea.l      2(a0),a0
 		dbf        d0,palt6
-		bra        notdone
+		move.l     #0,(a6)
+		rts
 palt7:
 		adda.l     d1,a0
-		move.l     a0,d3
-		move.l     a0,-(a7)
-		move.w     #6,-(a7) ; Setpalette
-		trap       #14
-		addq.w     #6,a7
-		moveq.l    #0,d2
+		move.l     a0,colorptr /* FIXME: use Setpalette */
+		move.l     a0,(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2368,42 +2460,34 @@ palt7:
  * Syntax: WORLD x1,y1,x2,y2,0,1
  *         WORLD scr,gadr,madr,x,y,0
  */
+lib9:
+	dc.w	0			; no library calls
 world:
-		move.l     (a7)+,a1
-		subq.w     #6,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+20
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movem.l    args+0(pc),a0-a2
-		movem.l    args+12(pc),d2-d3
-		move.l     args+20(pc),d7
+		tst.l      (a6)+
+		bne        world_init
+		movem.l    a0-a5,-(a7)
+		move.l     (a6)+,d3
+		move.l     (a6)+,d2
+		move.l     (a6)+,a2
+		move.l     (a6)+,a1
+		move.l     (a6)+,a0
+		move.l     a6,-(a7)
 		moveq.l    #0,d0
 		move.l     d0,d1
 		move.l     d0,d4
 		move.l     d0,d5
 		move.l     d0,d6
+		move.l     d0,d7
 		movea.l    d0,a3
 		movea.l    d0,a4
 		movea.l    d0,a5
 		movea.l    d0,a6
 		tst.w      d7
-		bne        world_init
+		bne        world_init ; FIXME; already done above
 		cmpi.l     #0x07793868,(a1)+
-		bne        notdone
+		bne        world_end
 		cmpi.l     #0x02528E54,(a2)+
-		bne        notdone
+		bne        world_end
 		tst.w      d2
 		bge.s      world1
 		moveq.l    #0,d2
@@ -2412,8 +2496,10 @@ world1:
 		bge.s      world2
 		moveq.l    #0,d3
 world2:
-		movem.w    (a2)+,d0-d1
-		move.w     d0,x12004
+		move.w     (a2)+,d0
+		lea        x12004(pc),a5
+		move.w     d0,(a5)
+		move.w     (a2)+,d1
 		subq.w     #2,d1
 		lsr.w      #1,d0
 		lsr.w      #1,d1
@@ -2445,7 +2531,8 @@ world4:
 		adda.w     d2,a2
 		move.w     d3,d2
 		andi.w     #15,d3
-		move.w     d3,x12006
+		lea        x12006(pc),a5
+		move.w     d3,(a5)
 		lsr.w      #4,d2
 		tst.w      d2
 		bge.s      world5
@@ -2469,12 +2556,12 @@ world6:
 		add.w      d7,d7
 		move.w     d3,d4
 		add.w      d4,d4
-		lea.l      lineoffset_table(pc),a5
+		lea.l      lineoffset_table2(pc),a5
 		adda.w     d4,a5
 		move.w     #2400,d6
 		sub.w      (a5),d6
-		lea        world8(pc,d7.w),a4		; dml
-
+		neg.w      d6
+		lea.l      world8(pc,d7.w),a4
 world7:
 		movea.l    a1,a5
 		adda.w     d2,a5
@@ -2565,15 +2652,15 @@ world8:
 		or.l       (a5)+,d4
 		or.l       (a5),d5
 		movem.l    d4-d5,(a0)
-		suba.w     d6,a0
-		lea.l      8(a0),a0
+		lea.l      8(a0,d6.w),a0
 		dbf        d0,world7
 		subq.w     #1,d1
 		movea.l    (a7)+,a2
-		addq.w     #2,a2
+		lea.l      2(a2),a2
+		neg.w      d6
 		movea.l    (a7)+,a0
-		lea.l      160(a0),a0
 		adda.w     d6,a0
+		lea.l      160(a0),a0
 		adda.w     x12004(pc),a2
 		tst.w      d1
 		bge.s      world9
@@ -2665,16 +2752,17 @@ world11:
 		addq.w     #2,a7
 		movea.l    (a7)+,a0
 		movem.w    world_width(pc),d0-d1
-		suba.w     d0,a2
-		suba.w     d0,a2
+		lsl.w      #1,d0 ; FIXME; may overflow
+		suba.l     d0,a2
 		subq.w     #2,a2
+		lsr.w      #1,d0 ; FIXME
 		moveq.l    #0,d7
 		move.w     x12004(pc),d7
 		addq.w     #2,d7
 		mulu.w     d1,d7
 		adda.w     d7,a2
 		lsl.w      #5,d1
-		lea.l      lineoffset_table(pc),a5
+		lea.l      lineoffset_table2(pc),a5
 		adda.w     d1,a5
 		adda.w     (a5),a0
 world12:
@@ -2684,7 +2772,7 @@ world12:
 		moveq.l    #15,d7
 		sub.w      d1,d7
 		lsl.w      #4,d7
-		lea        world14(pc,d7.w),a4		; dml
+		lea.l      world14(pc,d7.w),a4
 world13:
 		lea.l      128(a3),a5
 		move.w     (a2)+,d7			; dml
@@ -2772,16 +2860,22 @@ world14:
 		lea.l      8(a1),a0
 		dbf        d0,world13
 world_end:
-		movem.l    (a7)+,d5-d6/a2-a6
+		move.l     (a7)+,a6
+		movem.l    (a7)+,a0-a5
 		rts
 
 world_init:
-		movem.l    args+0(pc),d0-d3 ; x1,y1,x2,y2
+		lea.l      4(a6),a6 ; skip dummy arg
+		move.l     (a6)+,d3 ; y2
+		move.l     (a6)+,d2 ; x1
+		move.l     (a6)+,d1 ; y1
+		move.l     (a6)+,d0 ; x1
+		move.l     a0,-(a7)
 		tst.w      d0
 		bge.s      world_init1
 		moveq.l    #0,d0
 world_init1:
-		cmpi.w     #SCREEN_WIDTH-16,d0
+		cmpi.w     #SCREEN_WIDTH-16,d0 ; FIXME screensize
 		ble.s      world_init2
 		move.w     #SCREEN_WIDTH-16,d0
 world_init2:
@@ -2803,544 +2897,640 @@ world_init4:
 		add.w      d1,d0
 		lea.l      world_screenoffset(pc),a0
 		move.w     d0,(a0)
-		move.w     d2,d0
-		move.w     d3,d1
-		subq.w     #1,d0
-		subq.w     #1,d1
-		tst.w      d0
+		subq.w     #1,d2
+		subq.w     #1,d3
+		tst.w      d2
 		bge.s      world_init5
-		moveq.l    #0,d0
+		moveq.l    #0,d2
 world_init5:
-		tst.w      d1
+		tst.w      d3
 		bge.s      world_init6
-		moveq.l    #0,d1
+		moveq.l    #0,d3
 world_init6:
-		cmpi.w     #19,d0
+		cmpi.w     #19,d2
 		ble.s      world_init7
-		moveq.l    #19,d0
+		moveq.l    #19,d2
 world_init7:
-		cmpi.w     #11,d1
+		cmpi.w     #11,d3
 		ble.s      world_init8
-		moveq.l    #11,d1
+		moveq.l    #11,d3
 world_init8:
 		lea.l      world_width(pc),a0
-		move.w     d0,(a0)+
-		move.w     d1,(a0)
-		movem.l    (a7)+,d5-d6/a2-a6
+		move.w     d2,(a0)+
+		move.w     d3,(a0)
+		move.l     (a7)+,a0
 		rts
 
 world_width: dc.w 19
-world_height: dc.w 11
-x12004: ds.w 1
+world_height: dc.w 9
+x12004: dc.w 798
 x12006: ds.w 1
 world_screenoffset: ds.w 1
 
+lineoffset_table2:
+	dc.w 0*160
+	dc.w 1*160
+	dc.w 2*160
+	dc.w 3*160
+	dc.w 4*160
+	dc.w 5*160
+	dc.w 6*160
+	dc.w 7*160
+	dc.w 8*160
+	dc.w 9*160
+	dc.w 10*160
+	dc.w 11*160
+	dc.w 12*160
+	dc.w 13*160
+	dc.w 14*160
+	dc.w 15*160
+	dc.w 16*160
+	dc.w 17*160
+	dc.w 18*160
+	dc.w 19*160
+	dc.w 20*160
+	dc.w 21*160
+	dc.w 22*160
+	dc.w 23*160
+	dc.w 24*160
+	dc.w 25*160
+	dc.w 26*160
+	dc.w 27*160
+	dc.w 28*160
+	dc.w 29*160
+	dc.w 30*160
+	dc.w 31*160
+	dc.w 32*160
+	dc.w 33*160
+	dc.w 34*160
+	dc.w 35*160
+	dc.w 36*160
+	dc.w 37*160
+	dc.w 38*160
+	dc.w 39*160
+	dc.w 40*160
+	dc.w 41*160
+	dc.w 42*160
+	dc.w 43*160
+	dc.w 44*160
+	dc.w 45*160
+	dc.w 46*160
+	dc.w 47*160
+	dc.w 48*160
+	dc.w 49*160
+	dc.w 50*160
+	dc.w 51*160
+	dc.w 52*160
+	dc.w 53*160
+	dc.w 54*160
+	dc.w 55*160
+	dc.w 56*160
+	dc.w 57*160
+	dc.w 58*160
+	dc.w 59*160
+	dc.w 60*160
+	dc.w 61*160
+	dc.w 62*160
+	dc.w 63*160
+	dc.w 64*160
+	dc.w 65*160
+	dc.w 66*160
+	dc.w 67*160
+	dc.w 68*160
+	dc.w 69*160
+	dc.w 70*160
+	dc.w 71*160
+	dc.w 72*160
+	dc.w 73*160
+	dc.w 74*160
+	dc.w 75*160
+	dc.w 76*160
+	dc.w 77*160
+	dc.w 78*160
+	dc.w 79*160
+	dc.w 80*160
+	dc.w 81*160
+	dc.w 82*160
+	dc.w 83*160
+	dc.w 84*160
+	dc.w 85*160
+	dc.w 86*160
+	dc.w 87*160
+	dc.w 88*160
+	dc.w 89*160
+	dc.w 90*160
+	dc.w 91*160
+	dc.w 92*160
+	dc.w 93*160
+	dc.w 94*160
+	dc.w 95*160
+	dc.w 96*160
+	dc.w 97*160
+	dc.w 98*160
+	dc.w 99*160
+	dc.w 100*160
+	dc.w 101*160
+	dc.w 102*160
+	dc.w 103*160
+	dc.w 104*160
+	dc.w 105*160
+	dc.w 106*160
+	dc.w 107*160
+	dc.w 108*160
+	dc.w 109*160
+	dc.w 110*160
+	dc.w 111*160
+	dc.w 112*160
+	dc.w 113*160
+	dc.w 114*160
+	dc.w 115*160
+	dc.w 116*160
+	dc.w 117*160
+	dc.w 118*160
+	dc.w 119*160
+	dc.w 120*160
+	dc.w 121*160
+	dc.w 122*160
+	dc.w 123*160
+	dc.w 124*160
+	dc.w 125*160
+	dc.w 126*160
+	dc.w 127*160
+	dc.w 128*160
+	dc.w 129*160
+	dc.w 130*160
+	dc.w 131*160
+	dc.w 132*160
+	dc.w 133*160
+	dc.w 134*160
+	dc.w 135*160
+	dc.w 136*160
+	dc.w 137*160
+	dc.w 138*160
+	dc.w 139*160
+	dc.w 140*160
+	dc.w 141*160
+	dc.w 142*160
+	dc.w 143*160
+	dc.w 144*160
+	dc.w 145*160
+	dc.w 146*160
+	dc.w 147*160
+	dc.w 148*160
+	dc.w 149*160
+	dc.w 150*160
+	dc.w 151*160
+	dc.w 152*160
+	dc.w 153*160
+	dc.w 154*160
+	dc.w 155*160
+	dc.w 156*160
+	dc.w 157*160
+	dc.w 158*160
+	dc.w 159*160
+	dc.w 160*160
+	dc.w 161*160
+	dc.w 162*160
+	dc.w 163*160
+	dc.w 164*160
+	dc.w 165*160
+	dc.w 166*160
+	dc.w 167*160
+	dc.w 168*160
+	dc.w 169*160
+	dc.w 170*160
+	dc.w 171*160
+	dc.w 172*160
+	dc.w 173*160
+	dc.w 174*160
+	dc.w 175*160
+	dc.w 176*160
+	dc.w 177*160
+	dc.w 178*160
+	dc.w 179*160
+	dc.w 180*160
+	dc.w 181*160
+	dc.w 182*160
+	dc.w 183*160
+	dc.w 184*160
+	dc.w 185*160
+	dc.w 186*160
+	dc.w 187*160
+	dc.w 188*160
+	dc.w 189*160
+	dc.w 190*160
+	dc.w 191*160
+	dc.w 192*160
+	dc.w 193*160
+	dc.w 194*160
+	dc.w 195*160
+	dc.w 196*160
+	dc.w 197*160
+	dc.w 198*160
+	dc.w 199*160
+
+
 ; -----------------------------------------------------------------------------
+
+*
+* FIXME: this is an older version, and returns different type numbers than
+* the interpreter version
+*
 
 /*
  * Syntax: r = MUSAUTO (adr,num,size)
  */
+lib10:
+	dc.w	0			; no library calls
 musauto:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d1 ; size
-		bsr        getinteger
-		move.l     d3,d6 ; num
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movea.l    d3,a1 ; adr
-		tst.w      d6
+		movem.l    d0-d7/a0-a5,-(a7)
+		move.l     (a6)+,d1 ; size
+		move.l     (a6)+,d0 ; sound num
+		move.l     (a6)+,a0 ; addr
+		move.l     a6,-(a7)
+		andi.l     #-2,d1
+		tst.w      d0
 		beq        musstop
-		lea.l      mus_soundtype(pc),a3
-		tst.w      (a3)
-		bge        musauto5
-		lea.l      mus_addr(pc),a3
-		move.l     a1,(a3)
-		lea.l      mus_num(pc),a3
-		move.l     d6,(a3)
-		lea.l      mus_savearea(pc),a0
-		move.l     (vbl_vec).w,(a0)+
-		move.l     (timerd_vec).w,(a0)+
-		move.b     (gpip).w,(a0)+
-		move.b     (aer).w,(a0)+
-		move.b     (ddr).w,(a0)+
-		move.b     (iera).w,(a0)+
-		move.b     (ierb).w,(a0)+
-		move.b     (ipra).w,(a0)+
-		move.b     (iprb).w,(a0)+
-		move.b     (isra).w,(a0)+
-		move.b     (isrb).w,(a0)+
-		move.b     (imra).w,(a0)+
-		move.b     (imrb).w,(a0)+
-		move.b     (vr).w,(a0)+
-		move.b     (tacr).w,(a0)+
-		move.b     (tbcr).w,(a0)+
-		move.b     (tcdcr).w,(a0)+
-		move.b     (tadr).w,(a0)+
-		move.b     (tbdr).w,(a0)+
-		move.b     (conterm).w,(a0)+
-		andi.b     #0xFA,(conterm).w ; turn off system bell & key click
-		movea.l    a1,a0
-		move.l     d1,d7
-musauto1:
-		lea.l      soundtypetable(pc),a1
-		move.b     (a0),d1
-		move.b     1(a0),d2
-		move.b     2(a0),d3
-		move.b     3(a0),d4
-		move.w     #33-1,d0 ; BUG: only 32 drivers
-musauto2:
-		cmp.b      (a1),d1
-		bne.s      musauto3
-		cmp.b      1(a1),d2
-		bne.s      musauto3
-		cmp.b      2(a1),d3
-		bne.s      musauto3
-		cmp.b      3(a1),d4
-		beq        musauto4
-musauto3:
-		addq.l     #4,a1
-		dbf        d0,musauto2
-		addq.l     #1,a0
-		dbf        d7,musauto1
-		moveq.l    #0,d3
-		lea.l      mus_soundtype(pc),a3
-		move.w     #-1,(a3)
-		bra        musauto_end
-musauto4:
-		move.w     #32,d1
-		sub.w      d0,d1
+		lea.l      mus_inited(pc),a1
+		cmpi.w     #1,(a1)
+		beq        musauto_end
+		move.w     #1,(a1)
 		lea.l      mus_soundtype(pc),a2
-		move.w     d1,(a2)
+		lea.l      mus_soundoffset(pc),a3
+		movea.l    a0,a1
+
+musautoloop:
+		cmpi.l     #"TFMX",(a1) ; Mad Max
+		bne.s      musauto1
+		move.w     #1,(a2)
+		move.w     #8,(a3)
+		bra        soundplay1
+
+musauto1:
+		cmpi.l     #"COSO",(a1) ; Mad Max
+		bne.s      musauto2
+		move.w     #1,(a2)
+		move.w     #8,(a3)
+		bra        soundplay1
+
+musauto2:
+		cmpi.l     #"Coun",(a1) ; Count Zero
+		bne.s      musauto3
+		move.w     #2,(a2)
+		move.w     #2,(a3)
+		bra        soundplay1
+
+musauto3:
+		cmpi.l     #"P 19",(a1) ; Lap #1
+		bne.s      musauto4
+		move.w     #3,(a2)
+		move.w     #62,(a3)
+		bra        soundplay1
+
+musauto4:
+		cmpi.l     #"AP 9",(a1) ; Lap #2
+		bne.s      musauto5
+		move.w     #4,(a2)
+		move.w     #8,(a3)
+		bra        soundplay1
+
 musauto5:
-		move.w     mus_soundtype(pc),d0
-		move.l     mus_num(pc),d7
-		add.w      d0,d0
-		lea.l      soundtype_jtable(pc),a0
-		adda.w     0(a0,d0.w),a0
-		jmp        (a0)
+		cmpi.l     #"YM21",(a1) ; Big Alec (old)
+		bne.s      musauto6
+		move.w     #5,(a2)
+		move.w     #4,(a3)
+		bra        soundplay1
 
-soundtype_jtable:
-	dc.w soundtype0-soundtype_jtable
-	dc.w soundtype1-soundtype_jtable
-	dc.w soundtype2-soundtype_jtable
-	dc.w soundtype3-soundtype_jtable
-	dc.w soundtype4-soundtype_jtable
-	dc.w soundtype5-soundtype_jtable
-	dc.w soundtype6-soundtype_jtable
-	dc.w soundtype7-soundtype_jtable
-	dc.w soundtype8-soundtype_jtable
-	dc.w soundtype9-soundtype_jtable
-	dc.w soundtype10-soundtype_jtable
-	dc.w soundtype11-soundtype_jtable
-	dc.w soundtype12-soundtype_jtable
-	dc.w soundtype13-soundtype_jtable
-	dc.w soundtype14-soundtype_jtable
-	dc.w soundtype15-soundtype_jtable
-	dc.w soundtype16-soundtype_jtable
-	dc.w soundtype17-soundtype_jtable
-	dc.w soundtype18-soundtype_jtable
-	dc.w soundtype19-soundtype_jtable
-	dc.w soundtype20-soundtype_jtable
-	dc.w soundtype21-soundtype_jtable
-	dc.w soundtype22-soundtype_jtable
-	dc.w soundtype23-soundtype_jtable
-	dc.w soundtype24-soundtype_jtable
-	dc.w soundtype25-soundtype_jtable
-	dc.w soundtype26-soundtype_jtable
-	dc.w soundtype27-soundtype_jtable
-	dc.w soundtype28-soundtype_jtable
-	dc.w soundtype29-soundtype_jtable
-	dc.w soundtype30-soundtype_jtable
-	dc.w soundtype31-soundtype_jtable
+musauto6:
+		cmpi.l     #"STIC",(a1) ; LTK
+		bne.s      musauto7
+		move.w     #10,(a2)
+		move.w     #2,(a3)
+		bra        soundplay1
 
+musauto7:
+		cmpi.l     #"ille",(a1) ; Megatizer
+		bne.s      musauto8
+		move.w     #11,(a2)
+		move.w     #8,(a3)
+		bra        soundplay1
 
-soundtype0:
-soundtype1:
-		moveq.l    #8,d6
+musauto8:
+		cmpi.l     #"NDEA",(a1) ; Ninja Turtle
+		bne.s      musauto9
+		move.w     #6,(a2)
+		move.w     #8,(a3)
 		bra        soundplay1
-soundtype2:
-		moveq.l    #6,d6
+
+musauto9:
+		cmpi.l     #"ZOUN",(a1) ; Zound Dragger
+		bne.s      musauto10
+		move.w     #7,(a2)
+		move.w     #8,(a3)
 		bra        soundplay1
-soundtype3:
-		moveq.l    #4,d6
-		moveq.l    #1,d7
+
+musauto10:
+		cmpi.l     #"THIZ",(a1) ; TAO (chip #1)
+		bne.s      musauto11
+		move.w     #8,(a2)
+		move.w     #4,(a3)
 		bra        soundplay1
-soundtype4:
-		bra.s      soundtype3
-soundtype5:
-		moveq.l    #8,d6
-		moveq.l    #0,d7
+
+musauto11:
+		cmpi.l     #"ENEX",(a1) ; Titan
+		bne.s      musauto12
+		move.w     #9,(a2)
+		move.w     #4,(a3)
 		bra        soundplay1
-soundtype6:
-		moveq.l    #8,d6
-		moveq.l    #1,d7
+
+musauto12:
+		cmpi.l     #" C D",(a1) ; Synth Dream
+		bne.s      musauto13
+		move.w     #12,(a2)
+		move.w     #26,(a3)
 		bra        soundplay1
-soundtype7:
-		bra        soundtype0
-soundtype8:
-		moveq.l    #62,d6
+
+musauto13:
+		cmpi.l     #"BADF",(a1) ; Big Alec (new)
+		bne.s      musauto14
+		move.w     #13,(a2)
+		move.w     #8,(a3)
 		bra        soundplay1
-soundtype9:
-		moveq.l    #8,d6
-		moveq.l    #1,d7
+
+musauto14:
+		cmpi.l     #"M4M1",(a1) ; Ben Daglish
+		bne.s      musauto15
+		move.w     #14,(a2)
+		move.w     #4,(a3)
 		bra        soundplay1
-soundtype10:
-soundtype31:
-		bra        soundtype0
-soundtype11:
-		bra        soundtype0
-soundtype12:
-		bra        soundtype0
-soundtype13:
-		bra        soundtype3
-soundtype14:
-		movea.l    mus_addr(pc),a0
-		move.w     #0xFF00,(a0)
-		moveq.l    #2,d6
-		bra        soundplay2
-soundtype15:
-		moveq.l    #1,d7
-		bra        soundtype2
-soundtype16:
-		movea.l    mus_addr(pc),a3
-		lea.l      350(a3),a0
-		lea.l      368(a3),a1
-		move.l     a0,10(a1)
-		move.l     a1,10(a0)
-		lea.l      32(a3),a3
-		jsr        (a3)
-		movea.l    mus_addr(pc),a3
-		lea.l      1774(a3),a0
-		jsr        (a3)
-		movea.l    mus_addr(pc),a3
-		move.l     #312,d6
-		bra        soundplay2
-soundtype17:
-		movea.l    mus_addr(pc),a3
-		moveq.l    #0,d0
-		jsr        (a3)
-		movea.l    mus_addr(pc),a3
-		lea        18(a3),a3
-		jsr        (a3)
-		moveq.l    #26,d6
-		bra        soundplay2
-soundtype18:
-		moveq.l    #4,d6
-		subq.l     #1,d7
-		bra        soundplay1
-soundtype19:
-		moveq.l    #0,d7
-		moveq.l    #2,d6
-		bra        soundplay1
-soundtype20:
-		moveq.l    #0,d7
-		move.l     #168,d6
-		bra        soundplay1
-soundtype21:
-		moveq.l    #0,d7
-		move.l     #156,d6
-		bra        soundplay1
-soundtype22:
-		bra        soundtype3
-soundtype23:
-		bra        soundtype3
-soundtype24:
-		moveq.l    #1,d7
-		moveq.l    #16,d6
-		bra        soundplay1
-soundtype25:
-		movea.l    mus_addr(pc),a3
-		jsr        (a3)
-		movea.l    mus_addr(pc),a3
-		addq.l     #4,a3
-		move.l     mus_num(pc),d0
-		jsr        (a3)
-		moveq.l    #8,d6
-		bra        soundplay2
-soundtype26:
-		moveq.l    #0,d7
-		moveq.l    #34,d6
-		bra        soundplay1
-soundtype27:
-		bra        soundtype9
-soundtype28:
-		bra        soundtype9
-soundtype29:
-		bra        soundtype0
-soundtype30:
-		move.w     #1,d7
-		bra        soundtype2
+
+musauto15:
+		cmpi.l     #"LARY",(a1) ; FFT
+		bne.s      musauto16
+		move.w     #15,(a2)
+		move.w     #34,(a3)
+		bra.w      soundplay1
+
+musauto16:
+		cmpi.l     #"(c)L",(a1) ; Lap (1 scanline)
+		bne.s      musauto17
+		move.w     #18,(a2)
+		move.w     #312,(a3)
+		bra.s      soundplay1
+
+musauto17:
+		cmpi.l     #"TAO-",(a1) ; TAO (digi)
+		bne.s      musauto18
+		move.w     #19,(a2)
+		move.w     #8,(a3)
+		bra.s      soundplay1
+
+musauto18:
+		cmpi.l     #"-TAO",(a1) ; TAO (digi)
+		bne.s      musauto19
+		move.w     #19,(a2)
+		move.w     #8,(a3)
+		bra.s      soundplay1
+
+musauto19:
+		cmpi.l     #"TOJG",(a1) ; TAO (chip #2)
+		bne.s      musauto20
+		move.w     #20,(a2)
+		move.w     #8,(a3)
+		bra.s      soundplay1
+
+musauto20:
+		cmpi.l     #"-NEX",(a1) ; Nexus
+		bne.s      musauto21
+		move.w     #21,(a2)
+		move.w     #2,(a3)
+		bra.s      soundplay1
+
+musauto21:
+		cmpi.l     #"NEXU",(a1) ; Nexus
+		bne.s      musauto22
+		move.w     #21,(a2)
+		move.w     #2,(a3)
+		bra.s      soundplay1
+
+musauto22:
+		lea.l      2(a1),a1
+		dbf        d1,musautoloop
+		move.l     #0,-(a6)
+		bra        musauto_err
 
 soundplay1:
-		move.l     d6,-(a7)
-		movea.l    mus_addr(pc),a0
-		move.l     d7,d0
-		jsr        (a0)
-		move.l     (a7)+,d6
+		lea.l      mus_savearea+8(pc),a1
+		move.l     (timerc_vec).w,(a1)
+		lea.l      mus_savearea+12(pc),a1
+		move.b     (ierb).w,(a1)
+		lea.l      mus_savearea+15(pc),a1
+		move.b     (tcdcr).w,(a1)
+		lea.l      mus_savearea+13(pc),a1
+		move.b     (imrb).w,(a1)
+		lea.l      mus_savearea+14(pc),a1
+		move.b     (vr).w,(a1)
+		lea.l      mus_savearea(pc),a1
+		move.l     (vbl_vec).w,(a1)
+
+		lea.l      mus_soundtype(pc),a1
+		move.w     (a1)+,d2
+		move.w     (a1),d1 ; sound offset
+
+		cmp.w      #10,d2 ; LTK?
+		bne.s      soundplay2
+		subq.w     #1,d0
+		lsl.w      #2,d0
+		addi.w     #0xFF00,d0
+		move.w     d0,(a0)
+		bra.s      soundplay8
 soundplay2:
-		moveq.l    #0,d3
-		move.w     mus_soundtype(pc),d3 ; return value
-		addq.l     #1,d3
-		lea.l      mus_soundoffset(pc),a0
-		move.l     d6,(a0)
+		cmpi.w     #12,d2 ; Synth Dream?
+		bne.s      soundplay3
+		subq.w     #1,d0
+		bra.s      soundplay7
+soundplay3:
+		cmp.w      #14,d2 ; Ben Daglish?
+		bne.s      soundplay4
+		subq.w     #1,d0
+		bra.s      soundplay7
+soundplay4:
+		cmp.w      #18,d2 ; Lap (1 scanline)?
+		bne.s      soundplay5
+		movea.l    a0,a2
+		lea.l      350(a2),a0
+		lea.l      368(a2),a1
+		move.l     a0,10(a1)
+		move.l     a1,10(a0)
+		lea.l      32(a2),a0
+		jsr        (a0)
+		lea.l      1774(a2),a0
+		jsr        (a2)
+		movea.l    a2,a0
+		bra.s      soundplay8
+soundplay5:
+		cmp.w      #19,d2 ; TAO (digi)?
+		bne.s      soundplay6
+		moveq.l    #1,d0
+		bra.s      soundplay7
+soundplay6:
+		cmp.w      #20,d2 ; TAO (chip #2)
+		bne.s      soundplay7
+		moveq.l    #0,d0
+soundplay7:
+		movem.l    d0-d7/a0-a6,-(a7)
+		jsr        (a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+soundplay8:
+		add.l      d1,a0
+		lea.l      mus_addr(pc),a1
+		move.l     a0,(a1)
+		
 		lea.l      playirq(pc),a0
 		move.l     a0,(vbl_vec).w
+		bra        musauto_end
 
-musauto_end:
-		movem.l    (a7)+,d5-d6/a2-a6
-		moveq.l    #0,d2
-		rts
+musstop:
+		lea.l      mus_inited(pc),a2
+		tst.w      (a2)
+		beq        musstop_end
+		lea.l      mus_savearea(pc),a1
+		move.l     (a1),(vbl_vec).w
+		lea.l      mus_inited(pc),a1
+		move.w     #0,(a1)
+		lea.l      mus_soundtype(pc),a1
+		move.w     (a1),d1
+		lea.l      mus_addr(pc),a1
+		movea.l    (a1),a0
+
+		cmp.w      #12,d1 ; Synth Dream?
+		bne.s      soundstop1
+		subq.w     #8,a0
+		movem.l    d0-d7/a0-a6,-(a7)
+		jsr        (a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		move.l     #255,d0
+		/* lea -18(a0),a0 */
+		dc.w 0x91fc,0,18 /* XXX */
+		movem.l    d0-d7/a0-a6,-(a7)
+		jsr        (a0)
+		movem.l    (a7)+,d0-d7/a0-a6
+		bra.s      soundstop_restore
+
+soundstop1:
+		cmp.w      #10,d1 ; LTK?
+		bne.s      soundstop2
+		move.w     #-1,-2(a0)
+		jsr        (a0)
+		bra.s      soundstop_restore
+soundstop2:
+		cmp.w      #11,d1 ; Megatizer?
+		bne.s      soundstop3
+		subq.w     #4,a0
+		jsr        (a0)
+		bra.s      soundstop_restore
+soundstop3:
+		cmp.w      #18,d1 ; Lap (1 scanline)?
+		bne.s      soundstop4
+		lea.l      mus_addr(pc),a1
+		movea.l    (a1),a0
+		lea.l      -166(a0),a0
+		jsr        (a0)
+		bra.s      soundstop_restore
+soundstop4:
+		cmp.w      #19,d1 ; TAO (digi)?
+		bne.s      soundstop5
+		moveq.l    #0,d0
+		lea.l      mus_addr(pc),a1
+		movea.l    (a1),a0
+		lea.l      -8(a0),a0
+		jsr        (a0)
+		bra.s      soundstop_restore
+soundstop5:
+		cmp.w      #20,d1 ; TAO (chip #2)?
+		bne.s      soundstop6
+		moveq.l    #1,d0
+		lea.l      mus_addr(pc),a1
+		movea.l    (a1),a0
+		lea.l      -8(a0),a0
+		jsr        (a0)
+		bra.s      soundstop_restore
+soundstop6:
+		cmp.w      #21,d1 ; Nexus?
+		bne.s      soundstop_restore
+		lea.l      mus_addr(pc),a1
+		movea.l    (a1),a0
+		lea.l      2(a0),a0
+		jsr        (a0)
+
+soundstop_restore:
+		lea.l      mus_savearea+8(pc),a0
+		move.l     (a0),(timerc_vec).w
+		lea.l      mus_savearea+12(pc),a0
+		move.b     (a0),(ierb).w
+		lea.l      mus_savearea+15(pc),a0
+		move.b     (a0),(tcdcr).w
+		lea.l      mus_savearea+13(pc),a0
+		move.b     (a0),(imrb).w
+		lea.l      mus_savearea+14(pc),a0
+		move.b     (a0),(vr).w
+
+		move.l     #0x08000000,PSG ; turn all voices off
+		move.l     #0x09000000,PSG
+		move.l     #0x0A000000,PSG
+		bra.s      musstop_end
 
 playirq:
 		movem.l    d0-d7/a0-a6,-(a7)
 		movea.l    mus_addr(pc),a0
-		move.l     mus_soundoffset(pc),d0
-		adda.l     d0,a0
 		jsr        (a0)
 		movem.l    (a7)+,d0-d7/a0-a6
 		move.l     mus_savearea(pc),-(a7) ; jump to orignal VBL handler
 		rts
 
-musstop:
-		lea.l      mus_soundtype(pc),a3
-		tst.w      (a3)
-		bmi        musstop_end
-		move.l     mus_savearea(pc),(vbl_vec).w ; retore VBL
-		moveq.l    #0,d0
-		move.w     mus_soundtype(pc),d0
-		add.w      d0,d0
-		lea.l      stop_jtable(pc),a0
-		adda.w     0(a0,d0.w),a0
-		jmp        (a0)
-
-stop_jtable:
-	dc.w stoptype0-stop_jtable
-	dc.w stoptype1-stop_jtable
-	dc.w stoptype2-stop_jtable
-	dc.w stoptype3-stop_jtable
-	dc.w stoptype4-stop_jtable
-	dc.w stoptype5-stop_jtable
-	dc.w stoptype6-stop_jtable
-	dc.w stoptype7-stop_jtable
-	dc.w stoptype8-stop_jtable
-	dc.w stoptype9-stop_jtable
-	dc.w stoptype10-stop_jtable
-	dc.w stoptype11-stop_jtable
-	dc.w stoptype12-stop_jtable
-	dc.w stoptype13-stop_jtable
-	dc.w stoptype14-stop_jtable
-	dc.w stoptype15-stop_jtable
-	dc.w stoptype16-stop_jtable
-	dc.w stoptype17-stop_jtable
-	dc.w stoptype18-stop_jtable
-	dc.w stoptype19-stop_jtable
-	dc.w stoptype20-stop_jtable
-	dc.w stoptype21-stop_jtable
-	dc.w stoptype22-stop_jtable
-	dc.w stoptype23-stop_jtable
-	dc.w stoptype24-stop_jtable
-	dc.w stoptype25-stop_jtable
-	dc.w stoptype26-stop_jtable
-	dc.w stoptype27-stop_jtable
-	dc.w stoptype28-stop_jtable
-	dc.w stoptype29-stop_jtable
-	dc.w stoptype30-stop_jtable
-	dc.w stoptype31-stop_jtable
-
-stoptype0:
-stoptype1:
-		moveq.l    #4,d6
-		moveq.l    #0,d7
-		bra        soundstop1
-stoptype2:
-		moveq.l    #2,d6
-		moveq.l    #0,d7
-		bra        soundstop1
-stoptype3:
-		bra        soundstop2
-stoptype4:
-		bra        stoptype3
-stoptype5:
-		moveq.l    #0,d6
-		moveq.l    #1,d7
-		bra        soundstop1
-stoptype6:
-		moveq.l    #0,d6
-		moveq.l    #0,d6
-		bra        soundstop1
-stoptype7:
-		bra        stoptype0
-stoptype8:
-		bra        soundstop2
-stoptype9:
-		moveq.l    #0,d6
-		moveq.l    #0,d7
-		bra        soundstop1
-stoptype10:
-stoptype31:
-		bra        stoptype0
-stoptype11:
-		bra        stoptype0
-stoptype12:
-		bra        stoptype0
-stoptype13:
-		bra        soundstop2
-stoptype14:
-		movea.l    mus_addr(pc),a0
-		move.w     #-1,(a0)+
-		jsr        (a0)
-		bra        soundstop2
-stoptype15:
-		bra        stoptype2
-stoptype16:
-		move.l     #146,d6
-		moveq.l    #0,d7
-		bra        soundstop1
-stoptype17:
-		move.l     #255,d0
-		movea.l    mus_addr(pc),a0
-		jsr        (a0)
-		moveq.l    #18,d6
-		moveq.l    #-1,d0
-		bra        soundstop1
-stoptype18:
-		bra        soundstop2
-stoptype19:
-		bra        stoptype0
-stoptype20:
-		bra        soundstop2
-stoptype21:
-		bra        soundstop2
-stoptype22:
-		bra        soundstop2
-stoptype23:
-		bra        soundstop2
-stoptype24:
-		bra        soundstop2
-stoptype25:
-		bra        soundstop2
-stoptype26:
-		bra        soundstop2
-stoptype27:
-		bra        stoptype9
-stoptype28:
-		bra        stoptype9
-stoptype29:
-		bra        stoptype0
-stoptype30:
-		bra        stoptype2
-
-soundstop1:
-		movea.l    mus_addr(pc),a0
-		adda.l     d6,a0
-		move.l     d7,d0
-		jsr        (a0)
-soundstop2:
-		lea.l      mus_savearea(pc),a0
-		move.l     (a0)+,(vbl_vec).w
-		move.l     (a0)+,(timerd_vec).w
-		move.b     (a0)+,(gpip).w
-		move.b     (a0)+,(aer).w
-		move.b     (a0)+,(ddr).w
-		move.b     (a0)+,(iera).w
-		move.b     (a0)+,(ierb).w
-		move.b     (a0)+,(ipra).w
-		move.b     (a0)+,(iprb).w
-		move.b     (a0)+,(isra).w
-		move.b     (a0)+,(isrb).w
-		move.b     (a0)+,(imra).w
-		move.b     (a0)+,(imrb).w
-		move.b     (a0)+,(vr).w
-		move.b     (a0)+,(tacr).w
-		move.b     (a0)+,(tbcr).w
-		move.b     (a0)+,(tcdcr).w
-		move.b     (a0)+,(tadr).w
-		move.b     (a0)+,(tbdr).w
-		move.b     (a0)+,(conterm).w
-		lea.l      (PSG).w,a0
-		move.l     #0x0707FFFF,(a0) ; turn off mixer
-		move.l     #0x08080000,(a0) ; turn all voices off
-		move.l     #0x09090000,(a0)
-		move.l     #0x0A0A0000,(a0)
-		lea.l      mus_soundtype(pc),a3
-		move.w     #-1,(a3)
-
 musstop_end:
-		moveq.l    #0,d3
-		bra        musauto_end
+musauto_end:
+		move.l     (a7)+,a6
+		lea.l      mus_soundtype(pc),a0
+		moveq.l    #0,d0
+		move.w     (a0),d0
+		move.l     d0,-(a6)
+musauto_err:
+		movem.l    (a7)+,d0-d7/a0-a5
+		rts
 
-mus_addr: ds.l 1
-mus_num: ds.l 1
-mus_soundtype: dc.w -1
+mus_inited: dc.w 0
+mus_soundtype: dc.w 0
+mus_soundoffset: ds.w 1
 
 mus_savearea:
 	ds.l 1 ; vbl
-	ds.l 1 ; timerd
-	ds.b 17 ; MFP regs
-	ds.b 1  ; conterm
-	ds.b 54 ; unused
-mus_soundoffset: ds.l 1
-
-soundtypetable:
-	dc.b "TFMX" ; Mad Max
-	dc.b "COSO" ; Mad Max
-	dc.b "Coun" ; Count Zero
-	dc.b "YM21" ; Big Alec (old)
-	dc.b "THIZ" ; TAO (chip #1)
-	dc.b "TOJG" ; TAO (chip #2)
-	dc.b "-TAO" ; TAO (digi)
-	dc.b "P 90" ; Lap (1990)
-	dc.b "P 19" ; Lap (1991)
-	dc.b "BADF" ; Big Alec (new)
-	dc.b "ille" ; Megatizer
-	dc.b "UNDE" ; Undead
-	dc.b "ZOUN" ; Zound Dragger
-	dc.b "ENEX" ; Titan
-	dc.b "MYST" ; LTK
-	dc.b "TriM" ; TriMod
-	dc.b "LAP9" ; Lap (1 scanline)
-	dc.b " C D" ; Synth Dream
-	dc.b "Rip:" ; Ben Daglish
-	dc.b "NEXU" ; Nexus
-	dc.b "HRIS" ; Chrispy Noodle #1
-	dc.b "HRIS" ; Chrispy Noodle #2
-	dc.b "QQQQ" ; MUF/SMF (disabled)
-	dc.b "BIRD" ; Misfit
-	dc.b "Blip" ; Blipp Blopper
-	dc.b " G.S" ; G.S.R Format
-	dc.b "LARY" ; FFT
-	dc.b "a6J@" ; Crusader
-	dc.b "line" ; Newline
-	dc.b "ILLE" ; Millenium Brothers
-	dc.b "AXX " ; Synergy
-	dc.b "THKE"
+mus_addr: ds.l 1
+	ds.l 1 ; timerc
+	ds.b 1 ; ierb
+	ds.b 1 ; imrb
+	ds.b 1 ; vr
+	ds.b 1 ; tcdcr
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: MUSPLAY adr,num,offset
  */
+lib11:
+	dc.w	0			; no library calls
 musplay:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d1
-		bsr        getinteger
-		move.l     d3,d0
-		bsr        getinteger
-		move.l     d3,a0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
+		movem.l    d0-d7/a0-a5,-(a7)
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
+		move.l     a6,-(a7)
 		tst.w      d0
-		beq        musplay2
+		beq.s      musplay2
 		lea.l      vbl_saved_flag(pc),a1
-		tst.w      (a1)
-		bne        musplay1
+		move.w     (a1),d2
+		tst.w      d2
+		bne.s      musplay1
 		move.w     #1,(a1)
 		lea.l      save_vbl(pc),a1
 		move.l     (vbl_vec).w,(a1)
@@ -3353,20 +3543,20 @@ musplay1:
 		move.l     a0,(a1)
 		lea.l      musplay_intr(pc),a0
 		move.l     a0,(vbl_vec).w
-		bra        musplay_end
+		bra.s      musplay_end
 musplay2:
 		lea.l      vbl_saved_flag(pc),a2
 		tst.w      (a2)
-		beq        musplay_end
+		beq.s      musplay_end
 		lea.l      save_vbl(pc),a1
 		move.l     (a1),vbl_vec
 		lea.l      vbl_saved_flag(pc),a1
 		move.w     #0,(a1)
 		lea.l      musplay_addr(pc),a1
 		movea.l    (a1),a0
-		move.l     #0x08000000,PSG.l ; turn all voices off
-		move.l     #0x09000000,PSG.l
-		move.l     #0x0A000000,PSG.l
+		move.l     #0x08000000,PSG ; turn all voices off
+		move.l     #0x09000000,PSG
+		move.l     #0x0A000000,PSG
 		bra.s      musplay_end
 
 musplay_intr:
@@ -3378,7 +3568,8 @@ musplay_intr:
 		rts
 
 musplay_end:
-		movem.l    (a7)+,d5-d6/a2-a6
+		move.l     (a7)+,a6
+		movem.l    (a7)+,d0-d7/a0-a5
 		rts
 
 vbl_saved_flag: ds.w 1
@@ -3390,25 +3581,19 @@ save_vbl: ds.l 1
 /*
  * Syntax: r = WHICH BLOCK (madr,x,y)
  */
+lib12:
+	dc.w	0			; no library calls
 which_block:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d1
-		bsr        getinteger
-		move.l     d3,d0
-		bsr        getinteger
-		move.l     d3,a0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
 		cmpi.l     #0x03031973,(a0)+
 		bne.s      which_block1
 		moveq.l    #7,d5
 		bra.s      which_block2
 which_block1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        notdone
+		bne.w      which_block3
 		moveq.l    #8,d5
 which_block2:
 		tst.w      d0
@@ -3436,53 +3621,78 @@ which_block2:
 		move.w     (a0),d3
 		lsr.w      d5,d3
 		tst.w      d3
-		bge        which_block3
-which_block4:
+		bge.w      which_block3
 		move.l     #0x0000FFFF,d3
 which_block3:
-		moveq.l    #0,d2
-		movem.l    (a7)+,d5-d6/a2-a6
+		move.l     d3,-(a6)
 		rts
+which_block4:
+		move.l     #0x0000FFFF,d3
+		bra.s      which_block3
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: RELOCATE padr
  */
+lib13:
+	dc.w	0			; no library calls
 relocate:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     a2,-(a7)
-		movea.l    d3,a0
+		move.l     (a6)+,a0
+		movem.l    d0-d7/a0-a5,-(a7)
 		cmpi.w     #0x601A,(a0) ; GEMDOS magic
-		bne.s      relocate5
+		beq.s      relocate1
+		bra.s      relocate5
+relocate1:
+		move.l     a0,d2
+		addi.l     #28,d2
 		lea.l      28(a0),a1
-		move.l     a1,d2
 		movea.l    a1,a2
 		adda.l     2(a0),a2 ; skip text segment
-		adda.l     6(a0),a2 ; skip data segment
-		adda.l     14(a0),a2 ; skip symbols
-		move.l     (a2)+,d1 ; get address of first relocation
-		beq        relocate5 ; no relocations present
-		add.l      d1,a1
-		moveq.l    #0,d0
-relocate2:
+; 3 BUGS: in a single instruction:
+;  - ignores length of data segment
+;  - ignores length of symbol table
+;  - does not check for first longword being zero
+		adda.l     (a2)+,a1 ; get address of first relocation
 		add.l      d2,(a1)
-relocate3:
-		move.b     (a2)+,d0
+relocate2:
+		tst.b      (a2)
 		beq.s      relocate5
+		moveq.l    #0,d1
+relocate3:
+		moveq.l    #0,d0
+		move.b     (a2)+,d0
 		cmp.b      #1,d0
 		bne.s      relocate4
-		lea        254(a1),a1
+		addi.w     #254,d1
 		bra.s      relocate3
 relocate4:
-		adda.w     d0,a1
+		add.w      d0,d1
+		adda.w     d1,a1
+		add.l      d2,(a1)
 		bra.s      relocate2
 relocate5:
-		move.l     (a7)+,a2
+		movem.l    (a7)+,d0-d7/a0-a5
+		rts
+
+; -----------------------------------------------------------------------------
+
+/*
+ * Syntax: d = P LEFT (n)
+ */
+lib14:
+	dc.w	0			; no library calls
+p_left:
+		move.l     (a6)+,d3
+		lea.l      joybuf,a0
+		adda.w     d3,a0
+		moveq.l    #0,d3
+		move.b     (a0),d0
+		btst       #2,d0
+		beq.s      p_left1
+		moveq.l    #-1,d3
+p_left1:
+		move.l     d3,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3490,15 +3700,36 @@ relocate5:
 /*
  * Syntax: P ON
  */
+lib15:
+	dc.w	0			; no library calls
 p_on:
-		tst.w      d0
-		bne        syntax
-		move.w     #20,-(a7) ; joystick reporting
+		cmpi.w     #0x1234,(joysave_flag).w
+		beq.s      p_on1
+		move.w     #0x1234,(joysave_flag).w
+		movem.l    d0-d2/a0-a2,-(a7)
+		move.w     #20,-(a7)
 		move.w     #4,-(a7) ; IKBD
 		move.w     #3,-(a7) ; Bconout
 		trap       #13
 		addq.l     #6,a7
+		move.w     #34,-(a7) ; Kbdvbase
+		trap       #14
+		addq.l     #2,a7
+		movea.l    d0,a0
+		/* adda.l     #24,a0 */
+		dc.w 0xd1fc,0,24 /* XXX */
+		move.l     (a0),saved_joyvec
+		lea.l      myjoyvec(pc),a1
+		move.l     a1,(a0)
+		movem.l    (a7)+,d0-d2/a0-a2
 p_on1:
+		rts
+
+myjoyvec:
+		movem.l    a0-a1,-(a7)
+		move.b     1(a0),joybuf
+		move.b     2(a0),joybuf+1
+		movem.l    (a7)+,a0-a1
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3506,18 +3737,20 @@ p_on1:
 /*
  * Syntax: d = P JOY (n)
  */
+lib16:
+	dc.w	0			; no library calls
 p_joy:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     joybuf(pc),a0
-		and.w      #1,d3
-		add.w      d3,a0
+		move.l     (a6)+,d3
+		tst.b      d3
+		bne.s      p_joy1
 		moveq.l    #0,d3
-		move.b     (a0),d3
-		moveq.l    #0,d2
+		move.b     joybuf,d3
+		bra.s      p_joy2
+p_joy1:
+		moveq.l    #0,d3
+		move.b     joybuf+1,d3
+p_joy2:
+		move.l     d3,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3525,9 +3758,19 @@ p_joy:
 /*
  * Syntax: P STOP
  */
+lib17:
+	dc.w	0			; no library calls
 p_stop:
-		tst.w      d0
-		bne        syntax
+		cmpi.w     #0x1234,(joysave_flag).w
+		bne.s      p_stop1
+		move.w     #-1,(joysave_flag).w
+		move.w     #34,-(a7) ; Kbdvbase
+		trap       #14
+		addq.l     #2,a7
+		movea.l    d0,a0
+		/* adda.l     #24,a0 */
+		dc.w 0xd1fc,0,24 /* XXX */
+		move.l     saved_joyvec,(a0)
 ; send reset command to IKBD
 		move.w     #0x0080,-(a7)
 		move.w     #4,-(a7)
@@ -3545,46 +3788,59 @@ p_stop1:
 ; -----------------------------------------------------------------------------
 
 /*
+ * Syntax: d = P UP (n)
+ */
+lib18:
+	dc.w	0			; no library calls
+p_up:
+		move.l     (a6)+,d3
+		lea.l      joybuf,a0
+		adda.w     d3,a0
+		moveq.l    #0,d3
+		move.b     (a0),d0
+		btst       #0,d0
+		beq.s      p_up1
+		moveq.l    #-1,d3
+p_up1:
+		move.l     d3,-(a6)
+		rts
+
+; -----------------------------------------------------------------------------
+
+/*
  * Syntax: SET BLOCK madr,x,y,blk
  */
+lib19:
+	dc.w	0			; no library calls
 set_block:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movea.l    d3,a0
-		movem.l    args+4(pc),d0-d2
+		move.l     (a6)+,d2
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
 		cmpi.l     #0x03031973,(a0)+
 		bne.s      set_block1
 		lsl.w      #7,d2
 		bra.s      set_block2
 set_block1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        notdone
+		bne.w      set_block3
 		lsl.w      #8,d2
 set_block2:
 		tst.w      d0
-		blt        set_block3
+		blt.s      set_block3
 		tst.w      d1
-		blt        set_block3
+		blt.s      set_block3
 		moveq.l    #0,d3
 		move.w     (a0)+,d3
 		addq.w     #2,d3
 		lsl.w      #3,d3
 		cmp.w      d3,d0
-		bge        set_block3
+		bge.s      set_block3
 		lsr.w      #3,d3
 		move.w     (a0)+,d4
 		lsl.w      #3,d4
 		cmp.w      d4,d1
-		bge        set_block3
+		bge.s      set_block3
 		andi.w     #-16,d0
 		lsr.w      #3,d0
 		lsr.w      #4,d1
@@ -3598,45 +3854,55 @@ set_block3:
 ; -----------------------------------------------------------------------------
 
 /*
+ * Syntax: d = P RIGHT (n)
+ */
+lib20:
+	dc.w	0			; no library calls
+p_right:
+		move.l     (a6)+,d3
+		lea.l      joybuf,a0
+		adda.w     d3,a0
+		moveq.l    #0,d3
+		move.b     (a0),d0
+		btst       #3,d0
+		beq.s      p_right1
+		moveq.l    #-1,d3
+p_right1:
+		move.l     d3,-(a6)
+		rts
+
+; -----------------------------------------------------------------------------
+
+/*
  * Syntax: PALSPLIT md,cadr,y,hig,num
  */
+lib21:
+	dc.w	0			; no library calls
 palsplit:
-		move.l     (a7)+,a1
-		subq.w     #5,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d0-d1/a0-a2,-(a7)
-		move.l     args+0(pc),d1
-		movea.l    args+4(pc),a0
-		move.l     args+8(pc),d0
-		movem.l    args+12(pc),d2-d3
+		move.l     (a6)+,d3
+		move.l     (a6)+,d2
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
+		move.l     (a6)+,d1
 		tst.w      d1
 		beq        palsplit4
+		.IFNE 0 ; missing
 		cmpi.w     #2,d2
 		bge.s      palsplit1
 		moveq.l    #2,d2
+		.ENDC
 palsplit1:
 		lea        palsplit_saveflag(pc),a2
 		tst.w      (a2)
 		beq.s      palsplit2
-		clr.b      tbcr
+		clr.b      tbcr.l /* XXX */
 		lea.l      palsplit_patch1(pc),a2
 		move.b     d0,2(a2)
 		lea.l      palsplit_patch2(pc),a2
 		move.b     d2,2(a2)
 		lea.l      palsplit_num(pc),a2
 		move.w     d3,(a2)
-		move.b     #8,tbcr
+		move.b     #8,tbcr.l /* XXX */
 		bra        palsplit_end
 palsplit2:
 		lea.l      palsplit_patch1(pc),a2
@@ -3660,7 +3926,6 @@ palsplit3:
 		move.b     (ierb).w,(a0)+
 		move.b     (imra).w,(a0)+
 		move.b     (imrb).w,(a0)+
-		move.w     sr,d0
 		move.w     #0x2700,sr
 		ori.b      #1,(iera).w
 		ori.b      #1,(imra).w
@@ -3670,7 +3935,8 @@ palsplit3:
 		move.l     (vbl_vec).w,(a2)
 		lea        palsplit_vbl(pc),a2
 		move.l     a2,(vbl_vec).w
-		move.w     d0,sr
+; BUG: sr not saved/restored
+		move.w     #0x2300,sr
 		lea        palsplit_saveflag(pc),a2
 		move.w     #1,(a2)
 		bra.s      palsplit_end
@@ -3678,8 +3944,6 @@ palsplit4:
 		lea        palsplit_saveflag(pc),a2
 		tst.w      (a2)
 		beq.s      palsplit_end
-		clr.w      (a2)
-		move.w     sr,d0
 		move.w     #0x2700,sr
 		lea.l      palsplit_savearea(pc),a0
 		move.b     (a0)+,(iera).w
@@ -3687,10 +3951,12 @@ palsplit4:
 		move.b     (a0)+,(imra).w
 		move.b     (a0)+,(imrb).w
 		move.l     palsplit_savevbl(pc),(vbl_vec).w
-		move.w     d0,sr
+; BUG: sr not saved/restored
+		move.w     #0x2300,sr
+		lea        palsplit_saveflag(pc),a2
+		move.w     #0,(a2)
 
 palsplit_end:
-		movem.l    (a7)+,d0-d1/a0-a2
 		rts
 
 palsplit_vbl:
@@ -3795,89 +4061,21 @@ palsplit_colorptr: ds.l 1
 ; -----------------------------------------------------------------------------
 
 /*
- * Syntax: d = P LEFT (n)
- */
-p_left:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     joybuf(pc),a0
-		adda.l     d3,a0
-		moveq.l    #0,d3
-		moveq.l    #0,d2
-		move.b     (a0),d0
-		btst       #2,d0
-		beq        p_left1
-		moveq.l    #-1,d3
-p_left1:
-		rts
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: d = P UP (n)
- */
-p_up:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     joybuf(pc),a0
-		adda.l     d3,a0
-		moveq.l    #0,d3
-		moveq.l    #0,d2
-		move.b     (a0),d0
-		btst       #0,d0
-		beq        p_up1
-		moveq.l    #-1,d3
-p_up1:
-		rts
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: d = P RIGHT (n)
- */
-p_right:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     joybuf(pc),a0
-		adda.l     d3,a0
-		moveq.l    #0,d3
-		moveq.l    #0,d2
-		move.b     (a0),d0
-		btst       #3,d0
-		beq        p_right1
-		moveq.l    #-1,d3
-p_right1:
-		rts
-
-; -----------------------------------------------------------------------------
-
-/*
  * Syntax: d = P DOWN (n)
  */
+lib22:
+	dc.w	0			; no library calls
 p_down:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     joybuf(pc),a0
-		adda.l     d3,a0
+		move.l     (a6)+,d3
+		lea.l      joybuf,a0
+		adda.w     d3,a0
 		moveq.l    #0,d3
-		moveq.l    #0,d2
 		move.b     (a0),d0
 		btst       #1,d0
-		beq        p_down1
+		beq.s      p_down1
 		moveq.l    #-1,d3
 p_down1:
+		move.l     d3,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3885,21 +4083,17 @@ p_down1:
 /*
  * Syntax: FLOODPAL colr
  */
+lib23:
+	dc.w	0			; no library calls
 floodpal:
-		move.l     (a7)+,a1
-		sub.w      #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
+		move.l     (a6)+,d3
 		moveq.l    #16-1,d0
 		lea.l      floodpal_colortab(pc),a0
 floodpal1:
 		move.w     d3,(a0)+
 		dbf        d0,floodpal1
-		pea        floodpal_colortab(pc)
-		move.w     #6,-(a7) ; Setpalette
-		trap       #14
-		addq.w     #6,a7
+		lea.l      floodpal_colortab(pc),a0
+		move.l     a0,colorptr /* FIXME: use Setpalette */
 		rts
 
 floodpal_colortab: ds.w 16
@@ -3909,21 +4103,19 @@ floodpal_colortab: ds.w 16
 /*
  * Syntax: d = P FIRE (n)
  */
+lib24:
+	dc.w	0			; no library calls
 p_fire:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     joybuf(pc),a0
+		move.l     (a6)+,d3
+		lea.l      joybuf,a0
 		adda.l     d3,a0
 		moveq.l    #0,d3
-		moveq.l    #0,d2
 		move.b     (a0),d0
 		btst       #7,d0
-		beq        p_fire1
+		beq.s      p_fire1
 		moveq.l    #-1,d3
 p_fire1:
+		move.l     d3,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -3931,27 +4123,13 @@ p_fire1:
 /*
  * Syntax: DIGI PLAY md,sadr,sz,freq,lp
  */
+lib25:
+	dc.w	0			; no library calls
 digi_play:
-		move.l     (a7)+,a1
-		subq.w     #5,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,args+16
-		bsr        getinteger
-		move.l     d3,args+12
-		bsr        getinteger
-		move.l     d3,args+8
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		move.l     a1,-(a7) ; push return pc
-		move.l     args+0(pc),d3
-		movea.l    args+4(pc),a0
-		movem.l    args+8(pc),d0-d2
-		tst.w      digiplay_flag
+		lea        digiplay_flag(pc),a0
+		tst.w      (a0)
 		beq.s      digi_play1
-		move.w     #0,digiplay_flag
+		move.w     #0,(a0)
 		move.w     sr,-(a7)
 		move.w     #0x2700,sr
 		move.l     save_timera(pc),(timera_vec).w
@@ -3959,19 +4137,24 @@ digi_play:
 		move.b     save_imra(pc),(imra).w
 		move.b     save_vr(pc),(vr).w
 		move.b     save_tacr(pc),(tacr).w
-		move.w     #0,digiplay_loop
+		lea        digiplay_loop(pc),a0
+		move.w     #0,(a0)
 		move.w     (a7)+,sr
 digi_play1:
-		tst.w      d3
-		beq        digi_play_stop
+		move.l     (a6)+,d3
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
+		move.l     (a6)+,d2
 		tst.w      d2
-		lea.l      digiplay_loop(pc),a1
-		move.w     d2,(a1)
+		beq        digi_play_stop
 		subq.w     #1,d1
 		cmpi.w     #2,d1
 		blt.s      digi_play4
 		cmpi.w     #32,d1
 		bgt.s      digi_play4
+		lea.l      digiplay_loop(pc),a1
+		move.w     d3,(a1)
 		cmpi.l     #0x0858B8C1,(a0)
 		bne.s      digi_play3
 		move.w     4(a0),d3
@@ -3996,31 +4179,30 @@ digi_play4:
 install_digiirq:
 		lea.l      digiplay_flag(pc),a1
 		move.w     #1,(a1)
-		move.w     sr,d0
+		move.w     sr,-(a7)
 		move.w     #0x2700,sr
-		lea        save_timera(pc),a1
-		move.l     (timera_vec).w,(a1)
-		lea        digiplay_irq(pc),a1
-		move.l     a1,(timera_vec).w
 		lea        save_iera(pc),a1
 		move.b     iera,(a1)+
 		move.b     imra,(a1)+
 		move.b     vr,(a1)+
 		move.b     tacr,(a1)
+		lea        save_timera(pc),a1
+		move.l     (timera_vec).w,(a1)
+		lea        digiplay_irq(pc),a1
+		move.l     a1,(timera_vec).w
 		move.b     #1,(tacr).w
 		move.b     timera_value(pc),(tadr).w
 		bset       #5,(iera).w
 		bset       #5,(imra).w
 		bclr       #3,(vr).w
-		move.w     d0,sr
-		rts
+		rte ; BUG: only works on 68000
 
 digi_play_stop:
+		move.w     sr,-(a7)
 		lea.l      digiplay_flag(pc),a0
 		tst.w      (a0)
 		beq.s      digi_play_stop1
-		clr.w      (a0)
-		move.w     sr,d0
+		move.w     #0,(a0)
 		move.w     #0x2700,sr
 		move.l     save_timera(pc),(timera_vec).w
 		move.b     save_iera(pc),(iera).w
@@ -4028,19 +4210,22 @@ digi_play_stop:
 		move.b     save_vr(pc),(vr).w
 		move.b     save_tacr(pc),(tacr).w
 		lea        digiplay_loop(pc),a0
-		clr.w      (a0)
-		move.w     d0,sr
+		move.w     #0,(a0)
 digi_play_stop1:
-		rts
+		rte ; BUG: only works on 68000
 
 save_timera: ds.l 1
 
 digiplay_init:
-		move.l     d0,digiplay_length2
-		move.l     a0,digiplay_addr2
-		move.l     d0,digiplay_length
-		move.l     a0,digiplay_addr
-		moveq      #11-1,d1
+		lea        digiplay_length2(pc),a1
+		move.l     d0,(a1)
+		lea        digiplay_addr2(pc),a1
+		move.l     a0,(a1)
+		lea        digiplay_length(pc),a1
+		move.l     d0,(a1)
+		lea        digiplay_addr(pc),a1
+		move.l     a0,(a1)
+		move.b     #11-1,d1 /* BUG: should be move.w */
 		moveq.l    #0,d0
 		movea.w    #PSG,a0
 digiplay_init1:
@@ -4052,28 +4237,30 @@ digiplay_init1:
 		rts
 
 digiplay_irq:
-		movem.l    d0-d3/a0-a1,-(a7)
+		movem.l    d0-d1/a0-a1,-(a7)
 		moveq.l    #0,d0
-		movea.l    digiplay_addr,a0
-		subq.l     #1,digiplay_length
+		lea        digiplay_length(pc),a0
+		subq.l     #1,(a0)
+		movea.l    digiplay_addr(pc),a0
 		bne.s      digiplay_irq2
 		lea.l      digiplay_loop(pc),a1
 		tst.w      (a1)
 		bne.s      digiplay_irq1
 		bsr        digi_play_stop
 digiplay_irq1:
-		movea.l    digiplay_addr2,a0
+		movea.l    digiplay_addr2(pc),a0
 		lea.l      digiplay_length(pc),a1
 		move.l     digiplay_length2(pc),(a1)
 digiplay_irq2:
 		move.b     (a0)+,d0
-		move.l     a0,digiplay_addr
+		lea        digiplay_addr(pc),a1
+		move.l     a0,(a1)
 		lsl.w      #3,d0
 		movem.l    voldat(pc,d0.w),d0-d1
 		movea.w    #PSG,a0
 		movep.l    d0,0(a0)
 		move.l     d1,(a0)
-		movem.l    (a7)+,d0-d3/a0-a1
+		movem.l    (a7)+,d0-d1/a0-a1
 		rte
 
 digiplay_addr: ds.l 1
@@ -4082,6 +4269,7 @@ digiplay_addr2: ds.l 1
 digiplay_length2: ds.l 1 ; backup for loop
 
 digiplay_loop: ds.w 1
+      ds.w 1
 timera_value: dc.b 61,0
 
 voldat:
@@ -4351,25 +4539,23 @@ timera_table:
 		dc.b 12,0
 
 digiplay_flag: ds.w 1
-save_iera: ds.l 1
-save_imra: ds.l 1
-save_vr: ds.l 1
-save_tacr: ds.l 1
+save_iera: ds.b 1
+save_imra: ds.b 1
+save_vr: ds.b 1
+save_tacr: ds.b 1
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: tadr = STRING (num)
  */
+lib26:
+	dc.w	0			; no library calls
 FN_string:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
+		move.l     (a6),d3
 		lea.l      stringbuf+14(pc),a0
 		tst.l      d3
-		bne.s      string1
+		bgt.s      string1 ; BUG: should be bne, or handle negative values
 		move.b     #'0',-(a0)
 		bra.s      string2
 string1:
@@ -4379,33 +4565,29 @@ string1:
 		swap       d3
 		addi.w     #'0',d3
 		move.b     d3,-(a0)
-		clr.w      d3
+		move.w     #ZERO,d3
 		swap       d3
 		bra.s      string1
 string2:
-		move.l     a0,d3
-		moveq.l    #0,d2
+		move.l     a0,(a6)
 		rts
 
 stringbuf: dc.b "               ",0
+		rts ; FIXME
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: SAMSIGN sadr,sz
  */
+lib27:
+	dc.w	0			; no library calls
 samsign:
-		move.l     (a7)+,a1
-		sub.w      #2,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d0
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movea.l    d3,a0
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
 samsign1:
 		addi.b     #0x80,(a0)+
-		subq.l     #1,d0
+		subq.w     #1,d0 ; BUG: should be .l
 		bne.s      samsign1
 		rts
 
@@ -4414,27 +4596,10 @@ samsign1:
 /*
  * Syntax: l = DEPACK (adr)
  */
+lib28:
+	dc.w	0			; no library calls
 depack:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movea.l    d3,a0
-		moveq.l    #0,d0
-		move.l     d0,d1
-		move.l     d0,d3
-		move.l     d0,d4
-		move.l     d0,d5
-		move.l     d0,d6
-		move.l     d0,d7
-		movea.l    d0,a1
-		movea.l    d0,a2
-		movea.l    d0,a3
-		movea.l    d0,a4
-		movea.l    d0,a5
-		movea.l    d0,a6
+		move.l     (a6)+,a0
 		cmpi.l     #PACK_ICE2,(a0)
 		beq.s      depack1
 		cmpi.l     #PACK_FIRE,(a0)
@@ -4473,9 +4638,8 @@ depack6:
 		move.l     12(a0),-(a7)
 		bsr        speed3_depack
 depack_end:
-		move.l     (a7)+,d3 ; return value
-		movem.l    (a7)+,d5-d6/a2-a6
-		moveq.l    #0,d2
+		move.l     (a7)+,d0 ; return value
+		move.l     d0,-(a6)
 		rts
 
 		include "atomik.s"
@@ -4490,28 +4654,22 @@ depack_end:
 /*
  * Syntax: REPLACE BLOCKS madr,blk1,blk2
  */
+lib29:
+	dc.w	0			; no library calls
 replace_blocks:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d1
-		bsr        getinteger
-		move.l     d3,d0
-		bsr        getinteger
-		movea.l    d3,a0
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
+		move.l     a1,-(a7)
 		cmpi.l     #0x03031973,(a0)+
 		bne.s      replace_blocks1
 		moveq.l    #7,d4
 		bra.s      replace_blocks2
 replace_blocks1:
 		cmpi.l     #0x02528E54,-4(a0)
-		bne        notdone
+		bne        replace_blocks5
 		moveq.l    #8,d4
 replace_blocks2:
-		moveq.l    #0,d2
 		movem.w    (a0)+,d2-d3
 		addq.w     #2,d2
 		lsr.w      #1,d2
@@ -4527,7 +4685,8 @@ replace_blocks3:
 		move.w     d1,-2(a0)
 replace_blocks4:
 		dbf        d2,replace_blocks3
-		movem.l    (a7)+,d5-d6/a2-a6
+replace_blocks5:
+		movea.l    (a7)+,a1
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -4535,22 +4694,14 @@ replace_blocks4:
 /*
  * Syntax: l = DLOAD (filename,adr,ofs,num)
  */
+lib30:
+	dc.w	0			; no library calls
 dload:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d0 ; d0=num
-		bsr        getinteger
-		move.l     d3,d1 ; d1=ofs
-		bsr        getinteger
-		movea.l    d3,a4 ; a4=adr
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
+		move.l     (a6)+,d4 ; d4=num
+		move.l     (a6)+,d3 ; d3=ofs
+		move.l     (a6)+,a4 ; a4=adr
 		move.l     a3,-(a7)
-		movea.l    d3,a3 ; a3=filename
-		move.l     d0,d4 ; d4=num
-		move.l     d1,d3 ; d3=ofs
+		movea.l    (a6)+,a3 ; a3=filename
 		moveq.l    #0,d6
 		clr.w      -(a7)
 		move.l     a3,-(a7)
@@ -4558,31 +4709,35 @@ dload:
 		trap       #1
 		addq.l     #8,a7
 		move.w     d0,d7
-		blt        dload2
+		move.w     d0,d6 ; BUG: should be move.l
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
+		blt.s      dload2
 		clr.w      -(a7)
 		move.w     d7,-(a7)
 		move.l     d3,-(a7)
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
 		lea.l      10(a7),a7
-		cmp.l      d0,d3
-		bne        dload1
+		move.w     d0,d6 ; BUG: should be move.l
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
+		blt.s      dload1
 		move.l     a4,-(a7)
 		move.l     d4,-(a7)
 		move.w     d7,-(a7)
 		move.w     #63,-(a7) ; Fread
 		trap       #1
 		lea.l      12(a7),a7
-		move.l     d0,d6
+		move.w     d0,d6 ; BUG: should be move.l
 dload1:
 		move.w     d7,-(a7)
 		move.w     #62,-(a7) ; Fclose
 		trap       #1
 		addq.l     #4,a7
 dload2:
-		moveq.l    #0,d2
-		move.l     d6,d3
 		movea.l    (a7)+,a3
+		move.l     d6,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -4590,22 +4745,16 @@ dload2:
 /*
  * Syntax: DISPLAY PC1 gadr,scr
  */
+lib31:
+	dc.w	0			; no library calls
 display_pc1:
-		move.l     (a7)+,a1
-		subq.w     #2,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d7
-		bsr        getinteger
-		move.l     d3,a3
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		pea        2(a3)
-		move.w     #6,-(a7) ; Setpalette
-		trap       #14
-		addq.w     #6,a7
-		lea.l      34(a3),a0
-		movea.l    d7,a3
+		movem.l    a0-a5,-(a7)
+		move.l     (a6)+,a1
+		move.l     (a6)+,a0
+		lea.l      2(a0),a3
+		move.l     a3,(colorptr).w /* FIXME: use Setpalette */
+		movea.l    a1,a3
+		lea.l      34(a0),a0
 		move.w     #200-1,d4
 display_pc1_1:
 		moveq.l    #3,d3
@@ -4617,7 +4766,7 @@ display_pc1_2:
 		dbf        d3,display_pc1_2
 		lea.l      152(a3),a3
 		dbf        d4,display_pc1_1
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a0-a5
 		rts
 
 depack_pc1:
@@ -4664,22 +4813,14 @@ degas_line: ds.w 20
 /*
  * Syntax: l = DSAVE (filename,adr,ofs,num)
  */
+lib32:
+	dc.w	0			; no library calls
 dsave:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d0 ; d0=num
-		bsr        getinteger
-		move.l     d3,d1 ; d1=ofs
-		bsr        getinteger
-		movea.l    d3,a4 ; a4=adr
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
+		move.l     (a6)+,d4 ; d4=num
+		move.l     (a6)+,d3 ; d3=ofs
+		move.l     (a6)+,a4 ; a4=adr
 		move.l     a3,-(a7)
-		movea.l    d3,a3 ; a3=filename
-		move.l     d0,d4 ; d4=num
-		move.l     d1,d3 ; d3=ofs
+		move.l     (a6)+,a3 ; a3=filename
 		move.w     #47,-(a7) ; Fgetdta
 		trap       #1
 		addq.l     #2,a7
@@ -4711,6 +4852,9 @@ dsave1:
 		addq.l     #8,a7
 dsave2:
 		move.w     d0,d7
+		move.w     d0,d6 ; BUG: should be move.l
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
 		blt.s      dsave4
 		clr.w      -(a7)
 		move.w     d7,-(a7)
@@ -4718,15 +4862,17 @@ dsave2:
 		move.w     #66,-(a7) ; Fseek
 		trap       #1
 		lea.l      10(a7),a7
-		cmp.l      d0,d3
-		bne        dsave3
+		move.w     d0,d6 ; BUG: should be move.l
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
+		blt.s      dsave3
 		move.l     a4,-(a7)
 		move.l     d4,-(a7)
 		move.w     d7,-(a7)
 		move.w     #64,-(a7) ; Fwrite
 		trap       #1
 		lea.l      12(a7),a7
-		move.l     d0,d6
+		move.w     d0,d6 ; BUG: should be move.l
 dsave3:
 		move.w     d7,-(a7)
 		move.w     #62,-(a7) ; Fclose
@@ -4738,241 +4884,14 @@ dsave4:
 		move.w     #26,-(a7) ; Fsetdta
 		trap       #1
 		addq.l     #6,a7
-		moveq.l    #0,d2
-		move.l     d6,d3
+		move.l     d6,-(a6)
 		movea.l    (a7)+,a3
 		rts
 
 dsave_dtaptr: ds.l 1
 dsave_dta: ds.b 46
 
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: HONESTY
- */
-honesty:
-		tst.w      d0
-		bne        syntax
-		rts
-
-; space for up to 8 arguments
-args: ds.l 8
-
-
-	dc.w 0,0,8
-	dc.b "SPRMAXNB"
-	dc.l 256
-	dc.w 136
-	dc.b "VERSION$"
-	dc.l 0x3c434
-
-
-lineoffset_table:
-	dc.w 0*160
-	dc.w 1*160
-	dc.w 2*160
-	dc.w 3*160
-	dc.w 4*160
-	dc.w 5*160
-	dc.w 6*160
-	dc.w 7*160
-	dc.w 8*160
-	dc.w 9*160
-	dc.w 10*160
-	dc.w 11*160
-	dc.w 12*160
-	dc.w 13*160
-	dc.w 14*160
-	dc.w 15*160
-	dc.w 16*160
-	dc.w 17*160
-	dc.w 18*160
-	dc.w 19*160
-	dc.w 20*160
-	dc.w 21*160
-	dc.w 22*160
-	dc.w 23*160
-	dc.w 24*160
-	dc.w 25*160
-	dc.w 26*160
-	dc.w 27*160
-	dc.w 28*160
-	dc.w 29*160
-	dc.w 30*160
-	dc.w 31*160
-	dc.w 32*160
-	dc.w 33*160
-	dc.w 34*160
-	dc.w 35*160
-	dc.w 36*160
-	dc.w 37*160
-	dc.w 38*160
-	dc.w 39*160
-	dc.w 40*160
-	dc.w 41*160
-	dc.w 42*160
-	dc.w 43*160
-	dc.w 44*160
-	dc.w 45*160
-	dc.w 46*160
-	dc.w 47*160
-	dc.w 48*160
-	dc.w 49*160
-	dc.w 50*160
-	dc.w 51*160
-	dc.w 52*160
-	dc.w 53*160
-	dc.w 54*160
-	dc.w 55*160
-	dc.w 56*160
-	dc.w 57*160
-	dc.w 58*160
-	dc.w 59*160
-	dc.w 60*160
-	dc.w 61*160
-	dc.w 62*160
-	dc.w 63*160
-	dc.w 64*160
-	dc.w 65*160
-	dc.w 66*160
-	dc.w 67*160
-	dc.w 68*160
-	dc.w 69*160
-	dc.w 70*160
-	dc.w 71*160
-	dc.w 72*160
-	dc.w 73*160
-	dc.w 74*160
-	dc.w 75*160
-	dc.w 76*160
-	dc.w 77*160
-	dc.w 78*160
-	dc.w 79*160
-	dc.w 80*160
-	dc.w 81*160
-	dc.w 82*160
-	dc.w 83*160
-	dc.w 84*160
-	dc.w 85*160
-	dc.w 86*160
-	dc.w 87*160
-	dc.w 88*160
-	dc.w 89*160
-	dc.w 90*160
-	dc.w 91*160
-	dc.w 92*160
-	dc.w 93*160
-	dc.w 94*160
-	dc.w 95*160
-	dc.w 96*160
-	dc.w 97*160
-	dc.w 98*160
-	dc.w 99*160
-	dc.w 100*160
-	dc.w 101*160
-	dc.w 102*160
-	dc.w 103*160
-	dc.w 104*160
-	dc.w 105*160
-	dc.w 106*160
-	dc.w 107*160
-	dc.w 108*160
-	dc.w 109*160
-	dc.w 110*160
-	dc.w 111*160
-	dc.w 112*160
-	dc.w 113*160
-	dc.w 114*160
-	dc.w 115*160
-	dc.w 116*160
-	dc.w 117*160
-	dc.w 118*160
-	dc.w 119*160
-	dc.w 120*160
-	dc.w 121*160
-	dc.w 122*160
-	dc.w 123*160
-	dc.w 124*160
-	dc.w 125*160
-	dc.w 126*160
-	dc.w 127*160
-	dc.w 128*160
-	dc.w 129*160
-	dc.w 130*160
-	dc.w 131*160
-	dc.w 132*160
-	dc.w 133*160
-	dc.w 134*160
-	dc.w 135*160
-	dc.w 136*160
-	dc.w 137*160
-	dc.w 138*160
-	dc.w 139*160
-	dc.w 140*160
-	dc.w 141*160
-	dc.w 142*160
-	dc.w 143*160
-	dc.w 144*160
-	dc.w 145*160
-	dc.w 146*160
-	dc.w 147*160
-	dc.w 148*160
-	dc.w 149*160
-	dc.w 150*160
-	dc.w 151*160
-	dc.w 152*160
-	dc.w 153*160
-	dc.w 154*160
-	dc.w 155*160
-	dc.w 156*160
-	dc.w 157*160
-	dc.w 158*160
-	dc.w 159*160
-	dc.w 160*160
-	dc.w 161*160
-	dc.w 162*160
-	dc.w 163*160
-	dc.w 164*160
-	dc.w 165*160
-	dc.w 166*160
-	dc.w 167*160
-	dc.w 168*160
-	dc.w 169*160
-	dc.w 170*160
-	dc.w 171*160
-	dc.w 172*160
-	dc.w 173*160
-	dc.w 174*160
-	dc.w 175*160
-	dc.w 176*160
-	dc.w 177*160
-	dc.w 178*160
-	dc.w 179*160
-	dc.w 180*160
-	dc.w 181*160
-	dc.w 182*160
-	dc.w 183*160
-	dc.w 184*160
-	dc.w 185*160
-	dc.w 186*160
-	dc.w 187*160
-	dc.w 188*160
-	dc.w 189*160
-	dc.w 190*160
-	dc.w 191*160
-	dc.w 192*160
-	dc.w 193*160
-	dc.w 194*160
-	dc.w 195*160
-	dc.w 196*160
-	dc.w 197*160
-	dc.w 198*160
-	dc.w 199*160
-
-
-	dc.w 0
+libex:
 	dc.w 0
 
-
-finprg:
+ZERO = 0

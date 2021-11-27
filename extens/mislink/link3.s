@@ -40,23 +40,15 @@ tokens:
         dc.b "many add",$80
         dc.b "many overlap",$81
         dc.b "many sub",$82
-        dc.b "function2",$83 ; FIXME
         dc.b "many bob",$84
-        dc.b "function3",$85 ; FIXME
         dc.b "many joey",$86
         dc.b "hertz",$87
         dc.b "set hertz",$88
-        dc.b "function4",$89 ; FIXME
         dc.b "many inc",$8a
-        dc.b "function5",$8b
         dc.b "many dec",$8c
-        dc.b "function6",$8d ; FIXME
         dc.b "raster",$8e
-        dc.b "function7",$8f ; FIXME
         dc.b "bullet",$90
-        dc.b "function8",$91 ; FIXME
         dc.b "many bullet",$92
-        dc.b "function9",$93 ; FIXME
         dc.b "many spot",$94
         
         dc.b 0
@@ -66,23 +58,23 @@ jumps: dc.w 21
 		dc.l many_add
 		dc.l many_overlap
 		dc.l many_sub
-		dc.l function2
+		dc.l dummy
 		dc.l many_bob
-		dc.l function3
+		dc.l dummy
 		dc.l many_joey
 		dc.l hertz
 		dc.l set_hertz
-		dc.l function4
+		dc.l dummy
 		dc.l many_inc
-		dc.l function5
+		dc.l dummy
 		dc.l many_dec
-		dc.l function6
+		dc.l dummy
 		dc.l raster
-		dc.l function7
+		dc.l dummy
 		dc.l bullet
-		dc.l function8
+		dc.l dummy
 		dc.l many_bullet
-		dc.l function9
+		dc.l dummy
 		dc.l many_spot
 		
 welcome:
@@ -94,30 +86,33 @@ table: ds.l 1
 returnpc: ds.l 1
 
 load:
-		lea.l      finprg,a0
-		lea.l      cold,a1
+		lea.l      finprg(pc),a0
+		lea.l      cold(pc),a1
 		rts
 
 cold:
-		move.l     a0,table
-		lea.l      welcome,a0
-		lea.l      warm,a1
-		lea.l      tokens,a2
-		lea.l      jumps,a3
+		lea        table(pc),a1
+		move.l     a0,(a1)
+		lea.l      welcome(pc),a0
+		lea.l      warm(pc),a1
+		lea.l      tokens(pc),a2
+		lea.l      jumps(pc),a3
 		rts
 
 warm:
-		tst.w      vbl_saved_flag
+		lea        vbl_saved_flag(pc),a0
+		tst.w      (a0)
 		beq.s      warm1
-		move.w     #0x2700,sr ; BUG: sr not saved/restored
-		lea.l      save_iera,a0
+		clr.w      (a0)
+		move.w     sr,d0
+		move.w     #0x2700,sr
+		lea.l      save_iera(pc),a0
 		move.b     (a0)+,(iera).w
 		move.b     (a0)+,(ierb).w
 		move.b     (a0)+,(imra).w
 		move.b     (a0)+,(imrb).w
-		move.l     save_vbl,(vbl_vec).w
-		move.w     #0x2300,sr
-		move.w     #0,vbl_saved_flag
+		move.l     save_vbl(pc),(vbl_vec).w
+		move.w     d0,sr
 warm1:
 		rts
 
@@ -128,17 +123,15 @@ getinteger:
 		bne.s      typemismatch
 		jmp        (a0)
 
-noerror:
-		moveq.l    #0,d0
+notdone:
+		moveq.l    #E_none,d0
 		bra.s      goerror
+dummy:
 syntax:
 		moveq.l    #E_syntax,d0
 		bra.s      goerror
 typemismatch:
 		moveq.l    #E_typemismatch,d0
-		bra.s      goerror
-illfunc: /* unused */
-		moveq.l    #E_illegalfunc,d0
 
 goerror:
 		movea.l    table(pc),a0
@@ -151,11 +144,9 @@ goerror:
  * Syntax: MANY ADD xadr,vadr,num,lval,uval
  */
 many_add:
-		move.l     (a7)+,returnpc
-		cmp.w      #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne.s      syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr.s      getinteger
 		move.l     d3,args+16
 		bsr.s      getinteger
@@ -166,6 +157,8 @@ many_add:
 		move.l     d3,args+4
 		bsr.s      getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		movea.l    args+4,a1
 		move.l     args+8,d0
@@ -208,10 +201,8 @@ many_add7:
 		move.l     d3,(a0)+
 		dbf        d0,many_add5
 many_add8:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -219,7 +210,7 @@ many_add8:
  * Syntax: r = MANY OVERLAP (x1,y1,xadr,yadr,wid1,hig1,wid2,hig2,statadr,imgadr,stval,imgval,num)
  */
 many_overlap:
-		move.l     (a7)+,returnpc
+		move.l     (a7)+,a1
 		cmpi.w     #13,d0
 		bne        syntax
 		bsr        getinteger
@@ -248,8 +239,8 @@ many_overlap:
 		move.l     d3,args+44
 		bsr        getinteger
 		move.l     d3,args+48
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+48(pc),a0 ; x1
 		movea.l    args+44(pc),a1 ; y1
 		movea.l    args+40(pc),a2 ; xadr
@@ -267,8 +258,7 @@ many_overlap:
 		bge.s      many_overlap1
 		moveq.l    #0,d4
 many_overlap1:
-		/* suba.l     a6,a6 */
-		dc.w 0x2c7c,0,0 /* XXX */
+		suba.l     a6,a6
 many_overlap2:
 		cmpi.l     #1,(a4)
 		bne.s      many_overlap3
@@ -301,10 +291,8 @@ many_overlap4:
 		dbf        d4,many_overlap2
 		move.l     a6,d3
 		moveq.l    #0,d2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 many_overlap_stval: ds.l 1
 
@@ -314,11 +302,9 @@ many_overlap_stval: ds.l 1
  * Syntax: MANY SUB xadr,vadr,num,lval,uval
  */
 many_sub:
-		move.l     (a7)+,returnpc
-		cmp.w      #5,d0
+		move.l     (a7)+,a1
+		subq.w     #5,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+16
 		bsr        getinteger
@@ -329,6 +315,8 @@ many_sub:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		movea.l    args+4,a1
 		move.l     args+8,d0
@@ -371,17 +359,8 @@ many_sub7:
 		move.l     d3,(a0)+
 		dbf        d0,many_sub5
 many_sub8:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: 
- */
-function2:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -390,11 +369,9 @@ function2:
  *         scr,gadr,imgadr,xadr,yadr,statadr,xoff,yoff,num,0
  */
 many_bob:
-		move.l     (a7)+,returnpc
+		move.l     (a7)+,a1
 		cmp.w      #10,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+36
 		bsr        getinteger
@@ -415,6 +392,8 @@ many_bob:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movem.l    args+0(pc),a0-a5
 		movem.l    args+24(pc),d4-d7
 		tst.l      d6
@@ -436,10 +415,8 @@ many_bob2:
 		dbf        d6,many_bob1
 many_bob3:
 many_bob_ret:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 many_bob4:
 		moveq.l    #0,d3
 		move.l     d3,d4
@@ -463,7 +440,7 @@ many_bobpatch4:
 		cmpi.w     #SCREEN_HEIGHT,d2 ; patched with y2
 		bge        many_bob_end
 		cmpi.l     #0x38964820,(a1)
-		bne        noerror
+		bne        notdone
 		move.w     4(a1),d7
 		cmp.w      d7,d0
 		bge        many_bob_end
@@ -1378,8 +1355,7 @@ many_bob_end:
 
 many_bob_init:
 		movem.l    args+0(pc),d0-d3
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
+		tst.w      d0
 		bge.s      many_bob_init1
 		moveq.l    #0,d0
 many_bob_init1:
@@ -1387,8 +1363,7 @@ many_bob_init1:
 		ble.s      many_bob_init2
 		move.w     #SCREEN_WIDTH,d2
 many_bob_init2:
-		/* tst.w     d1 */
-		dc.w 0x0c41,0 /* XXX */
+		tst.w      d1
 		bge.s      many_bob_init3
 		moveq.l    #0,d1
 many_bob_init3:
@@ -1474,7 +1449,8 @@ many_bob_init4:
 		move.w     d0,2(a0)
 
 		subi.w     #16,d0
-		lea.l      many_bobpatch18(pc),a0 ; BUG: not patched
+		lea.l      many_bobpatch18(pc),a0
+		move.w     d0,2(a0)
 		lea.l      many_bobpatch1(pc),a0
 		move.w     d0,2(a0)
 
@@ -1518,17 +1494,8 @@ many_bob_init4:
 		subi.w     #16,d2
 		lea.l      many_bobpatch24(pc),a0
 		move.w     d2,2(a0)
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: 
- */
-function3:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -1537,11 +1504,9 @@ function3:
  *         MANY JOEY scr,gadr,imgadr,xadr,yadr,statadr,coladr,xoff,yoff,num,0
  */
 many_joey:
-		move.l     (a7)+,returnpc
+		move.l     (a7)+,a1
 		cmp.w      #11,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+40
 		bsr        getinteger
@@ -1564,6 +1529,8 @@ many_joey:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movem.l    args+0(pc),a0-a6
 		movem.l    args+28(pc),d4-d7
 		tst.l      d6
@@ -1587,10 +1554,8 @@ many_joey1:
 many_joey2:
 		dbf        d6,many_joey1
 many_joey_ret:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 many_joey3:
 		move.l     (a2)+,d0
 		move.l     (a3)+,d1
@@ -1605,10 +1570,8 @@ many_joey3:
 		movem.l    (a7)+,d4-d6/a0-a6
 many_joey4:
 		dbf        d6,many_joey3
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 many_joey5:
 		moveq.l    #0,d4
 		move.l     d4,d5
@@ -2487,8 +2450,7 @@ many_joey_end:
 
 many_joey_init:
 		movem.l    args+0(pc),d0-d3
-		/* tst.w     d0 */
-		dc.w 0x0c40,0 /* XXX */
+		tst.w      d0
 		bge.s      many_joey_init1
 		moveq.l    #0,d0
 many_joey_init1:
@@ -2496,8 +2458,7 @@ many_joey_init1:
 		ble.s      many_joey_init2
 		move.w     #SCREEN_WIDTH,d2
 many_joey_init2:
-		/* tst.w     d1 */
-		dc.w 0x0c41,0 /* XXX */
+		tst.w      d1
 		bge.s      many_joey_init3
 		moveq.l    #0,d1
 many_joey_init3:
@@ -2584,7 +2545,8 @@ many_joey_init4:
 		move.w     d0,2(a0)
 
 		subi.w     #16,d0
-		lea.l      many_joeypatch22(pc),a0 ; BUG: not patched
+		lea.l      many_joeypatch22(pc),a0
+		move.w     d0,2(a0)
 		lea.l      many_joeypatch1(pc),a0
 		move.w     d0,2(a0)
 
@@ -2629,10 +2591,8 @@ many_joey_init4:
 		lea.l      many_joeypatch28(pc),a0
 		move.w     d2,2(a0)
 
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2640,7 +2600,6 @@ many_joey_init4:
  * Syntax: freq = HERTZ
  */
 hertz:
-		move.l     (a7)+,returnpc
 		tst.w      d0
 		bne        syntax
 		moveq.l    #0,d0
@@ -2653,8 +2612,7 @@ hertz1:
 		moveq.l    #60,d3
 hertz2:
 		moveq.l    #0,d2
-		movea.l    returnpc,a0
-		jmp        (a0)
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2662,10 +2620,11 @@ hertz2:
  * Syntax: SET HERTZ freq
  */
 set_hertz:
-		move.l     (a7)+,returnpc
-		cmpi.w     #1,d0
+		move.l     (a7)+,a1
+		subq.w     #1,d0
 		bne        syntax
 		bsr        getinteger
+		move.l     a1,-(a7) ; push return pc
 		move.b     (0xFFFF820A).w,d1
 		cmpi.w     #60,d3
 		bne.s      set_hertz1
@@ -2675,15 +2634,7 @@ set_hertz1:
 		bset       #1,d1
 set_hertz2:
 		move.b     d1,(0xFFFF820A).w
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: 
- */
-function4:
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2691,11 +2642,9 @@ function4:
  * Syntax: MANY INC xadr,num,lval,uval
  */
 many_inc:
-		move.l     (a7)+,returnpc
-		cmp.w      #4,d0
+		move.l     (a7)+,a1
+		subq.w     #4,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+12
 		bsr        getinteger
@@ -2704,6 +2653,8 @@ many_inc:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		move.l     args+8,d1
@@ -2725,17 +2676,8 @@ many_inc2:
 many_inc3:
 		move.l     d3,(a0)+
 		dbf        d0,many_inc1
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: 
- */
-function5:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2743,11 +2685,9 @@ function5:
  * Syntax: MANY DEC xadr,num,lval,uval
  */
 many_dec:
-		move.l     (a7)+,returnpc
-		cmp.w      #4,d0
+		move.l     (a7)+,a1
+		subq.w     #4,d0
 		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
 		bsr        getinteger
 		move.l     d3,args+12
 		bsr        getinteger
@@ -2756,6 +2696,8 @@ many_dec:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		move.l     args+8,d1
@@ -2777,17 +2719,8 @@ many_dec2:
 many_dec3:
 		move.l     d3,(a0)+
 		dbf        d0,many_dec1
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: 
- */
-function6:
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 ; -----------------------------------------------------------------------------
 
@@ -2795,8 +2728,8 @@ function6:
  * Syntax: RASTER flag,coladr,line,wid,num,col
  */
 raster:
-		move.l     (a7)+,returnpc
-		cmpi.w     #6,d0
+		move.l     (a7)+,a1
+		subq.w     #6,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+20
@@ -2810,8 +2743,8 @@ raster:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		move.l     args+0(pc),d1
 		movea.l    args+4(pc),a0
 		move.l     args+8(pc),d0
@@ -2840,14 +2773,14 @@ raster3:
 		move.w     d4,4(a2)
 		tst.w      vbl_saved_flag
 		beq.s      raster4
-		clr.b      tbcr.l /* XXX */
+		clr.b      tbcr
 		lea.l      raster_tbdrpatch(pc),a2
 		move.b     d0,2(a2)
 		lea.l      raster_tbdrpatch2(pc),a2
 		move.b     d2,2(a2)
 		lea.l      raster_linecount(pc),a2
 		move.w     d3,(a2)
-		move.b     #8,tbcr.l /* XXX */
+		move.b     #8,tbcr
 		bra        raster6
 raster4:
 		lea.l      raster_tbdrpatch(pc),a2
@@ -2858,38 +2791,42 @@ raster4:
 		move.l     a0,(a2)
 		lea.l      raster_linecount(pc),a2
 		move.w     d3,(a2)
-		lea.l      save_iera,a0
+		lea.l      save_iera(pc),a0
 		move.b     (iera).w,(a0)+
 		move.b     (ierb).w,(a0)+
 		move.b     (imra).w,(a0)+
 		move.b     (imrb).w,(a0)+
-		move.w     #0x2700,sr /* BUG: sr not saved */
+		move.w     sr,d0
+		move.w     #0x2700,sr
 		ori.b      #1,(iera).w
 		ori.b      #1,(imra).w
 		bclr       #3,(vr).w
 		clr.b      (tbcr).w
-		move.l     (vbl_vec).w,save_vbl
-		move.l     #raster_irq,(vbl_vec).w
-		move.w     #0x2300,sr
-		move.w     #1,vbl_saved_flag
+		lea        save_vbl(pc),a2
+		move.l     (vbl_vec).w,(a2)
+		lea        raster_irq(pc),a2
+		move.l     a2,(vbl_vec).w
+		move.w     d0,sr
+		lea        vbl_saved_flag(pc),a2
+		move.w     #1,(a2)
 		bra.s      raster6
 raster5:
-		tst.w      vbl_saved_flag
+		lea        vbl_saved_flag(pc),a2
+		tst.w      (a2)
 		beq.s      raster6
-		move.w     #0x2700,sr /* BUG: sr not saved */
-		lea.l      save_iera,a0
+		clr.w      (a2)
+		move.w     sr,d0
+		move.w     #0x2700,sr
+		lea.l      save_iera(pc),a0
 		move.b     (a0)+,(iera).w
 		move.b     (a0)+,(ierb).w
 		move.b     (a0)+,(imra).w
 		move.b     (a0)+,(imrb).w
-		move.l     save_vbl,(vbl_vec).w
-		move.w     #0x2300,sr
-		move.w     #0,vbl_saved_flag
+		move.l     save_vbl(pc),(vbl_vec).w
+		move.w     d0,sr
 raster6:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 raster_irq:
 raster_colpatch:
@@ -2903,15 +2840,16 @@ raster_colpatch:
 		lea.l      raster_linecount(pc),a0
 		lea.l      raster_counter(pc),a1
 		move.w     (a0),(a1)
-		movem.l    (a7)+,a0-a1
 		clr.b      (tbcr).w
-		move.l     #raster_irq2,(timerb_vec).w
+		lea        raster_irq2(pc),a1
+		move.l     a1,(timerb_vec).w
 raster_tbdrpatch:
 		move.b     #0x63,(tbdr).w
 		move.b     #8,(tbcr).w
 raster_tbdrpatch2:
 		move.b     #1,(tbdr).w
-		move.l     save_vbl,-(a7)
+		movem.l    (a7)+,a0-a1
+		move.l     save_vbl(pc),-(a7)
 		rts
 
 raster_irq2:
@@ -2944,18 +2882,11 @@ raster_colptr: ds.l 1
 ; -----------------------------------------------------------------------------
 
 /*
- * Syntax: 
- */
-function7:
-
-; -----------------------------------------------------------------------------
-
-/*
  * Syntax: BULLET scr,x,y,col
  */
 bullet:
-		move.l     (a7)+,returnpc
-		cmp.w      #4,d0
+		move.l     (a7)+,a1
+		sub.w      #4,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+12
@@ -2965,8 +2896,8 @@ bullet:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movea.l    args+0,a0
 		move.l     args+4,d0
 		move.l     args+8,d1
@@ -3263,10 +3194,8 @@ bullet16:
 		or.l       d6,(a0)
 
 bullet_ret:
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 bullet_masktab:
 	dc.l 0xc000c000,0x3fff3fff,0x00000000,0xffffffff
@@ -3305,18 +3234,11 @@ bullet_masktab:
 ; -----------------------------------------------------------------------------
 
 /*
- * Syntax: 
- */
-function8:
-
-; -----------------------------------------------------------------------------
-
-/*
  * Syntax: MANY BULLET scr,xadr,yady,statadr,coladr,xoff,yoff,num
  */
 many_bullet:
-		move.l     (a7)+,returnpc
-		cmp.w      #8,d0
+		move.l     (a7)+,a1
+		subq.w     #8,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+28
@@ -3334,8 +3256,8 @@ many_bullet:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movem.l    args+0(pc),a0-a4
 		movem.l    args+20(pc),d3-d5
 		tst.l      d5
@@ -3357,10 +3279,8 @@ many_bullet2:
 		movem.l    (a7)+,d3-d5/a0-a4
 many_bullet3:
 		dbf        d5,many_bullet2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 many_bullet4:
 		move.l     (a1)+,d0
 		sub.w      d3,d0
@@ -3374,24 +3294,16 @@ many_bullet4:
 		movem.l    (a7)+,d3-d5/a0-a4
 many_bullet5:
 		dbf        d5,many_bullet4
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 drawmany:
-		tst.w      d0
-		bmi        drawmany_ret
-		cmpi.w     #SCREEN_WIDTH-2,d0
-		bgt        drawmany_ret
-		tst.w      d1
-		bmi        drawmany_ret
-		cmpi.w     #SCREEN_HEIGHT-2,d1
-		bgt        drawmany_ret
-		add.w      d1,d1
-		lea.l      lineoffset_table(pc),a1
-		adda.w     d1,a1
-		adda.w     (a1),a0
+		cmpi.w     #SCREEN_WIDTH-1,d0
+		bcc        drawmany_ret
+		cmpi.w     #SCREEN_HEIGHT-1,d1
+		bcc        drawmany_ret
+		mulu       #160,d1
+		adda.l     d1,a0
 		move.w     d0,d1
 		andi.w     #-16,d1
 		lsr.w      #1,d1
@@ -3678,18 +3590,11 @@ drawmany_ret:
 ; -----------------------------------------------------------------------------
 
 /*
- * Syntax: 
- */
-function9:
-
-; -----------------------------------------------------------------------------
-
-/*
  * Syntax: MANY SPOT scr,xadr,yady,statadr,coladr,xoff,yoff,num
  */
 many_spot:
-		move.l     (a7)+,returnpc
-		cmp.w      #8,d0
+		move.l     (a7)+,a1
+		subq.w     #8,d0
 		bne        syntax
 		bsr        getinteger
 		move.l     d3,args+28
@@ -3707,8 +3612,8 @@ many_spot:
 		move.l     d3,args+4
 		bsr        getinteger
 		move.l     d3,args+0
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
+		move.l     a1,-(a7) ; push return pc
+		movem.l    d5-d6/a2-a6,-(a7)
 		movem.l    args+0(pc),a0-a4
 		movem.l    args+20(pc),d3-d5
 		tst.l      d5
@@ -3730,10 +3635,8 @@ many_spot2:
 		movem.l    (a7)+,d3-d5/a0-a4
 many_spot3:
 		dbf        d5,many_spot2
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 many_spot4:
 		move.l     (a1)+,d0
 		sub.w      d3,d0
@@ -3747,23 +3650,17 @@ many_spot4:
 		movem.l    (a7)+,d3-d5/a0-a4
 many_spot5:
 		dbf        d5,many_spot4
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
+		movem.l    (a7)+,d5-d6/a2-a6
+		rts
 
 drawspot:
-		tst.w      d0
-		bmi        drawspot_ret
-		cmpi.w     #SCREEN_WIDTH-2,d0
-		bgt        drawspot_ret
-		tst.w      d1
-		bmi        drawspot_ret
-		cmpi.w     #SCREEN_HEIGHT-2,d1
-		bgt        drawspot_ret
+		cmpi.w     #SCREEN_WIDTH,d0
+		bcc        drawspot_ret
+		cmpi.w     #SCREEN_HEIGHT,d1
+		bcc        drawspot_ret
 		andi.w     #15,d2
-		add.w      d1,d1
-		lea.l      lineoffset_table(pc),a1
+		mulu       #160,d1
+		add.l      d1,a0
 		adda.w     0(a1,d1.w),a0
 		move.w     d0,d1
 		andi.w     #-16,d1
@@ -3893,10 +3790,6 @@ drawspot16:
 		or.l       d0,(a0)
 drawspot_ret:
 		rts
-
-; space for registers d5-d6/a1-a6
-saveregs: ds.l 8
-saveregsend:
 
 ; space for up to 13 arguments
 args: ds.l 13

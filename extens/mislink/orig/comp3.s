@@ -99,23 +99,23 @@ S	equ	$80
 l001:	.dc.b 0,I,',',I,',',I,',',I,',',I,1,1,0           ; many add
 l002:	.dc.b I,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; many overlap
 l003:	.dc.b 0,I,',',I,',',I,',',I,',',I,1,1,0           ; many sub
-l004:	.dc.b I,1,1,0
+l004:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l005:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; many bob
-l006:	.dc.b I,1,1,0
+l006:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l007:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; many joey
 l008:	.dc.b I,1,1,0             ; hertz
 l009:	.dc.b 0,I,1,1,0           ; set hertz
-l010:	.dc.b I,1,1,0
+l010:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l011:	.dc.b 0,I,',',I,',',I,',',I,1,1,0             ; many inc
-l012:	.dc.b I,1,1,0
+l012:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l013:	.dc.b 0,I,',',I,',',I,',',I,1,1,0             ; many dec
-l014:	.dc.b I,1,1,0
+l014:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l015:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; raster
-l016:	.dc.b I,1,1,0
+l016:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l017:	.dc.b 0,I,',',I,',',I,',',I,1,1,0           ; bullet
-l018:	.dc.b I,1,1,0
+l018:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l019:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; many bullet
-l020:	.dc.b I,1,1,0
+l020:	.dc.b I,I,',',I,',',I,1,1,0 ; FIXME
 l021:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0             ; many spot
 
 		.even
@@ -212,7 +212,8 @@ many_overlap:
 		bge.s      many_overlap1
 		moveq.l    #0,d4
 many_overlap1:
-		suba.l     a6,a6
+		/* suba.l     a6,a6 */
+		dc.w 0x2c7c,0,0 /* XXX */
 many_overlap2:
 		cmpi.l     #1,(a4)
 		bne.s      many_overlap3
@@ -307,16 +308,11 @@ many_sub8:
 
 ; -----------------------------------------------------------------------------
 
-lib4:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: MANY BOB x1,y1,x2,y2,0,0,0,0,0,1
  *         scr,gadr,imgadr,xadr,yadr,statadr,xoff,yoff,num,0
  */
+lib4: ; FIXME
 lib5:
 	dc.w	0			; no library calls
 many_bob:
@@ -324,7 +320,7 @@ many_bob:
 		tst.l      (a6)+
 		bne        many_bob_init
 		move.l     (a6)+,d6 ; num
-		bmi.s      many_bob_ret ; FIXME: should be illfunc
+		bmi.s      many_bob3 ; FIXME: should be illfunc ; BUG wrong target label
 		move.l     (a6)+,d5 ; yoff
 		move.l     (a6)+,d4 ; xoff
 		move.l     (a6)+,a5 ; statadr
@@ -1294,7 +1290,8 @@ many_bob_init:
 		move.l     (a6)+,d2
 		move.l     (a6)+,d1
 		move.l     (a6)+,d0
-		tst.w      d0
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
 		bge.s      many_bob_init1
 		moveq.l    #0,d0
 many_bob_init1:
@@ -1302,7 +1299,8 @@ many_bob_init1:
 		ble.s      many_bob_init2
 		move.w     #SCREEN_WIDTH,d2
 many_bob_init2:
-		tst.w      d1
+		/* tst.w     d1 */
+		dc.w 0x0c41,0 /* XXX */
 		bge.s      many_bob_init3
 		moveq.l    #0,d1
 many_bob_init3:
@@ -1388,8 +1386,7 @@ many_bob_init4:
 		move.w     d0,2(a0)
 
 		subi.w     #16,d0
-		lea.l      many_bobpatch18(pc),a0
-		move.w     d0,2(a0)
+		lea.l      many_bobpatch18(pc),a0 ; BUG: not patched
 		lea.l      many_bobpatch1(pc),a0
 		move.w     d0,2(a0)
 
@@ -1640,16 +1637,11 @@ lineoffset_table:
 
 ; -----------------------------------------------------------------------------
 
-lib6:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: MANY JOEY x1,y1,x2,y2,0,0,0,0,1
  *         MANY JOEY scr,gadr,imgadr,xadr,yadr,statadr,coladr,xoff,yoff,num,0
  */
+lib6:
 lib7:
 	dc.w	0			; no library calls
 many_joey:
@@ -1657,7 +1649,7 @@ many_joey:
 		tst.l      (a6)+
 		bne        many_joey_init
 		move.l     (a6)+,d6
-		bmi.s      many_joey_ret ; FIXME: should be illfunc
+		bmi.s      many_joey_ret ; FIXME: should be illfunc ; BUG: wrong label
 		move.l     (a6)+,d5
 		move.l     (a6)+,d4
 		move.l     (a6)+,d3
@@ -1685,8 +1677,8 @@ many_joey1:
 		movem.l    (a7)+,d4-d6/a0-a6
 many_joey2:
 		dbf        d6,many_joey1
-		move.l     (a7)+,a6
 many_joey_ret:
+		move.l     (a7)+,a6
 		movem.l    (a7)+,a0-a5
 		rts
 many_joey3:
@@ -2588,7 +2580,8 @@ many_joey_init:
 		move.l     (a6)+,d2
 		move.l     (a6)+,d1
 		move.l     (a6)+,d0
-		tst.w      d0
+		/* tst.w     d0 */
+		dc.w 0x0c40,0 /* XXX */
 		bge.s      many_joey_init1
 		moveq.l    #0,d0
 many_joey_init1:
@@ -2596,7 +2589,8 @@ many_joey_init1:
 		ble.s      many_joey_init2
 		move.w     #SCREEN_WIDTH,d2
 many_joey_init2:
-		tst.w       d1
+		/* tst.w     d1 */
+		dc.w 0x0c41,0 /* XXX */
 		bge.s      many_joey_init3
 		moveq.l    #0,d1
 many_joey_init3:
@@ -2683,8 +2677,7 @@ many_joey_init4:
 		move.w     d0,2(a0)
 
 		subi.w     #16,d0
-		lea.l      many_joeypatch22(pc),a0
-		move.w     d0,2(a0)
+		lea.l      many_joeypatch22(pc),a0 ; BUG: not patched
 		lea.l      many_joeypatch1(pc),a0
 		move.w     d0,2(a0)
 
@@ -2976,15 +2969,10 @@ set_hertz2:
 
 ; -----------------------------------------------------------------------------
 
-lib10:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: MANY INC xadr,num,lval,uval
  */
+lib10:
 lib11:
 	dc.w	0			; no library calls
 many_inc:
@@ -3015,15 +3003,10 @@ many_inc3:
 
 ; -----------------------------------------------------------------------------
 
-lib12:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: MANY DEC xadr,num,lval,uval
  */
+lib12:
 lib13:
 	dc.w	0			; no library calls
 many_dec:
@@ -3054,15 +3037,10 @@ many_dec3:
 
 ; -----------------------------------------------------------------------------
 
-lib14:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: RASTER flag,coladr,line,wid,num,col
  */
+lib14:
 lib15:
 	dc.w	0			; no library calls
 raster:
@@ -3098,14 +3076,14 @@ raster3:
 		lea        vbl_saved_flag(pc),a2
 		tst.w      (a2)
 		beq.s      raster4
-		clr.b      tbcr
+		clr.b      tbcr.l /* XXX */
 		lea.l      raster_tbdrpatch(pc),a2
 		move.b     d0,2(a2)
 		lea.l      raster_tbdrpatch2(pc),a2
 		move.b     d2,2(a2)
 		lea.l      raster_linecount(pc),a2
 		move.w     d3,(a2)
-		move.b     #8,tbcr
+		move.b     #8,tbcr.l /* XXX */
 		bra        raster6
 raster4:
 		lea.l      raster_tbdrpatch(pc),a2
@@ -3121,8 +3099,7 @@ raster4:
 		move.b     (ierb).w,(a0)+
 		move.b     (imra).w,(a0)+
 		move.b     (imrb).w,(a0)+
-		move.w     sr,d0
-		move.w     #0x2700,sr
+		move.w     #0x2700,sr /* BUG: sr not saved */
 		ori.b      #1,(iera).w
 		ori.b      #1,(imra).w
 		bclr       #3,(vr).w
@@ -3131,7 +3108,7 @@ raster4:
 		move.l     (vbl_vec).w,(a2)
 		lea        raster_irq(pc),a2
 		move.l     a2,(vbl_vec).w
-		move.w     d0,sr
+		move.w     #0x2300,sr
 		lea        vbl_saved_flag(pc),a2
 		move.w     #1,(a2)
 		bra.s      raster6
@@ -3139,16 +3116,16 @@ raster5:
 		lea        vbl_saved_flag(pc),a2
 		tst.w      (a2)
 		beq.s      raster6
-		clr.w      (a2)
-		move.w     sr,d0
-		move.w     #0x2700,sr
+		move.w     #0x2700,sr /* BUG: sr not saved */
 		lea.l      save_iera(pc),a0
 		move.b     (a0)+,(iera).w
 		move.b     (a0)+,(ierb).w
 		move.b     (a0)+,(imra).w
 		move.b     (a0)+,(imrb).w
 		move.l     save_vbl(pc),(vbl_vec).w
-		move.w     d0,sr
+		move.w     #0x2300,sr
+		lea        vbl_saved_flag(pc),a2
+		move.w     #0,(a2)
 raster6:
 		movem.l    (a7)+,a0-a5
 		rts
@@ -3157,7 +3134,8 @@ raster_irq:
 raster_colpatch:
 		move.w     #0,(0xFFFF8242).w
 		movem.l    a0-a1,-(a7)
-		movea.l    raster_coladr(pc),a0
+		lea        raster_coladr(pc),a1 ; FIXME
+		movea.l    (a1),a0
 		lea.l      raster_colpatch2(pc),a1
 		move.w     (a0)+,2(a1)
 		lea.l      raster_colptr(pc),a1
@@ -3165,15 +3143,15 @@ raster_colpatch:
 		lea.l      raster_linecount(pc),a0
 		lea.l      raster_counter(pc),a1
 		move.w     (a0),(a1)
+		movem.l    (a7)+,a0-a1
 		clr.b      (tbcr).w
-		lea        raster_irq2(pc),a1
-		move.l     a1,(timerb_vec).w
+		lea        raster_irq2(pc),a2 ; BUG BUG clobbers a2
+		move.l     a2,(timerb_vec).w
 raster_tbdrpatch:
 		move.b     #0x63,(tbdr).w
 		move.b     #8,(tbcr).w
 raster_tbdrpatch2:
 		move.b     #1,(tbdr).w
-		movem.l    (a7)+,a0-a1
 		move.l     save_vbl(pc),-(a7)
 		rts
 
@@ -3206,15 +3184,15 @@ raster_colptr: ds.l 1
 
 ; -----------------------------------------------------------------------------
 
-lib16:
-	dc.w	0			; no library calls
-	rts
+		movem.l    (a7)+,a0-a5 ; FIXME, dead code
+		rts
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: BULLET scr,x,y,col
  */
+lib16:
 lib17:
 	dc.w	0			; no library calls
 bullet:
@@ -3756,15 +3734,10 @@ lineoffset_table3:
 
 ; -----------------------------------------------------------------------------
 
-lib18:
-	dc.w	0			; no library calls
-	rts
-
-; -----------------------------------------------------------------------------
-
 /*
  * Syntax: MANY BULLET scr,xadr,yady,statadr,coladr,xoff,yoff,num
  */
+lib18:
 lib19:
 	dc.w	0			; no library calls
 many_bullet:
@@ -3815,12 +3788,18 @@ many_bullet5:
 		rts
 
 drawmany:
-		cmpi.w     #SCREEN_WIDTH-1,d0
-		bcc        drawmany_ret
-		cmpi.w     #SCREEN_HEIGHT-1,d1
-		bcc        drawmany_ret
-		mulu       #160,d1
-		adda.l     d1,a0
+		tst.w      d0
+		bmi        drawmany_ret
+		cmpi.w     #SCREEN_WIDTH-2,d0
+		bgt        drawmany_ret
+		tst.w      d1
+		bmi        drawmany_ret
+		cmpi.w     #SCREEN_HEIGHT-2,d1
+		bgt        drawmany_ret
+		add.w      d1,d1
+		lea.l      lineoffset_table4(pc),a1
+		adda.w     d1,a1
+		adda.w     (a1),a0
 		move.w     d0,d1
 		andi.w     #-16,d1
 		lsr.w      #1,d1
@@ -4138,17 +4117,214 @@ bullet_masktab2:
 	dc.l 0x00010001,0xfffefffe,0x80008000,0x7fff7fff
 	dc.l 0x00010001,0xfffefffe,0x80008000,0x7fff7fff
 
-; -----------------------------------------------------------------------------
-
-lib20:
-	dc.w	0			; no library calls
-	rts
+lineoffset_table4:
+	dc.w 0*160
+	dc.w 1*160
+	dc.w 2*160
+	dc.w 3*160
+	dc.w 4*160
+	dc.w 5*160
+	dc.w 6*160
+	dc.w 7*160
+	dc.w 8*160
+	dc.w 9*160
+	dc.w 10*160
+	dc.w 11*160
+	dc.w 12*160
+	dc.w 13*160
+	dc.w 14*160
+	dc.w 15*160
+	dc.w 16*160
+	dc.w 17*160
+	dc.w 18*160
+	dc.w 19*160
+	dc.w 20*160
+	dc.w 21*160
+	dc.w 22*160
+	dc.w 23*160
+	dc.w 24*160
+	dc.w 25*160
+	dc.w 26*160
+	dc.w 27*160
+	dc.w 28*160
+	dc.w 29*160
+	dc.w 30*160
+	dc.w 31*160
+	dc.w 32*160
+	dc.w 33*160
+	dc.w 34*160
+	dc.w 35*160
+	dc.w 36*160
+	dc.w 37*160
+	dc.w 38*160
+	dc.w 39*160
+	dc.w 40*160
+	dc.w 41*160
+	dc.w 42*160
+	dc.w 43*160
+	dc.w 44*160
+	dc.w 45*160
+	dc.w 46*160
+	dc.w 47*160
+	dc.w 48*160
+	dc.w 49*160
+	dc.w 50*160
+	dc.w 51*160
+	dc.w 52*160
+	dc.w 53*160
+	dc.w 54*160
+	dc.w 55*160
+	dc.w 56*160
+	dc.w 57*160
+	dc.w 58*160
+	dc.w 59*160
+	dc.w 60*160
+	dc.w 61*160
+	dc.w 62*160
+	dc.w 63*160
+	dc.w 64*160
+	dc.w 65*160
+	dc.w 66*160
+	dc.w 67*160
+	dc.w 68*160
+	dc.w 69*160
+	dc.w 70*160
+	dc.w 71*160
+	dc.w 72*160
+	dc.w 73*160
+	dc.w 74*160
+	dc.w 75*160
+	dc.w 76*160
+	dc.w 77*160
+	dc.w 78*160
+	dc.w 79*160
+	dc.w 80*160
+	dc.w 81*160
+	dc.w 82*160
+	dc.w 83*160
+	dc.w 84*160
+	dc.w 85*160
+	dc.w 86*160
+	dc.w 87*160
+	dc.w 88*160
+	dc.w 89*160
+	dc.w 90*160
+	dc.w 91*160
+	dc.w 92*160
+	dc.w 93*160
+	dc.w 94*160
+	dc.w 95*160
+	dc.w 96*160
+	dc.w 97*160
+	dc.w 98*160
+	dc.w 99*160
+	dc.w 100*160
+	dc.w 101*160
+	dc.w 102*160
+	dc.w 103*160
+	dc.w 104*160
+	dc.w 105*160
+	dc.w 106*160
+	dc.w 107*160
+	dc.w 108*160
+	dc.w 109*160
+	dc.w 110*160
+	dc.w 111*160
+	dc.w 112*160
+	dc.w 113*160
+	dc.w 114*160
+	dc.w 115*160
+	dc.w 116*160
+	dc.w 117*160
+	dc.w 118*160
+	dc.w 119*160
+	dc.w 120*160
+	dc.w 121*160
+	dc.w 122*160
+	dc.w 123*160
+	dc.w 124*160
+	dc.w 125*160
+	dc.w 126*160
+	dc.w 127*160
+	dc.w 128*160
+	dc.w 129*160
+	dc.w 130*160
+	dc.w 131*160
+	dc.w 132*160
+	dc.w 133*160
+	dc.w 134*160
+	dc.w 135*160
+	dc.w 136*160
+	dc.w 137*160
+	dc.w 138*160
+	dc.w 139*160
+	dc.w 140*160
+	dc.w 141*160
+	dc.w 142*160
+	dc.w 143*160
+	dc.w 144*160
+	dc.w 145*160
+	dc.w 146*160
+	dc.w 147*160
+	dc.w 148*160
+	dc.w 149*160
+	dc.w 150*160
+	dc.w 151*160
+	dc.w 152*160
+	dc.w 153*160
+	dc.w 154*160
+	dc.w 155*160
+	dc.w 156*160
+	dc.w 157*160
+	dc.w 158*160
+	dc.w 159*160
+	dc.w 160*160
+	dc.w 161*160
+	dc.w 162*160
+	dc.w 163*160
+	dc.w 164*160
+	dc.w 165*160
+	dc.w 166*160
+	dc.w 167*160
+	dc.w 168*160
+	dc.w 169*160
+	dc.w 170*160
+	dc.w 171*160
+	dc.w 172*160
+	dc.w 173*160
+	dc.w 174*160
+	dc.w 175*160
+	dc.w 176*160
+	dc.w 177*160
+	dc.w 178*160
+	dc.w 179*160
+	dc.w 180*160
+	dc.w 181*160
+	dc.w 182*160
+	dc.w 183*160
+	dc.w 184*160
+	dc.w 185*160
+	dc.w 186*160
+	dc.w 187*160
+	dc.w 188*160
+	dc.w 189*160
+	dc.w 190*160
+	dc.w 191*160
+	dc.w 192*160
+	dc.w 193*160
+	dc.w 194*160
+	dc.w 195*160
+	dc.w 196*160
+	dc.w 197*160
+	dc.w 198*160
+	dc.w 199*160
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: MANY SPOT scr,xadr,yady,statadr,coladr,xoff,yoff,num
  */
+lib20:
 lib21:
 	dc.w	0			; no library calls
 many_spot:
@@ -4199,13 +4375,18 @@ many_spot5:
 		rts
 
 drawspot:
-		cmpi.w     #SCREEN_WIDTH,d0
-		bcc        drawspot_ret
-		cmpi.w     #SCREEN_HEIGHT,d1
-		bcc        drawspot_ret
+		tst.w      d0
+		bmi        drawspot_ret
+		cmpi.w     #SCREEN_WIDTH-1,d0 ; BUG: should be SCREEN_WIDTH-2
+		bgt        drawspot_ret
+		tst.w      d1
+		bmi        drawspot_ret
+		cmpi.w     #SCREEN_HEIGHT-1,d1 ; BUG: should be SCREEN_HEIGHT-2
+		bgt        drawspot_ret
 		andi.w     #15,d2
-		mulu       #160,d1
-		add.l      d1,a0
+		add.w      d1,d1
+		lea.l      lineoffset_table5(pc),a1
+		adda.w     0(a1,d1.w),a0
 		move.w     d0,d1
 		andi.w     #-16,d1
 		lsr.w      #1,d1
@@ -4334,6 +4515,208 @@ drawspot16:
 		or.l       d0,(a0)
 drawspot_ret:
 		rts
+
+lineoffset_table5:
+	dc.w 0*160
+	dc.w 1*160
+	dc.w 2*160
+	dc.w 3*160
+	dc.w 4*160
+	dc.w 5*160
+	dc.w 6*160
+	dc.w 7*160
+	dc.w 8*160
+	dc.w 9*160
+	dc.w 10*160
+	dc.w 11*160
+	dc.w 12*160
+	dc.w 13*160
+	dc.w 14*160
+	dc.w 15*160
+	dc.w 16*160
+	dc.w 17*160
+	dc.w 18*160
+	dc.w 19*160
+	dc.w 20*160
+	dc.w 21*160
+	dc.w 22*160
+	dc.w 23*160
+	dc.w 24*160
+	dc.w 25*160
+	dc.w 26*160
+	dc.w 27*160
+	dc.w 28*160
+	dc.w 29*160
+	dc.w 30*160
+	dc.w 31*160
+	dc.w 32*160
+	dc.w 33*160
+	dc.w 34*160
+	dc.w 35*160
+	dc.w 36*160
+	dc.w 37*160
+	dc.w 38*160
+	dc.w 39*160
+	dc.w 40*160
+	dc.w 41*160
+	dc.w 42*160
+	dc.w 43*160
+	dc.w 44*160
+	dc.w 45*160
+	dc.w 46*160
+	dc.w 47*160
+	dc.w 48*160
+	dc.w 49*160
+	dc.w 50*160
+	dc.w 51*160
+	dc.w 52*160
+	dc.w 53*160
+	dc.w 54*160
+	dc.w 55*160
+	dc.w 56*160
+	dc.w 57*160
+	dc.w 58*160
+	dc.w 59*160
+	dc.w 60*160
+	dc.w 61*160
+	dc.w 62*160
+	dc.w 63*160
+	dc.w 64*160
+	dc.w 65*160
+	dc.w 66*160
+	dc.w 67*160
+	dc.w 68*160
+	dc.w 69*160
+	dc.w 70*160
+	dc.w 71*160
+	dc.w 72*160
+	dc.w 73*160
+	dc.w 74*160
+	dc.w 75*160
+	dc.w 76*160
+	dc.w 77*160
+	dc.w 78*160
+	dc.w 79*160
+	dc.w 80*160
+	dc.w 81*160
+	dc.w 82*160
+	dc.w 83*160
+	dc.w 84*160
+	dc.w 85*160
+	dc.w 86*160
+	dc.w 87*160
+	dc.w 88*160
+	dc.w 89*160
+	dc.w 90*160
+	dc.w 91*160
+	dc.w 92*160
+	dc.w 93*160
+	dc.w 94*160
+	dc.w 95*160
+	dc.w 96*160
+	dc.w 97*160
+	dc.w 98*160
+	dc.w 99*160
+	dc.w 100*160
+	dc.w 101*160
+	dc.w 102*160
+	dc.w 103*160
+	dc.w 104*160
+	dc.w 105*160
+	dc.w 106*160
+	dc.w 107*160
+	dc.w 108*160
+	dc.w 109*160
+	dc.w 110*160
+	dc.w 111*160
+	dc.w 112*160
+	dc.w 113*160
+	dc.w 114*160
+	dc.w 115*160
+	dc.w 116*160
+	dc.w 117*160
+	dc.w 118*160
+	dc.w 119*160
+	dc.w 120*160
+	dc.w 121*160
+	dc.w 122*160
+	dc.w 123*160
+	dc.w 124*160
+	dc.w 125*160
+	dc.w 126*160
+	dc.w 127*160
+	dc.w 128*160
+	dc.w 129*160
+	dc.w 130*160
+	dc.w 131*160
+	dc.w 132*160
+	dc.w 133*160
+	dc.w 134*160
+	dc.w 135*160
+	dc.w 136*160
+	dc.w 137*160
+	dc.w 138*160
+	dc.w 139*160
+	dc.w 140*160
+	dc.w 141*160
+	dc.w 142*160
+	dc.w 143*160
+	dc.w 144*160
+	dc.w 145*160
+	dc.w 146*160
+	dc.w 147*160
+	dc.w 148*160
+	dc.w 149*160
+	dc.w 150*160
+	dc.w 151*160
+	dc.w 152*160
+	dc.w 153*160
+	dc.w 154*160
+	dc.w 155*160
+	dc.w 156*160
+	dc.w 157*160
+	dc.w 158*160
+	dc.w 159*160
+	dc.w 160*160
+	dc.w 161*160
+	dc.w 162*160
+	dc.w 163*160
+	dc.w 164*160
+	dc.w 165*160
+	dc.w 166*160
+	dc.w 167*160
+	dc.w 168*160
+	dc.w 169*160
+	dc.w 170*160
+	dc.w 171*160
+	dc.w 172*160
+	dc.w 173*160
+	dc.w 174*160
+	dc.w 175*160
+	dc.w 176*160
+	dc.w 177*160
+	dc.w 178*160
+	dc.w 179*160
+	dc.w 180*160
+	dc.w 181*160
+	dc.w 182*160
+	dc.w 183*160
+	dc.w 184*160
+	dc.w 185*160
+	dc.w 186*160
+	dc.w 187*160
+	dc.w 188*160
+	dc.w 189*160
+	dc.w 190*160
+	dc.w 191*160
+	dc.w 192*160
+	dc.w 193*160
+	dc.w 194*160
+	dc.w 195*160
+	dc.w 196*160
+	dc.w 197*160
+	dc.w 198*160
+	dc.w 199*160
 
 libex:
 	dc.w 0

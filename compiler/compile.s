@@ -1600,7 +1600,7 @@ CIni4:  move.w  (a1)+,d0
         bne.s   CIni3a
 CIni5:  lea     4(a2),a2
         addq.w  #1,d7
-        cmp.w   #27,d7
+        cmp.w   #MAX_EXTENSIONS+1,d7
         bcs.s   CIni2
 
 ;------------------------------------> COPIE LES ROUTINES LIBRAIRIE

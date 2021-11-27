@@ -8,7 +8,11 @@ fire_decrunch:
 		movea.l    a4,a6
 		bsr.s      .getlongword   ; Kenn-Langwort holen
 		cmpi.l     #PACK_FIRE,d0  ; Kennung gefunden?
+		.IFNE COMPILER
 		bne.s      .not_packed    ; nein: nicht gepackt
+		.ELSE
+		bne.w      .not_packed    ; nein: nicht gepackt
+		.ENDC
 		bsr.s      .getlongword   ; Laenge holen
 		lea.l      -8(a0,d0.l),a5 ; a5 = end of data
 		bsr.s      .getlongword   ; erstes Informationslangwort
@@ -159,7 +163,11 @@ fire_decrunch:
 .length_3:
 		bsr.s      .get_short_offset ; %10
 		tst.w      d0
+		.IFNE COMPILER
 		beq.s      .put_d0
+		.ELSE
+		beq.w      .put_d0
+		.ENDC
 		moveq.l    #3-2,d0
 		bra.s      .copy_string
 

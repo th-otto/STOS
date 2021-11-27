@@ -8,7 +8,11 @@ AU5_decrunch:
 
 	bsr.s	.getinfo
 	cmpi.l	#'AU5!',d0
-	bne.s	.not_packed
+	.IFNE COMPILER
+	bne.s	.not_packed	/* XXX */
+	.ELSE
+	bne.w	.not_packed	/* XXX */
+	.ENDC
 
 	bsr.s	.getinfo		; size files packed
 	lea.l	-8(a0,d0.l),a5
