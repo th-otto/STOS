@@ -254,10 +254,12 @@ landscape3:
 		move.w     d7,d6
 		move.w     d3,d1
 		lea.l      -8(a0),a4
+		moveq      #0,d4			; dml
 landscape4:
 		movea.l    a6,a2
 		adda.w     d7,a2
-		adda.w     (a1)+,a2
+		move.w     (a1)+,d4		; dml
+		add.l      d4,a2
 		lea.l      landscape_loop(pc,d7.w),a3
 		lea.l      8(a4),a4
 		movea.l    a4,a0
@@ -311,7 +313,7 @@ landscape_loop:
 		move.l     (a2)+,(a0)+
 		move.l     (a2),(a0)+
 		dbf        d1,landscape4
-		move.w     #19,d4
+		moveq      #19,d4
 		sub.w      d3,d4
 		lsl.w      #3,d4
 		adda.w     d4,a0
@@ -321,13 +323,15 @@ landscape_loop:
 		sub.w      d3,d4
 		subq.w     #2,d4
 		adda.w     d4,a1
+		moveq      #0,d1			; dml
 landscape5:
 		movea.l    a0,a5
 		movea.l    a0,a4
 		move.w     d3,d7
 landscape6:
 		movea.l    a6,a2
-		adda.w     (a1)+,a2
+		move.w     (a1)+,d1		; dml
+		add.l      d1,a2
 		movea.l    a4,a0
 		lea.l      8(a4),a4
 		move.l     (a2)+,(a0)+
@@ -381,13 +385,14 @@ landscape6:
 		lea.l      2560(a5),a0
 		adda.w     d4,a1
 		dbf        d0,landscape5
-		move.w     #120,d7
+		moveq      #120,d7
 		sub.w      d6,d7
 		move.w     d3,d1
+		lea.l      landscape_loop2(pc,d7.w),a3
 landscape7:
 		movea.l    a6,a2
-		adda.w     (a1)+,a2
-		lea.l      landscape_loop2(pc,d7.w),a3
+		move.w     (a1)+,d7		; dml
+		add.l      d7,a2
 		movea.l    a0,a4
 		jmp        (a3)
 landscape_loop2:
@@ -919,8 +924,8 @@ bob32:
 		add.w      d7,d6
 		movea.l    a0,a2
 		movea.l    a1,a3
-bob33:
 		lea.l      bob34(pc,d6.w),a4
+bob33:
 		jmp        (a4)
 bob34:
 		move.l     (a1)+,d0
@@ -2556,14 +2561,16 @@ world6:
 		move.w     #2400,d6
 		sub.w      (a5),d6
 		neg.w      d6
+		lea.l      world8(pc,d7.w),a4
 world7:
 		movea.l    a1,a5
 		adda.w     d2,a5
 		movea.l    a3,a6
 		adda.w     d2,a6
-		adda.w     (a2)+,a5
-		adda.w     (a2),a6
-		lea.l      world8(pc,d7.w),a4
+		move.w     (a2)+,d7			; dml
+		add.l      d7,a5
+		move.w     (a2),d7
+		add.l      d7,a6
 		jmp        (a4)
 world8:
 		movem.l    (a6)+,d4-d5
@@ -2670,8 +2677,11 @@ world10:
 world11:
 		movea.l    a1,a5
 		movea.l    a3,a6
-        adda.w     (a2)+,a5
-		adda.w     (a2),a6
+		moveq      #0,d2			; dml
+		move.w     (a2)+,d2
+		add.l      d2,a5
+		move.w     (a2),d2
+		add.l      d2,a6
 		movem.l    (a6)+,d2-d7
 		or.l       (a5)+,d2
 		or.l       (a5)+,d3
@@ -2762,12 +2772,14 @@ world12:
 		moveq.l    #15,d7
 		sub.w      d1,d7
 		lsl.w      #4,d7
+		lea.l      world14(pc,d7.w),a4
 world13:
 		lea.l      128(a3),a5
-		adda.w     (a2)+,a5
-		movea.l    a3,a6
-		adda.w     (a2),a6
-		lea.l      world14(pc,d7.w),a4
+		move.w     (a2)+,d7			; dml
+		add.l      d7,a5
+		move.l     a3,a6
+		move.w     (a2),d7
+		add.l      d7,a6
 		movea.l    a0,a1
 		jmp        (a4)
 world14:

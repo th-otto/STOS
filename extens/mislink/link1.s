@@ -86,7 +86,7 @@ tokens:
         dc.b 0
         even
 
-jumps: dc.w 40 ; BUG: should be 40
+jumps: dc.w 33
 
 		dc.l landscape
 		dc.l overlap
@@ -124,8 +124,8 @@ jumps: dc.w 40 ; BUG: should be 40
 
 ; welcome messages: English, French
 welcome:
-		dc.b 10,13,"The Missing Link",10,13,"(c) 1993 Top Notch Software.",10,13,10,13,0
-		dc.b 10,13,"The Missing Link",10,13,"(c) 1993 Top Notch Software.",10,13,10,13,0
+		dc.b 10,13,"The Missing Link",10,13,"(c) 1993 Top Notch Software.",10,13,"* fixes by dml/2016.",10,13,10,13,0
+		dc.b 10,13,"The Missing Link",10,13,"(c) 1993 Top Notch Software.",10,13,"* fixes by dml/2016.",10,13,10,13,0
 		.even
 
 table: ds.l 1
@@ -459,10 +459,12 @@ landscape3:
 		move.w     d7,d6
 		move.w     d3,d1
 		lea.l      -8(a0),a4
+		moveq      #0,d4		; dml	
 landscape4:
 		movea.l    a6,a2
 		adda.w     d7,a2
-		adda.w     (a1)+,a2
+		move.w     (a1)+,d4		; dml	
+		add.l      d4,a2
 		lea.l      landscape_loop(pc,d7.w),a3
 		lea.l      8(a4),a4
 		movea.l    a4,a0
@@ -516,7 +518,7 @@ landscape_loop:
 		move.l     (a2)+,(a0)+
 		move.l     (a2),(a0)+
 		dbf        d1,landscape4
-		move.w     #19,d4
+		moveq      #19,d4
 		sub.w      d3,d4
 		lsl.w      #3,d4
 		adda.w     d4,a0
@@ -526,13 +528,15 @@ landscape_loop:
 		sub.w      d3,d4
 		subq.w     #2,d4
 		adda.w     d4,a1
+		moveq      #0,d1			; dml
 landscape5:
 		movea.l    a0,a5
 		movea.l    a0,a4
 		move.w     d3,d7
 landscape6:
 		movea.l    a6,a2
-		adda.w     (a1)+,a2
+		move.w     (a1)+,d1		; dml
+		add.l      d1,a2
 		movea.l    a4,a0
 		lea.l      8(a4),a4
 		move.l     (a2)+,(a0)+
@@ -586,13 +590,14 @@ landscape6:
 		lea.l      2560(a5),a0
 		adda.w     d4,a1
 		dbf        d0,landscape5
-		move.w     #120,d7
+		moveq      #120,d7
 		sub.w      d6,d7
 		move.w     d3,d1
+		lea        landscape_loop2(pc,d7.w),a3	; dml
 landscape7:
 		movea.l    a6,a2
-		adda.w     (a1)+,a2
-		lea        landscape_loop2(pc,d7.w),a3
+		move.w     (a1)+,d7		; dml
+		add.l      d7,a2
 		movea.l    a0,a4
 		jmp        (a3)
 landscape_loop2:
@@ -1142,8 +1147,8 @@ bob32:
 		add.w      d7,d6
 		movea.l    a0,a2
 		movea.l    a1,a3
+		lea        bob34(pc,d6.w),a4	; dml
 bob33:
-		lea        bob34(pc,d6.w),a4
 		jmp        (a4)
 bob34:
 		move.l     (a1)+,d0
@@ -2603,15 +2608,17 @@ world6:
 		adda.w     d4,a5
 		move.w     #2400,d6
 		sub.w      (a5),d6
+		lea        world8(pc,d7.w),a4		; dml
 
 world7:
 		movea.l    a1,a5
 		adda.w     d2,a5
 		movea.l    a3,a6
 		adda.w     d2,a6
-		adda.w     (a2)+,a5
-		adda.w     (a2),a6
-		lea        world8(pc,d7.w),a4
+		move.w     (a2)+,d7			; dml
+		add.l      d7,a5
+		move.w     (a2),d7
+		add.l      d7,a6
 		jmp        (a4)
 world8:
 		movem.l    (a6)+,d4-d5
@@ -2718,8 +2725,11 @@ world10:
 world11:
 		movea.l    a1,a5
 		movea.l    a3,a6
-		adda.w     (a2)+,a5
-		adda.w     (a2),a6
+		moveq      #0,d2			; dml
+		move.w     (a2)+,d2
+		add.l      d2,a5
+		move.w     (a2),d2
+		add.l      d2,a6
 		movem.l    (a6)+,d2-d7
 		or.l       (a5)+,d2
 		or.l       (a5)+,d3
@@ -2809,13 +2819,15 @@ world12:
 		moveq.l    #15,d7
 		sub.w      d1,d7
 		lsl.w      #4,d7
+		lea        world14(pc,d7.w),a4		; dml
 
 world13:
 		lea.l      128(a3),a5
-		adda.w     (a2)+,a5
-		movea.l    a3,a6
-		adda.w     (a2),a6
-		lea        world14(pc,d7.w),a4
+		move.w     (a2)+,d7			; dml
+		add.l      d7,a5
+		move.l     a3,a6
+		move.w     (a2),d7
+		add.l      d7,a6
 		movea.l    a0,a1
 		jmp        (a4)
 world14:
@@ -4679,6 +4691,53 @@ depack_end:
 ; -----------------------------------------------------------------------------
 
 /*
+ * Syntax: REPLACE BLOCKS madr,blk1,blk2
+ */
+replace_blocks:
+		move.l     (a7)+,returnpc
+		cmp.w      #3,d0
+		bne        syntax
+		lea.l      saveregsend,a0
+		movem.l    d5-d6/a1-a6,-(a0)
+		bsr        getinteger
+		move.l     d3,d1
+		bsr        getinteger
+		move.l     d3,d0
+		bsr        getinteger
+		movea.l    d3,a0
+		cmpi.l     #0x03031973,(a0)+
+		bne.s      replace_blocks1
+		moveq.l    #7,d4
+		bra.s      replace_blocks2
+replace_blocks1:
+		cmpi.l     #0x02528E54,-4(a0)
+		bne        noerror
+		moveq.l    #8,d4
+replace_blocks2:
+		moveq.l    #0,d2
+		movem.w    (a0)+,d2-d3
+		addq.w     #2,d2
+		lsr.w      #1,d2
+		lsr.w      #1,d3
+		mulu.w     d3,d2
+		subq.w     #1,d2
+		lsl.w      d4,d0
+		lsl.w      d4,d1
+replace_blocks3:
+		move.w     (a0)+,d3
+		cmp.w      d3,d0
+		bne.s      replace_blocks4
+		move.w     d1,-2(a0)
+replace_blocks4:
+		dbf        d2,replace_blocks3
+		lea.l      saveregs,a0
+		movem.l    (a0)+,d5-d6/a1-a6
+		movea.l    returnpc,a0
+		jmp        (a0)
+
+; -----------------------------------------------------------------------------
+
+/*
  * Syntax: l = DLOAD (filename,adr,ofs,num)
  */
 dload:
@@ -4736,6 +4795,82 @@ dload2:
 		movea.l    (a7)+,a3
 		movea.l    returnpc,a0
 		jmp        (a0)
+
+; -----------------------------------------------------------------------------
+
+/*
+ * Syntax: DISPLAY PC1 gadr,scr
+ */
+display_pc1:
+		move.l     (a7)+,returnpc
+		cmp.w      #2,d0
+		bne        syntax
+		lea.l      saveregsend,a0
+		movem.l    d5-d6/a1-a6,-(a0)
+		bsr        getinteger
+		move.l     d3,args+4
+		bsr        getinteger
+		move.l     d3,args+0
+		movea.l    args+0(pc),a0
+		movea.l    args+4(pc),a1
+		lea.l      2(a0),a3
+		move.l     a3,(colorptr).w /* FIXME: use Setpalette */
+		movea.l    a1,a3
+		lea.l      34(a0),a0
+		move.w     #200-1,d4
+display_pc1_1:
+		moveq.l    #3,d3
+display_pc1_2:
+		lea.l      degas_line(pc),a1
+		bsr.s      depack_pc1
+		bsr.s      degas_copyline
+		addq.w     #2,a3
+		dbf        d3,display_pc1_2
+		lea.l      152(a3),a3
+		dbf        d4,display_pc1_1
+		lea.l      saveregs(pc),a0
+		movem.l    (a0)+,d5-d6/a1-a6
+		movea.l    returnpc,a0
+		jmp        (a0)
+
+depack_pc1:
+		movem.l    d1/a1-a2,-(a7)
+		movea.l    a1,a2
+		lea.l      40(a2),a2
+depack_pc1_1:
+		moveq.l    #0,d1
+		move.b     (a0)+,d1
+		bmi.s      depack_pc1_3
+depack_pc1_2:
+		move.b     (a0)+,(a1)+
+		dbf        d1,depack_pc1_2
+		cmpa.l     a2,a1
+		blt.s      depack_pc1_1
+		bra.s      depack_pc1_5
+depack_pc1_3:
+		neg.b      d1
+		move.b     (a0)+,d0
+depack_pc1_4:
+		move.b     d0,(a1)+
+		dbf        d1,depack_pc1_4
+		cmpa.l     a2,a1
+		blt.s      depack_pc1_1
+depack_pc1_5:
+		movem.l    (a7)+,d1/a1-a2
+		rts
+
+degas_copyline:
+		movem.l    d0/a0-a3,-(a7)
+		lea.l      degas_line(pc),a0
+		moveq.l    #20-1,d0
+degas_copyline1:
+		move.w     (a0)+,(a3)+
+		addq.w     #6,a3
+		dbf        d0,degas_copyline1
+		movem.l    (a7)+,d0/a0-a3
+		rts
+
+degas_line: ds.w 20
 
 ; -----------------------------------------------------------------------------
 
@@ -4829,129 +4964,6 @@ dsave4:
 
 dsave_dtaptr: ds.l 1
 dsave_dta: ds.b 46
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: DISPLAY PC1 gadr,scr
- */
-display_pc1:
-		move.l     (a7)+,returnpc
-		cmp.w      #2,d0
-		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
-		bsr        getinteger
-		move.l     d3,args+4
-		bsr        getinteger
-		move.l     d3,args+0
-		movea.l    args+0(pc),a0
-		movea.l    args+4(pc),a1
-		lea.l      2(a0),a3
-		move.l     a3,(colorptr).w /* FIXME: use Setpalette */
-		movea.l    a1,a3
-		lea.l      34(a0),a0
-		move.w     #200-1,d4
-display_pc1_1:
-		moveq.l    #3,d3
-display_pc1_2:
-		lea.l      degas_line(pc),a1
-		bsr.s      depack_pc1
-		bsr.s      degas_copyline
-		addq.w     #2,a3
-		dbf        d3,display_pc1_2
-		lea.l      152(a3),a3
-		dbf        d4,display_pc1_1
-		lea.l      saveregs(pc),a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
-
-depack_pc1:
-		movem.l    d1/a1-a2,-(a7)
-		movea.l    a1,a2
-		lea.l      40(a2),a2
-depack_pc1_1:
-		moveq.l    #0,d1
-		move.b     (a0)+,d1
-		bmi.s      depack_pc1_3
-depack_pc1_2:
-		move.b     (a0)+,(a1)+
-		dbf        d1,depack_pc1_2
-		cmpa.l     a2,a1
-		blt.s      depack_pc1_1
-		bra.s      depack_pc1_5
-depack_pc1_3:
-		neg.b      d1
-		move.b     (a0)+,d0
-depack_pc1_4:
-		move.b     d0,(a1)+
-		dbf        d1,depack_pc1_4
-		cmpa.l     a2,a1
-		blt.s      depack_pc1_1
-depack_pc1_5:
-		movem.l    (a7)+,d1/a1-a2
-		rts
-
-degas_copyline:
-		movem.l    d0/a0-a3,-(a7)
-		lea.l      degas_line(pc),a0
-		moveq.l    #20-1,d0
-degas_copyline1:
-		move.w     (a0)+,(a3)+
-		addq.w     #6,a3
-		dbf        d0,degas_copyline1
-		movem.l    (a7)+,d0/a0-a3
-		rts
-
-degas_line: ds.w 20
-
-; -----------------------------------------------------------------------------
-
-/*
- * Syntax: REPLACE BLOCKS madr,blk1,blk2
- */
-replace_blocks:
-		move.l     (a7)+,returnpc
-		cmp.w      #3,d0
-		bne        syntax
-		lea.l      saveregsend,a0
-		movem.l    d5-d6/a1-a6,-(a0)
-		bsr        getinteger
-		move.l     d3,d1
-		bsr        getinteger
-		move.l     d3,d0
-		bsr        getinteger
-		movea.l    d3,a0
-		cmpi.l     #0x03031973,(a0)+
-		bne.s      replace_blocks1
-		moveq.l    #7,d4
-		bra.s      replace_blocks2
-replace_blocks1:
-		cmpi.l     #0x02528E54,-4(a0)
-		bne        noerror
-		moveq.l    #8,d4
-replace_blocks2:
-		moveq.l    #0,d2
-		movem.w    (a0)+,d2-d3
-		addq.w     #2,d2
-		lsr.w      #1,d2
-		lsr.w      #1,d3
-		mulu.w     d3,d2
-		subq.w     #1,d2
-		lsl.w      d4,d0
-		lsl.w      d4,d1
-replace_blocks3:
-		move.w     (a0)+,d3
-		cmp.w      d3,d0
-		bne.s      replace_blocks4
-		move.w     d1,-2(a0)
-replace_blocks4:
-		dbf        d2,replace_blocks3
-		lea.l      saveregs,a0
-		movem.l    (a0)+,d5-d6/a1-a6
-		movea.l    returnpc,a0
-		jmp        (a0)
 
 ; -----------------------------------------------------------------------------
 
