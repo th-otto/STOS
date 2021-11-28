@@ -1,7 +1,6 @@
 ..\..\dist\stos\misty.exm
 .L[-S=0]
 .S[-2-]
-.S[-S]
 .S[-DCOMPILER=0]
 .S[-I..\..\src]
 =

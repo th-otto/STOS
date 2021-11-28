@@ -1,5 +1,6 @@
 		.include "system.inc"
 		.include "errors.inc"
+		.include "equates.inc"
 
 SCREEN_WIDTH  = 320
 SCREEN_HEIGHT = 200
@@ -11,122 +12,118 @@ _frclock   = $0466
 
 		.text
 
-		bra.w        load
+* Define extension addresses
 
-        dc.b $80
-tokens:
-        dc.b "fastcopy",$80
-        dc.b "col",$81
-        dc.b "floprd",$82
-        dc.b "mediach",$83
-        dc.b "flopwrt",$84
-        dc.b "hardkey",$85
-        dc.b "dot",$86
-        dc.b "ndrv",$87
-        dc.b "mouseoff",$88
-        dc.b "freq",$89
-        dc.b "mouseon",$8a
-        dc.b "resvalid",$8b
-        dc.b "skopy",$8c
-        dc.b "aesin",$8d
-        dc.b "setrtim",$8e
-        dc.b "rtim",$8f
-        dc.b "warmboot",$90
-        dc.b "blitter",$91
-        dc.b "silence",$92
-        dc.b "kbshift",$93
-        dc.b "kopy",$94
+start:
+	dc.l	para-start		; parameter definitions
+	dc.l	entry-start		; reserve data area for program
+	dc.l	lib1-start		; start of library
 
-        dc.b 0
-        even
+catalog:
+	dc.w	lib2-lib1
+	dc.w	lib3-lib2
+	dc.w	lib4-lib3
+	dc.w	lib5-lib4
+	dc.w	lib6-lib5
+	dc.w	lib7-lib6
+	dc.w	lib8-lib7
+	dc.w	lib9-lib8
+	dc.w	lib10-lib9
+	dc.w	lib11-lib10
+	dc.w	lib12-lib11
+	dc.w	lib13-lib12
+	dc.w	lib14-lib13
+	dc.w	lib15-lib14
+	dc.w	lib16-lib15
+	dc.w	lib17-lib16
+	dc.w	lib18-lib17
+	dc.w	lib19-lib18
+	dc.w	lib20-lib19
+	dc.w	lib21-lib20
+	dc.w	libex-lib21
 
-jumps: dc.w 21
-		dc.l fastcopy
-		dc.l col
-		dc.l floprd
-		dc.l mediach
-		dc.l flopwrt
-		dc.l hardkey
-		dc.l dot
-		dc.l ndrv
-		dc.l mouseoff
-		dc.l freq
-		dc.l mouseon
-		dc.l resvalid
-		dc.l skopy
-		dc.l aesin
-		dc.l setrtim
-		dc.l rtim
-		dc.l warmboot
-		dc.l blitter
-		dc.l silence
-		dc.l kbshift
-		dc.l kopy
-		
-welcome:
-	dc.b 10,"Misty Extension",0
-	dc.b 10,"Extention Misty",0
-	.even
+para:
+	dc.w	21			; number of library routines
+	dc.w	21			; number of extension commands
+	.dc.w l001-para
+	.dc.w l002-para
+	.dc.w l003-para
+	.dc.w l004-para
+	.dc.w l005-para
+	.dc.w l006-para
+	.dc.w l007-para
+	.dc.w l008-para
+	.dc.w l009-para
+	.dc.w l010-para
+	.dc.w l011-para
+	.dc.w l012-para
+	.dc.w l013-para
+	.dc.w l014-para
+	.dc.w l015-para
+	.dc.w l016-para
+	.dc.w l017-para
+	.dc.w l018-para
+	.dc.w l019-para
+	.dc.w l020-para
+	.dc.w l021-para
 
-table: ds.l 1
+* Parameter definitions
+
+I	equ	0
+F	equ	$40
+S	equ	$80
+
+l001:	.dc.b 0,I,',',I,1,1,0             ; fastcopy
+l002:	.dc.b I,I,',',I,',',I,1,1,0       ; col
+l003:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; floprd
+l004:	.dc.b I,I,1,1,0                   ; mediach
+l005:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; flopwrt
+l006:	.dc.b I,1,1,0                     ; hardkey
+l007:	.dc.b 0,I,',',I,',',I,',',I,1,1,0 ; dot
+l008:	.dc.b I,1,1,0                     ; ndrv
+l009:	.dc.b 0,1,1,0                     ; mouseoff
+l010:	.dc.b I,1,1,0                     ; freq
+l011:	.dc.b 0,1,1,0                     ; mouseon
+l012:	.dc.b I,1,1,0                     ; resvalid
+l013:	.dc.b 0,I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,',',I,1,1,0           ; skopy
+l014:	.dc.b I,1,1,0                     ; aesin
+l015:	.dc.b 0,I,1,1,0                   ; setrtim
+l016:	.dc.b I,1,1,0                     ; rtim
+l017:	.dc.b 0,1,1,0                     ; warmboot
+l018:	.dc.b I,1,1,0                     ; blitter
+l019:	.dc.b 0,1,1,0                     ; silence
+l020:	.dc.b I,1,1,0                     ; kbshift
+l021:	.dc.b 0,I,',',I,',',I,1,1,0       ; kopy
 
 
-load:
-		lea.l      finprg(pc),a0
-		lea.l      cold(pc),a1
+		.even
+
+entry:  bra.w init
+
+init:
+		lea        exit(pc),a2
 		rts
 
-cold:
-		lea        table(pc),a1
-		move.l     a0,(a1)
-		lea.l      welcome(pc),a0
-		lea.l      warm(pc),a1
-		lea.l      tokens(pc),a2
-		lea.l      jumps(pc),a3
+exit:
 		rts
-
-warm:
-		clr.l      0x000004D2
-		rts
-
-getinteger:
-		movea.l    (a7)+,a0
-		movem.l    (a7)+,d2-d4
-		tst.b      d2
-		bne.s      typemismatch
-		jmp        (a0)
-
-syntax:
-		moveq.l    #E_syntax,d0
-		bra.s      goerror
-typemismatch:
-		moveq.l    #E_typemismatch,d0
-		bra.s      goerror
-illfunc:
-		moveq.l    #E_illegalfunc,d0
-
-goerror:
-		movea.l    table(pc),a0
-		movea.l    sys_error(a0),a0
-		jmp        (a0)
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: FASTCOPY Screen1,Screen2
  */
+lib1:
+	dc.w	0			; no library calls
 fastcopy:
-		move.l     (a7)+,a2
-		subq.w     #2,d0
-		bne.s      syntax
-		bsr.s      getinteger
-		movea.l    d3,a1
-		bsr.s      getinteger
-		movea.l    d3,a0
-		move.l     a2,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
+		move.l     (a6)+,a1
+		move.l     (a6)+,a0
 		cmpa.l     #10000,a1
-		ble.s      illfunc
+		bgt        fastcopy0
+		moveq.l    #E_illegalfunc,d0
+		move.l     error(a5),a0
+		jmp        (a0)
+fastcopy0:
+		movem.l    a0-a6,-(a7)
 		move.w     #50-1,d0
 fastcopy1:
 		movem.l    0(a0),d1-d7/a2-a6
@@ -164,7 +161,7 @@ fastcopy1:
 		lea.l      640(a0),a0
 		lea.l      640(a1),a1
 		dbf        d0,fastcopy1
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a0-a6
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -172,17 +169,12 @@ fastcopy1:
 /*
  * Syntax: C=COL(Screen,X,Y)
  */
+lib2:
+	dc.w	0			; no library calls
 col:
-		move.l     (a7)+,a1
-		subq.w     #3,d0
-		bne        syntax
-		bsr        getinteger
-		move.w     d3,d1
-		bsr        getinteger
-		move.w     d3,d0
-		bsr        getinteger
-		movea.l    d3,a0
-		move.l     a1,-(a7) ; push return pc
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
 		clr.w      d2
 		mulu.w     #160,d1
 		move.w     d0,d3
@@ -206,8 +198,8 @@ col2:
 col3:
 		addq.w     #1,d4
 		dbf        d3,col1
-		move.w     d2,d3
-		clr.w      d2
+		move.l     d2,d1
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -215,30 +207,22 @@ col3:
 /*
  * Syntax: FLOPRD Buffer,NumSecs,Side,Track,Sector,Drive
  */
+lib3:
+	dc.w	0			; no library calls
 floprd:
-		move.l     (a7)+,a1
-		subq.w     #6,d0
-		bne        syntax
-		bsr        getinteger
-		move.w     d3,flop_drive
-		bsr        getinteger
-		move.w     d3,flop_sector
-		bsr        getinteger
-		move.w     d3,flop_track
-		bsr        getinteger
-		move.w     d3,flop_side
-		bsr        getinteger
-		move.w     d3,flop_numsecs
-		bsr        getinteger
-		move.l     d3,flop_buffer
-		move.l     a1,-(a7) ; push return pc
-		move.w     flop_numsecs(pc),-(a7)
-		move.w     flop_side(pc),-(a7)
-		move.w     flop_track(pc),-(a7)
-		move.w     flop_sector(pc),-(a7)
-		move.w     flop_drive(pc),-(a7)
+		move.l     (a6)+,d4
+		move.l     (a6)+,d3
+		move.l     (a6)+,d2
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
+		move.w     d0,-(a7)
+		move.w     d1,-(a7)
+		move.w     d2,-(a7)
+		move.w     d3,-(a7)
+		move.w     d4,-(a7)
 		clr.l      -(a7)
-		move.l     flop_buffer(pc),-(a7)
+		move.l     a0,-(a7)
 		move.w     #8,-(a7) ; Floprd
 		trap       #14
 		lea.l      20(a7),a7
@@ -249,18 +233,16 @@ floprd:
 /*
  * Syntax: X=MEDIACH (D)
  */
+lib4:
+	dc.w	0			; no library calls
 mediach:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.w     d3,-(a7)
+		move.l     (a6)+,d0
+		move.w     d0,-(a7)
 		move.w     #9,-(a7) ; Mediach
 		trap       #13
 		addq.l     #4,a7
-		move.l     d0,d3
-		moveq.l    #0,d2
+		move.l     d0,d1
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -268,53 +250,38 @@ mediach:
 /*
  * Syntax: FLOPWRT Buffer,NumSecs,Side,Track,Sector,Drive
  */
+lib5:
+	dc.w	0			; no library calls
 flopwrt:
-		move.l     (a7)+,a1
-		subq.w     #6,d0
-		bne        syntax
-		bsr        getinteger
-		move.w     d3,flop_drive
-		bsr        getinteger
-		move.w     d3,flop_sector
-		bsr        getinteger
-		move.w     d3,flop_track
-		bsr        getinteger
-		move.w     d3,flop_side
-		bsr        getinteger
-		move.w     d3,flop_numsecs
-		bsr        getinteger
-		move.l     d3,flop_buffer
-		move.l     a1,-(a7) ; push return pc
-		move.w     flop_numsecs(pc),-(a7)
-		move.w     flop_side(pc),-(a7)
-		move.w     flop_track(pc),-(a7)
-		move.w     flop_sector(pc),-(a7)
-		move.w     flop_drive(pc),-(a7)
+		move.l     (a6)+,d4
+		move.l     (a6)+,d3
+		move.l     (a6)+,d2
+		move.l     (a6)+,d1
+		move.l     (a6)+,d0
+		move.l     (a6)+,a0
+		move.w     d0,-(a7)
+		move.w     d1,-(a7)
+		move.w     d2,-(a7)
+		move.w     d3,-(a7)
+		move.w     d4,-(a7)
 		clr.l      -(a7)
-		move.l     flop_buffer(pc),-(a7)
+		move.l     a0,-(a7)
 		move.w     #9,-(a7) ; Flopwrt
 		trap       #14
 		lea.l      20(a7),a7
 		rts
-
-flop_numsecs: ds.w 1
-flop_side: ds.w 1
-flop_track: ds.w 1
-flop_sector: ds.w 1
-flop_drive: ds.w 1
-flop_buffer: ds.l 1
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: C=HARDKEY
  */
+lib6:
+	dc.w	0			; no library calls
 hardkey:
-		tst.w      d0
-		bne        syntax
-		moveq.l    #0,d3
-		moveq.l    #0,d2
-		move.b     0xFFFFFC02,d3
+		moveq.l    #0,d1
+		move.b     0xFFFFFC02,d1
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -322,20 +289,13 @@ hardkey:
 /*
  * Syntax: DOT Scr,X,Y,C
  */
+lib7:
+	dc.w	0			; no library calls
 dot:
-		move.l     (a7)+,a1
-		subq.w     #4,d0
-		bne        syntax
-		bsr        getinteger
-		move.w     d3,dot_color
-		bsr        getinteger
-		move.w     d3,d1
-		bsr        getinteger
-		move.w     d3,d0
-		bsr        getinteger
-		move.l     d3,a0
-		move.l     a1,-(a7) ; push return pc
-		move.w     dot_color(pc),d2
+		move.l     (a6)+,d2 ; color
+		move.l     (a6)+,d1 ; y
+		move.l     (a6)+,d0 ; x
+		move.l     (a6)+,a0 ; screen
 		mulu.w     #160,d1
 		move.w     d0,d3
 		lsr.w      #1,d3
@@ -359,19 +319,17 @@ dot3:
 		dbf        d3,dot1
 		rts
 
-dot_color: ds.w 1
-
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: D=NDRV
  */
+lib8:
+	dc.w	0			; no library calls
 ndrv:
-		tst.w      d0
-		bne        syntax
-		moveq.l    #0,d2
-		moveq.l    #0,d3
-		move.w     0x000004A6,d3
+		moveq.l    #0,d1
+		move.w     0x000004A6,d1
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -379,9 +337,9 @@ ndrv:
 /*
  * Syntax: MOUSEOFF
  */
+lib9:
+	dc.w	0			; no library calls
 mouseoff:
-		tst.w      d0
-		bne        syntax
 		move.b     #0x12,0xFFFFFC02
 		rts
 
@@ -390,19 +348,19 @@ mouseoff:
 /*
  * Syntax: F=FREQ
  */
+lib10:
+	dc.w	0			; no library calls
 freq:
-		tst.w      d0
-		bne        syntax
-		moveq.l    #0,d3
-		move.b     0xFFFF820A,d3
-		btst       #1,d3
+		moveq.l    #0,d1
+		move.b     0xFFFF820A,d1
+		btst       #1,d1
 		beq.s      freq1
-		moveq.l    #50,d3
+		moveq.l    #50,d1
 		bra.s      freq2
 freq1:
-		moveq.l    #60,d3
+		moveq.l    #60,d1
 freq2:
-		moveq.l    #0,d2
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -410,9 +368,9 @@ freq2:
 /*
  * Syntax: MOUSEON
  */
+lib11:
+	dc.w	0			; no library calls
 mouseon:
-		tst.w      d0
-		bne        syntax
 		move.b     #0x08,0xFFFFFC02
 		rts
 
@@ -421,16 +379,16 @@ mouseon:
 /*
  * Syntax: R=RESVALID
  */
+lib12:
+	dc.w	0			; no library calls
 resvalid:
-		tst.w      d0
-		bne        syntax
-		moveq.l    #0,d2
-		moveq.l    #0,d3
+		moveq.l    #0,d1
 		move.l     0x00000426,d0
 		cmpi.l     #0x31415926,d0
 		bne.s      resvalid1
-		moveq.l     #-1,d3
+		moveq.l     #-1,d1
 resvalid1:
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -438,44 +396,26 @@ resvalid1:
 /*
  * Syntax: SKOPY N,Scr1,X1,Y1,X2,Y2,Scr2,XDST,YDST
  */
+lib13:
+	dc.w	0			; no library calls
 skopy:
-		move.l     (a7)+,a1
-		cmp.w      #9,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,skopy_ydst
-		bsr        getinteger
-		move.l     d3,skopy_xdst
-		bsr        getinteger
-		move.l     d3,skopy_dst
-		bsr        getinteger
-		move.l     d3,skopy_y2
-		bsr        getinteger
-		move.l     d3,skopy_x2
-		bsr        getinteger
-		move.l     d3,skopy_y1
-		bsr        getinteger
-		move.l     d3,skopy_x1
-		bsr        getinteger
-		move.l     d3,skopy_src
-		bsr        getinteger
-		move.l     d3,skopy_nplanes
-		move.l     a1,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
-		movea.l    skopy_src(pc),a0
-		movea.l    skopy_dst(pc),a1
-		move.l     skopy_x1(pc),d0
-		move.l     skopy_y1(pc),d1
-		move.l     skopy_x2(pc),d2
-		move.l     skopy_y2(pc),d3
-		move.l     skopy_xdst(pc),d4
-		move.l     skopy_ydst(pc),d5
-		move.l     skopy_nplanes(pc),d6
+		move.l     (a6)+,d5 ; ydst
+		move.l     (a6)+,d4 ; xdst
+		move.l     (a6)+,a1 ; dst
+		move.l     (a6)+,d3 ; y2
+		move.l     (a6)+,d2 ; x2
+		move.l     (a6)+,d1 ; y1
+		move.l     (a6)+,d0 ; x1
+		move.l     (a6)+,a0 ; src
+		move.l     (a6)+,a4 ; nplanes
 		subq.l     #1,d3
-		cmpi.l     #10,d6
+		cmpa.l     #32000,a1
+		blt        skopy_illfunc
+skopy1:
+		movem.l    a0-a6,-(a7) ; too late, a0-a1/a4 already clobbered
+		cmpa.l     #10,a4
 		ble.s      skopy_clipped
-		subi.l     #10,d6
-		move.l     d6,skopy_nplanes
+		suba.l     #10,a4
 		bra        skopy_unclipped
 
 skopy_clipped:
@@ -588,7 +528,7 @@ skopy_unclipped:
 		mulu.w     #160,d5
 		adda.l     d1,a0
 		adda.l     d5,a1
-		move.l     skopy_nplanes(pc),d5
+		move.l     a4,d5 ; nplanes
 		cmp.w      #1,d5
 		beq.s      skopy_1plane_unclipped
 		cmp.w      #2,d5
@@ -597,7 +537,7 @@ skopy_unclipped:
 		beq        skopy_3planes_unclipped
 		cmp.w      #4,d5
 		beq        skopy_4planes_unclipped
-		bra        illfunc
+		bra        skopy_illfunc
 
 skopy_1plane_unclipped:
 		cmpi.w     #4,d6
@@ -2190,27 +2130,22 @@ skopy_4planes_80words:
 		dbf        d7,skopy_4planes_80words
 
 skopy_ret:
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a0-a6
 		rts
 
-skopy_x1: ds.l 1
-skopy_y1: ds.l 1
-skopy_x2: ds.l 1
-skopy_y2: ds.l 1
-skopy_xdst: ds.l 1
-skopy_ydst: ds.l 1
-skopy_src: ds.l 1
-skopy_dst: ds.l 1
-skopy_nplanes: ds.l 1
+skopy_illfunc:
+		moveq.l    #E_illegalfunc,d0
+		movea.l    error(a5),a0
+		jmp        (a0)
 
 ; -----------------------------------------------------------------------------
 
 /*
  * Syntax: GEM=AESIN
  */
+lib14:
+	dc.w	0			; no library calls
 aesin:
-		tst.w      d0
-		bne        syntax
 		movem.l    a0-a2,-(a7)
 		move.w     #0x00C9,d0
 		trap       #2
@@ -2220,7 +2155,7 @@ aesin:
 		beq.s      aesin1
 		moveq.l    #-1,d3
 aesin1:
-		clr.l      d2
+		move.l     d3,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2228,13 +2163,11 @@ aesin1:
 /*
  * Syntax: SETRTIM x
  */
+lib15:
+	dc.w	0			; no library calls
 setrtim:
-		move.l     (a7)+,a1
-		subq.w     #1,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     a1,-(a7) ; push return pc
-		move.l     d3,_frclock
+		move.l     (a6)+,d0
+		move.l     d0,_frclock
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2242,11 +2175,11 @@ setrtim:
 /*
  * Syntax: X=RTIM
  */
+lib16:
+	dc.w	0			; no library calls
 rtim:
-		tst.w      d0
-		bne        syntax
-		move.l     _frclock,d3
-		moveq.l    #0,d2
+		move.l     _frclock,d1
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2254,9 +2187,9 @@ rtim:
 /*
  * Syntax: WARMBOOT
  */
+lib17:
+	dc.w	0			; no library calls
 warmboot:
-		tst.w      d0
-		bne        syntax
 		move.l     4,a0
 		jmp        (a0)
 
@@ -2265,21 +2198,21 @@ warmboot:
 /*
  * Syntax: X=BLITTER
  */
+lib18:
+	dc.w	0			; no library calls
 blitter:
-		tst.w      d0
-		bne        syntax
 		move.w     #-1,-(a7)
 		move.w     #64,-(a7)
 		trap       #14 ; Blitmode
 		addq.l     #4,a7
 		btst       #1,d0
 		beq.s      blitter1
-		moveq.l     #-1,d3
+		moveq.l     #-1,d1
 		bra.s      blitter2
 blitter1:
-		clr.l      d3
+		clr.l      d1
 blitter2:
-		clr.l      d2
+		move.l     d1,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2287,9 +2220,9 @@ blitter2:
 /*
  * Syntax: SILENCE
  */
+lib19:
+	dc.w	0			; no library calls
 silence:
-		tst.w      d0
-		bne        syntax
 		move.l     #0x08000000,PSG
 		move.l     #0x09000000,PSG
 		move.l     #0x0A000000,PSG
@@ -2300,17 +2233,16 @@ silence:
 /*
  * Syntax: X=KBSHIFT
  */
+lib20:
+	dc.w	0			; no library calls
 kbshift:
-		tst.w      d0
-		bne        syntax
-		movem.l    a1-a2,-(a7)
+		movem.l    a0-a6,-(a7)
 		move.w     #-1,-(a7)
 		move.w     #11,-(a7)
 		trap       #13
 		addq.l     #4,a7
-		movem.l    (a7)+,a1-a2
-		move.l     d0,d3
-		clr.l      d2
+		movem.l    (a7)+,a0-a6
+		move.l     d0,-(a6)
 		rts
 
 ; -----------------------------------------------------------------------------
@@ -2318,18 +2250,13 @@ kbshift:
 /*
  * Syntax: KOPY Src, Dst, Size
  */
+lib21:
+	dc.w	0			; no library calls
 kopy:
-		move.l     (a7)+,a2
-		subq.w     #3,d0
-		bne        syntax
-		bsr        getinteger
-		move.l     d3,d0
-		bsr        getinteger
-		move.l     d3,a1
-		bsr        getinteger
-		move.l     d3,a0
-		move.l     a2,-(a7) ; push return pc
-		movem.l    d5-d6/a2-a6,-(a7)
+		move.l     (a6)+,d0
+		move.l     (a6)+,a1
+		move.l     (a6)+,a0
+		movem.l    a0-a6,-(a7)
 		move.l     d0,d1
 		moveq.l    #10,d2
 		lsr.l      d2,d1
@@ -2863,7 +2790,8 @@ kopyrest:
 		beq.s      kopy3
 		move.w     (a0)+,(a1)+
 kopy3:
-		movem.l    (a7)+,d5-d6/a2-a6
+		movem.l    (a7)+,a0-a6
 		rts
 
-finprg:
+libex:
+	dc.w 0
