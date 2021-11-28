@@ -1,0 +1,222 @@
+
+                       And now a few words from
+                           Wheee the fibble
+                                  of
+                              Top Notch
+
+                           ---------------
+
+        First of all, you can get in touch by writing to either of the
+following addresses:
+
+        Write to A.C.O:                         Write to W.T.F:
+
+        Colin Watt,                             Billy Allan,
+        14 Lanrig Place,                        66 Highmains ave,
+        Muirhead,                               Dumbarton,
+        Scotland,                               Scotland,
+        G69 9AT.                                G82 2PT.
+
+
+        This demo will be released on the 21st of July 1992.  And, at
+the moment, it is the best STOS demo in existence.
+        The demo has taken just five weeks from conception to
+completion, which isn't half bad I think you'll agree!  As compared to
+the last major STOS demo released (The Cunning Demos) which took over
+a year to complete I think we've done rather well.
+
+        We wrote this demo for a couple of reasons.  First of all, we
+wanted to distribute The Misty Extension, and a demo seemed the
+obvious way to show it off.  Secondly, we had a few demo screens lying
+around which we had written in moments of boredom and needed a demo to
+put them on.
+        We had tried to give the screens to some people in Sweden for
+their STOS demo, but they were turned down (the screens being "A
+Farewell to Arms and A Globe Called Alice).  After receiving a copy of
+the demo which we sent them in to, we discovered that the scrollers in
+the demo and the docs in a diskmagazine by the same people said we
+were liars, lamers and our demos were crap because we used our own
+extensions (though not in those particular screens).
+        Now, we feel understandably annoyed about these little prats
+calling us names and slagging of our screens.  If you have seen their
+demo (The Pure As Water Demo) then you may have noticed the it is
+absolute garbage.
+        They seem to believe that releasing a crap (excuse my
+language, but I'm feeling rather irate) demo full of crap screens is
+ok just because they are all written in 100% STOS (although how they
+play back Mad Max digidrums without any assembly...).  We on the other
+hand, think that a demo should be good, or at least entertaining, no
+matter what language it's written in.
+        We admit that our screens use our extension, but everyone has
+access to it so why is it "lame" to use it?
+        It seems to us that doing a 4 vbl screen with flickery
+graphics cannot be justified with the excuse "but it's STOS", so we
+make up for STOS's most obvious deficiencies with our own, freely
+available, extension and produce a much higher quality of screen.
+That's not to say that you can't do a good 100% STOS screen, you just
+need to look at the 3 in this demo to see that it is possible.
+        So, the next time you see a STOS demo with flickery sprites
+and is barely updating just think of these screens and then kick the
+person who did the screen.
+
+        Next topic please...
+
+        Asa Burrows/The STOS establishment.
+        Have you ever read the STOS column in ST Format?  If so you
+will probably fall into one of two groups.
+        Group A will feel that their problems have been sorted out by
+a competent and helpful programmer with an in-depth knowledge of STOS
+and how to make the best use of it's "powerful" commands.
+        Group B will be aghast at the gross stupidity, will laugh at
+the ridiculous suggestions and be actively engaged in their local
+"string up Asa Burrows" campaign.
+        We belong to group B.
+        I will now proceed to demonstrate why Asa Burrows is the
+complete waste of space that he is by showing questions he has been
+asked in ST Format, what advice he gave and what advice he should have
+given.
+
+Question 1.
+How to draw a sprite with a constantly changing speed and direction.
+
+Asa advised this person to use the SPRITE command and by using a
+complex combination of STR$ and MOVE make the sprite move around.
+
+Oh dear.  My advice would be to ditch the SPRITE command, write you're
+own with SCREEN$+SCREEN COPY and just calculate the co-ordinates into
+an array or data bank where possible.
+
+Question 2.
+How can I do smooth horizontal scrolling in STOS without using the
+SCREEN COPY command?
+
+Asa advised them that it was not possible to scroll the screen without
+using SCREEN COPY, but that you could try and use TOME which should be
+a part of any serious STOS programmer collection.
+
+I would laugh heartily and then suggest that they either (A) didn't
+bother scrolling the screen horizontally, (B) used animation if the
+background was made of tiles, (C) got a decent sync scroller or
+(D) wrote a different program altogether.  I would not have mentioned
+TOME as I have a brain and don't plug my friends programs in national
+magazines when I'm supposed to be giving advise.
+
+Question 3.
+How can I get more memory for my sprite bank as my program needs lot's
+animation and the sprite editor won't let me edit more than 66 32x32
+sprites?
+
+Asa advised them to try BSAVEing them our and BLOADing the back into
+memory.
+
+What the devil is he talking about???  I would advise them to draw the
+sprites with an art package and save them out as picture files and
+copy them from there, though you'll still probably run out of memory
+if you're holding 16 images of each sprite.  So don't.
+
+Question 4.
+What should I use to make scrolling backgrounds for my game?
+
+Asa advised them to use the map editor which comes with STOS.
+
+I advise them to burn, stab and destroy any trace of the map editor
+which comes with STOS and then write their own which uses the SCREEN
+COPY command rather than SPRITE to draw up the backgrounds and doesn't
+leave you with hundreds of DATA statements at the end of your program.
+
+Question 5.
+How can I make my sprites move over a background?
+
+Asa advised them to copy the picture to the BACK and PHYSIC screens
+and then use the SPRITE and MOVE command to move the sprites around.
+
+I advise them to give up programming if they have difficulty with
+putting a sprite on the screen.
+
+        I could go on, but I think you get the idea.  It seems to me
+that if this is the sort of drivel which the STOS establishment is
+telling people it's no wonder that STOS games and demos have such a
+bad reputation.
+        How could they possibly be advising people to use the SPRITE
+command?  And use MOVE X/Y to move them around the screen?!?  What are
+they doing?  Are they being deliberately ignorant, blinding themselves
+to the fact that it just isn't possible to do anything good with the
+SPRITE and MOVE commands?
+        If there are any non-STOS people still reading then you may be
+a bit confused by all this, but if you've ever seen a STOS program
+with flickery sprites with a vbl-line through them and which only move
+in straight lines then those are done with the SPRITE and MOVE
+commands.  Maybe you understand why I don't like them...
+        I seem to remember seeing an ad for the "Alternative STOS
+club" a while ago, so maybe they are more intelligent.  They couldn't
+be any stupider anyway.
+
+        Ping! Next topic coming up...
+
+        The Misty extension.
+        If you are a STOS user then please try out our extension.  If
+you are not used to bitplanes and the more complicated side of
+programming which Misty leads you into, then do remember that you get
+a disk full of sources when you register, and if you are still
+confused after looking at them then you can write to us and we'll try
+and help you.
+        We would also ask you ALL (not just STOS users) to copy the
+install program on the disk (INSTALL.PRG") and spread it as far as you
+can.  This would be a great help to us (of course), but we hope it
+will also result in an improvement of all STOS programs in the future.
+        So please do try the extension.  And if you like it, do
+register with us as we have put a lot of work into the extension and
+we have put together a very substantial registration package for you.
+
+                           ---------------
+
+                       And now a few words from
+                          A Clockwork Orange
+                                  of
+                              Top Notch
+
+                           ---------------
+
+
+
+ Well what can I say? I think that WTF has summed everything up rather
+well.  The only thing that I want to emphasise is that the rather small-
+minded and talentless people who seem to enjoy puting me down must STOP!
+
+ If these people do not desist in their pettyy, futile vendeta I shall be
+forced to release a demo called 'The unadultarated A Clockwork Orange demo'
+this demo will feature old screens which I have coded in 100% STOS.
+
+Belated hellos go out to:-
+
+Douglas Little
+      &
+Noel Wallace
+     of
+The Pixel Twins
+
+whom I spoke to lately and also the rest of TPT
+
+Neil (fuck you and your bloody DMA loader)
+
+Vision Gonzales, why send me such a nice letter and then say such
+unkind things about me? and furthermore, you use everybit as much
+assembly routines as I do, so why state otherwise?
+
+Oskar Burman, see above.
+
+Anyone else whom I have forgotten, you can't be very memorable.
+
+
+
+-------------------------------------------------------------------------------
+
+AND NOW A WORD FROM NEIL W STEWART (ex of FLAIR)
+
+Artichoke.
+There's a word, now fuck off !
+
+(By the way, Colin, you are not getting a fucking 4 Kilobyte
+ DMA loader with a soundtrack and 3D polyhedra for your crappy
+ STOS efforts. Besides, what does DMA stand for anyway ? )
+
